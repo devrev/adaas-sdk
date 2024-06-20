@@ -45,7 +45,7 @@ describe('Adapter', () => {
         expect.objectContaining({
           headers: {
             Accept: 'application/json, text/plain, */*',
-            Authorization: event.context.secrets.service_account_token,
+            Authorization: event.context.secrets["service_account_token"],
             'Content-Type': 'application/json',
           },
         })
@@ -74,7 +74,7 @@ describe('Adapter', () => {
         expect.objectContaining({
           headers: {
             Accept: 'application/json, text/plain, */*',
-            Authorization: event.context.secrets.service_account_token,
+            Authorization: event.context.secrets["service_account_token"],
             'Content-Type': 'application/json',
           },
         })

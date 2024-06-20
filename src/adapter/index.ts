@@ -47,7 +47,7 @@ export class Adapter {
     this.extractorState = state || {};
 
     this.callbackUrl = event.payload.event_context.callback_url;
-    this.devrevToken = event.context.secrets.service_account_token;
+    this.devrevToken = event.context.secrets["service_account_token"];
 
     // Once lambda is near to timeout, Snap-in needs to submit the information about artifacts
     // that have been uploaded and state, so next time it is run, can continue where it has left off

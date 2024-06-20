@@ -19,7 +19,7 @@ export class DemoExtractor {
     const adapter = new Adapter(event);
     const uploader = new Uploader(
       event.execution_metadata.devrev_endpoint,
-      event.context.secrets.service_account_token
+      event.context.secrets["service_account_token"]
     );
 
     switch (event.payload.event_type) {

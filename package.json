@@ -6,7 +6,7 @@
   "main": "./dist/src/index.js",
   "typings": "./dist/src/index.d.ts",
   "scripts": {
-    "build": "tsc -p ./tsconfig.json",
+    "build": "tsc",
     "start": "ts-node src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
@@ -34,7 +34,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@devrev/typescript-sdk": "^1.1.23",
+    "@devrev/typescript-sdk": "1.1.27",
     "axios": "^1.5.1",
     "js-jsonl": "^1.1.1",
     "ts-node": "^10.9.2"

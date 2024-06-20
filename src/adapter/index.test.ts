@@ -1,3 +1,4 @@
+import { Context, ExecutionMetadata } from '@devrev/typescript-sdk/dist/snap-ins';
 import { AirdropEvent, EventType } from '../types';
 import { Adapter } from './index';
 
@@ -8,7 +9,7 @@ const defaultEvent: AirdropEvent = {
     secrets: {
       service_account_token: 'mockToken',
     },
-  },
+  } as unknown as Context,
   payload: {
     connection_data: {
       org_id: 'mockOrgId',
@@ -28,7 +29,7 @@ const defaultEvent: AirdropEvent = {
   },
   execution_metadata: {
     devrev_endpoint: 'http://api.dev.devrev-eng.ai',
-  },
+  } as ExecutionMetadata,
 };
 
 describe('Adapter', () => {

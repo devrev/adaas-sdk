@@ -1,3 +1,7 @@
+import {
+  Context,
+  ExecutionMetadata,
+} from '@devrev/typescript-sdk/dist/snap-ins';
 import { EventType, AirdropEvent } from '../src/types';
 
 export function createAirdropEvent(
@@ -7,12 +11,12 @@ export function createAirdropEvent(
   return {
     execution_metadata: {
       devrev_endpoint: 'devrev_endpoint',
-    },
+    } as ExecutionMetadata,
     context: {
       secrets: {
         service_account_token: 'service_account_token',
       },
-    },
+    } as unknown as Context,
     payload: {
       connection_data: {
         org_id: 'org_id',
