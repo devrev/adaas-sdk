@@ -1,5 +1,5 @@
 name: Publish ADaaS Library
-run-name: "Release ${{ inputs.release-type }} by ${{ github.actor }}${{ inputs.dry-run && ' --dry-run'}}"
+run-name: "Release ${{ inputs.release-type }} by ${{ github.actor }}"
 on:
   push:
     branches:
@@ -21,7 +21,7 @@ jobs:
           node-version: 18.17
           registry-url: https://registry.npmjs.org/
           scope: '@devrev'
-          token: ${{ secrets.NPM_TOKEN }}
+          token: ${{ secrets.NPMJS_NPM_TOKEN }}
 
       - run: npm ci
       - run: npm run build
@@ -37,6 +37,6 @@ jobs:
           fi
       - name: Publish to registry
         if: ${{ env.version_bumped == 'true' }}
-        run: npm publish --verbose --access public 
+        run: npm publish --verbose --access public  
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          NODE_AUTH_TOKEN: ${{secrets.NPMJS_NPM_TOKEN}}

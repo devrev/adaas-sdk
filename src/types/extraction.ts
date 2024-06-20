@@ -1,5 +1,5 @@
 import { Artifact, ErrorRecord } from './common';
-
+import { ExecutionMetadata, Context } from '@devrev/typescript-sdk/dist/snap-ins/'
 export enum EventType {
   // Get the list of sync units (repos, projects, ...) that can be extracted
   ExtractionExternalSyncUnitsStart = 'EXTRACTION_EXTERNAL_SYNC_UNITS_START',
@@ -136,15 +136,9 @@ export interface DomainObjectState {
 }
 
 export interface AirdropEvent {
-  context: {
-    secrets: {
-      service_account_token: string;
-    };
-  };
+  context: Context;
   payload: AirdropMessage;
-  execution_metadata: {
-    devrev_endpoint: string;
-  };
+  execution_metadata: ExecutionMetadata;
 }
 
 export interface AirdropMessage {
