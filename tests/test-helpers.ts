@@ -11,7 +11,7 @@ export function createAirdropEvent(
   return {
     execution_metadata: {
       devrev_endpoint: 'devrev_endpoint',
-    } as ExecutionMetadata,
+    } as unknown as ExecutionMetadata,
     context: {
       secrets: {
         service_account_token: 'service_account_token',
@@ -31,8 +31,13 @@ export function createAirdropEvent(
         dev_user_id: 'dev_user_id',
         external_system_id: 'external_system_id',
         uuid: 'uuid',
+        sync_run_id: 'sync_run_id',
       },
       event_type,
+    },
+    input_data: {
+      global_values: {},
+      event_sources: {},
     },
     ...overrides,
   };

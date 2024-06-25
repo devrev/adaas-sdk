@@ -95,13 +95,19 @@ export class Adapter {
       event_type: newEventType,
       event_context: {
         uuid: this.event.payload.event_context.uuid,
-      },
+        sync_run: this.event.payload.event_context.sync_run_id,
+    },
       event_data: {
         ...data,
         artifacts: this.artifacts,
       },
     };
 
+    // If sync_unit_id is present in the event, add it to the new event
+    if (this.event.payload.event_context.sync_unit_id) {
+      newEvent.event_context.sync_unit =
+        this.event.payload.event_context.sync_unit_id;
+    }
     console.log('Event that will be emitted: ' + JSON.stringify(newEvent));
 
     try {

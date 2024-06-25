@@ -1,5 +1,7 @@
+import { InputData,Context,ExecutionMetadata } from '@devrev/typescript-sdk/dist/snap-ins';
+
 import { Artifact, ErrorRecord } from './common';
-import { ExecutionMetadata, Context } from '@devrev/typescript-sdk/dist/snap-ins/'
+
 export enum EventType {
   // Get the list of sync units (repos, projects, ...) that can be extracted
   ExtractionExternalSyncUnitsStart = 'EXTRACTION_EXTERNAL_SYNC_UNITS_START',
@@ -99,6 +101,10 @@ export interface EventContextIn {
   dev_user_id: string;
   // ID of the External Sync Unit
   external_sync_unit_id?: string;
+  // ID of the Sync Unit
+  sync_unit_id?: string;
+  // ID of the Sync Run ID
+  sync_run_id: string;
   // ID of the external system
   external_system_id: string;
   // ID of the source organization in which the extraction is happening
@@ -107,6 +113,8 @@ export interface EventContextIn {
 
 export interface EventContextOut {
   uuid: string;
+  sync_run: string;
+  sync_unit?: string;
 }
 
 export interface ConnectionData {
@@ -139,6 +147,7 @@ export interface AirdropEvent {
   context: Context;
   payload: AirdropMessage;
   execution_metadata: ExecutionMetadata;
+  input_data: InputData;
 }
 
 export interface AirdropMessage {

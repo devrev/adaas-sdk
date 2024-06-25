@@ -31,6 +31,7 @@ describe('Airdrop event types', () => {
         dev_org_id: 'DEV-123',
         dev_user_id: 'DEVU-123',
         external_system_id: '123',
+        sync_run_id: '123',
         uuid: '123',
       };
 

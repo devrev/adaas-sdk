@@ -24,12 +24,17 @@ const defaultEvent: AirdropEvent = {
       dev_org_id: 'DEV-TESTORG',
       dev_user_id: 'DEV-TESTUSER',
       external_system_id: 'TESTSYSTEM',
+      sync_run_id: 'mockSyncRunId',
     },
     event_type: EventType.ExtractionExternalSyncUnitsStart,
   },
   execution_metadata: {
     devrev_endpoint: 'http://api.dev.devrev-eng.ai',
   } as ExecutionMetadata,
+  input_data: {
+    global_values:{},
+    event_sources: {},
+  },
 };
 
 describe('Adapter', () => {
