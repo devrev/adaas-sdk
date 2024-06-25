@@ -33,5 +33,5 @@
       "allow_item_type_decisions": true
     }
   ],
-  "external_system_short_name": "Freshdesk"
+  "external_system_short_name": "source-system"
 }
