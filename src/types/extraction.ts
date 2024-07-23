@@ -1,4 +1,4 @@
-import { InputData,Context,ExecutionMetadata } from '@devrev/typescript-sdk/dist/snap-ins';
+import { InputData } from '@devrev/typescript-sdk/dist/snap-ins';
 
 import { Artifact, ErrorRecord } from './common';
 
@@ -85,7 +85,7 @@ export interface ExternalSyncUnit {
   // Description of the external sync unit (either extracted or defined by the extractor)
   description: string;
   // Number of items in the external sync unit (if known, otherwise can be set to 0)
-  item_count: number;
+  item_count?: number;
 }
 
 // EventContextIn holds all the information that an external extrator needs to know about the extraction
@@ -109,6 +109,8 @@ export interface EventContextIn {
   external_system_id: string;
   // ID of the source organization in which the extraction is happening
   uuid: string;
+  // URL of the worker data endpoint
+  worker_data_url: string;
 }
 
 export interface EventContextOut {
@@ -144,9 +146,15 @@ export interface DomainObjectState {
 }
 
 export interface AirdropEvent {
-  context: Context;
+  context: {
+    secrets: {
+      service_account_token: string;
+    };
+  };
   payload: AirdropMessage;
-  execution_metadata: ExecutionMetadata;
+  execution_metadata: {
+    devrev_endpoint: string;
+  };
   input_data: InputData;
 }
 
@@ -163,7 +171,12 @@ export interface ExtractorEvent {
   event_type: string;
   event_context: EventContextOut;
   // JSON of the external extractor state, not touched by the adapter, just forwarded
-  extractor_state: string;
+  extractor_state?: string;
   // Event data
   event_data?: EventData;
 }
+
+export type AdapterState<ExtractorState> = ExtractorState & {
+  lastSyncStarted?: string;
+  lastSuccessfulSyncStarted?: string;
+};
