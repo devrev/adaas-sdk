@@ -1,17 +1,18 @@
-import axios, { isAxiosError } from 'axios';
+import axios from 'axios';
 
 import {
   AirdropEvent,
   ExtractorEventType,
   ExtractorEvent,
   EventData,
-  AdapterState,
+  AdapterState as AdapterStateType,
   Artifact,
 } from '../types';
 
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { getTimeoutExtractorEventType } from '../common/helpers';
 import { Logger } from '../logging';
+import { AdapterState, createAdapterState } from '../state';
 
 /**
  * Adapter class is used to interact with Airdrop platform. The class provides
@@ -38,33 +39,30 @@ import { Logger } from '../logging';
 
 export async function createAdapter<ExtractorState>(
   event: AirdropEvent,
-  initialState: AdapterState<ExtractorState>,
+  initialState: ExtractorState,
   isLocalDevelopment: boolean = false
 ) {
-  console.log('initialState in createAdapter: ', initialState);
-
-  const newInitialState = { ...initialState };
+  const newInitialState = structuredClone(initialState);
+  const adapterState: AdapterState<ExtractorState> = await createAdapterState(
+    event,
+    newInitialState
+  );
 
   const a = new Adapter<ExtractorState>(
     event,
-    newInitialState,
+    adapterState,
     isLocalDevelopment
   );
 
-  console.log('Creating new adapter');
-  if (!STATELESS_EVENT_TYPES.includes(event.payload.event_type)) {
-    await a.fetchState(newInitialState);
-  }
   return a;
 }
 
 export class Adapter<ExtractorState> {
-  private _state: AdapterState<ExtractorState>;
+  private adapterState: AdapterState<ExtractorState>;
   private _artifacts: Artifact[];
 
   private event: AirdropEvent;
   private callbackUrl: string;
-  private workerUrl: string;
   private devrevToken: string;
   private startTime: number;
   private heartBeatFn: NodeJS.Timeout;
@@ -74,19 +72,18 @@ export class Adapter<ExtractorState> {
 
   constructor(
     event: AirdropEvent,
-    initialState: AdapterState<ExtractorState>,
+    adapterState: AdapterState<ExtractorState>,
     isLocalDevelopment: boolean = false
   ) {
     if (!isLocalDevelopment) {
       Logger.init(event);
     }
 
-    this._state = { ...initialState };
+    this.adapterState = adapterState;
     this._artifacts = [];
 
     this.event = event;
     this.callbackUrl = event.payload.event_context.callback_url;
-    this.workerUrl = event.payload.event_context.worker_data_url;
     this.devrevToken = event.context.secrets.service_account_token;
 
     this.startTime = Date.now();
@@ -100,12 +97,12 @@ export class Adapter<ExtractorState> {
     }, this.heartBeatInterval);
   }
 
-  get state(): AdapterState<ExtractorState> {
-    return this._state;
+  get state(): AdapterStateType<ExtractorState> {
+    return this.adapterState.state;
   }
 
-  set state(value: AdapterState<ExtractorState>) {
-    this._state = value;
+  set state(value: AdapterStateType<ExtractorState>) {
+    this.adapterState.state = value;
   }
 
   get artifacts(): Artifact[] {
@@ -114,88 +111,6 @@ export class Adapter<ExtractorState> {
 
   set artifacts(value: Artifact[]) {
     this._artifacts = value;
-  }
-
-  /**
-   *  Updates the state of the adapter.
-   *
-   * @param {object} state - The state to be updated
-   */
-  async postState(state: AdapterState<ExtractorState>) {
-    try {
-      await axios.post(
-        this.workerUrl + '.update',
-        {
-          state: JSON.stringify(state),
-        },
-        {
-          headers: {
-            Authorization: this.devrevToken,
-          },
-          params: {
-            sync_unit: this.event.payload.event_context.sync_unit_id,
-          },
-        }
-      );
-
-      this._state = state;
-      console.log('State updated successfully');
-    } catch (error) {
-      console.error('Failed to update state, error:' + error);
-      this.emit(ExtractorEventType.ExtractionDataError, {
-        error: { message: 'Failed to update state' },
-      });
-    }
-  }
-
-  /**
-   *  Fetches the state of the adapter.
-   *
-   * @return  The state of the adapter
-   */
-  async fetchState(
-    initialState: ExtractorState
-  ): Promise<AdapterState<ExtractorState> | unknown> {
-    const state: AdapterState<ExtractorState> = {
-      ...initialState,
-      lastSyncStarted: '',
-      lastSuccessfulSyncStarted: '',
-    };
-
-    console.log(
-      'Fetching state with sync unit id: ' +
-        this.event.payload.event_context.sync_unit_id
-    );
-
-    try {
-      const response = await axios.post(
-        this.workerUrl + '.get',
-        {},
-        {
-          headers: {
-            Authorization: this.devrevToken,
-          },
-          params: {
-            sync_unit: this.event.payload.event_context.sync_unit_id,
-          },
-        }
-      );
-
-      this._state = JSON.parse(response.data.state);
-
-      console.log('State fetched successfully');
-      return this._state;
-    } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 404) {
-        console.log('State not found, returning initial state');
-        this._state = state;
-        this.postState(this._state);
-        return this._state;
-      }
-
-      console.error('Failed to fetch state, error:' + error);
-      return error;
-    }
   }
 
   /**
@@ -215,7 +130,7 @@ export class Adapter<ExtractorState> {
     // We want to save the state every time we emit an event, except for the start and delete events
     if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
       console.log(`Saving state before emitting event`);
-      await this.postState(this._state);
+      await this.adapterState.postState(this.state);
     }
 
     const newEvent: ExtractorEvent = {
