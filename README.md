@@ -6,6 +6,21 @@ Typescript ADaaS Library (@devrev/ts-adaas) provides:
 - an adapter for ADaaS control protocol,
 - helpers for uploading artifacts and manage the state for ADaaS snap-in.
 
+## Release Notes
+
+#### v0.0.2
+
+- Support for the State API
+- HTTP client for API requests
+- Local development environment creates local artifact files
+- Improvements in logging
+
+#### v0.0.1
+
+- Demo implementation of ADaaS snap-in
+- Adapter for ADaaS control protocol with helper functions
+- Uploader for uploading artifacts
+
 ## Usage
 
 Create a new ADaaS adapter on each ADaaS snap-in invocation:

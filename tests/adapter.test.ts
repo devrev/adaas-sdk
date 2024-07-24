@@ -1,13 +1,12 @@
 import axios from 'axios';
 import { createAdapter, Adapter } from '../src/adapter';
-import { AdapterState, createAdapterState } from '../src/state';
+import { State, createAdapterState } from '../src/state';
 import {
   AirdropEvent,
   EventType,
   ExtractorEventType,
   EventData,
 } from '../src/types';
-import { STATELESS_EVENT_TYPES } from '../src/common/constants';
 import { getTimeoutExtractorEventType } from '../src/common/helpers';
 
 jest.mock('axios');
@@ -70,7 +69,7 @@ describe('Adapter', () => {
 
   describe('createAdapter', () => {
     it('should create an Adapter instance', async () => {
-      const adapterState = new AdapterState(event, initialState);
+      const adapterState = new State(event, initialState);
       mockedCreateAdapterState.mockResolvedValue(adapterState);
 
       const adapter = await createAdapter(event, initialState, false);
@@ -85,10 +84,10 @@ describe('Adapter', () => {
 
   describe('Adapter', () => {
     let adapter: Adapter<typeof initialState>;
-    let adapterState: AdapterState<typeof initialState>;
+    let adapterState: State<typeof initialState>;
 
     beforeEach(() => {
-      adapterState = new AdapterState(event, initialState);
+      adapterState = new State(event, initialState);
       adapter = new Adapter(event, adapterState, false);
     });
 

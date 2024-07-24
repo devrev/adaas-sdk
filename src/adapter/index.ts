@@ -5,14 +5,14 @@ import {
   ExtractorEventType,
   ExtractorEvent,
   EventData,
-  AdapterState as AdapterStateType,
+  AdapterState,
   Artifact,
 } from '../types';
 
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { getTimeoutExtractorEventType } from '../common/helpers';
 import { Logger } from '../logging';
-import { AdapterState, createAdapterState } from '../state';
+import { State, createAdapterState } from '../state';
 
 /**
  * Adapter class is used to interact with Airdrop platform. The class provides
@@ -43,7 +43,7 @@ export async function createAdapter<ExtractorState>(
   isLocalDevelopment: boolean = false
 ) {
   const newInitialState = structuredClone(initialState);
-  const adapterState: AdapterState<ExtractorState> = await createAdapterState(
+  const adapterState: State<ExtractorState> = await createAdapterState(
     event,
     newInitialState
   );
@@ -58,7 +58,7 @@ export async function createAdapter<ExtractorState>(
 }
 
 export class Adapter<ExtractorState> {
-  private adapterState: AdapterState<ExtractorState>;
+  private adapterState: State<ExtractorState>;
   private _artifacts: Artifact[];
 
   private event: AirdropEvent;
@@ -72,7 +72,7 @@ export class Adapter<ExtractorState> {
 
   constructor(
     event: AirdropEvent,
-    adapterState: AdapterState<ExtractorState>,
+    adapterState: State<ExtractorState>,
     isLocalDevelopment: boolean = false
   ) {
     if (!isLocalDevelopment) {
@@ -97,11 +97,11 @@ export class Adapter<ExtractorState> {
     }, this.heartBeatInterval);
   }
 
-  get state(): AdapterStateType<ExtractorState> {
+  get state(): AdapterState<ExtractorState> {
     return this.adapterState.state;
   }
 
-  set state(value: AdapterStateType<ExtractorState>) {
+  set state(value: AdapterState<ExtractorState>) {
     this.adapterState.state = value;
   }
 

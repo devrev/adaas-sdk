@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { createAdapterState, AdapterState } from '../src/state';
+import { createAdapterState, State } from '../src/state';
 import { AirdropEvent, EventType } from '../src/types';
 import { STATELESS_EVENT_TYPES } from '../src/common/constants';
 
@@ -55,7 +55,7 @@ describe('AdapterState', () => {
   describe('createAdapterState', () => {
     it('should create an AdapterState instance', async () => {
       const adapterState = await createAdapterState(event, initialState);
-      expect(adapterState).toBeInstanceOf(AdapterState);
+      expect(adapterState).toBeInstanceOf(State);
       expect(adapterState.state).toEqual({
         ...initialState,
         lastSyncStarted: '',
@@ -64,7 +64,7 @@ describe('AdapterState', () => {
     });
 
     it('should fetch state if event type is not stateless', async () => {
-      const spy = jest.spyOn(AdapterState.prototype, 'fetchState');
+      const spy = jest.spyOn(State.prototype, 'fetchState');
       await createAdapterState(event, initialState);
       expect(spy).toHaveBeenCalled();
     });
@@ -74,17 +74,17 @@ describe('AdapterState', () => {
         ...event,
         payload: { ...event.payload, event_type: STATELESS_EVENT_TYPES[0] },
       };
-      const spy = jest.spyOn(AdapterState.prototype, 'fetchState');
+      const spy = jest.spyOn(State.prototype, 'fetchState');
       await createAdapterState(statelessEvent, initialState);
       expect(spy).not.toHaveBeenCalled();
     });
   });
 
   describe('AdapterState', () => {
-    let adapterState: AdapterState<typeof initialState>;
+    let adapterState: State<typeof initialState>;
 
     beforeEach(() => {
-      adapterState = new AdapterState(event, initialState);
+      adapterState = new State(event, initialState);
     });
 
     it('should initialize with given state', () => {

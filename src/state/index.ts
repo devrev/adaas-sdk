@@ -1,6 +1,6 @@
 import axios, { isAxiosError } from 'axios';
 
-import { AdapterState as AdapterStateType, AirdropEvent } from '../types';
+import { AdapterState, AirdropEvent } from '../types';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 
 export async function createAdapterState<ExtractorState>(
@@ -8,7 +8,7 @@ export async function createAdapterState<ExtractorState>(
   initialState: ExtractorState
 ) {
   const newInitialState = structuredClone(initialState);
-  const as = new AdapterState<ExtractorState>(event, newInitialState);
+  const as = new State<ExtractorState>(event, newInitialState);
 
   if (!STATELESS_EVENT_TYPES.includes(event.payload.event_type)) {
     console.log('Fetching state');
@@ -18,8 +18,8 @@ export async function createAdapterState<ExtractorState>(
   return as;
 }
 
-export class AdapterState<ExtractorState> {
-  private _state: AdapterStateType<ExtractorState>;
+export class State<ExtractorState> {
+  private _state: AdapterState<ExtractorState>;
 
   private event: AirdropEvent;
   private workerUrl: string;
@@ -50,7 +50,7 @@ export class AdapterState<ExtractorState> {
    *
    * @param {object} state - The state to be updated
    */
-  async postState(state: AdapterStateType<ExtractorState>) {
+  async postState(state: AdapterState<ExtractorState>) {
     try {
       await axios.post(
         this.workerUrl + '.update',
@@ -81,8 +81,8 @@ export class AdapterState<ExtractorState> {
    */
   async fetchState(
     initialState: ExtractorState
-  ): Promise<AdapterStateType<ExtractorState> | unknown> {
-    const state: AdapterStateType<ExtractorState> = {
+  ): Promise<AdapterState<ExtractorState> | unknown> {
+    const state: AdapterState<ExtractorState> = {
       ...initialState,
       lastSyncStarted: '',
       lastSuccessfulSyncStarted: '',
