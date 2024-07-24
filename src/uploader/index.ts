@@ -16,7 +16,7 @@ import { Artifact, UploadResponse } from '../types/common';
  * @constructor
  * @param {string} endpoint - The endpoint of the DevRev platform
  * @param {string} token - The token to authenticate with the DevRev platform
- * @param {boolean} local - A flag to indicate if the uploader should upload to the file-system.
+ * @param {boolean} local - Flag to indicate if the uploader should upload to the file-system.
  */
 export class Uploader {
   private betaDevrevSdk;
