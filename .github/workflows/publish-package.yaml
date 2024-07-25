@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-
+  workflow_dispatch:
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
@@ -35,6 +35,9 @@ jobs:
             echo "Version $CURRENT_VERSION has not been changed"
             echo "version_bumped=false" >> "$GITHUB_ENV"
           fi
+      - name: Set version_bumped to true if workflow_dispatch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: echo "version_bumped=true" >> "$GITHUB_ENV"
       - name: Publish to registry
         if: ${{ env.version_bumped == 'true' }}
         run: npm publish --verbose --access public  
