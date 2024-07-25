@@ -33,20 +33,33 @@ export function createArtifact(
   } as Artifact;
 }
 
-export function getTimeoutExtractorEventType(
-  eventType: EventType
-): ExtractorEventType | null {
+export function getTimeoutExtractorEventType(eventType: EventType): {
+  eventType: ExtractorEventType;
+  isError: boolean;
+} | null {
   switch (eventType) {
     case EventType.ExtractionMetadataStart:
-      return ExtractorEventType.ExtractionMetadataError;
+      return {
+        eventType: ExtractorEventType.ExtractionMetadataError,
+        isError: true,
+      };
     case EventType.ExtractionDataStart:
     case EventType.ExtractionDataContinue:
-      return ExtractorEventType.ExtractionDataProgress;
+      return {
+        eventType: ExtractorEventType.ExtractionDataProgress,
+        isError: false,
+      };
     case EventType.ExtractionAttachmentsStart:
     case EventType.ExtractionAttachmentsContinue:
-      return ExtractorEventType.ExtractionAttachmentsProgress;
+      return {
+        eventType: ExtractorEventType.ExtractionAttachmentsProgress,
+        isError: false,
+      };
     case EventType.ExtractionExternalSyncUnitsStart:
-      return ExtractorEventType.ExtractionExternalSyncUnitsError;
+      return {
+        eventType: ExtractorEventType.ExtractionExternalSyncUnitsError,
+        isError: true,
+      };
     default:
       console.log(
         'Event type not recognized in getTimeoutExtractorEventType function: ' +

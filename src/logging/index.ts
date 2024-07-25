@@ -1,8 +1,9 @@
-enum LogLevel {
+import { AirdropEvent } from '../types';
+
+export enum LogLevel {
   INFO = 'info',
   WARN = 'warn',
   ERROR = 'error',
-  DEBUG = 'debug',
 }
 
 /**
@@ -11,63 +12,37 @@ enum LogLevel {
  * - INFO
  * - WARN
  * - ERROR
- * - DEBUG
  *
  * The log tags can be set to any key-value pair.
  */
-class Logger {
-  private level: LogLevel;
-  private logTags: Record<string, any> = {};
-  private static instance: Logger;
+export class Logger {
+  public static init(event: AirdropEvent) {
+    const origLog = console.log;
+    console.log = (message: string) => {
+      origLog(`[${LogLevel.INFO.toUpperCase()}]: ${message}`, {
+        ...event.payload.event_context,
+      });
+    };
 
-  // Private constructor to prevent instantiation
-  private constructor(level: LogLevel, logTags: Record<string, any> = {}) {
-    this.level = level;
-    this.logTags = logTags;
-  }
+    const origInfo = console.info;
+    console.info = (message: string) => {
+      origInfo(`[${LogLevel.INFO.toUpperCase()}]: ${message}`, {
+        ...event.payload.event_context,
+      });
+    };
 
-  private log(level: LogLevel, message: string): void {
-    if (this.level === level) {
-      console.log(`[${level.toUpperCase()}]: ${message}`, this.logTags);
-    }
-  }
+    const origWarn = console.warn;
+    console.warn = (message: string) => {
+      origWarn(`[${LogLevel.WARN.toUpperCase()}]: ${message}`, {
+        ...event.payload.event_context,
+      });
+    };
 
-  // Singleton instance
-  public static getInstance(
-    level: LogLevel,
-    logTags: Record<string, any> = {}
-  ): Logger {
-    if (!Logger.instance) {
-      Logger.instance = new Logger(level, logTags);
-    }
-    return Logger.instance;
-  }
-
-  // Set log tags destructively.
-  public setTags(tags: Record<string, any>): void {
-    this.logTags = tags;
-  }
-
-  // Add log tags. If the key already exists, it will be overwritten.
-  public addTags(tags: Record<string, any>): void {
-    this.logTags = { ...this.logTags, ...tags };
-  }
-
-  info(message: string): void {
-    this.log(LogLevel.INFO, message);
-  }
-
-  warn(message: string): void {
-    this.log(LogLevel.WARN, message);
-  }
-
-  error(message: string): void {
-    this.log(LogLevel.ERROR, message);
-  }
-
-  debug(message: string): void {
-    this.log(LogLevel.DEBUG, message);
+    const origError = console.error;
+    console.error = (message: string) => {
+      origError(`[${LogLevel.ERROR.toUpperCase()}]: ${message}`, {
+        ...event.payload.event_context,
+      });
+    };
   }
 }
-
-export default Logger;

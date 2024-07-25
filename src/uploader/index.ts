@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 import { betaSDK, client } from '@devrev/typescript-sdk';
-
-import { createFormData } from '../adapter/helpers';
+import fs, { promises as fsPromises } from 'fs';
+import { createFormData } from '../common/helpers';
 import { Artifact, UploadResponse } from '../types/common';
 
 /**
@@ -16,17 +16,17 @@ import { Artifact, UploadResponse } from '../types/common';
  * @constructor
  * @param {string} endpoint - The endpoint of the DevRev platform
  * @param {string} token - The token to authenticate with the DevRev platform
+ * @param {boolean} local - Flag to indicate if the uploader should upload to the file-system.
  */
 export class Uploader {
   private betaDevrevSdk;
-  private publicDevrevSdk;
-
-  constructor(endpoint: string, token: string) {
+  private local: boolean;
+  constructor(endpoint: string, token: string, local = false) {
     this.betaDevrevSdk = client.setupBeta({
       endpoint,
       token,
     });
-    this.publicDevrevSdk = client.setup({ endpoint, token });
+    this.local = local;
   }
 
   /**
@@ -46,6 +46,10 @@ export class Uploader {
     fetchedObjects: object[] | object,
     filetype: string = 'application/jsonl+json'
   ): Promise<UploadResponse> {
+    if (this.local) {
+      this.downloadToLocal(filename, fetchedObjects);
+    }
+
     const preparedArtifact = await this.prepareArtifact(filename, filetype);
 
     if (!preparedArtifact) {
@@ -75,6 +79,8 @@ export class Uploader {
       item_count: itemCount,
     };
 
+    console.log(`Artifact uploaded successfully: ${artifact.id}`);
+
     return { artifact, error: undefined };
   }
 
@@ -90,7 +96,8 @@ export class Uploader {
 
       return response.data;
     } catch (error) {
-      throw new Error('Error while fetching upload url: ' + error);
+      console.error('Error while preparing artifact: ' + error);
+      return null;
     }
   }
 
@@ -111,6 +118,39 @@ export class Uploader {
     } catch (error) {
       console.error('Error while uploading artifact: ' + error);
       return null;
+    }
+  }
+
+  private async downloadToLocal(
+    filePath: string,
+    fetchedObjects: object | object[]
+  ) {
+    console.log(`Uploading ${filePath} to local file system`);
+    try {
+      if (!fs.existsSync('extracted_files')) {
+        fs.mkdirSync('extracted_files');
+      }
+
+      const timestamp = new Date().getTime();
+      const fileHandle = await fsPromises.open(
+        `extracted_files/${timestamp}_${filePath}`,
+        'w'
+      );
+      let objArray = [];
+      if (!Array.isArray(fetchedObjects)) {
+        objArray.push(fetchedObjects);
+      } else {
+        objArray = fetchedObjects;
+      }
+      for (const jsonObject of objArray) {
+        const jsonLine = JSON.stringify(jsonObject) + '\n';
+        await fileHandle.write(jsonLine);
+      }
+      await fileHandle.close();
+      console.log('Data successfully written to', filePath);
+    } catch (error) {
+      console.error('Error writing data to file:', error);
+      return Promise.reject(error);
     }
   }
 }

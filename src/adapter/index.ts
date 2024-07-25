@@ -1,86 +1,116 @@
 import axios from 'axios';
 
 import {
-  Artifact,
   AirdropEvent,
   ExtractorEventType,
   ExtractorEvent,
   EventData,
+  AdapterState,
+  Artifact,
 } from '../types';
 
-import { AdapterUpdateParams } from '../types/common';
-import { getTimeoutExtractorEventType } from '../adapter/helpers';
+import { STATELESS_EVENT_TYPES } from '../common/constants';
+import { getTimeoutExtractorEventType } from '../common/helpers';
+import { Logger } from '../logging';
+import { State, createAdapterState } from '../state';
 
 /**
  * Adapter class is used to interact with Airdrop platform. The class provides
  * utilities to
  *  - emit control events to the platform
  *  - update the state of the extractor
- *  - add artifacts to the list of artifacts to be returned to the platform
- *  - Return the last saved state and artifacts in case timeout
- *  - The event sent in case of timeout for each event type is as follows:
- *     - EXTRACTION_EXTERNAL_SYNC_UNITS_START =>  EXTRACTION_EXTERNAL_SYNC_UNITS_ERROR
- *     - EXTRACTION_METADATA_START => EXTRACTION_METADATA_ERROR
- *     - EXTRACTION_DATA_START => EXTRACTION_DATA_PROGRESS
- *     - EXTRACTION_DATA_CONTINUE => EXTRACTION_DATA_PROGRESS
- *     - EXTRACTION_ATTACHMENTS_START => EXTRACTION_ATTACHMENTS_PROGRESS
- *     - EXTRACTION_ATTACHMENTS_CONTINUE => EXTRACTION_ATTACHMENTS_PROGRESS
+ *  - set the last saved state in case of a timeout
  *
  * @class Adapter
  * @constructor
  * @param {AirdropEvent} event - The event object received from the platform
- * @param {object=} state - Optional state object to be passed to the extractor. If not provided, an empty object is used.
+ * @param {object=} initialState - The initial state of the adapter
+ * @param {boolean=} isLocalDevelopment - A flag to indicate if the adapter is being used in local development
  */
-export class Adapter {
-  private artifacts: Artifact[];
-  /** Adapter level state to return to the platform */
-  private extractorState: object;
+
+/**
+ *  Creates an adapter instance.
+ *
+ * @param {AirdropEvent} event - The event object received from the platform
+ * @param initialState
+ * @param {boolean=} isLocalDevelopment - A flag to indicate if the adapter is being used in local development
+ * @return  The adapter instance
+ */
+
+export async function createAdapter<ExtractorState>(
+  event: AirdropEvent,
+  initialState: ExtractorState,
+  isLocalDevelopment: boolean = false
+) {
+  const newInitialState = structuredClone(initialState);
+  const adapterState: State<ExtractorState> = await createAdapterState(
+    event,
+    newInitialState
+  );
+
+  const a = new Adapter<ExtractorState>(
+    event,
+    adapterState,
+    isLocalDevelopment
+  );
+
+  return a;
+}
+
+export class Adapter<ExtractorState> {
+  private adapterState: State<ExtractorState>;
+  private _artifacts: Artifact[];
 
   private event: AirdropEvent;
   private callbackUrl: string;
   private devrevToken: string;
+  private startTime: number;
+  private heartBeatFn: NodeJS.Timeout;
+  private exit: boolean = false;
+  private lambdaTimeout: number = 10 * 60 * 1000; // 10 minutes in milliseconds
+  private heartBeatInterval: number = 30 * 1000; // 30 seconds in milliseconds
 
-  constructor(event: AirdropEvent, state?: object) {
+  constructor(
+    event: AirdropEvent,
+    adapterState: State<ExtractorState>,
+    isLocalDevelopment: boolean = false
+  ) {
+    if (!isLocalDevelopment) {
+      Logger.init(event);
+    }
+
+    this.adapterState = adapterState;
+    this._artifacts = [];
+
     this.event = event;
-    this.artifacts = [];
-
-    this.extractorState = state || {};
-
     this.callbackUrl = event.payload.event_context.callback_url;
-    this.devrevToken = event.context.secrets["service_account_token"];
+    this.devrevToken = event.context.secrets.service_account_token;
 
-    // Once lambda is near to timeout, Snap-in needs to submit the information about artifacts
-    // that have been uploaded and state, so next time it is run, can continue where it has left off
-    setTimeout(
-      async () => {
-        const extractorEventType = getTimeoutExtractorEventType(
-          this.event.payload.event_type
-        );
+    this.startTime = Date.now();
 
-        if (extractorEventType) {
-          await this.emit(extractorEventType, { artifacts: this.artifacts });
-        }
-      },
-      12 * 60 * 1000
-    );
+    // Run heartbeat every 30 seconds
+    this.heartBeatFn = setInterval(async () => {
+      const b = await this.heartbeat();
+      if (b) {
+        this.exitAdapter();
+      }
+    }, this.heartBeatInterval);
   }
 
-  /**
-   *  Adds artifact to the list of artifacts.
-   *  Overrides extractor state if provided.
-   *
-   * @param {AdapterUpdateParams} params - The parameters to update the adapter
-   * @param {Artifact=} params.artifact - The artifact to be added to the list of artifacts
-   * @param {object=} params.extractor_state - The state object to be updated
-   */
-  async update(params: AdapterUpdateParams) {
-    if (params.artifact) {
-      this.artifacts.push(params.artifact);
-    }
+  get state(): AdapterState<ExtractorState> {
+    return this.adapterState.state;
+  }
 
-    if (params.extractor_state) {
-      this.extractorState = params.extractor_state;
-    }
+  set state(value: AdapterState<ExtractorState>) {
+    this.adapterState.state = value;
+  }
+
+  get artifacts(): Artifact[] {
+    return this._artifacts;
+  }
+
+  set artifacts(value: Artifact[]) {
+    this._artifacts = value;
   }
 
   /**
@@ -90,25 +120,32 @@ export class Adapter {
    * @param {EventData=} data - The data to be sent with the event
    */
   async emit(newEventType: ExtractorEventType, data?: EventData) {
+    if (this.exit) {
+      console.warn(
+        'Adapter is already in exit state. No more events can be emitted.'
+      );
+      return;
+    }
+
+    // We want to save the state every time we emit an event, except for the start and delete events
+    if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
+      console.log(`Saving state before emitting event`);
+      await this.adapterState.postState(this.state);
+    }
+
     const newEvent: ExtractorEvent = {
-      extractor_state: JSON.stringify(this.extractorState),
       event_type: newEventType,
       event_context: {
         uuid: this.event.payload.event_context.uuid,
         sync_run: this.event.payload.event_context.sync_run_id,
-    },
+        ...(this.event.payload.event_context.sync_unit_id && {
+          sync_unit: this.event.payload.event_context.sync_unit_id,
+        }),
+      },
       event_data: {
         ...data,
-        artifacts: this.artifacts,
       },
     };
-
-    // If sync_unit_id is present in the event, add it to the new event
-    if (this.event.payload.event_context.sync_unit_id) {
-      newEvent.event_context.sync_unit =
-        this.event.payload.event_context.sync_unit_id;
-    }
-    console.log('Event that will be emitted: ' + JSON.stringify(newEvent));
 
     try {
       await axios.post(
@@ -122,24 +159,50 @@ export class Adapter {
           },
         }
       );
+
+      console.log('Successfully emitted event: ' + JSON.stringify(newEvent));
     } catch (error) {
       // If this request fails the extraction will be stuck in loop and
       // we need to stop it through UI or think about retrying this request
       console.log(
-        'Emitting failed for this event: ' +
+        'Failed to emit event: ' +
           JSON.stringify(newEvent) +
           ', error: ' +
           error
       );
+    } finally {
+      this.exitAdapter();
     }
   }
 
   /**
-   *  Returns the list of artifacts stored in the adapter.
-   *
-   * @return  The list of artifacts
+   * Exit the adapter. This will stop the heartbeat and no
+   * further events will be emitted.
    */
-  getArtifacts(): Artifact[] {
-    return this.artifacts;
+  private exitAdapter() {
+    this.exit = true;
+    clearInterval(this.heartBeatFn);
+  }
+
+  /**
+   * Heartbeat function to check if the lambda is about to timeout.
+   * @returns true if 10 minutes have passed since the start of the lambda.
+   */
+  private async heartbeat(): Promise<boolean> {
+    if (this.exit) {
+      return true;
+    }
+    if (Date.now() - this.startTime > this.lambdaTimeout) {
+      const timeoutEventType = getTimeoutExtractorEventType(
+        this.event.payload.event_type
+      );
+      if (timeoutEventType !== null) {
+        const { eventType, isError } = timeoutEventType;
+        const err = isError ? { message: 'Lambda Timeout' } : undefined;
+        await this.emit(eventType, { error: err, artifacts: this._artifacts });
+        return true;
+      }
+    }
+    return false;
   }
 }

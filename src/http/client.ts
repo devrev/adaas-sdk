@@ -1,6 +1,5 @@
 import axios, { InternalAxiosRequestConfig, isAxiosError } from 'axios';
 import {
-  LAMBDA_LIMIT_EXCEEDED,
   RATE_LIMIT_EXCEEDED,
   RATE_LIMIT_EXCEEDED_STATUS_CODE,
 } from './constants';
@@ -16,7 +15,7 @@ export const defaultResponse: HTTPResponse = {
   success: false,
 };
 
-export default class HTTPClient {
+export class HTTPClient {
   private retryAfter = 0;
   private retryAt = 0;
   private axiosInstance = axios.create();
