@@ -10,7 +10,7 @@ Typescript ADaaS Library (@devrev/ts-adaas) provides:
 
 #### v0.0.3
 
-- Support for new recipe managemet
+- Support for new recipe management
 
 #### v0.0.2
 

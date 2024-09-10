@@ -19,8 +19,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "strictPropertyInitialization": false
+    "resolveJsonModule": true
   },
   "include": ["src", "tests"],
   "exclude": ["node_modules", "dist"]
