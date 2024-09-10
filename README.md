@@ -8,6 +8,10 @@ Typescript ADaaS Library (@devrev/ts-adaas) provides:
 
 ## Release Notes
 
+#### v0.0.3
+
+- Support for new recipe managemet
+
 #### v0.0.2
 
 - Support for the State API

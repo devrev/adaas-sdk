@@ -17,6 +17,7 @@ describe('AdapterState', () => {
       secrets: {
         service_account_token: 'service_account_token',
       },
+      snap_in_version_id: 'snap_in_version_id',
     },
     payload: {
       connection_data: {

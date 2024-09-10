@@ -1,0 +1,38 @@
+{
+  "record_types": {
+    "users": {
+      "fields": {
+        "name": {
+          "is_required": true,
+          "type": "text",
+          "name": "Name",
+          "text": {
+            "min_length": 1
+          }
+        },
+        "email": {
+          "type": "text",
+          "name": "Email",
+          "is_required": true
+        }
+      }
+    },
+    "contacts": {
+      "fields": {
+        "name": {
+          "is_required": true,
+          "type": "text",
+          "name": "Name",
+          "text": {
+            "min_length": 1
+          }
+        },
+        "email": {
+          "type": "text",
+          "name": "Email",
+          "is_required": true
+        }
+      }
+    }
+  }
+}

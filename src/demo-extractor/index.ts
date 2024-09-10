@@ -8,7 +8,7 @@ import {
 import { Adapter } from '../adapter';
 import { Uploader } from '../uploader';
 
-import extractorInitialDomainMapping from './initial_domain_mapping.json';
+import externalDomainMetadata from './external_domain_metadata.json';
 
 type ExtractorState = object;
 
@@ -48,21 +48,10 @@ export class DemoExtractor {
       }
 
       case EventType.ExtractionMetadataStart: {
-        const metadata = [
-          {
-            item: 'contacts',
-            fields: ['id', 'name', 'lastName'],
-          },
-          {
-            item: 'users',
-            fields: ['id', 'name', 'lastName'],
-          },
-        ];
-
         const { artifact, error } = await this.uploader.upload(
-          'loopback_metadata_1.jsonl',
-          'metadata',
-          metadata
+          'metadata_1.jsonl',
+          'external_domain_metadata',
+          externalDomainMetadata
         );
 
         if (error || !artifact) {
@@ -72,23 +61,8 @@ export class DemoExtractor {
           return;
         }
 
-        const { artifact: recipe, error: recipeError } =
-          await this.uploader.upload(
-            'recipe.json',
-            'initial_domain_mapping',
-            extractorInitialDomainMapping
-          );
-
-        if (recipeError || !recipe) {
-          await this.adapter.emit(ExtractorEventType.ExtractionMetadataError, {
-            error: recipeError,
-          });
-          return;
-        }
-
         await this.adapter.emit(ExtractorEventType.ExtractionMetadataDone, {
-          progress: 50,
-          artifacts: [artifact, recipe],
+          artifacts: [artifact],
         });
 
         break;
@@ -97,19 +71,27 @@ export class DemoExtractor {
       case EventType.ExtractionDataStart: {
         const contacts = [
           {
-            id: 1,
-            name: 'John',
-            lastName: 'Doe',
+            id: 'contact-1',
+            created_date: '1999-12-25T01:00:03+01:00',
+            modified_date: '1999-12-25T01:00:03+01:00',
+            data: {
+              email: 'johnsmith@test.com',
+              name: 'John Smith',
+            },
           },
           {
-            id: 2,
-            name: 'Jane',
-            lastName: 'Doe',
+            id: 'contact-2',
+            created_date: '1999-12-27T15:31:34+01:00',
+            modified_date: '2002-04-09T01:55:31+02:00',
+            data: {
+              email: 'janesmith@test.com',
+              name: 'Jane Smith',
+            },
           },
         ];
 
         const { artifact, error } = await this.uploader.upload(
-          'loopback_contacts_1.json',
+          'contacts_1.json',
           'contacts',
           contacts
         );
@@ -133,19 +115,27 @@ export class DemoExtractor {
       case EventType.ExtractionDataContinue: {
         const users = [
           {
-            id: 1,
-            name: 'John',
-            lastName: 'Phd',
+            id: 'user-1',
+            created_date: '1999-12-25T01:00:03+01:00',
+            modified_date: '1999-12-25T01:00:03+01:00',
+            data: {
+              email: 'johndoe@test.com',
+              name: 'John Doe',
+            },
           },
           {
-            id: 2,
-            name: 'Jane',
-            lastName: 'Phd',
+            id: 'user-2',
+            created_date: '1999-12-27T15:31:34+01:00',
+            modified_date: '2002-04-09T01:55:31+02:00',
+            data: {
+              email: 'janedoe@test.com',
+              name: 'Jane Doe',
+            },
           },
         ];
 
         const { artifact, error } = await this.uploader.upload(
-          'loopback_users_1.json',
+          'users_1.json',
           'users',
           users
         );

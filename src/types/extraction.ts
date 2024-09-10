@@ -150,6 +150,7 @@ export interface AirdropEvent {
     secrets: {
       service_account_token: string;
     };
+    snap_in_version_id: string;
   };
   payload: AirdropMessage;
   execution_metadata: {

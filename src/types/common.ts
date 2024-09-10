@@ -37,3 +37,8 @@ export interface UploadResponse {
   artifact?: Artifact;
   error?: ErrorRecord;
 }
+
+export interface InitialDomainMapping {
+  starting_recipe_blueprint?: object;
+  additional_mappings?: object;
+}
