@@ -4,11 +4,11 @@
 
 #### v1.0.0
 
-- Architecture overhaul with Node worker threads
-- Simplified metadata and data extraction with repos implementation
-- Handling of attachments streaming in library
-- Reduced file size, streamlined process by gzip compression
-- Bug fixes and improvements in error handling
+- Allow extractions to use full lambda runtime and gracefully handle execution context timeout.
+- Simplified metadata and data normalization and uploading with repo implementation.
+- Default handling of attachment extraction phase in ADaaS SDK library.
+- Reduced file size, streamlined process by gzip compression.
+- Bug fixes and improvements in error handling.
 
 #### v0.0.3
 
