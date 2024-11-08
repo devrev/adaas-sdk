@@ -1,179 +1,220 @@
 # ADaaS Library
 
-Typescript ADaaS Library (@devrev/ts-adaas) provides:
+[![Coverage Status](https://coveralls.io/repos/github/devrev/devrev-adaas-typescript/badge.svg?branch=main&t=MZaK74)](https://coveralls.io/github/devrev/devrev-adaas-typescript?branch=main)
 
-- type definitions for ADaaS control protocol,
-- an adapter for ADaaS control protocol,
-- helpers for uploading artifacts and manage the state for ADaaS snap-in.
+# Overview
 
-## Release Notes
+The ADaaS (Airdrop-as-a-Service) Library for TypeScript helps developers build Snap-ins that integrate with DevRev’s ADaaS platform. This library simplifies the workflow for handling data extraction, event-driven actions, state management, and artifact handling.
 
-#### v0.0.3
+## Features
 
-- Support for new recipe management
+- Type Definitions: Structured types for ADaaS control protocol
+- Event Management: Easily emit events for different extraction phases
+- State Handling: Update and access state in real-time within tasks
+- Artifact Management: Supports batched storage of artifacts (2000 items per batch)
+- Error & Timeout Support: Error handling and timeout management for long-running tasks
 
-#### v0.0.2
+# Installation
 
-- Support for the State API
-- HTTP client for API requests
-- Local development environment creates local artifact files
-- Improvements in logging
-
-#### v0.0.1
-
-- Demo implementation of ADaaS snap-in
-- Adapter for ADaaS control protocol with helper functions
-- Uploader for uploading artifacts
-
-## Usage
-
-Create a new ADaaS adapter on each ADaaS snap-in invocation:
-
-```javascript
-const adapter = new Adapter(event: AirdropEvent);
+```bash
+npm install @devrev/ts-adaas
 ```
 
-Adapter class provides:
+# Usage
 
-- helper function to emit response,
-- automatic emit event if ADaaS snap-in invocation runs out of time,
-- setter for updating ADaaS snap-in state and adding artifacts to the return ADaaS message.
+ADaaS Snap-ins are composed of several phases, each with unique requirements for initialization, data extraction, and error handling. The ADaaS library exports processTask to structure the work within each phase. The processTask function accepts task and onTimeout handlers, giving access to the adapter to streamline state updates, upload of extracted data, and event emission.
 
-### Phases of Airdrop Extraction
+### ADaaS Snap-in Invocation
 
-Each ADaaS snap-in must handle all the phases of ADaaS extraction.
-
-ADaaS library provides type definitions to ensure ADaaS snap-ins are compatible with ADaaS control protocol.
-
-```javascript
-async run() {
-  switch (this.event.payload.event_type) {
-    case EventType.ExtractionExternalSyncUnitsStart: {
-
-      // extract available External Sync Units (projects, organizations, ...)
-
-      await this.adapter.emit(ExtractorEventType.ExtractionExternalSyncUnitsDone, {
-        external_sync_units: externalSyncUnits,
-      });
-      break;
-    }
-
-    case EventType.ExtractionMetadataStart: {
-
-      // provide mappings of domain objects by provioding initial_domain_mapping.json file
-      // update ADaaS snap-in state
-
-      await this.adapter.emit(ExtractorEventType.ExtractionMetadataDone);
-      break;
-    }
-
-    case EventType.ExtractionDataStart: {
-
-      // extract Data
-      // upload Data
-      // update ADaaS snap-in state
-      // approximate progress done
-
-      await this.adapter.emit(ExtractorEventType.ExtractionDataContinue, {
-        progress: 10,
-      });
-
-      break;
-    }
-
-    case EventType.ExtractionDataContinue: {
-      await this.processExtractionData();
-
-      // extract Data
-      // upload Data
-      // update ADaaS snap-in state
-      // approximate progress done
-
-      await this.adapter.emit(ExtractorEventType.ExtractionDataDone, {
-        progress: 100,
-      });
-      break;
-    }
-
-    case EventType.ExtractionDataDelete: {
-
-      // if an extraction has any side-effects to 3rd party systems cleanup should be done here.
-
-      await this.adapter.emit(ExtractorEventType.ExtractionDataDeleteDone);
-      break;
-    }
-
-    case EventType.ExtractionAttachmentsStart: {
-
-      // extract Attachments
-      // upload Attachments
-      // update ADaaS snap-in state
-
-      await this.adapter.emit(ExtractorEventType.ExtractionAttachmentsContinue);
-      break;
-    }
-
-    case EventType.ExtractionAttachmentsContinue: {
-
-
-      // extract Attachments
-      // upload Attachments
-      // update ADaaS snap-in state
-
-      await this.adapter.emit(ExtractorEventType.ExtractionAttachmentsDone);
-      break;
-    }
-
-    case EventType.ExtractionAttachmentsDelete: {
-
-      // if an extraction has any side-effects to 3rd party systems cleanup should be done here.
-
-      await this.adapter.emit(ExtractorEventType.ExtractionAttachmentsDeleteDone);
-      break;
-    }
-
-    default: {
-      console.log('Event not supported' + JSON.stringify(this.event));
-    }
-  }
-}
-```
-
-## Uploading artifacts
-
-Create a new Uploader class for uploading artifacts:
-
-```javascript
-const upload = new Uploader(
-  event.execution_metadata.devrev_endpoint,
-  event.context.secrets.service_account_token
-);
-```
-
-Files with extracted domain objects must be in JSONL (JSON Lines) format. Data files should contain 2000 - 5000 records each.
-
-```javascript
-const entity = 'users';
-const { artifact, error } = await this.uploader.upload(
-  `extractor_${entity}_${i}.jsonl`,
-  entity,
-  data
-);
-if (error) {
-  return error;
-} else {
-  await this.adapter.update({ artifact });
-}
-```
-
-Each uploaded file must be attached to ADaaS adapter as soon as it is uploaded to ensure it is included in the ADaaS response message in case of a lambda timeout.
-
-## Updating ADaaS snap-in state
-
-ADaaS snap-ins keep their own state between sync runs, between the states of a particular sync run and between invocations within a particular state.
-
-By managing its own state, the ADaaS snap-in keeps track of the process of extraction (what items have already been extracted and where to continue), the times of the last successful sync run and keeps record of progress of the extraction.
+Each ADaaS snap-in must handle all the phases of ADaaS extraction. In a Snap-in, you typically define a `run` function that iterates over events and invokes workers per extraction phase.
 
 ```typescript
-    async update({ artifacts, extractor_state}: AdapterUpdateParams)
+import { AirdropEvent, EventType, spawn } from '@devrev/ts-adaas';
+
+interface DummyExtractorState {
+  issues: { completed: boolean };
+  users: { completed: boolean };
+  attachments: { completed: boolean };
+}
+
+const initialState: DummyExtractorState = {
+  issues: { completed: false },
+  users: { completed: false },
+  attachments: { completed: false },
+};
+
+function getWorkerPerExtractionPhase(event: AirdropEvent) {
+  let path;
+  switch (event.payload.event_type) {
+    case EventType.ExtractionExternalSyncUnitsStart:
+      path = __dirname + '/workers/external-sync-units-extraction';
+      break;
+    case EventType.ExtractionMetadataStart:
+      path = __dirname + '/workers/metadata-extraction';
+      break;
+    case EventType.ExtractionDataStart:
+    case EventType.ExtractionDataContinue:
+      path = __dirname + '/workers/data-extraction';
+      break;
+  }
+  return path;
+}
+
+const run = async (events: AirdropEvent[]) => {
+  for (const event of events) {
+    const file = getWorkerPerExtractionPhase(event);
+    await spawn<DummyExtractorState>({
+      event,
+      initialState,
+      workerPath: file,
+      options: {
+        isLocalDevelopment: true,
+      },
+    });
+  }
+};
+
+export default run;
 ```
+
+## Extraction Phases
+
+The ADaaS snap-in extraction lifecycle consists of three main phases: External Sync Units Extraction, Metadata Extraction, and Data Extraction. Each phase is defined in a separate file and is responsible for fetching the respective data.
+
+### 1. External Sync Units Extraction
+
+This phase is defined in `external-sync-units-extraction.ts` and is responsible for fetching the external sync units.
+
+```typescript
+import {
+  ExternalSyncUnit,
+  ExtractorEventType,
+  processTask,
+} from '@devrev/ts-adaas';
+
+const externalSyncUnits: ExternalSyncUnit[] = [
+  {
+    id: 'devrev',
+    name: 'devrev',
+    description: 'Demo external sync unit',
+    item_count: 2,
+    item_type: 'issues',
+  },
+];
+
+processTask({
+  task: async ({ adapter }) => {
+    await adapter.emit(ExtractorEventType.ExtractionExternalSyncUnitsDone, {
+      external_sync_units: externalSyncUnits,
+    });
+  },
+  onTimeout: async ({ adapter }) => {
+    await adapter.emit(ExtractorEventType.ExtractionExternalSyncUnitsError, {
+      error: {
+        message: 'Failed to extract external sync units. Lambda timeout.',
+      },
+    });
+  },
+});
+```
+
+### 2. Metadata Extraction
+
+This phase is defined in `metadata-extraction.ts` and is responsible for fetching the metadata.
+
+```typescript
+import { ExtractorEventType, processTask } from '@devrev/ts-adaas';
+import externalDomainMetadata from '../dummy-extractor/external_domain_metadata.json';
+
+const repos = [{ itemType: 'external_domain_metadata' }];
+
+processTask({
+  task: async ({ adapter }) => {
+    adapter.initializeRepos(repos);
+    await adapter
+      .getRepo('external_domain_metadata')
+      ?.push([externalDomainMetadata]);
+    await adapter.emit(ExtractorEventType.ExtractionMetadataDone);
+  },
+  onTimeout: async ({ adapter }) => {
+    await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      error: { message: 'Failed to extract metadata. Lambda timeout.' },
+    });
+  },
+});
+```
+
+### 3. Data Extraction
+
+This phase is defined in `data-extraction.ts` and is responsible for fetching the data. In this phase also attachments metadata is extracted.
+
+```typescript
+import { EventType, ExtractorEventType, processTask } from '@devrev/ts-adaas';
+import { normalizeAttachment, normalizeIssue, normalizeUser } from '../dummy-extractor/data-normalization';
+
+const issues = [
+  { id: 'issue-1', created_date: '1999-12-25T01:00:03+01:00', ... },
+  { id: 'issue-2', created_date: '1999-12-27T15:31:34+01:00', ... },
+];
+
+const users = [
+  { id: 'user-1', created_date: '1999-12-25T01:00:03+01:00', ... },
+  { id: 'user-2', created_date: '1999-12-27T15:31:34+01:00', ... },
+];
+
+const attachments = [
+  { url: 'https://app.dev.devrev-eng.ai/favicon.ico', id: 'attachment-1', ... },
+  { url: 'https://app.dev.devrev-eng.ai/favicon.ico', id: 'attachment-2', ... },
+];
+
+const repos = [
+  { itemType: 'issues', normalize: normalizeIssue },
+  { itemType: 'users', normalize: normalizeUser },
+  { itemType: 'attachments', normalize: normalizeAttachment },
+];
+
+processTask({
+  task: async ({ adapter }) => {
+    adapter.initializeRepos(repos);
+
+    if (adapter.event.payload.event_type === EventType.ExtractionDataStart) {
+      await adapter.getRepo('issues')?.push(issues);
+      await adapter.emit(ExtractorEventType.ExtractionDataProgress, { progress: 50 });
+    } else {
+      await adapter.getRepo('users')?.push(users);
+      await adapter.getRepo('attachments')?.push(attachments);
+      await adapter.emit(ExtractorEventType.ExtractionDataDone, { progress: 100 });
+    }
+  },
+  onTimeout: async ({ adapter }) => {
+    await adapter.postState();
+    await adapter.emit(ExtractorEventType.ExtractionDataProgress, { progress: 50 });
+  },
+});
+```
+
+## 4. Attachments Streaming
+
+The ADaaS library handles attachments streaming to improve efficiency and reduce complexity for developers. During the extraction phase, developers need only to provide metadata in a specific format for each attachment, and the library manages the streaming process.
+
+The Snap-in should provide attachment metadata following the `NormalizedAttachment` interface:
+
+```typescript
+export interface NormalizedAttachment {
+  url: string;
+  id: string;
+  file_name: string;
+  author_id: string;
+  parent_id: string;
+}
+```
+
+## Artifact Uploading and State Management
+
+The ADaaS library provides a repository management system to handle artifacts in batches. The `initializeRepos` function initializes the repositories, and the `push` function uploads the artifacts to the repositories. The `postState` function is used to post the state of the extraction task.
+
+State management is crucial for ADaaS Snap-ins to maintain the state of the extraction task. The `postState` function is used to post the state of the extraction task. The state is stored in the adapter and can be retrieved using the `adapter.state` property.
+
+## Timeout Handling
+
+The ADaaS library provides a timeout handler to handle timeouts in long-running tasks. The `onTimeout` handler is called when the task exceeds the timeout limit. The handler can be used to post the state of the extraction task and emit an event when a timeout occurs.

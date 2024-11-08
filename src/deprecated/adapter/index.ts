@@ -1,18 +1,19 @@
 import axios from 'axios';
 
+import { Artifact } from '../../uploader/uploader.interfaces';
 import {
   AirdropEvent,
   ExtractorEventType,
   ExtractorEvent,
   EventData,
-  AdapterState,
-  Artifact,
-} from '../types';
+} from '../../types/extraction';
 
-import { STATELESS_EVENT_TYPES } from '../common/constants';
+import { AdapterState } from '../../state/state.interfaces';
+
+import { STATELESS_EVENT_TYPES } from '../../common/constants';
 import { getTimeoutExtractorEventType } from '../common/helpers';
-import { Logger } from '../logging';
-import { State, createAdapterState } from '../state';
+// import { Logger } from '../../logger/logger';
+import { State, createAdapterState } from '../../state/state';
 
 /**
  * Adapter class is used to interact with Airdrop platform. The class provides
@@ -23,6 +24,7 @@ import { State, createAdapterState } from '../state';
  *
  * @class Adapter
  * @constructor
+ * @deprecated
  * @param {AirdropEvent} event - The event object received from the platform
  * @param {object=} initialState - The initial state of the adapter
  * @param {boolean=} isLocalDevelopment - A flag to indicate if the adapter is being used in local development
@@ -37,18 +39,18 @@ import { State, createAdapterState } from '../state';
  * @return  The adapter instance
  */
 
-export async function createAdapter<ExtractorState>(
+export async function createAdapter<ConnectorState>(
   event: AirdropEvent,
-  initialState: ExtractorState,
+  initialState: ConnectorState,
   isLocalDevelopment: boolean = false
 ) {
   const newInitialState = structuredClone(initialState);
-  const adapterState: State<ExtractorState> = await createAdapterState(
+  const adapterState: State<ConnectorState> = await createAdapterState({
     event,
-    newInitialState
-  );
+    initialState: newInitialState,
+  });
 
-  const a = new Adapter<ExtractorState>(
+  const a = new Adapter<ConnectorState>(
     event,
     adapterState,
     isLocalDevelopment
@@ -57,27 +59,27 @@ export async function createAdapter<ExtractorState>(
   return a;
 }
 
-export class Adapter<ExtractorState> {
-  private adapterState: State<ExtractorState>;
+export class Adapter<ConnectorState> {
+  private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];
 
   private event: AirdropEvent;
   private callbackUrl: string;
   private devrevToken: string;
   private startTime: number;
-  private heartBeatFn: NodeJS.Timeout;
+  private heartBeatFn: ReturnType<typeof setTimeout> | undefined;
   private exit: boolean = false;
   private lambdaTimeout: number = 10 * 60 * 1000; // 10 minutes in milliseconds
   private heartBeatInterval: number = 30 * 1000; // 30 seconds in milliseconds
 
   constructor(
     event: AirdropEvent,
-    adapterState: State<ExtractorState>,
+    adapterState: State<ConnectorState>,
     isLocalDevelopment: boolean = false
   ) {
-    if (!isLocalDevelopment) {
-      Logger.init(event);
-    }
+    // if (!isLocalDevelopment) {
+    //   Logger.init(event);
+    // }
 
     this.adapterState = adapterState;
     this._artifacts = [];
@@ -97,11 +99,11 @@ export class Adapter<ExtractorState> {
     }, this.heartBeatInterval);
   }
 
-  get state(): AdapterState<ExtractorState> {
+  get state(): AdapterState<ConnectorState> {
     return this.adapterState.state;
   }
 
-  set state(value: AdapterState<ExtractorState>) {
+  set state(value: AdapterState<ConnectorState>) {
     this.adapterState.state = value;
   }
 
@@ -181,7 +183,6 @@ export class Adapter<ExtractorState> {
    */
   private exitAdapter() {
     this.exit = true;
-    clearInterval(this.heartBeatFn);
   }
 
   /**

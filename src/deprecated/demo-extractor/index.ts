@@ -3,21 +3,25 @@ import {
   EventType,
   ExternalSyncUnit,
   ExtractorEventType,
-} from '../types';
-
+} from '../../types/extraction';
 import { Adapter } from '../adapter';
 import { Uploader } from '../uploader';
-
 import externalDomainMetadata from './external_domain_metadata.json';
 
-type ExtractorState = object;
+type ConnectorState = object;
 
+/**
+ * Demo extractor is a reference implementation of an ADaaS connector to facilitate rapid immersion into ADaaS.
+ *
+ * @class DemoExtractor
+ * @deprecated
+ **/
 export class DemoExtractor {
   private event: AirdropEvent;
-  private adapter: Adapter<ExtractorState>;
+  private adapter: Adapter<ConnectorState>;
   private uploader: Uploader;
 
-  constructor(event: AirdropEvent, adapter: Adapter<ExtractorState>) {
+  constructor(event: AirdropEvent, adapter: Adapter<ConnectorState>) {
     this.event = event;
     this.adapter = adapter;
     this.uploader = new Uploader(

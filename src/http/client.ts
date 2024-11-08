@@ -1,4 +1,8 @@
-import axios, { InternalAxiosRequestConfig, isAxiosError } from 'axios';
+import axios, {
+  InternalAxiosRequestConfig,
+  isAxiosError,
+  RawAxiosRequestHeaders,
+} from 'axios';
 import {
   RATE_LIMIT_EXCEEDED,
   RATE_LIMIT_EXCEEDED_STATUS_CODE,
@@ -57,7 +61,7 @@ export class HTTPClient {
    */
   async getCall(
     endpoint: string,
-    headers: Record<string, string>,
+    headers: RawAxiosRequestHeaders,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     params?: any
   ): Promise<HTTPResponse> {

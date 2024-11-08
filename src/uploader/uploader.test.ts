@@ -1,7 +1,9 @@
-import { Uploader } from '../src/uploader';
+import { createEvent } from '../tests/test-helpers';
+import { EventType } from '../types';
+import { Uploader } from './uploader';
 
 // mock uploader.upload method
-jest.mock('../src/uploader', () => {
+jest.mock('./uploader', () => {
   return {
     Uploader: jest.fn().mockImplementation(() => {
       return {
@@ -15,18 +17,15 @@ jest.mock('../src/uploader', () => {
 });
 
 describe('uploader.ts', () => {
-  const uploader = new Uploader('https://example.com', 'test-token', false);
+  const mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+
+  const uploader = new Uploader({ event: mockEvent });
 
   it('should upload the file to the DevRev platform and return the artifact information', async () => {
-    const filename = 'filename';
     const entity = 'entity';
     const fetchedObjects = [{ key: 'value' }];
 
-    const uploadResponse = await uploader.upload(
-      filename,
-      entity,
-      fetchedObjects
-    );
+    const uploadResponse = await uploader.upload(entity, fetchedObjects);
 
     expect(uploadResponse).toEqual({
       artifact: { key: 'value' },

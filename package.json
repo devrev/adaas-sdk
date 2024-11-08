@@ -1,12 +1,12 @@
 {
   "name": "@devrev/ts-adaas",
-  "version": "0.0.3",
+  "version": "1.0.0",
   "description": "Typescript library containing the ADaaS(AirDrop as a Service) control protocol.",
   "type": "commonjs",
-  "main": "./dist/src/index.js",
-  "typings": "./dist/src/index.d.ts",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p ./tsconfig.json",
     "start": "ts-node src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
@@ -17,13 +17,15 @@
     "url": "git+https://github.com/devrev/adaas-sdk.git"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org"
+    "registry": "https://npm.pkg.github.com"
   },
   "keywords": [],
   "author": "devrev",
   "license": "ISC",
   "devDependencies": {
     "@types/jest": "^29.5.12",
+    "@types/lambda-log": "^3.0.3",
+    "@types/node": "20.16.11",
     "@typescript-eslint/eslint-plugin": "^7.12.0",
     "@typescript-eslint/parser": "^7.12.0",
     "eslint": "^8.57.0",
@@ -36,7 +38,9 @@
   "dependencies": {
     "@devrev/typescript-sdk": "^1.1.27",
     "axios": "^1.5.1",
+    "form-data": "^4.0.1",
     "js-jsonl": "^1.1.1",
+    "lambda-log": "^3.1.0",
     "ts-node": "^10.9.2"
   },
   "files": [

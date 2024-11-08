@@ -1,9 +1,8 @@
 import axios from 'axios';
-
 import { betaSDK, client } from '@devrev/typescript-sdk';
 import fs, { promises as fsPromises } from 'fs';
 import { createFormData } from '../common/helpers';
-import { Artifact, UploadResponse } from '../types/common';
+import { Artifact, UploadResponse } from '../../uploader/uploader.interfaces';
 
 /**
  * Uploader class is used to upload files to the DevRev platform.
@@ -19,7 +18,7 @@ import { Artifact, UploadResponse } from '../types/common';
  * @param {boolean} local - Flag to indicate if the uploader should upload to the file-system.
  */
 export class Uploader {
-  private betaDevrevSdk;
+  private betaDevrevSdk: betaSDK.Api<unknown>;
   private local: boolean;
   constructor(endpoint: string, token: string, local = false) {
     this.betaDevrevSdk = client.setupBeta({
@@ -105,6 +104,7 @@ export class Uploader {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     preparedArtifact: any,
     fetchedObjects: object[] | object
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any | null> {
     const formData = createFormData(preparedArtifact, fetchedObjects);
     try {

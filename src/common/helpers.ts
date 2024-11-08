@@ -1,67 +1,37 @@
-import { jsonl } from 'js-jsonl';
+import { EventType, ExtractorEventType } from '../types/extraction';
 
-import { Artifact, EventType, ExtractorEventType } from '../types';
-
-export function createFormData(
-  //eslint-disable-next-line @typescript-eslint/no-explicit-any
-  preparedArtifact: any,
-  fetchedObjects: object[] | object
-): FormData {
-  const formData = new FormData();
-  for (const item of preparedArtifact.form_data) {
-    formData.append(item.key, item.value);
-  }
-
-  const output = jsonl.stringify(fetchedObjects);
-  formData.append('file', output);
-
-  return formData;
-}
-
-export function createArtifact(
-  //eslint-disable-next-line @typescript-eslint/no-explicit-any
-  preparedArtifact: any,
-  fetchedObjects: object[] | object,
-  entity: string
-): Artifact {
-  const itemCount = Array.isArray(fetchedObjects) ? fetchedObjects.length : 1;
-
-  return {
-    item_count: itemCount,
-    id: preparedArtifact.id,
-    item_type: entity,
-  } as Artifact;
-}
-
-export function getTimeoutExtractorEventType(eventType: EventType): {
+export function getErrorExtractorEventType(eventType: EventType): {
   eventType: ExtractorEventType;
-  isError: boolean;
 } | null {
   switch (eventType) {
     case EventType.ExtractionMetadataStart:
       return {
         eventType: ExtractorEventType.ExtractionMetadataError,
-        isError: true,
       };
     case EventType.ExtractionDataStart:
     case EventType.ExtractionDataContinue:
       return {
-        eventType: ExtractorEventType.ExtractionDataProgress,
-        isError: false,
+        eventType: ExtractorEventType.ExtractionDataError,
+      };
+    case EventType.ExtractionDataDelete:
+      return {
+        eventType: ExtractorEventType.ExtractionDataDeleteError,
       };
     case EventType.ExtractionAttachmentsStart:
     case EventType.ExtractionAttachmentsContinue:
       return {
-        eventType: ExtractorEventType.ExtractionAttachmentsProgress,
-        isError: false,
+        eventType: ExtractorEventType.ExtractionAttachmentsError,
+      };
+    case EventType.ExtractionAttachmentsDelete:
+      return {
+        eventType: ExtractorEventType.ExtractionAttachmentsDeleteError,
       };
     case EventType.ExtractionExternalSyncUnitsStart:
       return {
         eventType: ExtractorEventType.ExtractionExternalSyncUnitsError,
-        isError: true,
       };
     default:
-      console.log(
+      console.error(
         'Event type not recognized in getTimeoutExtractorEventType function: ' +
           eventType
       );
