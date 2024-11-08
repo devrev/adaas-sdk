@@ -1,6 +1,31 @@
 # ADaaS Library
 
-[![Coverage Status](https://coveralls.io/repos/github/devrev/devrev-adaas-typescript/badge.svg?branch=main&t=MZaK74)](https://coveralls.io/github/devrev/devrev-adaas-typescript?branch=main)
+## Release Notes
+
+#### v1.0.0
+
+- Architecture overhaul with Node worker threads
+- Simplified metadata and data extraction with repos implementation
+- Handling of attachments streaming in library
+- Reduced file size, streamlined process by gzip compression
+- Bug fixes and improvements in error handling
+
+#### v0.0.3
+
+- Support for new recipe management
+
+#### v0.0.2
+
+- Support for the State API
+- HTTP client for API requests
+- Local development environment creates local artifact files
+- Improvements in logging
+
+#### v0.0.1
+
+- Demo implementation of ADaaS snap-in
+- Adapter for ADaaS control protocol with helper functions
+- Uploader for uploading artifacts
 
 # Overview
 
