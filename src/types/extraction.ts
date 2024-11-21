@@ -160,8 +160,6 @@ export interface AirdropMessage {
   event_context: EventContextIn;
   event_type: EventType;
   event_data?: EventData;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  extractor_state?: any;
 }
 
 /**
@@ -171,6 +169,5 @@ export interface AirdropMessage {
 export interface ExtractorEvent {
   event_type: string;
   event_context: EventContextOut;
-  extractor_state?: string;
   event_data?: EventData;
 }

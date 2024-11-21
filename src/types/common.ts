@@ -32,7 +32,6 @@ export interface LogRecord {
  */
 export interface AdapterUpdateParams {
   artifact?: Artifact;
-  extractor_state?: object;
 }
 
 /**

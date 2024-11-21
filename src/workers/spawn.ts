@@ -147,8 +147,8 @@ export class Spawn {
       this.logger.info('Worker exited with exit code: ' + code + '.');
       if (this.timer) {
         clearTimeout(this.timer);
-        await this.exitFromMainThread();
       }
+      await this.exitFromMainThread();
     });
     worker.on(WorkerEvent.WorkerMessage, async (message) => {
       if (message?.subject === WorkerMessageSubject.WorkerMessageEmitted) {
@@ -173,6 +173,7 @@ export class Spawn {
 
   private async exitFromMainThread(): Promise<void> {
     if (this.hasWorkerEmitted) {
+      this.resolve(true);
       return;
     }
 

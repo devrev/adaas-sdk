@@ -54,9 +54,6 @@ export function createEvent({
         error,
         delay,
       },
-      extractor_state: {
-        test_extractor_state_key: 'test_extractor_state_value',
-      },
       ...payloadOverrides,
     },
     execution_metadata: {

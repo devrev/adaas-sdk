@@ -2,6 +2,10 @@
 
 ## Release Notes
 
+#### v1.0.1
+
+- Bug fixes and improvements in logging.
+
 #### v1.0.0
 
 - Allow extractions to use full lambda runtime and gracefully handle execution context timeout.
