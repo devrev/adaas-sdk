@@ -2,6 +2,11 @@
 
 ## Release Notes
 
+#### v1.0.2
+
+- Bug fixes and improvements in local development.
+- Exposed `formatAxiosError` function for error handling.
+
 #### v1.0.1
 
 - Bug fixes and improvements in logging.
