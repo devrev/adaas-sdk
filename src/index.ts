@@ -12,3 +12,5 @@ export { processTask } from './workers/process-task';
 export { spawn } from './workers/spawn';
 
 export * from './types/workers';
+
+export { formatAxiosError } from './logger/logger';

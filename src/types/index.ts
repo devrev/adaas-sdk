@@ -24,7 +24,11 @@ export {
 } from './extraction';
 
 // Repo
-export { NormalizedItem, NormalizedAttachment } from '../repo/repo.interfaces';
+export {
+  NormalizedItem,
+  NormalizedAttachment,
+  RepoInterface,
+} from '../repo/repo.interfaces';
 
 // State
 export { AdapterState } from '../state/state.interfaces';

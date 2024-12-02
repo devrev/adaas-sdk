@@ -34,7 +34,7 @@ export const emit = async ({
   };
 
   return new Promise<void>(async (resolve, reject) => {
-    console.info('Emitting event', newEvent);
+    console.info('Emitting event', JSON.stringify(newEvent));
 
     try {
       await axios.post(
@@ -63,7 +63,7 @@ export const emit = async ({
           error
         );
       }
-      reject(error);
+      reject();
     }
   });
 };

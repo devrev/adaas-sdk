@@ -8,16 +8,19 @@ async function createWorker<ConnectorState>(
 ): Promise<Worker> {
   return new Promise<Worker>((resolve, reject) => {
     if (isMainThread) {
-      const logger = new Logger(workerData.event);
+      const logger = new Logger({
+        event: workerData.event,
+        options: workerData.options,
+      });
       const workerFile = __dirname + '/worker.js';
 
       const worker: Worker = new Worker(workerFile, {
         workerData,
       } as WorkerOptions);
 
-      worker.on(WorkerEvent.WorkerError, (error: Error) => {
-        logger.error('Worker error', error);
-        reject(error);
+      worker.on(WorkerEvent.WorkerError, () => {
+        logger.error('Worker error');
+        reject();
       });
       worker.on(WorkerEvent.WorkerOnline, () => {
         resolve(worker);

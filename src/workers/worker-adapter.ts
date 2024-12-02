@@ -47,7 +47,7 @@ export function createWorkerAdapter<ConnectorState>({
  */
 export class WorkerAdapter<ConnectorState> {
   readonly event: AirdropEvent;
-  readonly options: WorkerAdapterOptions;
+  readonly options?: WorkerAdapterOptions;
 
   private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];

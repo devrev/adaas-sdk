@@ -18,7 +18,7 @@ export function processTask<ConnectorState>({
       const event = workerData.event;
       const initialState = workerData.initialState as ConnectorState;
       const options = workerData.options;
-      console = new Logger(event);
+      console = new Logger({ event, options });
 
       const adapterState = await createAdapterState<ConnectorState>({
         event,

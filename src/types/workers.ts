@@ -19,7 +19,7 @@ export interface WorkerAdapterInterface<ConnectorState> {
   event: AirdropEvent;
   adapterState: State<ConnectorState>;
   parentPort: MessagePort;
-  options: WorkerAdapterOptions;
+  options?: WorkerAdapterOptions;
 }
 
 /**
@@ -46,7 +46,7 @@ export type SpawnResolve = (value: boolean | PromiseLike<boolean>) => void;
 export interface SpawnInterface {
   event: AirdropEvent;
   worker: Worker;
-  options: WorkerAdapterOptions | null;
+  options?: WorkerAdapterOptions;
   resolve: SpawnResolve;
 }
 
@@ -159,4 +159,5 @@ export interface WorkerData<ConnectorState> {
 export interface GetWorkerPathInterface {
   event: AirdropEvent;
   connectorWorkerPath?: string | null;
+  options?: WorkerAdapterOptions;
 }

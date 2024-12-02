@@ -1,3 +1,11 @@
+import { AirdropEvent } from '../types/extraction';
+import { WorkerAdapterOptions } from '../types/workers';
+
+export interface LoggerFactoryInterface {
+  event: AirdropEvent;
+  options?: WorkerAdapterOptions;
+}
+
 export enum LogLevel {
   INFO = 'info',
   WARN = 'warn',

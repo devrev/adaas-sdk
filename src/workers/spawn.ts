@@ -20,8 +20,9 @@ import { LogLevel } from '../logger/logger.interfaces';
 function getWorkerPath({
   event,
   connectorWorkerPath,
+  options,
 }: GetWorkerPathInterface): string | null {
-  const logger = new Logger(event);
+  const logger = new Logger({ event, options });
 
   if (!ALLOWED_EVENT_TYPES.includes(event.payload.event_type)) {
     return null;
@@ -79,10 +80,11 @@ export async function spawn<ConnectorState>({
 }: SpawnFactoryInterface<ConnectorState>): Promise<
   boolean | PromiseLike<boolean>
 > {
-  const logger = new Logger(event);
+  const logger = new Logger({ event, options });
   const script = getWorkerPath({
     event,
     connectorWorkerPath: workerPath,
+    options,
   });
 
   if (script) {
@@ -98,7 +100,7 @@ export async function spawn<ConnectorState>({
         new Spawn({
           event,
           worker,
-          options: options || null,
+          options,
           resolve,
         });
       });
@@ -141,7 +143,7 @@ export class Spawn {
       }
     }, this.lambdaTimeout);
 
-    this.logger = new Logger(event);
+    this.logger = new Logger({ event, options });
     this.worker = worker;
     worker.on(WorkerEvent.WorkerExit, async (code) => {
       this.logger.info('Worker exited with exit code: ' + code + '.');

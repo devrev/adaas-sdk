@@ -1,16 +1,26 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import log from 'lambda-log';
 import { Console } from 'node:console';
 
-import { LogLevel, PrintableArray, PrintableState } from './logger.interfaces';
-import { AirdropEvent } from '../types';
+import {
+  LoggerFactoryInterface,
+  LogLevel,
+  PrintableArray,
+  PrintableState,
+} from './logger.interfaces';
 import { isMainThread, parentPort } from 'node:worker_threads';
-import { WorkerMessageSubject } from '../types/workers';
+import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import { AxiosError } from 'axios';
+import { AirdropEvent } from '../types/extraction';
 
 export class Logger extends Console {
-  constructor(event: AirdropEvent) {
+  private event: AirdropEvent;
+  private options?: WorkerAdapterOptions;
+
+  constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
+    this.event = event;
+    this.options = options;
+
     log.options.levelKey = null;
     log.options.tagsKey = null;
     log.options.messageKey = 'message';
@@ -21,7 +31,11 @@ export class Logger extends Console {
 
   logFn(args: unknown[], level: LogLevel): void {
     if (isMainThread) {
-      log.log(level, JSON.stringify(args));
+      if (this.options?.isLocalDevelopment) {
+        console[level](...args);
+      } else {
+        log.log(level, JSON.stringify(args));
+      }
     } else {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
@@ -87,6 +101,7 @@ export function formatAxiosError(error: AxiosError): object {
       method: error.config?.method,
       baseURL: error.config?.baseURL,
       url: error.config?.url,
+      payload: error.config?.data,
     };
   }
 
