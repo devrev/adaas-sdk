@@ -2,6 +2,10 @@
 
 ## Release Notes
 
+#### v1.0.4
+
+- Fix logging from worker threads.
+
 #### v1.0.3
 
 - Added Release notes.
