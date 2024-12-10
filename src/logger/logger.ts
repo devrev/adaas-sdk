@@ -40,7 +40,7 @@ export class Logger extends Console {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
         payload: {
-          args,
+          args: JSON.parse(JSON.stringify(args)),
           level,
         },
       });
@@ -65,8 +65,10 @@ export class Logger extends Console {
 }
 
 // Helper function to process each value in the state
-export function getPrintableState(state: Record<string, any>): PrintableState {
-  function processValue(value: any): any {
+export function getPrintableState(
+  state: Record<string, unknown>
+): PrintableState {
+  function processValue(value: unknown): unknown {
     if (Array.isArray(value)) {
       // If the value is an array, summarize it
       return {

@@ -77,9 +77,9 @@ export class Adapter<ConnectorState> {
     adapterState: State<ConnectorState>,
     isLocalDevelopment: boolean = false
   ) {
-    // if (!isLocalDevelopment) {
-    //   Logger.init(event);
-    // }
+    if (!isLocalDevelopment) {
+      //   Logger.init(event);
+    }
 
     this.adapterState = adapterState;
     this._artifacts = [];
