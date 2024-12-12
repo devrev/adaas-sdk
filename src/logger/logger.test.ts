@@ -50,5 +50,8 @@ it('formatAxiosError should return formatted error', () => {
     status: 500,
     data: 'Internal server error',
     method: 'GET',
+    baseURL: undefined,
+    url: undefined,
+    payload: undefined,
   });
 });

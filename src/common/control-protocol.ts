@@ -5,12 +5,14 @@ import {
   EventData,
   ExtractorEvent,
   ExtractorEventType,
+  LoaderEvent,
 } from '../types/extraction';
+import { LoaderEventType } from '../types/loading';
 import { formatAxiosError } from '../logger/logger';
 
 export interface EmitInterface {
   event: AirdropEvent;
-  eventType: ExtractorEventType;
+  eventType: ExtractorEventType | LoaderEventType;
   data?: EventData;
 }
 
@@ -19,7 +21,7 @@ export const emit = async ({
   eventType,
   data,
 }: EmitInterface): Promise<void | Error> => {
-  const newEvent: ExtractorEvent = {
+  const newEvent: ExtractorEvent | LoaderEvent = {
     event_type: eventType,
     event_context: {
       uuid: event.payload.event_context.uuid,

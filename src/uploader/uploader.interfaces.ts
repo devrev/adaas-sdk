@@ -1,6 +1,7 @@
 import { AirdropEvent } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import { ErrorRecord } from '../types/common';
+import { ExternalSystemItem, StatsFileObject } from '../types/loading';
 
 export interface UploaderFactoryInterface {
   event: AirdropEvent;
@@ -67,4 +68,14 @@ export interface SsorAttachment {
   actor_id: {
     external: string;
   };
+}
+
+export interface StatsFileResponse {
+  error?: ErrorRecord;
+  statsFile?: StatsFileObject[];
+}
+
+export interface TransformerFileResponse {
+  error?: ErrorRecord;
+  transformerFile?: ExternalSystemItem[];
 }

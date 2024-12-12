@@ -6,6 +6,8 @@ import { WorkerAdapter } from '../workers/worker-adapter';
 
 import { ExtractorEventType, AirdropEvent } from './extraction';
 
+import { LoaderEventType } from './loading';
+
 /**
  * WorkerAdapterInterface is an interface for WorkerAdapter class.
  * @interface WorkerAdapterInterface
@@ -117,7 +119,7 @@ export enum WorkerMessageSubject {
 export interface WorkerMessageEmitted {
   subject: WorkerMessageSubject.WorkerMessageEmitted;
   payload: {
-    eventType: ExtractorEventType;
+    eventType: ExtractorEventType | LoaderEventType;
   };
 }
 

@@ -4,11 +4,14 @@ import { Artifact } from '../uploader/uploader.interfaces';
 
 import { ErrorRecord } from './common';
 
+import { DonV2, LoaderReport } from './loading';
+
 /**
  * EventType is an enum that defines the different types of events that can be sent to the external extractor from ADaaS.
  * The external extractor can use these events to know what to do next in the extraction process.
  */
 export enum EventType {
+  // Extraction
   ExtractionExternalSyncUnitsStart = 'EXTRACTION_EXTERNAL_SYNC_UNITS_START',
   ExtractionMetadataStart = 'EXTRACTION_METADATA_START',
   ExtractionDataStart = 'EXTRACTION_DATA_START',
@@ -17,6 +20,12 @@ export enum EventType {
   ExtractionAttachmentsStart = 'EXTRACTION_ATTACHMENTS_START',
   ExtractionAttachmentsContinue = 'EXTRACTION_ATTACHMENTS_CONTINUE',
   ExtractionAttachmentsDelete = 'EXTRACTION_ATTACHMENTS_DELETE',
+
+  // Loading
+  StartLoadingData = 'START_LOADING_DATA',
+  ContinueLoadingData = 'CONTINUE_LOADING_DATA',
+  StartDeletingLoaderState = 'START_DELETING_LOADER_STATE',
+  StartDeletingLoaderAttachmentsState = 'START_DELETING_LOADER_ATTACHMENTS_STATE',
 }
 
 /**
@@ -24,6 +33,7 @@ export enum EventType {
  * The external extractor can use these events to inform ADaaS about the progress of the extraction process.
  */
 export enum ExtractorEventType {
+  // Extraction
   ExtractionExternalSyncUnitsDone = 'EXTRACTION_EXTERNAL_SYNC_UNITS_DONE',
   ExtractionExternalSyncUnitsError = 'EXTRACTION_EXTERNAL_SYNC_UNITS_ERROR',
   ExtractionMetadataDone = 'EXTRACTION_METADATA_DONE',
@@ -40,15 +50,29 @@ export enum ExtractorEventType {
   ExtractionAttachmentsError = 'EXTRACTION_ATTACHMENTS_ERROR',
   ExtractionAttachmentsDeleteDone = 'EXTRACTION_ATTACHMENTS_DELETE_DONE',
   ExtractionAttachmentsDeleteError = 'EXTRACTION_ATTACHMENTS_DELETE_ERROR',
+
+  // Unknown
+  UnknownEventType = 'UNKNOWN_EVENT_TYPE',
 }
 
 /**
+ * @deprecated
  * ExtractionMode is an enum that defines the different modes of extraction that can be used by the external extractor.
  * It can be either INITIAL or INCREMENTAL. INITIAL mode is used for the first/initial import, while INCREMENTAL mode is used for doing syncs.
  */
 export enum ExtractionMode {
   INITIAL = 'INITIAL',
   INCREMENTAL = 'INCREMENTAL',
+}
+
+/**
+ * ExtractionMode is an enum that defines the different modes of extraction that can be used by the external extractor.
+ * It can be either INITIAL or INCREMENTAL. INITIAL mode is used for the first/initial import, while INCREMENTAL mode is used for doing syncs.
+ */
+export enum SyncMode {
+  INITIAL = 'INITIAL',
+  INCREMENTAL = 'INCREMENTAL',
+  LOADING = 'LOADING',
 }
 
 /**
@@ -67,21 +91,27 @@ export interface ExternalSyncUnit {
  * EventContextIn is an interface that defines the structure of the input event context that is sent to the external extractor from ADaaS.
  */
 export interface EventContextIn {
-  mode: string;
   callback_url: string;
+  dev_org: string;
   dev_org_id: string;
+  dev_user: string;
   dev_user_id: string;
-  external_sync_unit_id?: string;
-  sync_unit_id?: string;
-  sync_run_id: string;
-  external_system_id: string;
-  uuid: string;
-  worker_data_url: string;
+  external_sync_unit: string;
+  external_sync_unit_id: string;
+  external_sync_unit_name: string;
   external_system: string;
   external_system_type: string;
   import_slug: string;
+  mode: string;
+  request_id: string;
   snap_in_slug: string;
+  sync_run: string;
+  sync_run_id: string;
   sync_tier: string;
+  sync_unit: DonV2;
+  sync_unit_id: string;
+  uuid: string;
+  worker_data_url: string;
 }
 
 /**
@@ -116,6 +146,11 @@ export interface EventData {
    * @deprecated This field is deprecated and should not be used.
    */
   artifacts?: Artifact[];
+
+  // TODO: Probably this should be moved somewhere else and required in case of specific event types
+  reports?: LoaderReport[];
+  processed_files?: string[];
+  stats_file?: string;
 }
 
 /**
@@ -167,6 +202,15 @@ export interface AirdropMessage {
  * It contains the event type, event context, extractor state, and event data.
  */
 export interface ExtractorEvent {
+  event_type: string;
+  event_context: EventContextOut;
+  event_data?: EventData;
+}
+
+/**
+ * LoaderEvent
+ */
+export interface LoaderEvent {
   event_type: string;
   event_context: EventContextOut;
   event_data?: EventData;

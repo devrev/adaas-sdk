@@ -393,6 +393,37 @@ export class Uploader {
     }
   }
 
+  async getJsonObjectByArtifactId({
+    artifactId,
+    isGzipped = false,
+  }: {
+    artifactId: string;
+    isGzipped?: boolean;
+  }): Promise<object[] | object | void> {
+    const artifactUrl = await this.getArtifactDownloadUrl(artifactId);
+    if (!artifactUrl) {
+      return;
+    }
+
+    const artifact = await this.downloadArtifact(artifactUrl);
+    if (!artifact) {
+      return;
+    }
+
+    if (isGzipped) {
+      const decompressedArtifact = await this.decompressGzip(artifact);
+      if (!decompressedArtifact) {
+        return;
+      }
+
+      const jsonlObject = Buffer.from(decompressedArtifact).toString('utf-8');
+      return jsonl.parse(jsonlObject);
+    }
+
+    const jsonlObject = Buffer.from(artifact).toString('utf-8');
+    return jsonl.parse(jsonlObject);
+  }
+
   private async downloadToLocal(
     itemType: string,
     fetchedObjects: object | object[]

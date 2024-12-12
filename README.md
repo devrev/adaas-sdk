@@ -2,6 +2,10 @@
 
 ## Release Notes
 
+#### v1.1.0
+
+- Support for sync from DevRev to external system.
+
 #### v1.0.4
 
 - Fix logging from worker threads.

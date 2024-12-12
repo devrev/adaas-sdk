@@ -18,8 +18,8 @@ async function createWorker<ConnectorState>(
         workerData,
       } as WorkerOptions);
 
-      worker.on(WorkerEvent.WorkerError, () => {
-        logger.error('Worker error');
+      worker.on(WorkerEvent.WorkerError, (error) => {
+        logger.error('Worker error', error);
         reject();
       });
       worker.on(WorkerEvent.WorkerOnline, () => {

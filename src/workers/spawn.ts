@@ -1,8 +1,12 @@
 import { Worker } from 'node:worker_threads';
 
-import { AirdropEvent, EventType } from '../types/extraction';
+import {
+  AirdropEvent,
+  EventType,
+  ExtractorEventType,
+} from '../types/extraction';
 import { emit } from '../common/control-protocol';
-import { getErrorExtractorEventType } from '../common/helpers';
+import { getTimeoutErrorEventType } from '../common/helpers';
 import { Logger } from '../logger/logger';
 import { ALLOWED_EVENT_TYPES } from '../common/constants';
 import {
@@ -20,16 +24,14 @@ import { LogLevel } from '../logger/logger.interfaces';
 function getWorkerPath({
   event,
   connectorWorkerPath,
-  options,
 }: GetWorkerPathInterface): string | null {
-  const logger = new Logger({ event, options });
-
   if (!ALLOWED_EVENT_TYPES.includes(event.payload.event_type)) {
     return null;
   }
   if (connectorWorkerPath) return connectorWorkerPath;
   let path = null;
   switch (event.payload.event_type) {
+    // Extraction
     case EventType.ExtractionExternalSyncUnitsStart:
       path = __dirname + '/default-workers/external-sync-units-extraction';
       break;
@@ -45,18 +47,31 @@ function getWorkerPath({
       path = __dirname + '/default-workers/attachments-extraction';
       break;
     case EventType.ExtractionDataDelete:
-      path = __dirname + '/default-workers/data-deletion.js';
+      path = __dirname + '/default-workers/data-deletion';
       break;
     case EventType.ExtractionAttachmentsDelete:
       path = __dirname + '/default-workers/attachments-deletion';
       break;
+
+    // Loading
+    case EventType.StartLoadingData:
+    case EventType.ContinueLoadingData:
+      path = __dirname + '/default-workers/data-loading';
+      break;
+
     default:
-      logger.error(
-        'Worker script not found for event type: ' +
-          event.payload.event_type +
-          '.'
-      );
-      path = null;
+      emit({
+        event,
+        eventType: ExtractorEventType.UnknownEventType,
+        data: {
+          error: {
+            message:
+              'Unrecognized event type in spawn ' +
+              event.payload.event_type +
+              '.',
+          },
+        },
+      });
   }
   return path;
 }
@@ -81,6 +96,7 @@ export async function spawn<ConnectorState>({
   boolean | PromiseLike<boolean>
 > {
   const logger = new Logger({ event, options });
+
   const script = getWorkerPath({
     event,
     connectorWorkerPath: workerPath,
@@ -179,7 +195,7 @@ export class Spawn {
       return;
     }
 
-    const timeoutEventType = getErrorExtractorEventType(
+    const timeoutEventType = getTimeoutErrorEventType(
       this.event.payload.event_type
     );
     if (timeoutEventType !== null) {

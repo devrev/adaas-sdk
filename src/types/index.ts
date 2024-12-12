@@ -21,7 +21,16 @@ export {
   AirdropEvent,
   AirdropMessage,
   ExtractorEvent,
+  SyncMode,
 } from './extraction';
+
+// Loading
+export {
+  LoaderEventType,
+  ExternalSystemItem,
+  ExternalSystemItemLoadingResponse,
+  ExternalSystemItemLoadingParams,
+} from './loading';
 
 // Repo
 export {

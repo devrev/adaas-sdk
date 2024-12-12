@@ -5,9 +5,11 @@ export const STATELESS_EVENT_TYPES = [
   EventType.ExtractionMetadataStart,
   EventType.ExtractionDataDelete,
   EventType.ExtractionAttachmentsDelete,
+  EventType.StartDeletingLoaderState,
+  EventType.StartDeletingLoaderAttachmentsState,
 ];
 
-export const ALLOWED_EVENT_TYPES = [
+export const ALLOWED_EXTRACTION_EVENT_TYPES = [
   EventType.ExtractionExternalSyncUnitsStart,
   EventType.ExtractionMetadataStart,
   EventType.ExtractionDataStart,
@@ -16,6 +18,18 @@ export const ALLOWED_EVENT_TYPES = [
   EventType.ExtractionAttachmentsStart,
   EventType.ExtractionAttachmentsContinue,
   EventType.ExtractionAttachmentsDelete,
+];
+
+export const ALLOWED_LOADING_EVENT_TYPES = [
+  EventType.StartLoadingData,
+  EventType.ContinueLoadingData,
+  EventType.StartDeletingLoaderState,
+  EventType.StartDeletingLoaderAttachmentsState,
+];
+
+export const ALLOWED_EVENT_TYPES = [
+  ...ALLOWED_EXTRACTION_EVENT_TYPES,
+  ...ALLOWED_LOADING_EVENT_TYPES,
 ];
 
 export const ARTIFACT_BATCH_SIZE = 2000;

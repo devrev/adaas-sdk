@@ -1,11 +1,12 @@
 import axios from 'axios';
 
-import { AirdropEvent } from '../types/extraction';
+import { AirdropEvent, SyncMode } from '../types/extraction';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { formatAxiosError, getPrintableState } from '../logger/logger';
 import { ErrorRecord } from '../types/common';
 
-import { AdapterState, StateInterface } from './state.interfaces';
+import { AdapterState, SdkState, StateInterface } from './state.interfaces';
+import { getSyncDirection } from '../common/helpers';
 
 export async function createAdapterState<ConnectorState>({
   event,
@@ -29,23 +30,32 @@ export async function createAdapterState<ConnectorState>({
 export class State<ConnectorState> {
   private _state: AdapterState<ConnectorState>;
 
+  private initialSdkState: SdkState;
   private event: AirdropEvent;
   private workerUrl: string;
   private devrevToken: string;
 
   constructor({ event, initialState }: StateInterface<ConnectorState>) {
+    this.initialSdkState =
+      getSyncDirection({ event }) === SyncMode.LOADING
+        ? {
+            fromDevRev: {
+              filesToLoad: [],
+            },
+          }
+        : {
+            lastSyncStarted: new Date().toISOString(),
+            lastSuccessfulSyncStarted: '',
+            toDevRev: {
+              attachmentsMetadata: {
+                artifactIds: [],
+                lastProcessed: 0,
+              },
+            },
+          };
     this._state = {
       ...initialState,
-      lastSyncStarted: new Date().toISOString(),
-      lastSuccessfulSyncStarted: '',
-
-      fromDevRev: {
-        attachmentsMetadata: {
-          artifactIds: [],
-          lastProcessed: 0,
-        },
-      },
-      toDevRev: {},
+      ...this.initialSdkState,
     } as AdapterState<ConnectorState>;
 
     this.event = event;
@@ -139,15 +149,7 @@ export class State<ConnectorState> {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         const state: AdapterState<ConnectorState> = {
           ...initialState,
-          lastSyncStarted: new Date().toISOString(),
-          lastSuccessfulSyncStarted: '',
-          toDevRev: {
-            attachmentsMetadata: {
-              artifactIds: [],
-              lastProcessed: 0,
-            },
-          },
-          fromDevRev: {},
+          ...this.initialSdkState,
         };
 
         this.state = state;
