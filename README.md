@@ -4,7 +4,7 @@
 
 #### v1.1.0
 
-- Support for sync from DevRev to external system.
+- Support for sync from DevRev to external system. Known limitations: no support for loading attachments.
 
 #### v1.0.4
 
