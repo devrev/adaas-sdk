@@ -2,6 +2,10 @@
 
 ## Release Notes
 
+#### v1.1.1
+
+- Added default workers for loading deletion events.
+
 #### v1.1.0
 
 - Support for sync from DevRev to external system. Known limitations: no support for loading attachments.
