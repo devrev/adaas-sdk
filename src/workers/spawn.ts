@@ -58,6 +58,9 @@ function getWorkerPath({
     case EventType.ContinueLoadingData:
       path = __dirname + '/default-workers/data-loading';
       break;
+    case EventType.StartDeletingLoaderState:
+      path = __dirname + '/default-workers/loader-state-deletion';
+      break;
 
     default:
       emit({
