@@ -1,7 +1,5 @@
 # ADaaS Library
 
-[![Coverage Status](https://coveralls.io/repos/github/devrev/devrev-adaas-typescript/badge.svg?branch=main&t=MZaK74)](https://coveralls.io/github/devrev/devrev-adaas-typescript?branch=main)
-
 ## Release Notes
 
 #### v1.1.2
