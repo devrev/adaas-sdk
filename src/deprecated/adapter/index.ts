@@ -137,13 +137,7 @@ export class Adapter<ConnectorState> {
 
     const newEvent: ExtractorEvent = {
       event_type: newEventType,
-      event_context: {
-        uuid: this.event.payload.event_context.uuid,
-        sync_run: this.event.payload.event_context.sync_run_id,
-        ...(this.event.payload.event_context.sync_unit_id && {
-          sync_unit: this.event.payload.event_context.sync_unit_id,
-        }),
-      },
+      event_context: this.event.payload.event_context,
       event_data: {
         ...data,
       },

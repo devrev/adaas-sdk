@@ -23,13 +23,7 @@ export const emit = async ({
 }: EmitInterface): Promise<void | Error> => {
   const newEvent: ExtractorEvent | LoaderEvent = {
     event_type: eventType,
-    event_context: {
-      uuid: event.payload.event_context.uuid,
-      sync_run: event.payload.event_context.sync_run_id,
-      ...(event.payload.event_context.sync_unit_id && {
-        sync_unit: event.payload.event_context.sync_unit_id,
-      }),
-    },
+    event_context: event.payload.event_context,
     event_data: {
       ...data,
     },

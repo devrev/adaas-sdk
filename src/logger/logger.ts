@@ -10,15 +10,12 @@ import {
 import { isMainThread, parentPort } from 'node:worker_threads';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import { AxiosError } from 'axios';
-import { AirdropEvent } from '../types/extraction';
 
 export class Logger extends Console {
-  private event: AirdropEvent;
   private options?: WorkerAdapterOptions;
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
-    this.event = event;
     this.options = options;
 
     log.options.levelKey = null;
@@ -26,6 +23,7 @@ export class Logger extends Console {
     log.options.messageKey = 'message';
     log.options.meta = {
       ...event.payload.event_context,
+      dev_oid: event.payload.event_context.dev_org,
     };
   }
 

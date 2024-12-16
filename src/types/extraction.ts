@@ -89,6 +89,7 @@ export interface ExternalSyncUnit {
 
 /**
  * EventContextIn is an interface that defines the structure of the input event context that is sent to the external extractor from ADaaS.
+ * @deprecated
  */
 export interface EventContextIn {
   callback_url: string;
@@ -116,11 +117,39 @@ export interface EventContextIn {
 
 /**
  * EventContextOut is an interface that defines the structure of the output event context that is sent from the external extractor to ADaaS.
+ * @deprecated
  */
 export interface EventContextOut {
   uuid: string;
   sync_run: string;
   sync_unit?: string;
+}
+
+/**
+ * EventContext is an interface that defines the structure of the event context that is sent to and from the external connector.
+ */
+export interface EventContext {
+  callback_url: string;
+  dev_org: string;
+  dev_org_id: string;
+  dev_user: string;
+  dev_user_id: string;
+  external_sync_unit: string;
+  external_sync_unit_id: string;
+  external_sync_unit_name: string;
+  external_system: string;
+  external_system_type: string;
+  import_slug: string;
+  mode: string;
+  request_id: string;
+  snap_in_slug: string;
+  sync_run: string;
+  sync_run_id: string;
+  sync_tier: string;
+  sync_unit: DonV2;
+  sync_unit_id: string;
+  uuid: string;
+  worker_data_url: string;
 }
 
 /**
@@ -192,7 +221,7 @@ export interface AirdropEvent {
  */
 export interface AirdropMessage {
   connection_data: ConnectionData;
-  event_context: EventContextIn;
+  event_context: EventContext;
   event_type: EventType;
   event_data?: EventData;
 }
@@ -203,7 +232,7 @@ export interface AirdropMessage {
  */
 export interface ExtractorEvent {
   event_type: string;
-  event_context: EventContextOut;
+  event_context: EventContext;
   event_data?: EventData;
 }
 
@@ -212,6 +241,6 @@ export interface ExtractorEvent {
  */
 export interface LoaderEvent {
   event_type: string;
-  event_context: EventContextOut;
+  event_context: EventContext;
   event_data?: EventData;
 }

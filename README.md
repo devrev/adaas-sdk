@@ -1,6 +1,13 @@
 # ADaaS Library
 
+[![Coverage Status](https://coveralls.io/repos/github/devrev/devrev-adaas-typescript/badge.svg?branch=main&t=MZaK74)](https://coveralls.io/github/devrev/devrev-adaas-typescript?branch=main)
+
 ## Release Notes
+
+#### v1.1.2
+
+- Unified incoming and outgoing event context.
+- Added `dev_oid` to logger tags.
 
 #### v1.1.1
 
@@ -54,14 +61,14 @@
 
 # Overview
 
-The ADaaS (Airdrop-as-a-Service) Library for TypeScript helps developers build Snap-ins that integrate with DevRev’s ADaaS platform. This library simplifies the workflow for handling data extraction, event-driven actions, state management, and artifact handling.
+The ADaaS (Airdrop-as-a-Service) Library for TypeScript helps developers build Snap-ins that integrate with DevRev’s ADaaS platform. This library simplifies the workflow for handling data extraction and loading, event-driven actions, state management, and artifact handling.
 
-## Features
+It provides features such as:
 
 - Type Definitions: Structured types for ADaaS control protocol
-- Event Management: Easily emit events for different extraction phases
+- Event Management: Easily emit events for different extraction or loading phases
 - State Handling: Update and access state in real-time within tasks
-- Artifact Management: Supports batched storage of artifacts (2000 items per batch)
+- Artifact Management: Supports batched storage of artifacts
 - Error & Timeout Support: Error handling and timeout management for long-running tasks
 
 # Installation
@@ -72,7 +79,22 @@ npm install @devrev/ts-adaas
 
 # Usage
 
-ADaaS Snap-ins are composed of several phases, each with unique requirements for initialization, data extraction, and error handling. The ADaaS library exports processTask to structure the work within each phase. The processTask function accepts task and onTimeout handlers, giving access to the adapter to streamline state updates, upload of extracted data, and event emission.
+ADaaS Snap-ins can import data in both directions: from external sources to DevRev and from DevRev to external sources. Both directions are composed of several phases.
+
+From external source to DevRev:
+
+- External Sync Units Extraction
+- Metadata Extraction
+- Data Extraction
+- Attachments Extraction
+
+From DevRev to external source:
+
+- Data Loading
+
+Each phase comes with unique requirements for processing task, and both timeout and error handling.
+
+The ADaaS library exports processTask to structure the work within each phase, and onTimeout function to handle timeouts.
 
 ### ADaaS Snap-in Invocation
 
@@ -127,9 +149,13 @@ const run = async (events: AirdropEvent[]) => {
 export default run;
 ```
 
-## Extraction Phases
+## Extraction
 
 The ADaaS snap-in extraction lifecycle consists of three main phases: External Sync Units Extraction, Metadata Extraction, and Data Extraction. Each phase is defined in a separate file and is responsible for fetching the respective data.
+
+The ADaaS library provides a repository management system to handle artifacts in batches. The `initializeRepos` function initializes the repositories, and the `push` function uploads the artifacts to the repositories. The `postState` function is used to post the state of the extraction task.
+
+State management is crucial for ADaaS Snap-ins to maintain the state of the extraction task. The `postState` function is used to post the state of the extraction task. The state is stored in the adapter and can be retrieved using the `adapter.state` property.
 
 ### 1. External Sync Units Extraction
 
@@ -243,7 +269,7 @@ processTask({
 });
 ```
 
-## 4. Attachments Streaming
+### 4. Attachments Streaming
 
 The ADaaS library handles attachments streaming to improve efficiency and reduce complexity for developers. During the extraction phase, developers need only to provide metadata in a specific format for each attachment, and the library manages the streaming process.
 
@@ -259,12 +285,45 @@ export interface NormalizedAttachment {
 }
 ```
 
-## Artifact Uploading and State Management
+## Loading phases
 
-The ADaaS library provides a repository management system to handle artifacts in batches. The `initializeRepos` function initializes the repositories, and the `push` function uploads the artifacts to the repositories. The `postState` function is used to post the state of the extraction task.
+### 1. Data Loading
 
-State management is crucial for ADaaS Snap-ins to maintain the state of the extraction task. The `postState` function is used to post the state of the extraction task. The state is stored in the adapter and can be retrieved using the `adapter.state` property.
+This phase is defined in `data-loading.ts` and is responsible for loading the data to the external system.
 
-## Timeout Handling
+Loading is done by providing an ordered list of itemTypes to load and their respective create and update functions.
 
-The ADaaS library provides a timeout handler to handle timeouts in long-running tasks. The `onTimeout` handler is called when the task exceeds the timeout limit. The handler can be used to post the state of the extraction task and emit an event when a timeout occurs.
+```typescript
+  processTask({
+    task: async ({ adapter }) => {
+      const { reports, processed_files } = await adapter.loadItemTypes({
+        itemTypesToLoad: [
+          {
+            itemType: 'tickets',
+            create: createTicket,
+            update: updateTicket,
+          },
+          {
+            itemType: 'conversations',
+            create: createConversation,
+            update: updateConversation,
+          },
+        ],
+      });
+
+    await adapter.emit(LoaderEventType.DataLoadingDone, {
+      reports,
+      processed_files,
+    });
+  },
+  onTimeout: async ({ adapter }) => {
+    await adapter.emit(LoaderEventType.DataLoadingProgress, {
+      reports: adapter.reports,
+      processed_files: adapter.processedFiles,
+    });
+});
+```
+
+The loading functions `create` and `update` provide loading to the external system. They provide denormalization of the records to the schema of the external system and provide HTTP calls to the external system. Both loading functions must handle rate limiting for the external system and handle errors.
+
+Functions return an ID and modified date of the record in the external system, or specify rate-liming offset or errors, if the record could not be created or updated.
