@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { axios, axiosClient } from '../http/axios-client';
 import { FunctionInput } from '@devrev/typescript-sdk/dist/snap-ins';
 
 import { InitialDomainMapping } from '../types/common';
@@ -18,7 +18,7 @@ export async function installInitialDomainMapping(
   }
 
   try {
-    const snapInResponse = await axios.get(
+    const snapInResponse = await axiosClient.get(
       devrevEndpoint + '/internal/snap-ins.get',
       {
         headers: {
@@ -50,7 +50,7 @@ export async function installInitialDomainMapping(
       Object.keys(startingRecipeBlueprint).length !== 0
     ) {
       try {
-        const recipeBlueprintResponse = await axios.post(
+        const recipeBlueprintResponse = await axiosClient.post(
           `${devrevEndpoint}/internal/airdrop.recipe.blueprints.create`,
           {
             ...startingRecipeBlueprint,
@@ -83,7 +83,7 @@ export async function installInitialDomainMapping(
       // 2. Install the initial domain mappings
       const additionalMappings =
         initialDomainMappingJson.additional_mappings || {};
-      const initialDomainMappingInstallResponse = await axios.post(
+      const initialDomainMappingInstallResponse = await axiosClient.post(
         `${devrevEndpoint}/internal/airdrop.recipe.initial-domain-mappings.install`,
         {
           external_system_type: 'ADaaS',

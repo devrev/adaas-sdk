@@ -45,7 +45,7 @@ export class Repo {
 
     if (itemsToUpload.length > 0) {
       console.log(
-        `Uploading ${itemsToUpload.length} items of type ${this.itemType}.`
+        `Uploading ${itemsToUpload.length} items of type ${this.itemType}. `
       );
 
       const { artifact, error } = await this.uploader.upload(
@@ -64,6 +64,10 @@ export class Repo {
       if (!batch) {
         this.items = [];
       }
+
+      console.log(
+        `Uploaded ${itemsToUpload.length} items of type ${this.itemType}. Number of items left in repo: ${this.items.length}.`
+      );
     } else {
       console.log(
         `No items to upload for type ${this.itemType}. Skipping upload.`
@@ -78,7 +82,8 @@ export class Repo {
       // Normalize items if needed
       if (
         this.normalize &&
-        !Object.values(AIRDROP_DEFAULT_ITEM_TYPES).includes(this.itemType)
+        this.itemType != AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_DOMAIN_METADATA &&
+        this.itemType != AIRDROP_DEFAULT_ITEM_TYPES.SSOR_ATTACHMENT
       ) {
         recordsToPush = items.map((item: Item) => this.normalize!(item));
       } else {
@@ -89,7 +94,7 @@ export class Repo {
       this.items.push(...recordsToPush);
 
       console.log(
-        `Extracted ${this.items.length} items of type ${this.itemType}.`
+        `Extracted ${recordsToPush.length} new items of type ${this.itemType}. Total number of items in repo: ${this.items.length}.`
       );
 
       // Upload in batches while the number of items exceeds the batch size

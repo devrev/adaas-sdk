@@ -1,4 +1,5 @@
-import axios, { AxiosResponse } from 'axios';
+import { axiosClient } from '../http/axios-client';
+import { AxiosResponse } from 'axios';
 
 import {
   MappersFactoryInterface,
@@ -23,7 +24,7 @@ export class Mappers {
     params: MappersGetByTargetIdParams
   ): Promise<AxiosResponse<MappersGetByTargetIdResponse>> {
     const { sync_unit, target } = params;
-    return axios.get<MappersGetByTargetIdResponse>(
+    return axiosClient.get<MappersGetByTargetIdResponse>(
       `${this.endpoint}/internal/airdrop.sync-mapper-record.get-by-target`,
       {
         headers: {
@@ -37,7 +38,7 @@ export class Mappers {
   async create(
     params: MappersCreateParams
   ): Promise<AxiosResponse<MappersCreateResponse>> {
-    return axios.post<MappersCreateResponse>(
+    return axiosClient.post<MappersCreateResponse>(
       `${this.endpoint}/internal/airdrop.sync-mapper-record.create`,
       params,
       {
@@ -51,7 +52,7 @@ export class Mappers {
   async update(
     params: MappersUpdateParams
   ): Promise<AxiosResponse<MappersUpdateResponse>> {
-    return axios.post<MappersUpdateResponse>(
+    return axiosClient.post<MappersUpdateResponse>(
       `${this.endpoint}/internal/airdrop.sync-mapper-record.update`,
       params,
       {

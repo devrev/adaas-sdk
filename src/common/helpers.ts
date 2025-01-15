@@ -143,3 +143,18 @@ export function addReportToLoaderReport({
 
   return loaderReports;
 }
+
+// https://stackoverflow.com/a/53731154
+export function getCircularReplacer() {
+  const seen = new WeakSet();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (key: any, value: any) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return;
+      }
+      seen.add(value);
+    }
+    return value;
+  };
+}

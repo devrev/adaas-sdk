@@ -19,6 +19,10 @@ export const defaultResponse: HTTPResponse = {
   success: false,
 };
 
+/**
+ * HTTPClient class to make HTTP requests
+ * @deprecated
+ */
 export class HTTPClient {
   private retryAfter = 0;
   private retryAt = 0;

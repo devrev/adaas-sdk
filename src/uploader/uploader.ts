@@ -1,4 +1,5 @@
-import axios, { AxiosResponse } from 'axios';
+import { axios, axiosClient } from '../http/axios-client';
+import { AxiosResponse } from 'axios';
 import fs, { promises as fsPromises } from 'fs';
 import zlib from 'zlib';
 import { jsonl } from 'js-jsonl';
@@ -125,7 +126,7 @@ export class Uploader {
     formData.append('file', file);
 
     try {
-      const response = await axios.post(preparedArtifact.url, formData, {
+      const response = await axiosClient.post(preparedArtifact.url, formData, {
         headers: {
           ...formData.getHeaders(),
         },
@@ -156,7 +157,7 @@ export class Uploader {
     formData.append('file', fileStreamResponse.data);
 
     try {
-      const response = await axios.post(preparedArtifact.url, formData, {
+      const response = await axiosClient.post(preparedArtifact.url, formData, {
         headers: {
           ...formData.getHeaders(),
           ...(!fileStreamResponse.headers['content-length'] && {
@@ -268,7 +269,7 @@ export class Uploader {
 
   private async downloadArtifact(artifactUrl: string): Promise<Buffer | void> {
     try {
-      const response = await axios.get(artifactUrl, {
+      const response = await axiosClient.get(artifactUrl, {
         responseType: 'arraybuffer',
       });
 
@@ -373,7 +374,7 @@ export class Uploader {
     url: string
   ): Promise<AxiosResponse | void> {
     try {
-      const fileStreamResponse = await axios.get(url, {
+      const fileStreamResponse = await axiosClient.get(url, {
         responseType: 'stream',
         headers: {
           Authorization: this.event.payload.connection_data.key,

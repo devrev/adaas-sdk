@@ -54,24 +54,36 @@ describe('Repo class push method', () => {
     expect(normalize).not.toHaveBeenCalled();
   });
 
-  describe('should not normalize items if they are airdrop default item types', () => {
-    it.each(Object.values(AIRDROP_DEFAULT_ITEM_TYPES))(
-      'item type: %s',
-      async (itemType) => {
-        repo = new Repo({
-          event: createEvent({ eventType: EventType.ExtractionDataStart }),
-          itemType,
-          normalize,
-          onUpload: jest.fn(),
-          options: {},
-        });
+  describe('should not normalize items if type is "external_domain_metadata" or "ssor_attachment"', () => {
+    it('item type: external_domain_metadata', async () => {
+      repo = new Repo({
+        event: createEvent({ eventType: EventType.ExtractionDataStart }),
+        itemType: AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_DOMAIN_METADATA,
+        normalize,
+        onUpload: jest.fn(),
+        options: {},
+      });
 
-        const items = createItems(10);
-        await repo.push(items);
+      const items = createItems(10);
+      await repo.push(items);
 
-        expect(normalize).not.toHaveBeenCalled();
-      }
-    );
+      expect(normalize).not.toHaveBeenCalled();
+    });
+
+    it('item type: ssor_attachment', async () => {
+      repo = new Repo({
+        event: createEvent({ eventType: EventType.ExtractionDataStart }),
+        itemType: AIRDROP_DEFAULT_ITEM_TYPES.SSOR_ATTACHMENT,
+        normalize,
+        onUpload: jest.fn(),
+        options: {},
+      });
+
+      const items = createItems(10);
+      await repo.push(items);
+
+      expect(normalize).not.toHaveBeenCalled();
+    });
   });
 
   it('should leave 5 items in the items array after pushing 2005 items with batch size of 2000', async () => {

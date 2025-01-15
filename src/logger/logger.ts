@@ -10,6 +10,7 @@ import {
 import { isMainThread, parentPort } from 'node:worker_threads';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import { AxiosError } from 'axios';
+import { getCircularReplacer } from '../common/helpers';
 
 export class Logger extends Console {
   private options?: WorkerAdapterOptions;
@@ -38,7 +39,7 @@ export class Logger extends Console {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
         payload: {
-          args: JSON.parse(JSON.stringify(args)),
+          args: JSON.parse(JSON.stringify(args, getCircularReplacer())),
           level,
         },
       });

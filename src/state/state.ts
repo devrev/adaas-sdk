@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { axios, axiosClient } from '../http/axios-client';
 
 import { AirdropEvent, SyncMode } from '../types/extraction';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
@@ -78,7 +78,7 @@ export class State<ConnectorState> {
    */
   async postState(state?: AdapterState<ConnectorState>) {
     try {
-      await axios.post(
+      await axiosClient.post(
         this.workerUrl + '.update',
         {
           state: JSON.stringify(state || this.state),
@@ -123,7 +123,7 @@ export class State<ConnectorState> {
     );
 
     try {
-      const response = await axios.post(
+      const response = await axiosClient.post(
         this.workerUrl + '.get',
         {},
         {

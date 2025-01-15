@@ -1,3 +1,7 @@
+/**
+ * HTTP Response type
+ * @deprecated
+ */
 export type HTTPResponse = {
   success: boolean;
   message: string;

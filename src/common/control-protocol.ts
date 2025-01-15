@@ -1,5 +1,4 @@
-import axios from 'axios';
-
+import { axios, axiosClient } from '../http/axios-client';
 import {
   AirdropEvent,
   EventData,
@@ -33,7 +32,7 @@ export const emit = async ({
     console.info('Emitting event', JSON.stringify(newEvent));
 
     try {
-      await axios.post(
+      await axiosClient.post(
         event.payload.event_context.callback_url,
         { ...newEvent },
         {

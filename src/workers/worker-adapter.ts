@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { axios } from '../http/axios-client';
 import {
   AirdropEvent,
   ExtractorEventType,
@@ -126,9 +126,9 @@ export class WorkerAdapter<ConnectorState> {
 
   initializeRepos(repos: RepoInterface[]) {
     this.repos = repos.map((repo) => {
-      const shouldNormalize = !Object.values(
-        AIRDROP_DEFAULT_ITEM_TYPES
-      ).includes(repo.itemType);
+      const shouldNormalize =
+        repo.itemType !== AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_DOMAIN_METADATA &&
+        repo.itemType !== AIRDROP_DEFAULT_ITEM_TYPES.SSOR_ATTACHMENT;
 
       return new Repo({
         event: this.event,

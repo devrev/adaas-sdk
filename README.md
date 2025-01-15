@@ -2,6 +2,13 @@
 
 ## Release Notes
 
+### v1.1.3
+
+- Exported `axios` and `axiosClient` with exponential backoff retry mechanism for HTTP requests.
+- Resolved issues with circular structure logging.
+- Fixed attachments metadata normalization bug.
+- Improved repository logging.
+
 #### v1.1.2
 
 - Unified incoming and outgoing event context.
