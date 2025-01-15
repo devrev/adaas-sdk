@@ -4,7 +4,7 @@
 
 ### v1.1.3
 
-- Exported `axios` and `axiosClient` with exponential backoff retry mechanism for HTTP requests.
+- Exported `axios` and `axiosClient` with exponential backoff retry mechanism for HTTP requests and omitting Authorization headers from Axios errors.
 - Resolved issues with circular structure logging.
 - Fixed attachments metadata normalization bug.
 - Improved repository logging.
