@@ -9,7 +9,7 @@ import {
 } from './logger.interfaces';
 import { isMainThread, parentPort } from 'node:worker_threads';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
-import { AxiosError } from 'axios';
+import { AxiosError, RawAxiosResponseHeaders } from 'axios';
 import { getCircularReplacer } from '../common/helpers';
 
 export class Logger extends Console {
@@ -93,18 +93,43 @@ export function getPrintableState(state: Record<string, any>): PrintableState {
   // Process the state object directly since it's guaranteed to be an object
   return processValue(state) as PrintableState;
 }
-
+/**
+ * @deprecated
+ */
 export function formatAxiosError(error: AxiosError): object {
-  if (error.response) {
-    return {
-      status: error.response.status,
-      data: error.response.data,
-      method: error.config?.method,
-      baseURL: error.config?.baseURL,
-      url: error.config?.url,
-      payload: error.config?.data,
-    };
-  }
+  return serializeAxiosError(error);
+}
 
-  return error;
+export const serializeError = (error: unknown): Error => {
+  let serializedError = error;
+  try {
+    serializedError = JSON.parse(
+      JSON.stringify(error, Object.getOwnPropertyNames(error))
+    );
+  } catch (err) {
+    console.error('Failed to serialize error object for logger', err);
+  }
+  return serializedError as Error;
+};
+
+export function serializeAxiosError(error: AxiosError) {
+  const response = error.response
+    ? {
+        data: error.response.data,
+        headers: error.response.headers as RawAxiosResponseHeaders,
+        status: error.response.status,
+        statusText: error.response.statusText,
+      }
+    : null;
+  const config = {
+    method: error.config?.method,
+    params: error.config?.params,
+    url: error.config?.url,
+  };
+  return {
+    config,
+    isAxiosError: true,
+    isCorsOrNoNetworkError: !error.response,
+    response,
+  };
 }

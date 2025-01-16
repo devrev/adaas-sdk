@@ -18,7 +18,7 @@ import {
   StreamAttachmentsResponse,
   UploaderFactoryInterface,
 } from './uploader.interfaces';
-import { formatAxiosError } from '../logger/logger';
+import { serializeAxiosError } from '../logger/logger';
 
 export class Uploader {
   private event: AirdropEvent;
@@ -106,7 +106,7 @@ export class Uploader {
       if (axios.isAxiosError(error)) {
         console.error(
           'Error while preparing artifact.',
-          formatAxiosError(error)
+          serializeAxiosError(error)
         );
       } else {
         console.error('Error while preparing artifact.', error);
@@ -137,7 +137,7 @@ export class Uploader {
       if (axios.isAxiosError(error)) {
         console.error(
           'Error while uploading artifact.',
-          formatAxiosError(error)
+          serializeAxiosError(error)
         );
       } else {
         console.error('Error while uploading artifact.', error);
@@ -171,7 +171,7 @@ export class Uploader {
       if (axios.isAxiosError(error)) {
         console.error(
           'Error while streaming artifact.',
-          formatAxiosError(error)
+          serializeAxiosError(error)
         );
       } else {
         console.error('Error while streaming artifact.', error);
@@ -278,7 +278,7 @@ export class Uploader {
       if (axios.isAxiosError(error)) {
         console.error(
           'Error while downloading artifact from URL.',
-          formatAxiosError(error)
+          serializeAxiosError(error)
         );
       } else {
         console.error('Error while downloading artifact from URL.', error);
@@ -386,7 +386,7 @@ export class Uploader {
       if (axios.isAxiosError(error)) {
         console.error(
           'Error while fetching attachment from URL.',
-          formatAxiosError(error)
+          serializeAxiosError(error)
         );
       } else {
         console.error('Error while fetching attachment from URL.', error);

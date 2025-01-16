@@ -31,7 +31,7 @@ import {
 import { addReportToLoaderReport, getFilesToLoad } from '../common/helpers';
 import { Mappers } from '../mappers/mappers';
 import { Uploader } from '../uploader/uploader';
-import { formatAxiosError } from '../logger/logger';
+import { serializeAxiosError } from '../logger/logger';
 import { SyncMapperRecordStatus } from '../mappers/mappers.interface';
 
 export function createWorkerAdapter<ConnectorState>({
@@ -481,7 +481,7 @@ export class WorkerAdapter<ConnectorState> {
             if (axios.isAxiosError(error)) {
               console.error(
                 'Failed to update sync mapper record',
-                formatAxiosError(error)
+                serializeAxiosError(error)
               );
               return {
                 error: {
@@ -561,7 +561,7 @@ export class WorkerAdapter<ConnectorState> {
               if (axios.isAxiosError(error)) {
                 console.error(
                   'Failed to create sync mapper record',
-                  formatAxiosError(error)
+                  serializeAxiosError(error)
                 );
                 return {
                   error: {
@@ -595,7 +595,7 @@ export class WorkerAdapter<ConnectorState> {
         } else {
           console.error(
             'Failed to get sync mapper record',
-            formatAxiosError(error)
+            serializeAxiosError(error)
           );
           return {
             error: {

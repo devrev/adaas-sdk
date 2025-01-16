@@ -2,7 +2,7 @@ import { axios, axiosClient } from '../http/axios-client';
 
 import { AirdropEvent, SyncMode } from '../types/extraction';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
-import { formatAxiosError, getPrintableState } from '../logger/logger';
+import { serializeAxiosError, getPrintableState } from '../logger/logger';
 import { ErrorRecord } from '../types/common';
 
 import { AdapterState, SdkState, StateInterface } from './state.interfaces';
@@ -101,7 +101,7 @@ export class State<ConnectorState> {
       );
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.error('Failed to update state.', formatAxiosError(error));
+        console.error('Failed to update state.', serializeAxiosError(error));
       } else {
         console.error('Failed to update state.', error);
       }

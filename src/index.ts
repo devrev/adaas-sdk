@@ -14,3 +14,4 @@ export { spawn } from './workers/spawn';
 export * from './types/workers';
 
 export { formatAxiosError } from './logger/logger';
+export { serializeAxiosError } from './logger/logger';

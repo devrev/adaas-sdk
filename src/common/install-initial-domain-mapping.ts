@@ -2,7 +2,7 @@ import { axios, axiosClient } from '../http/axios-client';
 import { FunctionInput } from '@devrev/typescript-sdk/dist/snap-ins';
 
 import { InitialDomainMapping } from '../types/common';
-import { formatAxiosError } from '../logger/logger';
+import { serializeAxiosError } from '../logger/logger';
 
 export async function installInitialDomainMapping(
   event: FunctionInput,
@@ -71,7 +71,7 @@ export async function installInitialDomainMapping(
         if (axios.isAxiosError(error)) {
           console.error(
             'Error while creating recipe blueprint',
-            formatAxiosError(error)
+            serializeAxiosError(error)
           );
         } else {
           console.error('Error while creating recipe blueprint', error);
@@ -109,7 +109,7 @@ export async function installInitialDomainMapping(
       if (axios.isAxiosError(error)) {
         console.error(
           'Error while installing initial domain mapping',
-          formatAxiosError(error)
+          serializeAxiosError(error)
         );
       } else {
         console.error('Error while installing initial domain mapping', error);
@@ -118,7 +118,7 @@ export async function installInitialDomainMapping(
     }
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('Error while fetching snap in', formatAxiosError(error));
+      console.error('Error while fetching snap in', serializeAxiosError(error));
     } else {
       console.error('Error while fetching snap in', error);
     }

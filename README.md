@@ -2,6 +2,10 @@
 
 ## Release Notes
 
+### v1.1.4
+
+- Provide log line and stack trace on runtime worker errors.
+
 ### v1.1.3
 
 - Exported `axios` and `axiosClient` with exponential backoff retry mechanism for HTTP requests and omitting Authorization headers from Axios errors.

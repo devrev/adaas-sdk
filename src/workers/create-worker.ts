@@ -1,7 +1,7 @@
 import { isMainThread, Worker } from 'node:worker_threads';
 
 import { WorkerData, WorkerEvent } from '../types/workers';
-import { Logger } from '../logger/logger';
+import { Logger, serializeError } from '../logger/logger';
 
 async function createWorker<ConnectorState>(
   workerData: WorkerData<ConnectorState>
@@ -19,7 +19,7 @@ async function createWorker<ConnectorState>(
       } as WorkerOptions);
 
       worker.on(WorkerEvent.WorkerError, (error) => {
-        logger.error('Worker error', error);
+        logger.error('Worker error', serializeError(error));
         reject();
       });
       worker.on(WorkerEvent.WorkerOnline, () => {

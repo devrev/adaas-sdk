@@ -7,7 +7,7 @@ import {
   LoaderEvent,
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
-import { formatAxiosError } from '../logger/logger';
+import { serializeAxiosError } from '../logger/logger';
 
 export interface EmitInterface {
   event: AirdropEvent;
@@ -49,7 +49,7 @@ export const emit = async ({
       if (axios.isAxiosError(error)) {
         console.error(
           `Failed to emit event with event type ${eventType}.`,
-          formatAxiosError(error)
+          serializeAxiosError(error)
         );
       } else {
         // TODO: Stop it through UI or think about retrying this request. Implement exponential retry mechanism.

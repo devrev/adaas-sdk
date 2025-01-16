@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios';
-import { getPrintableState, formatAxiosError } from './logger';
+import { getPrintableState, serializeAxiosError } from './logger';
 
 it('getPrintableState should return printable state', () => {
   const state = {
@@ -33,7 +33,7 @@ it('getPrintableState should return printable state', () => {
   });
 });
 
-it('formatAxiosError should return formatted error', () => {
+it('serializeAxiosError should return formatted error', () => {
   const error = {
     response: {
       status: 500,
@@ -44,14 +44,21 @@ it('formatAxiosError should return formatted error', () => {
     },
   } as AxiosError;
 
-  const formattedError = formatAxiosError(error);
+  const formattedError = serializeAxiosError(error);
 
   expect(formattedError).toEqual({
-    status: 500,
-    data: 'Internal server error',
-    method: 'GET',
-    baseURL: undefined,
-    url: undefined,
-    payload: undefined,
+    config: {
+      method: 'GET',
+      params: undefined,
+      url: undefined,
+    },
+    isAxiosError: true,
+    isCorsOrNoNetworkError: false,
+    response: {
+      data: 'Internal server error',
+      headers: undefined,
+      status: 500,
+      statusText: undefined,
+    },
   });
 });
