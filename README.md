@@ -4,75 +4,75 @@
 
 ### v1.1.5
 
-- Increased `delayFactor` and number of retries of exponential backoff retry mechanism for HTTP requests.
-- Provided inject function for streaming attachments.
-- Fixed attachments streaming bug.
+- Increase `delayFactor` and number of retries for the exponential backoff retry mechanism for HTTP requests.
+- Provide an inject function for streaming attachments.
+- Fix the attachments streaming bug.
 
 ### v1.1.4
 
-- Provide log line and stack trace on runtime worker errors.
+- Provide log lines and stack traces for runtime worker errors.
 
 ### v1.1.3
 
-- Exported `axios` and `axiosClient` with exponential backoff retry mechanism for HTTP requests and omitting Authorization headers from Axios errors.
-- Resolved issues with circular structure logging.
-- Fixed attachments metadata normalization bug.
-- Improved repository logging.
+- Export `axios` and `axiosClient` with the exponential backoff retry mechanism for HTTP requests and omit Authorization headers from Axios errors.
+- Resolve circular structure logging issues.
+- Fix the attachments metadata normalization bug.
+- Improve repository logging.
 
-#### v1.1.2
+### v1.1.2
 
-- Unified incoming and outgoing event context.
-- Added `dev_oid` to logger tags.
+- Unify incoming and outgoing event context.
+- Add `dev_oid` to logger tags.
 
-#### v1.1.1
+### v1.1.1
 
-- Added default workers for loading deletion events.
+- Add default workers for loading deletion events.
 
-#### v1.1.0
+### v1.1.0
 
-- Support for sync from DevRev to external system. Known limitations: no support for loading attachments.
+- Support sync from DevRev to the external system. (Known limitations: no support for loading attachments.)
 
-#### v1.0.4
+### v1.0.4
 
 - Fix logging from worker threads.
 
-#### v1.0.3
+### v1.0.3
 
-- Added Release notes.
+- Add release notes.
 
-#### v1.0.2
+### v1.0.2
 
-- Bug fixes and improvements in local development.
+- Fix bugs and improve local development.
 - Expose `formatAxiosError` function for error handling.
 
-#### v1.0.1
+### v1.0.1
 
-- Bug fixes and improvements in logging.
+- Fix bugs and improve logging.
 
-#### v1.0.0
+### v1.0.0
 
-- Allow extractions to use full lambda runtime and gracefully handle execution context timeout.
-- Simplified metadata and data normalization and uploading with repo implementation.
-- Default handling of attachment extraction phase in ADaaS SDK library.
-- Reduced file size, streamlined process by gzip compression.
-- Bug fixes and improvements in error handling.
+- Enable extractions to use the full lambda runtime and gracefully handle execution context timeout.
+- Simplify metadata and data normalization and uploading with the repo implementation.
+- Provide default handling of the attachment extraction phase in the ADaaS SDK library.
+- Reduce file size and streamline processes with gzip compression.
+- Fix bugs and improve error handling.
 
-#### v0.0.3
+### v0.0.3
 
-- Support for new recipe management
+- Support new recipe management.
 
-#### v0.0.2
+### v0.0.2
 
-- Support for the State API
-- HTTP client for API requests
-- Local development environment creates local artifact files
-- Improvements in logging
+- Support the State API.
+- Provide an HTTP client for API requests.
+- Create local artifact files in the local development environment.
+- Improve logging.
 
-#### v0.0.1
+### v0.0.1
 
-- Demo implementation of ADaaS snap-in
-- Adapter for ADaaS control protocol with helper functions
-- Uploader for uploading artifacts
+- Implement a demo of the ADaaS snap-in.
+- Add an adapter for the ADaaS control protocol with helper functions.
+- Provide an uploader for uploading artifacts.
 
 # Overview
 
