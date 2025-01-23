@@ -1,6 +1,6 @@
-import { axios, axiosClient } from '../http/axios-client';
 import { AxiosResponse } from 'axios';
 import fs, { promises as fsPromises } from 'fs';
+import { axios, axiosClient } from '../http/axios-client';
 import zlib from 'zlib';
 import { jsonl } from 'js-jsonl';
 import FormData from 'form-data';
@@ -13,9 +13,6 @@ import { AirdropEvent } from '../types/extraction';
 import {
   Artifact,
   UploadResponse,
-  StreamResponse,
-  SsorAttachment,
-  StreamAttachmentsResponse,
   UploaderFactoryInterface,
 } from './uploader.interfaces';
 import { serializeAxiosError } from '../logger/logger';
@@ -91,7 +88,7 @@ export class Uploader {
     return { artifact };
   }
 
-  private async prepareArtifact(
+  public async prepareArtifact(
     filename: string,
     fileType: string
   ): Promise<betaSDK.ArtifactsPrepareResponse | void> {
@@ -145,7 +142,7 @@ export class Uploader {
     }
   }
 
-  private async streamToArtifact(
+  public async streamToArtifact(
     preparedArtifact: betaSDK.ArtifactsPrepareResponse,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fileStreamResponse: any
@@ -154,6 +151,7 @@ export class Uploader {
     for (const field of preparedArtifact.form_data) {
       formData.append(field.key, field.value);
     }
+
     formData.append('file', fileStreamResponse.data);
 
     try {
@@ -165,7 +163,6 @@ export class Uploader {
           }),
         },
       });
-
       return response;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -180,24 +177,17 @@ export class Uploader {
     }
   }
 
-  /**
-   * Streams the attachments to the DevRev platform.
-   * The attachments are streamed to the platform and the artifact information is returned.
-   * @param {string} attachmentsMetadataArtifactId - The artifact ID of the attachments metadata
-   * @returns {Promise<UploadResponse>} - The response object containing the ssoAttachment artifact information
-   * or error information if there was an error
-   */
-  async streamAttachments({
-    attachmentsMetadataArtifactId,
+  public async getAttachmentsFromArtifactId({
+    artifact,
   }: {
-    attachmentsMetadataArtifactId: string;
-  }): Promise<StreamAttachmentsResponse> {
-    console.log('Started streaming attachments to the platform.');
-
+    artifact: string;
+  }): Promise<{
+    attachments?: NormalizedAttachment[];
+    error?: { message: string };
+  }> {
     // 1. Get the URL of the attachments metadata artifact
-    const artifactUrl = await this.getArtifactDownloadUrl(
-      attachmentsMetadataArtifactId
-    );
+    const artifactUrl = await this.getArtifactDownloadUrl(artifact);
+
     if (!artifactUrl) {
       return {
         error: { message: 'Error while getting artifact download URL.' },
@@ -230,27 +220,7 @@ export class Uploader {
       };
     }
 
-    // 5. Stream each attachment to the platform, and push the ssorAttachment to the ssorAttachments array
-    const ssorAttachments: SsorAttachment[] = [];
-    for (const attachmentMetadata of jsonObject) {
-      const { ssorAttachment, error } = await this.stream(attachmentMetadata);
-
-      if (error || !ssorAttachment) {
-        console.warn('Error while streaming attachment', error);
-        continue;
-      }
-
-      ssorAttachments.push(ssorAttachment);
-    }
-
-    if (!ssorAttachments.length) {
-      console.warn('No attachments were streamed to the platform.');
-      return {
-        error: { message: 'No attachments were streamed to the platform.' },
-      };
-    }
-
-    return { ssorAttachments };
+    return { attachments: jsonObject };
   }
 
   private async getArtifactDownloadUrl(
@@ -310,87 +280,6 @@ export class Uploader {
       return jsonl.parse(jsonlObject);
     } catch (error) {
       console.error('Error while parsing jsonl object.', error);
-    }
-  }
-
-  private async stream(
-    attachmentMetadata: NormalizedAttachment
-  ): Promise<StreamResponse> {
-    const {
-      id: externalId,
-      file_name: filename,
-      url,
-      parent_id: parentId,
-      author_id: actorId,
-    } = attachmentMetadata;
-
-    const fileStreamResponse = await this.getFileStreamResponse(url);
-    if (!fileStreamResponse) {
-      return {
-        error: { message: 'Error while fetching attachment from URL' },
-      };
-    }
-
-    const fileType =
-      fileStreamResponse.headers?.['content-type'] ||
-      'application/octet-stream';
-
-    const preparedArtifact = await this.prepareArtifact(filename, fileType);
-    if (!preparedArtifact) {
-      return {
-        error: { message: 'Error while preparing artifact.' },
-      };
-    }
-
-    const uploadedArtifact = await this.streamToArtifact(
-      preparedArtifact,
-      fileStreamResponse
-    );
-    if (!uploadedArtifact) {
-      return {
-        error: { message: 'Error while streaming artifact.' },
-      };
-    }
-
-    const ssorAttachment: SsorAttachment = {
-      id: {
-        devrev: preparedArtifact.id,
-        external: externalId,
-      },
-      parent_id: {
-        external: parentId,
-      },
-      actor_id: {
-        external: actorId,
-      },
-    };
-
-    console.log('Successful stream of attachment: ', ssorAttachment);
-
-    return { ssorAttachment };
-  }
-
-  private async getFileStreamResponse(
-    url: string
-  ): Promise<AxiosResponse | void> {
-    try {
-      const fileStreamResponse = await axiosClient.get(url, {
-        responseType: 'stream',
-        headers: {
-          Authorization: this.event.payload.connection_data.key,
-        },
-      });
-
-      return fileStreamResponse;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          'Error while fetching attachment from URL.',
-          serializeAxiosError(error)
-        );
-      } else {
-        console.error('Error while fetching attachment from URL.', error);
-      }
     }
   }
 

@@ -7,8 +7,7 @@ export interface SdkState {
   lastSuccessfulSyncStarted?: string;
   toDevRev?: ToDevRev;
   fromDevRev?: FromDevRev;
-};
-
+}
 
 /**
  * AdapterState is an interface that defines the structure of the adapter state that is used by the external extractor. It extends the connector state with additional fields: lastSyncStarted, lastSuccessfulSyncStarted, and attachmentsMetadata.

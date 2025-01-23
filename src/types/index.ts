@@ -22,6 +22,9 @@ export {
   AirdropMessage,
   ExtractorEvent,
   SyncMode,
+  ExternalSystemAttachmentStreamingParams,
+  ExternalSystemAttachmentStreamingResponse,
+  ExternalSystemAttachmentStreamingFunction,
 } from './extraction';
 
 // Loading

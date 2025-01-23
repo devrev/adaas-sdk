@@ -4,10 +4,11 @@ import {
   ExtractorEventType,
   EventData,
   EventType,
+  ExternalSystemAttachmentStreamingFunction,
 } from '../types/extraction';
 import { ActionType, LoaderEventType, StatsFileObject } from '../types/loading';
 import { AdapterState } from '../state/state.interfaces';
-import { Artifact } from '../uploader/uploader.interfaces';
+import { Artifact, SsorAttachment } from '../uploader/uploader.interfaces';
 import {
   AIRDROP_DEFAULT_ITEM_TYPES,
   ALLOWED_EXTRACTION_EVENT_TYPES,
@@ -612,5 +613,119 @@ export class WorkerAdapter<ConnectorState> {
         },
       };
     }
+  }
+
+  /**
+   * Streams the attachments to the DevRev platform.
+   * The attachments are streamed to the platform and the artifact information is returned.
+   * @param {string} attachmentsMetadataArtifactId - The artifact ID of the attachments metadata
+   * @returns {Promise<UploadResponse>} - The response object containing the ssoAttachment artifact information
+   * or error information if there was an error
+   */
+  async streamAttachments({
+    stream,
+  }: {
+    stream: ExternalSystemAttachmentStreamingFunction;
+  }) {
+    const repos = [
+      {
+        itemType: 'ssor_attachment',
+      },
+    ];
+    this.initializeRepos(repos);
+
+    for (const attachmentsMetadataArtifactId of this.state.toDevRev
+      ?.attachmentsMetadata.artifactIds || []) {
+      if (this.state.toDevRev?.attachmentsMetadata.artifactIds.length === 0) {
+        return { report: {} };
+      }
+
+      console.log('Started streaming attachments to the platform.');
+
+      const { attachments, error } =
+        await this.uploader.getAttachmentsFromArtifactId({
+          artifact: attachmentsMetadataArtifactId,
+        });
+
+      if (error) {
+        return { error };
+      }
+      console.log(
+        'this.state.toDevRev?.attachmentsMetadata :>> ',
+        this.state.toDevRev?.attachmentsMetadata
+      );
+      if (attachments) {
+        const attachmentsToProcess = attachments.slice(
+          this.state.toDevRev?.attachmentsMetadata?.lastProcessed,
+          attachments.length
+        );
+
+        for (const attachment of attachmentsToProcess) {
+          const { httpStream, delay, error } = await stream({
+            item: attachment,
+            event: this.event,
+          });
+
+          if (error) {
+            console.warn('Error while streaming attachment', error?.message);
+            continue;
+          } else if (delay) {
+            return { delay };
+          }
+
+          if (httpStream) {
+            const fileType =
+              httpStream.headers?.['content-type'] ||
+              'application/octet-stream';
+
+            const preparedArtifact = await this.uploader.prepareArtifact(
+              attachment.file_name,
+              fileType
+            );
+            if (!preparedArtifact) {
+              return {
+                error: { message: 'Error while preparing artifact.' },
+              };
+            }
+
+            const uploadedArtifact = await this.uploader.streamToArtifact(
+              preparedArtifact,
+              httpStream
+            );
+
+            if (!uploadedArtifact) {
+              return {
+                error: { message: 'Error while streaming artifact.' },
+              };
+            }
+
+            const ssorAttachment: SsorAttachment = {
+              id: {
+                devrev: preparedArtifact.id,
+                external: attachment.id,
+              },
+              parent_id: {
+                external: attachment.parent_id,
+              },
+              actor_id: {
+                external: attachment.author_id,
+              },
+            };
+
+            await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
+            if (this.state.toDevRev) {
+              this.state.toDevRev.attachmentsMetadata.lastProcessed++;
+            }
+          }
+        }
+      }
+
+      if (this.state.toDevRev) {
+        this.state.toDevRev.attachmentsMetadata.artifactIds.shift();
+        this.state.toDevRev.attachmentsMetadata.lastProcessed = 0;
+      }
+    }
+
+    return { report: {} };
   }
 }

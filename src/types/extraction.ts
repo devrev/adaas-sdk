@@ -4,7 +4,9 @@ import { Artifact } from '../uploader/uploader.interfaces';
 
 import { ErrorRecord } from './common';
 
-import { DonV2, LoaderReport } from './loading';
+import { DonV2, LoaderReport, RateLimited } from './loading';
+import { NormalizedAttachment } from 'repo/repo.interfaces';
+import { AxiosResponse } from 'axios';
 
 /**
  * EventType is an enum that defines the different types of events that can be sent to the external extractor from ADaaS.
@@ -243,4 +245,26 @@ export interface LoaderEvent {
   event_type: string;
   event_context: EventContext;
   event_data?: EventData;
+}
+
+export type ExternalSystemAttachmentStreamingFunction = ({
+  item,
+  event,
+}: ExternalSystemAttachmentStreamingParams) => Promise<ExternalSystemAttachmentStreamingResponse>;
+
+export interface ExternalSystemAttachmentStreamingParams {
+  item: NormalizedAttachment;
+  event: AirdropEvent;
+}
+
+export interface ExternalSystemAttachmentStreamingResponse {
+  httpStream?: AxiosResponse;
+  error?: ErrorRecord;
+  delay?: number;
+}
+
+export interface StreamAttachmentsResponse {
+  error?: ErrorRecord;
+  report?: LoaderReport;
+  rateLimit?: RateLimited;
 }

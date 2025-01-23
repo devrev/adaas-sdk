@@ -1,53 +1,57 @@
-import { processTask, ExtractorEventType } from '../../index';
-import { Uploader } from '../../uploader/uploader';
+import {
+  ExternalSystemAttachmentStreamingParams,
+  ExternalSystemAttachmentStreamingResponse,
+} from 'types/extraction';
+import {
+  processTask,
+  ExtractorEventType,
+  serializeAxiosError,
+} from '../../index';
+import { axios, axiosClient } from '../../http/axios-client';
 
-const repos = [
-  {
-    itemType: 'ssor_attachment',
-  },
-];
+const getAttachmentStream = async ({
+  item,
+}: ExternalSystemAttachmentStreamingParams): Promise<ExternalSystemAttachmentStreamingResponse> => {
+  const { id, url } = item;
+
+  try {
+    const fileStreamResponse = await axiosClient.get(url, {
+      responseType: 'stream',
+    });
+
+    return { httpStream: fileStreamResponse };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error(
+        'Error while fetching attachment from URL.',
+        serializeAxiosError(error)
+      );
+    } else {
+      console.error('Error while fetching attachment from URL.', error);
+    }
+    return {
+      error: {
+        message: 'Error while fetching attachment ' + id + ' from URL.',
+      },
+    };
+  }
+};
 
 processTask({
   task: async ({ adapter }) => {
-    if (
-      !adapter.state.toDevRev?.attachmentsMetadata.artifactIds ||
-      adapter.state.toDevRev.attachmentsMetadata.artifactIds.length === 0
-    ) {
-      console.log('No attachments to extract, skipping.');
-      await adapter.emit(ExtractorEventType.ExtractionAttachmentsDone);
-      return;
-    }
-
-    adapter.initializeRepos(repos);
-    const uploader = new Uploader({
-      event: adapter.event,
-      options: adapter.options,
+    const { error, delay } = await adapter.streamAttachments({
+      stream: getAttachmentStream,
     });
 
-    for (const attachmentsMetadataArtifactId of adapter.state.toDevRev
-      ?.attachmentsMetadata.artifactIds) {
-      const { ssorAttachments, error } = await uploader.streamAttachments({
-        attachmentsMetadataArtifactId,
+    if (delay) {
+      await adapter.emit(ExtractorEventType.ExtractionAttachmentsDelay, {
+        delay,
       });
-
-      if (error || !ssorAttachments) {
-        await adapter.emit(ExtractorEventType.ExtractionAttachmentsError, {
-          error,
-        });
-        return;
-      }
-
-      await adapter.getRepo('ssor_attachment')?.push(ssorAttachments);
-      adapter.state.toDevRev?.attachmentsMetadata.artifactIds.shift();
-      adapter.state.toDevRev.attachmentsMetadata.lastProcessed = 0;
-
-      if (
-        adapter.state.toDevRev?.attachmentsMetadata.artifactIds.length === 0
-      ) {
-        break;
-      }
+    } else if (error) {
+      await adapter.emit(ExtractorEventType.ExtractionAttachmentsError, {
+        error,
+      });
     }
-
     await adapter.emit(ExtractorEventType.ExtractionAttachmentsDone);
   },
   onTimeout: async ({ adapter }) => {

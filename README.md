@@ -2,6 +2,12 @@
 
 ## Release Notes
 
+### v1.1.5
+
+- Increased `delayFactor` and number of retries of exponential backoff retry mechanism for HTTP requests.
+- Provided inject function for streaming attachments.
+- Fixed attachments streaming bug.
+
 ### v1.1.4
 
 - Provide log line and stack trace on runtime worker errors.

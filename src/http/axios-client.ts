@@ -3,12 +3,15 @@ import axiosRetry from 'axios-retry';
 
 const axiosClient = axios.create();
 
-// Exponential backoff algorithm: Retry 3 times and there will be a delay of more than 1 * no. of retries second + random number of milliseconds between each retry.
 axiosRetry(axiosClient, {
-  retries: 3,
+  retries: 5,
   retryDelay: (retryCount, error) => {
-    console.log(`Retry attempt: ${retryCount} of ${error.config?.url}.`);
-    return axiosRetry.exponentialDelay(retryCount, error, 1000);
+    console.warn(
+      'Retry attempt: ' + retryCount + 'to url: ' + error.config?.url + '.'
+    );
+
+    // Exponential backoff algorithm: 1 * 2 ^ retryCount * 5000ms
+    return axiosRetry.exponentialDelay(retryCount, error, 5000);
   },
   retryCondition: (error: AxiosError) => {
     if (
