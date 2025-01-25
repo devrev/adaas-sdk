@@ -1,6 +1,5 @@
-import { AxiosResponse } from 'axios';
 import fs, { promises as fsPromises } from 'fs';
-import { axios, axiosClient } from '../http/axios-client';
+import { axios, axiosDevRevClient } from '../http/axios-devrev-client';
 import zlib from 'zlib';
 import { jsonl } from 'js-jsonl';
 import FormData from 'form-data';
@@ -16,6 +15,7 @@ import {
   UploaderFactoryInterface,
 } from './uploader.interfaces';
 import { serializeAxiosError } from '../logger/logger';
+import { AxiosResponse } from 'axios';
 
 export class Uploader {
   private event: AirdropEvent;
@@ -123,11 +123,15 @@ export class Uploader {
     formData.append('file', file);
 
     try {
-      const response = await axiosClient.post(preparedArtifact.url, formData, {
-        headers: {
-          ...formData.getHeaders(),
-        },
-      });
+      const response = await axiosDevRevClient.post(
+        preparedArtifact.url,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+          },
+        }
+      );
 
       return response;
     } catch (error) {
@@ -154,15 +158,24 @@ export class Uploader {
 
     formData.append('file', fileStreamResponse.data);
 
+    if (
+      fileStreamResponse.headers['content-length'] > MAX_DEVREV_ARTIFACT_SIZE
+    ) {
+      return;
+    }
     try {
-      const response = await axiosClient.post(preparedArtifact.url, formData, {
-        headers: {
-          ...formData.getHeaders(),
-          ...(!fileStreamResponse.headers['content-length'] && {
-            'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
-          }),
-        },
-      });
+      const response = await axiosDevRevClient.post(
+        preparedArtifact.url,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+            ...(!fileStreamResponse.headers['content-length'] && {
+              'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
+            }),
+          },
+        }
+      );
       return response;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -239,7 +252,7 @@ export class Uploader {
 
   private async downloadArtifact(artifactUrl: string): Promise<Buffer | void> {
     try {
-      const response = await axiosClient.get(artifactUrl, {
+      const response = await axiosDevRevClient.get(artifactUrl, {
         responseType: 'arraybuffer',
       });
 

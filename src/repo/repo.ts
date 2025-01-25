@@ -93,7 +93,7 @@ export class Repo {
       // Add the new records to the items array
       this.items.push(...recordsToPush);
 
-      console.log(
+      console.info(
         `Extracted ${recordsToPush.length} new items of type ${this.itemType}. Total number of items in repo: ${this.items.length}.`
       );
 

@@ -2,6 +2,11 @@
 
 ## Release Notes
 
+### v1.1.6
+
+- Add exponential retry and handle rate-limiting towards DevRev.
+- Gracefully handle failure to upload extracted attachments.
+
 ### v1.1.5
 
 - Increase `delayFactor` and number of retries for the exponential backoff retry mechanism for HTTP requests.

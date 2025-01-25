@@ -33,7 +33,7 @@ export const ALLOWED_EVENT_TYPES = [
 ];
 
 export const ARTIFACT_BATCH_SIZE = 2000;
-export const MAX_DEVREV_ARTIFACT_SIZE = 536870912; // 512MB
+export const MAX_DEVREV_ARTIFACT_SIZE = 262144000; // 250MB
 
 export const AIRDROP_DEFAULT_ITEM_TYPES = {
   EXTERNAL_DOMAIN_METADATA: 'external_domain_metadata',

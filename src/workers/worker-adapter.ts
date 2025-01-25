@@ -1,4 +1,4 @@
-import { axios } from '../http/axios-client';
+import { axios } from '../http/axios-devrev-client';
 import {
   AirdropEvent,
   ExtractorEventType,
@@ -650,10 +650,7 @@ export class WorkerAdapter<ConnectorState> {
       if (error) {
         return { error };
       }
-      console.log(
-        'this.state.toDevRev?.attachmentsMetadata :>> ',
-        this.state.toDevRev?.attachmentsMetadata
-      );
+
       if (attachments) {
         const attachmentsToProcess = attachments.slice(
           this.state.toDevRev?.attachmentsMetadata?.lastProcessed,
@@ -683,9 +680,15 @@ export class WorkerAdapter<ConnectorState> {
               fileType
             );
             if (!preparedArtifact) {
-              return {
-                error: { message: 'Error while preparing artifact.' },
-              };
+              console.warn(
+                'Error while preparing artifact for attachment ID ' +
+                  attachment.id +
+                  '. Skipping attachment'
+              );
+              if (this.state.toDevRev) {
+                this.state.toDevRev.attachmentsMetadata.lastProcessed++;
+              }
+              continue;
             }
 
             const uploadedArtifact = await this.uploader.streamToArtifact(
@@ -694,9 +697,14 @@ export class WorkerAdapter<ConnectorState> {
             );
 
             if (!uploadedArtifact) {
-              return {
-                error: { message: 'Error while streaming artifact.' },
-              };
+              console.warn(
+                'Error while preparing artifact for attachment ID ' +
+                  attachment.id
+              );
+              if (this.state.toDevRev) {
+                this.state.toDevRev.attachmentsMetadata.lastProcessed++;
+              }
+              continue;
             }
 
             const ssorAttachment: SsorAttachment = {
