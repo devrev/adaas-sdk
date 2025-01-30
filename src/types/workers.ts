@@ -89,8 +89,8 @@ export interface TaskAdapterInterface<ConnectorState> {
  * @param {function} onTimeout - The task to be executed on timeout, returns exit code
  */
 export interface ProcessTaskInterface<ConnectorState> {
-  task: (params: TaskAdapterInterface<ConnectorState>) => void;
-  onTimeout: (params: TaskAdapterInterface<ConnectorState>) => void;
+  task: (params: TaskAdapterInterface<ConnectorState>) => Promise<void>;
+  onTimeout: (params: TaskAdapterInterface<ConnectorState>) => Promise<void>;
 }
 
 /**

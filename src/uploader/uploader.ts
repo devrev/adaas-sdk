@@ -45,11 +45,11 @@ export class Uploader {
     fetchedObjects: object[] | object
   ): Promise<UploadResponse> {
     if (this.isLocalDevelopment) {
-      this.downloadToLocal(itemType, fetchedObjects);
+      await this.downloadToLocal(itemType, fetchedObjects);
     }
 
     // 1. Compress the fetched objects to a gzipped jsonl object
-    const file = await this.compressGzip(jsonl.stringify(fetchedObjects));
+    const file = this.compressGzip(jsonl.stringify(fetchedObjects));
     if (!file) {
       return {
         error: { message: 'Error while compressing jsonl object.' },
@@ -216,7 +216,7 @@ export class Uploader {
     }
 
     // 3. Decompress the gzipped jsonl object
-    const jsonlObject = await this.decompressGzip(gzippedJsonlObject);
+    const jsonlObject = this.decompressGzip(gzippedJsonlObject);
     if (!jsonlObject) {
       return {
         error: { message: 'Error while decompressing gzipped jsonl object.' },
@@ -224,9 +224,7 @@ export class Uploader {
     }
 
     // 4. Parse the jsonl object to get the attachment metadata
-    const jsonObject = (await this.parseJsonl(
-      jsonlObject
-    )) as NormalizedAttachment[];
+    const jsonObject = this.parseJsonl(jsonlObject) as NormalizedAttachment[];
     if (!jsonObject) {
       return {
         error: { message: 'Error while parsing jsonl object.' },
@@ -269,7 +267,7 @@ export class Uploader {
     }
   }
 
-  private async compressGzip(jsonlObject: string): Promise<Buffer | void> {
+  private compressGzip(jsonlObject: string): Buffer | void {
     try {
       return zlib.gzipSync(jsonlObject);
     } catch (error) {
@@ -277,23 +275,22 @@ export class Uploader {
     }
   }
 
-  private async decompressGzip(
-    gzippedJsonlObject: Buffer
-  ): Promise<string | void> {
+  private decompressGzip(gzippedJsonlObject: Buffer): string | void {
     try {
-      const jsonlObject = await zlib.gunzipSync(gzippedJsonlObject);
+      const jsonlObject = zlib.gunzipSync(gzippedJsonlObject);
       return jsonlObject.toString();
     } catch (error) {
       console.error('Error while decompressing gzipped jsonl object.', error);
     }
   }
 
-  private async parseJsonl(jsonlObject: string): Promise<object[] | void> {
+  private parseJsonl(jsonlObject: string): object[] | null {
     try {
       return jsonl.parse(jsonlObject);
     } catch (error) {
       console.error('Error while parsing jsonl object.', error);
     }
+    return null;
   }
 
   async getJsonObjectByArtifactId({
@@ -314,7 +311,7 @@ export class Uploader {
     }
 
     if (isGzipped) {
-      const decompressedArtifact = await this.decompressGzip(artifact);
+      const decompressedArtifact = this.decompressGzip(artifact);
       if (!decompressedArtifact) {
         return;
       }

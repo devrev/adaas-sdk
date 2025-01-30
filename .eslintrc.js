@@ -11,4 +11,10 @@ module.exports = {
     project: './tsconfig.eslint.json',
   },
   plugins: ['@typescript-eslint', 'prettier'],
+  rules: {
+    'require-await': 'off',
+    '@typescript-eslint/await-thenable': 'error',
+    '@typescript-eslint/require-await': 'error',
+    '@typescript-eslint/no-floating-promises': 'error',
+  },
 };

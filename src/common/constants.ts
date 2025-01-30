@@ -6,7 +6,7 @@ export const STATELESS_EVENT_TYPES = [
   EventType.ExtractionDataDelete,
   EventType.ExtractionAttachmentsDelete,
   EventType.StartDeletingLoaderState,
-  EventType.StartDeletingLoaderAttachmentsState,
+  EventType.StartDeletingLoaderAttachmentState,
 ];
 
 export const ALLOWED_EXTRACTION_EVENT_TYPES = [
@@ -24,7 +24,7 @@ export const ALLOWED_LOADING_EVENT_TYPES = [
   EventType.StartLoadingData,
   EventType.ContinueLoadingData,
   EventType.StartDeletingLoaderState,
-  EventType.StartDeletingLoaderAttachmentsState,
+  EventType.StartDeletingLoaderAttachmentState,
 ];
 
 export const ALLOWED_EVENT_TYPES = [

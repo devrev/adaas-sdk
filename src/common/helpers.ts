@@ -6,7 +6,6 @@ import {
 import {
   ActionType,
   FileToLoad,
-  ItemTypeToLoad,
   LoaderEventType,
   LoaderReport,
   StatsFileObject,
@@ -20,24 +19,29 @@ export function getTimeoutErrorEventType(eventType: EventType): {
       return {
         eventType: ExtractorEventType.ExtractionMetadataError,
       };
+
     case EventType.ExtractionDataStart:
     case EventType.ExtractionDataContinue:
       return {
         eventType: ExtractorEventType.ExtractionDataError,
       };
+
     case EventType.ExtractionDataDelete:
       return {
         eventType: ExtractorEventType.ExtractionDataDeleteError,
       };
+
     case EventType.ExtractionAttachmentsStart:
     case EventType.ExtractionAttachmentsContinue:
       return {
         eventType: ExtractorEventType.ExtractionAttachmentsError,
       };
+
     case EventType.ExtractionAttachmentsDelete:
       return {
         eventType: ExtractorEventType.ExtractionAttachmentsDeleteError,
       };
+
     case EventType.ExtractionExternalSyncUnitsStart:
       return {
         eventType: ExtractorEventType.ExtractionExternalSyncUnitsError,
@@ -48,17 +52,25 @@ export function getTimeoutErrorEventType(eventType: EventType): {
       return {
         eventType: LoaderEventType.DataLoadingError,
       };
+
     case EventType.StartDeletingLoaderState:
-    case EventType.StartDeletingLoaderAttachmentsState:
       return {
         eventType: LoaderEventType.LoaderStateDeletionError,
       };
+
+    case EventType.StartDeletingLoaderAttachmentState:
+      return {
+        eventType: LoaderEventType.LoaderAttachmentStateDeletionError,
+      };
+
     default:
       console.error(
         'Event type not recognized in getTimeoutErrorEventType function: ' +
           eventType
       );
-      return null;
+      return {
+        eventType: LoaderEventType.UnknownEventType,
+      };
   }
 }
 
@@ -67,21 +79,17 @@ export function getSyncDirection({ event }: { event: AirdropEvent }) {
 }
 
 export function getFilesToLoad({
-  itemTypesToLoad,
+  supportedItemTypes,
   statsFile,
 }: {
-  itemTypesToLoad: ItemTypeToLoad[];
+  supportedItemTypes: string[];
   statsFile: StatsFileObject[];
 }): FileToLoad[] {
   const filesToLoad = [];
 
-  if (itemTypesToLoad.length === 0 || statsFile.length === 0) {
+  if (supportedItemTypes.length === 0 || statsFile.length === 0) {
     return [];
   }
-
-  const supportedItemTypes = itemTypesToLoad.map(
-    (itemTypeToLoad) => itemTypeToLoad.itemType
-  );
 
   const filteredStatsFile = statsFile.filter((file) =>
     supportedItemTypes.includes(file.item_type)

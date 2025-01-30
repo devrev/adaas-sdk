@@ -18,6 +18,21 @@ export interface FileToLoad {
   completed: boolean;
 }
 
+export interface ExternalSystemAttachment {
+  reference_id: DonV2;
+  parent_type: string;
+  parent_reference_id: DonV2;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  url: string;
+  valid_until: string;
+  created_by_id: string;
+  created_date: string;
+  modified_by_id: string;
+  modified_date: string;
+}
+
 export interface ExternalSystemItem {
   id: {
     devrev: DonV2;
@@ -29,8 +44,19 @@ export interface ExternalSystemItem {
   data: any;
 }
 
-export interface ExternalSystemItemLoadingParams {
-  item: ExternalSystemItem;
+export interface ExternalSystemItem {
+  id: {
+    devrev: DonV2;
+    external?: string;
+  };
+  created_date: string;
+  modified_date: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
+}
+
+export interface ExternalSystemItemLoadingParams<Type> {
+  item: Type;
   mappers: Mappers;
   event: AirdropEvent;
 }
@@ -48,16 +74,16 @@ export interface ExternalSystemItemLoadedItem {
   modifiedDate?: string;
 }
 
-export type ExternalSystemLoadingFunction = ({
+export type ExternalSystemLoadingFunction<Item> = ({
   item,
   mappers,
   event,
-}: ExternalSystemItemLoadingParams) => Promise<ExternalSystemItemLoadingResponse>;
+}: ExternalSystemItemLoadingParams<Item>) => Promise<ExternalSystemItemLoadingResponse>;
 
 export interface ItemTypeToLoad {
   itemType: string;
-  create: ExternalSystemLoadingFunction;
-  update: ExternalSystemLoadingFunction;
+  create: ExternalSystemLoadingFunction<ExternalSystemItem>;
+  update: ExternalSystemLoadingFunction<ExternalSystemItem>;
   // requiresSecondPass: boolean;
 }
 
@@ -112,7 +138,13 @@ export enum LoaderEventType {
   DataLoadingDelay = 'DATA_LOADING_DELAYED',
   DataLoadingDone = 'DATA_LOADING_DONE',
   DataLoadingError = 'DATA_LOADING_ERROR',
+  AttachmentLoadingProgress = 'ATTACHMENT_LOADING_PROGRESS',
+  AttachmentLoadingDelayed = 'ATTACHMENT_LOADING_DELAYED',
+  AttachmentLoadingDone = 'ATTACHMENT_LOADING_DONE',
+  AttachmentLoadingError = 'ATTACHMENT_LOADING_ERROR',
   LoaderStateDeletionDone = 'LOADER_STATE_DELETION_DONE',
   LoaderStateDeletionError = 'LOADER_STATE_DELETION_ERROR',
+  LoaderAttachmentStateDeletionDone = 'LOADER_ATTACHMENT_STATE_DELETION_DONE',
+  LoaderAttachmentStateDeletionError = 'LOADER_ATTACHMENT_STATE_DELETION_ERROR',
   UnknownEventType = 'UNKNOWN_EVENT_TYPE',
 }

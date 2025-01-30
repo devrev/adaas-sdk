@@ -6,7 +6,14 @@ import {
   EventType,
   ExternalSystemAttachmentStreamingFunction,
 } from '../types/extraction';
-import { ActionType, LoaderEventType, StatsFileObject } from '../types/loading';
+import {
+  ActionType,
+  ExternalSystemAttachment,
+  ExternalSystemLoadingFunction,
+  FileToLoad,
+  LoaderEventType,
+  StatsFileObject,
+} from '../types/loading';
 import { AdapterState } from '../state/state.interfaces';
 import { Artifact, SsorAttachment } from '../uploader/uploader.interfaces';
 import {
@@ -255,84 +262,28 @@ export class WorkerAdapter<ConnectorState> {
   async loadItemTypes({
     itemTypesToLoad,
   }: ItemTypesToLoadParams): Promise<LoadItemTypesResponse> {
-    const statsFileArtifactId = this.event.payload.event_data?.stats_file;
-
-    if (!statsFileArtifactId) {
-      console.error('Stats file artifact id not found in event data.');
-      await emit({
-        event: this.event,
-        eventType: LoaderEventType.DataLoadingError,
-        data: {
-          error: {
-            message: 'Stats file artifact id not found in event data.',
-          },
-        },
-      });
-
-      return {
-        reports: this.reports,
-        processed_files: this.processedFiles,
-      };
-    }
-
-    const statsFile = (await this.uploader.getJsonObjectByArtifactId({
-      artifactId: statsFileArtifactId,
-    })) as StatsFileObject[];
-
-    console.log('Stats file', statsFile);
-
-    if (!statsFile || statsFile.length === 0) {
-      console.warn('Stats file not found or empty.');
-      return {
-        reports: this.reports,
-        processed_files: this.processedFiles,
-      };
-    }
-
     if (this.event.payload.event_type === EventType.StartLoadingData) {
-      console.log(
-        'Recieved event type ' +
-          EventType.StartLoadingData +
-          '. Preparing files to load.'
-      );
-      const filesToLoad = getFilesToLoad({
-        itemTypesToLoad,
-        statsFile,
-      });
-
-      if (filesToLoad.length === 0) {
-        console.warn('No files to load, returning.');
-        return {
-          reports: this.reports,
-          processed_files: this.processedFiles,
-        };
-      }
-
-      this.adapterState.state.fromDevRev = { filesToLoad };
+      this.adapterState.state.fromDevRev = {
+        filesToLoad: await this.getLoaderBatches({
+          supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
+        }),
+      };
     }
 
+    if (this.adapterState.state.fromDevRev?.filesToLoad.length === 0) {
+      console.warn('No files to load, returning.');
+      return {
+        reports: this.reports,
+        processed_files: this.processedFiles,
+      };
+    }
     console.log(
       'Files to load in state',
       this.adapterState.state.fromDevRev?.filesToLoad
     );
 
-    if (!this.adapterState.state.fromDevRev) {
-      await emit({
-        event: this.event,
-        eventType: LoaderEventType.DataLoadingError,
-        data: {
-          error: {
-            message: 'Unexpected state set in LOAD_DATA.',
-          },
-        },
-      });
-      return {
-        reports: this.reports,
-        processed_files: this.processedFiles,
-      };
-    }
     outerloop: for (const fileToLoad of this.adapterState.state.fromDevRev
-      ?.filesToLoad) {
+      ?.filesToLoad || []) {
       const itemTypeToLoad = itemTypesToLoad.find(
         (itemTypeToLoad: ItemTypeToLoad) =>
           itemTypeToLoad.itemType === fileToLoad.itemType
@@ -368,22 +319,113 @@ export class WorkerAdapter<ConnectorState> {
         }
 
         for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
-          const { report, rateLimit, error } = await this.loadItem({
+          const { report, rateLimit } = await this.loadItem({
             item: transformerFile[i],
             itemTypeToLoad,
           });
 
-          if (error) {
+          if (rateLimit?.delay) {
             await emit({
               event: this.event,
-              eventType: LoaderEventType.DataLoadingError,
+              eventType: LoaderEventType.DataLoadingDelay,
               data: {
-                error,
+                delay: rateLimit.delay,
+                reports: this.reports,
+                processed_files: this.processedFiles,
               },
             });
 
             break outerloop;
           }
+
+          if (report) {
+            addReportToLoaderReport({
+              loaderReports: this.loaderReports,
+              report,
+            });
+            fileToLoad.lineToProcess = fileToLoad.lineToProcess + 1;
+          }
+        }
+
+        fileToLoad.completed = true;
+        this._processedFiles.push(fileToLoad.id);
+      }
+    }
+
+    return {
+      reports: this.reports,
+      processed_files: this.processedFiles,
+    };
+  }
+
+  async getLoaderBatches({
+    supportedItemTypes,
+  }: {
+    supportedItemTypes: string[];
+  }) {
+    const statsFileArtifactId = this.event.payload.event_data?.stats_file;
+
+    if (statsFileArtifactId) {
+      const statsFile = (await this.uploader.getJsonObjectByArtifactId({
+        artifactId: statsFileArtifactId,
+      })) as StatsFileObject[];
+
+      if (!statsFile || statsFile.length === 0) {
+        return [] as FileToLoad[];
+      }
+
+      const filesToLoad = getFilesToLoad({
+        supportedItemTypes,
+        statsFile,
+      });
+
+      return filesToLoad;
+    }
+
+    return [] as FileToLoad[];
+  }
+
+  async loadAttachments({
+    create,
+  }: {
+    create: ExternalSystemLoadingFunction<ExternalSystemAttachment>;
+  }): Promise<LoadItemTypesResponse> {
+    if (this.event.payload.event_type === EventType.StartLoadingAttachments) {
+      this.adapterState.state.fromDevRev = {
+        filesToLoad: await this.getLoaderBatches({
+          supportedItemTypes: ['attachment'],
+        }),
+      };
+    }
+
+    if (
+      !this.adapterState.state.fromDevRev ||
+      this.adapterState.state.fromDevRev?.filesToLoad.length === 0
+    ) {
+      return {
+        reports: this.reports,
+        processed_files: this.processedFiles,
+      };
+    }
+
+    outerloop: for (const fileToLoad of this.adapterState.state.fromDevRev
+      ?.filesToLoad) {
+      if (!fileToLoad.completed) {
+        const transformerFile = (await this.uploader.getJsonObjectByArtifactId({
+          artifactId: fileToLoad.id,
+          isGzipped: true,
+        })) as ExternalSystemAttachment[];
+
+        if (!transformerFile) {
+          console.error('Transformer file not found.');
+          break outerloop;
+        }
+
+        for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
+          const { report, rateLimit } = await this.loadAttachment({
+            item: transformerFile[i],
+            create,
+          });
 
           if (rateLimit?.delay) {
             await emit({
@@ -610,6 +652,44 @@ export class WorkerAdapter<ConnectorState> {
       return {
         error: {
           message: 'Failed to get sync mapper record' + error,
+        },
+      };
+    }
+  }
+
+  async loadAttachment({
+    item,
+    create,
+  }: {
+    item: ExternalSystemAttachment;
+    create: ExternalSystemLoadingFunction<ExternalSystemAttachment>;
+  }): Promise<LoadItemResponse> {
+    // Create item
+    const { id, delay, error } = await create({
+      item,
+      mappers: this.mappers,
+      event: this.event,
+    });
+
+    if (delay) {
+      return {
+        rateLimit: {
+          delay,
+        },
+      };
+    } else if (id) {
+      return {
+        report: {
+          item_type: 'attachment',
+          [ActionType.CREATED]: 1,
+        },
+      };
+    } else {
+      console.error('Failed to create item', error);
+      return {
+        report: {
+          item_type: 'attachment',
+          [ActionType.FAILED]: 1,
         },
       };
     }

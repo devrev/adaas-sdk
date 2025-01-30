@@ -75,44 +75,41 @@ export class Repo {
     }
   }
 
-  async push(items: Item[]): Promise<void | ErrorRecord> {
-    return new Promise(async (resolve, reject) => {
-      let recordsToPush: (NormalizedItem | NormalizedAttachment | Item)[];
+  async push(items: Item[]): Promise<boolean | ErrorRecord> {
+    let recordsToPush: (NormalizedItem | NormalizedAttachment | Item)[];
 
-      // Normalize items if needed
-      if (
-        this.normalize &&
-        this.itemType != AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_DOMAIN_METADATA &&
-        this.itemType != AIRDROP_DEFAULT_ITEM_TYPES.SSOR_ATTACHMENT
-      ) {
-        recordsToPush = items.map((item: Item) => this.normalize!(item));
-      } else {
-        recordsToPush = items;
+    // Normalize items if needed
+    if (
+      this.normalize &&
+      this.itemType != AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_DOMAIN_METADATA &&
+      this.itemType != AIRDROP_DEFAULT_ITEM_TYPES.SSOR_ATTACHMENT
+    ) {
+      recordsToPush = items.map((item: Item) => this.normalize!(item));
+    } else {
+      recordsToPush = items;
+    }
+
+    // Add the new records to the items array
+    this.items.push(...recordsToPush);
+
+    console.info(
+      `Extracted ${recordsToPush.length} new items of type ${this.itemType}. Total number of items in repo: ${this.items.length}.`
+    );
+
+    // Upload in batches while the number of items exceeds the batch size
+    while (this.items.length >= ARTIFACT_BATCH_SIZE) {
+      // Slice out a batch of ARTIFACT_BATCH_SIZE items to upload
+      const batch = this.items.splice(0, ARTIFACT_BATCH_SIZE);
+
+      try {
+        // Upload the batch
+        await this.upload(batch);
+      } catch (error) {
+        console.error('Error while uploading batch', error);
+        return false;
       }
+    }
 
-      // Add the new records to the items array
-      this.items.push(...recordsToPush);
-
-      console.info(
-        `Extracted ${recordsToPush.length} new items of type ${this.itemType}. Total number of items in repo: ${this.items.length}.`
-      );
-
-      // Upload in batches while the number of items exceeds the batch size
-      while (this.items.length >= ARTIFACT_BATCH_SIZE) {
-        // Slice out a batch of ARTIFACT_BATCH_SIZE items to upload
-        const batch = this.items.splice(0, ARTIFACT_BATCH_SIZE);
-
-        try {
-          // Upload the batch
-          await this.upload(batch);
-        } catch (error) {
-          console.error('Error while uploading batch', error);
-          reject(error);
-          return;
-        }
-      }
-
-      resolve();
-    });
+    return true;
   }
 }

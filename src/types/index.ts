@@ -33,6 +33,7 @@ export {
   ExternalSystemItem,
   ExternalSystemItemLoadingResponse,
   ExternalSystemItemLoadingParams,
+  ExternalSystemAttachment,
 } from './loading';
 
 // Repo

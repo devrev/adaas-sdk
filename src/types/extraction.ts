@@ -26,8 +26,10 @@ export enum EventType {
   // Loading
   StartLoadingData = 'START_LOADING_DATA',
   ContinueLoadingData = 'CONTINUE_LOADING_DATA',
+  StartLoadingAttachments = 'START_LOADING_ATTACHMENTS',
+  ContinueLoadingAttachments = 'CONTINUE_LOADING_ATTACHMENTS',
   StartDeletingLoaderState = 'START_DELETING_LOADER_STATE',
-  StartDeletingLoaderAttachmentsState = 'START_DELETING_LOADER_ATTACHMENTS_STATE',
+  StartDeletingLoaderAttachmentState = 'START_DELETING_LOADER_ATTACHMENT_STATE',
 }
 
 /**

@@ -54,13 +54,19 @@ describe('getFilesToLoad', () => {
   it('should return an empty array if statsFile is empty', () => {
     statsFile = [];
     const itemTypesToLoad: ItemTypeToLoad[] = [];
-    const result = getFilesToLoad({ itemTypesToLoad, statsFile });
+    const result = getFilesToLoad({
+      supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
+      statsFile,
+    });
     expect(result).toEqual([]);
   });
 
   it('should return an empty array if itemTypesToLoad is empty', () => {
     const itemTypesToLoad: ItemTypeToLoad[] = [];
-    const result = getFilesToLoad({ itemTypesToLoad, statsFile });
+    const result = getFilesToLoad({
+      supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
+      statsFile,
+    });
     expect(result).toEqual([]);
   });
 
@@ -68,7 +74,10 @@ describe('getFilesToLoad', () => {
     const itemTypesToLoad: ItemTypeToLoad[] = [
       { itemType: 'users', create: jest.fn(), update: jest.fn() },
     ];
-    const result = getFilesToLoad({ itemTypesToLoad, statsFile });
+    const result = getFilesToLoad({
+      supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
+      statsFile,
+    });
     expect(result).toEqual([]);
   });
 
@@ -77,7 +86,10 @@ describe('getFilesToLoad', () => {
       { itemType: 'attachments', create: jest.fn(), update: jest.fn() },
       { itemType: 'issues', create: jest.fn(), update: jest.fn() },
     ];
-    const result = getFilesToLoad({ itemTypesToLoad, statsFile });
+    const result = getFilesToLoad({
+      supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
+      statsFile,
+    });
     expect(result).toEqual([
       {
         id: 'don:core:dvrv-us-1:devo/1:artifact/99',
@@ -119,7 +131,7 @@ describe('getFilesToLoad', () => {
       { itemType: 'issues', create: jest.fn(), update: jest.fn() },
     ];
     const result = getFilesToLoad({
-      itemTypesToLoad,
+      supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
       statsFile,
     });
 

@@ -46,7 +46,7 @@ export class Uploader {
     filetype: string = 'application/jsonl+json'
   ): Promise<UploadResponse> {
     if (this.local) {
-      this.downloadToLocal(filename, fetchedObjects);
+      await this.downloadToLocal(filename, fetchedObjects);
     }
 
     const preparedArtifact = await this.prepareArtifact(filename, filetype);

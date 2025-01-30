@@ -14,7 +14,7 @@ export function processTask<ConnectorState>({
   onTimeout,
 }: ProcessTaskInterface<ConnectorState>) {
   if (!isMainThread) {
-    (async () => {
+    void (async () => {
       const event = workerData.event;
       const initialState = workerData.initialState as ConnectorState;
       const options = workerData.options;

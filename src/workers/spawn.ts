@@ -8,7 +8,6 @@ import {
 import { emit } from '../common/control-protocol';
 import { getTimeoutErrorEventType } from '../common/helpers';
 import { Logger } from '../logger/logger';
-import { ALLOWED_EVENT_TYPES } from '../common/constants';
 import {
   GetWorkerPathInterface,
   WorkerEvent,
@@ -25,9 +24,6 @@ function getWorkerPath({
   event,
   connectorWorkerPath,
 }: GetWorkerPathInterface): string | null {
-  if (!ALLOWED_EVENT_TYPES.includes(event.payload.event_type)) {
-    return null;
-  }
   if (connectorWorkerPath) return connectorWorkerPath;
   let path = null;
   switch (event.payload.event_type) {
@@ -56,25 +52,20 @@ function getWorkerPath({
     // Loading
     case EventType.StartLoadingData:
     case EventType.ContinueLoadingData:
-      path = __dirname + '/default-workers/data-loading';
+      path = __dirname + '/default-workers/load-data';
+      break;
+    case EventType.StartLoadingAttachments:
+    case EventType.ContinueLoadingAttachments:
+      path = __dirname + '/default-workers/load-attachments';
       break;
     case EventType.StartDeletingLoaderState:
-      path = __dirname + '/default-workers/loader-state-deletion';
+      path = __dirname + '/default-workers/delete-loader-state';
       break;
-
+    case EventType.StartDeletingLoaderAttachmentState:
+      path = __dirname + '/default-workers/delete-loader-attachment-state';
+      break;
     default:
-      emit({
-        event,
-        eventType: ExtractorEventType.UnknownEventType,
-        data: {
-          error: {
-            message:
-              'Unrecognized event type in spawn ' +
-              event.payload.event_type +
-              '.',
-          },
-        },
-      });
+      path = null;
   }
   return path;
 }
@@ -128,7 +119,19 @@ export async function spawn<ConnectorState>({
       return false;
     }
   } else {
-    throw new Error('Worker script not found.');
+    await emit({
+      event,
+      eventType: ExtractorEventType.UnknownEventType,
+      data: {
+        error: {
+          message:
+            'Unrecognized event type in spawn ' +
+            event.payload.event_type +
+            '.',
+        },
+      },
+    });
+    return false;
   }
 }
 
