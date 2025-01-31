@@ -1,6 +1,6 @@
 {
   "name": "@devrev/ts-adaas",
-  "version": "1.2.0",
+  "version": "1.2.0-beta",
   "description": "DevRev ADaaS (AirDrop-as-a-Service) Typescript SDK.",
   "type": "commonjs",
   "main": "./dist/index.js",
