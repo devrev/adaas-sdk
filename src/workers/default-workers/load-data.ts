@@ -1,4 +1,4 @@
-import { processTask } from 'workers/process-task';
+import { processTask } from '../process-task';
 import { LoaderEventType } from '../../types/loading';
 
 processTask({
