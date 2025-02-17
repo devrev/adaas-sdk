@@ -8,6 +8,7 @@ import {
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
 import { serializeAxiosError } from '../logger/logger';
+import { version } from '../../package.json';
 
 export interface EmitInterface {
   event: AirdropEvent;
@@ -26,6 +27,9 @@ export const emit = async ({
     event_data: {
       ...data,
     },
+    worker_metadata: {
+      adaas_library_version: version
+    }
   };
 
   return new Promise<void>(async (resolve, reject) => {

@@ -187,6 +187,13 @@ export interface EventData {
 }
 
 /**
+ * WorkerMetadata is an interface that defines the structure of the worker metadata that is sent from the external extractor to ADaaS.
+ */
+export interface WorkerMetadata {
+  adaas_library_version: string;
+}
+
+/**
  * DomainObject is an interface that defines the structure of a domain object that can be extracted.
  * It must contain a name, a next chunk ID, the pages, the last modified date, whether it is done, and the count.
  * @deprecated
@@ -238,6 +245,7 @@ export interface ExtractorEvent {
   event_type: string;
   event_context: EventContext;
   event_data?: EventData;
+  worker_metadata?: WorkerMetadata;
 }
 
 /**
@@ -247,6 +255,7 @@ export interface LoaderEvent {
   event_type: string;
   event_context: EventContext;
   event_data?: EventData;
+  worker_metadata?: WorkerMetadata;
 }
 
 export type ExternalSystemAttachmentStreamingFunction = ({
