@@ -4,7 +4,10 @@
 
 ### v1.2.1
 
--
+- Reduced the `delayFactor` to minimize unnecessary delays.
+- Correct the setting of the `lastSyncStarted` timestamp.
+- Improve logging for attachment extraction and loading.
+- Fix several bugs related to the control protocol.
 
 ### v1.2.0
 
