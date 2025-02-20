@@ -1,6 +1,6 @@
 import { axios, axiosClient } from '../http/axios-client';
 
-import { AirdropEvent, SyncMode } from '../types/extraction';
+import { AirdropEvent, EventType, SyncMode } from '../types/extraction';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { serializeAxiosError, getPrintableState } from '../logger/logger';
 import { ErrorRecord } from '../types/common';
@@ -22,6 +22,14 @@ export async function createAdapterState<ConnectorState>({
 
   if (!STATELESS_EVENT_TYPES.includes(event.payload.event_type)) {
     await as.fetchState(newInitialState);
+
+    if (
+      event.payload.event_type === EventType.ExtractionDataStart &&
+      !as.state.lastSyncStarted
+    ) {
+      as.state.lastSyncStarted = new Date().toISOString();
+      console.log(`Setting lastSyncStarted to ${as.state.lastSyncStarted}.`);
+    }
   }
 
   return as;
@@ -44,7 +52,7 @@ export class State<ConnectorState> {
             },
           }
         : {
-            lastSyncStarted: new Date().toISOString(),
+            lastSyncStarted: '',
             lastSuccessfulSyncStarted: '',
             toDevRev: {
               attachmentsMetadata: {
@@ -155,7 +163,7 @@ export class State<ConnectorState> {
         this.state = state;
 
         console.log(
-          'State not found, returning initial state. Current state:',
+          'State not found, returning initial state. Current state',
           getPrintableState(this.state)
         );
         await this.postState(this.state);

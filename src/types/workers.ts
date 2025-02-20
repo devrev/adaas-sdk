@@ -36,8 +36,6 @@ export interface WorkerAdapterOptions {
   timeout?: number;
 }
 
-export type SpawnResolve = (value: boolean | PromiseLike<boolean>) => void;
-
 /**
  * SpawnInterface is an interface for Spawn class.
  * @interface SpawnInterface
@@ -49,7 +47,7 @@ export interface SpawnInterface {
   event: AirdropEvent;
   worker: Worker;
   options?: WorkerAdapterOptions;
-  resolve: SpawnResolve;
+  resolve: (value: void | PromiseLike<void>) => void;
 }
 
 /**

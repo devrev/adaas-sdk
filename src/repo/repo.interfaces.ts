@@ -41,7 +41,7 @@ export interface NormalizedAttachment {
   file_name: string;
   author_id: string;
   parent_id: string;
-  inline?: boolean;
+  grand_parent_id?: number;
 }
 
 /**

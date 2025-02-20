@@ -25,6 +25,9 @@ export {
   ExternalSystemAttachmentStreamingParams,
   ExternalSystemAttachmentStreamingResponse,
   ExternalSystemAttachmentStreamingFunction,
+  ExternalProcessAttachmentFunction,
+  ExternalSystemAttachmentReducerFunction,
+  ExternalSystemAttachmentIteratorFunction,
 } from './extraction';
 
 // Loading

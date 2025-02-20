@@ -10,8 +10,8 @@ axiosRetry(axiosClient, {
       'Retry attempt: ' + retryCount + 'to url: ' + error.config?.url + '.'
     );
 
-    // Exponential backoff algorithm: 1 * 2 ^ retryCount * 5000ms
-    return axiosRetry.exponentialDelay(retryCount, error, 5000);
+    // Exponential backoff algorithm: 1 * 2 ^ retryCount * 1000ms
+    return axiosRetry.exponentialDelay(retryCount, error, 1000);
   },
   retryCondition: (error: AxiosError) => {
     if (

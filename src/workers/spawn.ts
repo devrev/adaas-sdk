@@ -1,5 +1,4 @@
-import { Worker } from 'node:worker_threads';
-
+import axios from 'axios';
 import {
   AirdropEvent,
   EventType,
@@ -7,14 +6,13 @@ import {
 } from '../types/extraction';
 import { emit } from '../common/control-protocol';
 import { getTimeoutErrorEventType } from '../common/helpers';
-import { Logger } from '../logger/logger';
+import { Logger, serializeAxiosError } from '../logger/logger';
 import {
   GetWorkerPathInterface,
   WorkerEvent,
   WorkerMessageSubject,
   SpawnFactoryInterface,
   SpawnInterface,
-  SpawnResolve,
 } from '../types/workers';
 
 import { createWorker } from './create-worker';
@@ -86,11 +84,8 @@ export async function spawn<ConnectorState>({
   initialState,
   workerPath,
   options,
-}: SpawnFactoryInterface<ConnectorState>): Promise<
-  boolean | PromiseLike<boolean>
-> {
+}: SpawnFactoryInterface<ConnectorState>): Promise<void> {
   const logger = new Logger({ event, options });
-
   const script = getWorkerPath({
     event,
     connectorWorkerPath: workerPath,
@@ -106,7 +101,7 @@ export async function spawn<ConnectorState>({
         options,
       });
 
-      return new Promise<boolean>((resolve) => {
+      return new Promise((resolve) => {
         new Spawn({
           event,
           worker,
@@ -115,58 +110,70 @@ export async function spawn<ConnectorState>({
         });
       });
     } catch (error) {
-      logger.error('Worker error while processing task.', error);
-      return false;
+      logger.error('Worker error while processing task', error);
     }
   } else {
-    await emit({
-      event,
-      eventType: ExtractorEventType.UnknownEventType,
-      data: {
-        error: {
-          message:
-            'Unrecognized event type in spawn ' +
-            event.payload.event_type +
-            '.',
+    console.error(
+      'Script was not found for event type: ' + event.payload.event_type + '.'
+    );
+
+    try {
+      await emit({
+        event,
+        eventType: ExtractorEventType.UnknownEventType,
+        data: {
+          error: {
+            message:
+              'Unrecognized event type in spawn ' +
+              event.payload.event_type +
+              '.',
+          },
         },
-      },
-    });
-    return false;
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Error while emitting event', serializeAxiosError(error));
+      } else {
+        console.error('Error while emitting event', error);
+      }
+    }
   }
 }
 
 export class Spawn {
   private event: AirdropEvent;
-  private hasWorkerEmitted: boolean;
+  private alreadyEmitted: boolean;
   private defaultLambdaTimeout: number = 10 * 60 * 1000; // 10 minutes in milliseconds
   private lambdaTimeout: number;
-  private worker: Worker | null;
-  private resolve: SpawnResolve;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private logger: Logger;
+  private resolve: (value: void | PromiseLike<void>) => void;
 
   constructor({ event, worker, options, resolve }: SpawnInterface) {
-    this.hasWorkerEmitted = false;
+    this.alreadyEmitted = false;
     this.event = event;
+    this.logger = new Logger({ event, options });
     this.lambdaTimeout = options?.timeout
       ? Math.min(options.timeout, this.defaultLambdaTimeout)
       : this.defaultLambdaTimeout;
-
     this.resolve = resolve;
-    this.timer = setTimeout(async () => {
-      this.logger.log('Lambda timeout reached. Exiting.');
 
-      if (this.worker) {
-        this.worker.postMessage({
+    // if lambda timeout is reached, then send a message to the worker to gracefully exit
+    this.timer = setTimeout(async () => {
+      this.logger.log(
+        'Lambda timeout reached. Sending a message to the worker to gracefully exit.'
+      );
+      if (worker) {
+        worker.postMessage({
           subject: WorkerMessageSubject.WorkerMessageExit,
         });
       } else {
+        console.log("Worker doesn't exist. Exiting from main thread.");
         await this.exitFromMainThread();
       }
     }, this.lambdaTimeout);
 
-    this.logger = new Logger({ event, options });
-    this.worker = worker;
+    // if worker exits with process.exit(code) then we need to clear the timer and exit from main thread
     worker.on(WorkerEvent.WorkerExit, async (code) => {
       this.logger.info('Worker exited with exit code: ' + code + '.');
       if (this.timer) {
@@ -174,50 +181,67 @@ export class Spawn {
       }
       await this.exitFromMainThread();
     });
-    worker.on(WorkerEvent.WorkerMessage, async (message) => {
-      if (message?.subject === WorkerMessageSubject.WorkerMessageEmitted) {
-        this.logger.info('Worker has emitted message to ADaaS.');
-        this.hasWorkerEmitted = true;
-      }
-      if (message?.subject === WorkerMessageSubject.WorkerMessageDone) {
-        this.logger.info('Worker has completed work.');
-        clearTimeout(this.timer);
-        await this.exitFromMainThread();
-      }
-    });
 
-    worker.on(WorkerEvent.WorkerMessage, (message) => {
+    worker.on(WorkerEvent.WorkerMessage, async (message) => {
+      // if worker send a log message, then log it from the main thread with logger
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
         const args = message.payload?.args;
         const level = message.payload?.level as LogLevel;
         this.logger.logFn(args, level);
       }
+
+      // if worker sends a message that it has completed work, then clear the timer and exit from main thread
+      if (message?.subject === WorkerMessageSubject.WorkerMessageDone) {
+        this.logger.info('Worker has completed with executing the task.');
+        if (this.timer) {
+          clearTimeout(this.timer);
+        }
+        await this.exitFromMainThread();
+      }
+
+      // if worker sends a message that it has emitted an event, then set alreadyEmitted to true
+      if (message?.subject === WorkerMessageSubject.WorkerMessageEmitted) {
+        this.logger.info('Worker has emitted message to ADaaS.');
+        this.alreadyEmitted = true;
+      }
     });
   }
 
   private async exitFromMainThread(): Promise<void> {
-    if (this.hasWorkerEmitted) {
-      this.resolve(true);
+    if (this.alreadyEmitted) {
+      this.resolve();
       return;
     }
+    this.alreadyEmitted = true;
 
     const timeoutEventType = getTimeoutErrorEventType(
       this.event.payload.event_type
     );
-    if (timeoutEventType !== null) {
+
+    if (timeoutEventType) {
       const { eventType } = timeoutEventType;
-      await emit({
-        eventType,
-        event: this.event,
-        data: {
-          error: {
-            message: 'Worker has not emitted anything. Exited.',
+
+      try {
+        await emit({
+          eventType,
+          event: this.event,
+          data: {
+            error: {
+              message: 'Worker has not emitted anything. Exited.',
+            },
           },
-        },
-      }).then(() => {
-        this.logger.error('Worker has not emitted anything. Exited.');
-        this.resolve(true);
-      });
+        });
+        this.resolve();
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          console.error(
+            'Error while emitting event',
+            serializeAxiosError(error)
+          );
+        } else {
+          console.error('Error while emitting event', error);
+        }
+      }
     }
   }
 }

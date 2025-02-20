@@ -22,13 +22,16 @@ const getAttachmentStream = async ({
     return { httpStream: fileStreamResponse };
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error(
-        'Error while fetching attachment from URL.',
+      console.warn(
+        `Error while fetching attachment ${id} from URL.`,
         serializeAxiosError(error)
       );
+      console.warn('Failed attachment metadata', item);
     } else {
-      console.error('Error while fetching attachment from URL.', error);
+      console.warn(`Error while fetching attachment ${id} from URL.`, error);
+      console.warn('Failed attachment metadata', item);
     }
+
     return {
       error: {
         message: 'Error while fetching attachment ' + id + ' from URL.',
@@ -39,20 +42,25 @@ const getAttachmentStream = async ({
 
 processTask({
   task: async ({ adapter }) => {
-    const { error, delay } = await adapter.streamAttachments({
-      stream: getAttachmentStream,
-    });
+    try {
+      const response = await adapter.streamAttachments({
+        stream: getAttachmentStream,
+      });
 
-    if (delay) {
-      await adapter.emit(ExtractorEventType.ExtractionAttachmentsDelay, {
-        delay,
-      });
-    } else if (error) {
-      await adapter.emit(ExtractorEventType.ExtractionAttachmentsError, {
-        error,
-      });
+      if (response?.delay) {
+        await adapter.emit(ExtractorEventType.ExtractionAttachmentsDelay, {
+          delay: response.delay,
+        });
+      } else if (response?.error) {
+        await adapter.emit(ExtractorEventType.ExtractionAttachmentsError, {
+          error: response.error,
+        });
+      } else {
+        await adapter.emit(ExtractorEventType.ExtractionAttachmentsDone);
+      }
+    } catch (error) {
+      console.error('An error occured while processing a task.', error);
     }
-    await adapter.emit(ExtractorEventType.ExtractionAttachmentsDone);
   },
   onTimeout: async ({ adapter }) => {
     await adapter.postState();

@@ -78,6 +78,11 @@ export class Repo {
   async push(items: Item[]): Promise<boolean | ErrorRecord> {
     let recordsToPush: (NormalizedItem | NormalizedAttachment | Item)[];
 
+    if (!items || items.length === 0) {
+      console.log(`No items to push for type ${this.itemType}. Skipping push.`);
+      return true;
+    }
+
     // Normalize items if needed
     if (
       this.normalize &&
@@ -91,10 +96,6 @@ export class Repo {
 
     // Add the new records to the items array
     this.items.push(...recordsToPush);
-
-    console.info(
-      `Extracted ${recordsToPush.length} new items of type ${this.itemType}. Total number of items in repo: ${this.items.length}.`
-    );
 
     // Upload in batches while the number of items exceeds the batch size
     while (this.items.length >= ARTIFACT_BATCH_SIZE) {

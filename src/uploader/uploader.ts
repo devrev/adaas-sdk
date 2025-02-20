@@ -84,7 +84,7 @@ export class Uploader {
       item_count: Array.isArray(fetchedObjects) ? fetchedObjects.length : 1,
     };
 
-    console.log('Successful upload of artifact: ', artifact);
+    console.log('Successful upload of artifact', artifact);
     return { artifact };
   }
 

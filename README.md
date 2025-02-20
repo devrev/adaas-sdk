@@ -2,6 +2,10 @@
 
 ## Release Notes
 
+### v1.2.1
+
+-
+
 ### v1.2.0
 
 - Add support for loading attachments from DevRev to external system.
@@ -361,7 +365,7 @@ This phase is defined in `load-attachments.ts` and is responsible for loading th
 Loading is done by providing the create function to create attachments in the external system.
 
 ```typescript
-  processTask({
+processTask({
   task: async ({ adapter }) => {
     const { reports, processed_files } = await adapter.loadAttachments({
       create,
@@ -380,7 +384,6 @@ Loading is done by providing the create function to create attachments in the ex
     });
   },
 });
-
 ```
 
 The loading function `create` provides loading to the external system, to make API calls to the external system to create the attachments and handle errors and external system's rate limiting.

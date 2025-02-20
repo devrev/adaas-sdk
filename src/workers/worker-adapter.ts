@@ -5,6 +5,9 @@ import {
   EventData,
   EventType,
   ExternalSystemAttachmentStreamingFunction,
+  ExternalSystemAttachmentProcessors,
+  ProcessAttachmentReturnType,
+  StreamAttachmentsReturnType,
 } from '../types/extraction';
 import {
   ActionType,
@@ -27,7 +30,7 @@ import { MessagePort } from 'node:worker_threads';
 import { emit } from '../common/control-protocol';
 import { WorkerMessageEmitted, WorkerMessageSubject } from '../types/workers';
 import { Repo } from '../repo/repo';
-import { RepoInterface } from '../repo/repo.interfaces';
+import { NormalizedAttachment, RepoInterface } from '../repo/repo.interfaces';
 import {
   ExternalSystemItem,
   ItemTypesToLoadParams,
@@ -209,6 +212,7 @@ export class WorkerAdapter<ConnectorState> {
     // If the extraction is done, we want to save the timestamp of the last successful sync
     if (newEventType === ExtractorEventType.ExtractionAttachmentsDone) {
       this.state.lastSuccessfulSyncStarted = this.state.lastSyncStarted;
+      this.state.lastSyncStarted = '';
     }
 
     // We want to save the state every time we emit an event, except for the start and delete events
@@ -240,11 +244,20 @@ export class WorkerAdapter<ConnectorState> {
       };
       this.artifacts = [];
       this.parentPort.postMessage(message);
+      this.hasWorkerEmitted = true;
     } catch (error) {
-      console.error(
-        'Error while emitting event with event type: ' + newEventType + '.',
-        error
-      );
+      if (axios.isAxiosError(error)) {
+        console.error(
+          'Error while emitting event with event type: ' + newEventType + '.',
+          serializeAxiosError(error)
+        );
+      } else {
+        console.error(
+          'Error while emitting event with event type: ' + newEventType + '.',
+          error
+        );
+      }
+
       this.parentPort.postMessage(WorkerMessageSubject.WorkerMessageExit);
     }
   }
@@ -657,6 +670,69 @@ export class WorkerAdapter<ConnectorState> {
     }
   }
 
+  processAttachment = async (
+    attachment: NormalizedAttachment,
+    stream: ExternalSystemAttachmentStreamingFunction
+  ): Promise<ProcessAttachmentReturnType> => {
+    const { httpStream, delay, error } = await stream({
+      item: attachment,
+      event: this.event,
+    });
+
+    if (error) {
+      console.warn('Error while streaming attachment', error?.message);
+      return { error };
+    } else if (delay) {
+      return { delay };
+    }
+
+    if (httpStream) {
+      const fileType =
+        httpStream.headers?.['content-type'] || 'application/octet-stream';
+
+      const preparedArtifact = await this.uploader.prepareArtifact(
+        attachment.file_name,
+        fileType
+      );
+      if (!preparedArtifact) {
+        console.warn(
+          'Error while preparing artifact for attachment ID ' +
+            attachment.id +
+            '. Skipping attachment'
+        );
+        return;
+      }
+
+      const uploadedArtifact = await this.uploader.streamToArtifact(
+        preparedArtifact,
+        httpStream
+      );
+
+      if (!uploadedArtifact) {
+        console.warn(
+          'Error while preparing artifact for attachment ID ' + attachment.id
+        );
+        return;
+      }
+
+      const ssorAttachment: SsorAttachment = {
+        id: {
+          devrev: preparedArtifact.id,
+          external: attachment.id,
+        },
+        parent_id: {
+          external: attachment.parent_id,
+        },
+        actor_id: {
+          external: attachment.author_id,
+        },
+      };
+
+      await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
+    }
+    return;
+  };
+
   async loadAttachment({
     item,
     create,
@@ -698,29 +774,36 @@ export class WorkerAdapter<ConnectorState> {
   /**
    * Streams the attachments to the DevRev platform.
    * The attachments are streamed to the platform and the artifact information is returned.
-   * @param {string} attachmentsMetadataArtifactId - The artifact ID of the attachments metadata
-   * @returns {Promise<UploadResponse>} - The response object containing the ssoAttachment artifact information
+   * @param {{ stream, processors }: { stream: ExternalSystemAttachmentStreamingFunction, processors?: ExternalSystemAttachmentProcessors  }} Params - The parameters to stream the attachments
+   * @returns {Promise<StreamAttachmentsReturnType>} - The response object containing the ssoAttachment artifact information
    * or error information if there was an error
    */
-  async streamAttachments({
+  async streamAttachments<NewBatch>({
     stream,
+    processors,
   }: {
     stream: ExternalSystemAttachmentStreamingFunction;
-  }) {
+    processors?: ExternalSystemAttachmentProcessors<
+      ConnectorState,
+      NormalizedAttachment[],
+      NewBatch
+    >;
+  }): Promise<StreamAttachmentsReturnType> {
     const repos = [
       {
         itemType: 'ssor_attachment',
       },
     ];
     this.initializeRepos(repos);
+    const attachmentsState = (
+      this.state.toDevRev?.attachmentsMetadata.artifactIds || []
+    ).slice();
 
-    for (const attachmentsMetadataArtifactId of this.state.toDevRev
-      ?.attachmentsMetadata.artifactIds || []) {
-      if (this.state.toDevRev?.attachmentsMetadata.artifactIds.length === 0) {
-        return { report: {} };
-      }
-
-      console.log('Started streaming attachments to the platform.');
+    console.log('Attachments metadata artifact IDs', attachmentsState);
+    for (const attachmentsMetadataArtifactId of attachmentsState) {
+      console.log(
+        `Started processing attachments for artifact ID: ${attachmentsMetadataArtifactId}.`
+      );
 
       const { attachments, error } =
         await this.uploader.getAttachmentsFromArtifactId({
@@ -728,92 +811,60 @@ export class WorkerAdapter<ConnectorState> {
         });
 
       if (error) {
+        console.error(
+          `Failed to get attachments for artifact ID: ${attachmentsMetadataArtifactId}.`
+        );
         return { error };
       }
 
-      if (attachments) {
+      if (!attachments || attachments.length === 0) {
+        console.warn(
+          `No attachments found for artifact ID: ${attachmentsMetadataArtifactId}.`
+        );
+        continue;
+      }
+
+      if (processors) {
+        console.log(`Using custom processors for attachments.`);
+        const { reducer, iterator } = processors;
+        const reducedAttachments = reducer({ attachments, adapter: this });
+
+        const response = await iterator({
+          reducedAttachments,
+          adapter: this,
+          stream,
+        });
+        if (response?.delay || response?.error) {
+          return response;
+        }
+      } else {
+        console.log(`Using default processors for attachments.`);
         const attachmentsToProcess = attachments.slice(
           this.state.toDevRev?.attachmentsMetadata?.lastProcessed,
           attachments.length
         );
 
         for (const attachment of attachmentsToProcess) {
-          const { httpStream, delay, error } = await stream({
-            item: attachment,
-            event: this.event,
-          });
-
-          if (error) {
-            console.warn('Error while streaming attachment', error?.message);
-            continue;
-          } else if (delay) {
-            return { delay };
+          const response = await this.processAttachment(attachment, stream);
+          if (response?.delay || response?.error) {
+            return response;
           }
 
-          if (httpStream) {
-            const fileType =
-              httpStream.headers?.['content-type'] ||
-              'application/octet-stream';
-
-            const preparedArtifact = await this.uploader.prepareArtifact(
-              attachment.file_name,
-              fileType
-            );
-            if (!preparedArtifact) {
-              console.warn(
-                'Error while preparing artifact for attachment ID ' +
-                  attachment.id +
-                  '. Skipping attachment'
-              );
-              if (this.state.toDevRev) {
-                this.state.toDevRev.attachmentsMetadata.lastProcessed++;
-              }
-              continue;
-            }
-
-            const uploadedArtifact = await this.uploader.streamToArtifact(
-              preparedArtifact,
-              httpStream
-            );
-
-            if (!uploadedArtifact) {
-              console.warn(
-                'Error while preparing artifact for attachment ID ' +
-                  attachment.id
-              );
-              if (this.state.toDevRev) {
-                this.state.toDevRev.attachmentsMetadata.lastProcessed++;
-              }
-              continue;
-            }
-
-            const ssorAttachment: SsorAttachment = {
-              id: {
-                devrev: preparedArtifact.id,
-                external: attachment.id,
-              },
-              parent_id: {
-                external: attachment.parent_id,
-              },
-              actor_id: {
-                external: attachment.author_id,
-              },
-            };
-
-            await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
-            if (this.state.toDevRev) {
-              this.state.toDevRev.attachmentsMetadata.lastProcessed++;
-            }
+          if (this.state.toDevRev) {
+            this.state.toDevRev.attachmentsMetadata.lastProcessed += 1;
           }
         }
       }
 
       if (this.state.toDevRev) {
+        console.log(
+          `Finished processing attachments for artifact ID. Setting last processed to 0 and removing artifact ID from state.`
+        );
         this.state.toDevRev.attachmentsMetadata.artifactIds.shift();
         this.state.toDevRev.attachmentsMetadata.lastProcessed = 0;
       }
     }
 
-    return { report: {} };
+    return;
   }
 }

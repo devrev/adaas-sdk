@@ -5,8 +5,9 @@ import { Artifact } from '../uploader/uploader.interfaces';
 import { ErrorRecord } from './common';
 
 import { DonV2, LoaderReport, RateLimited } from './loading';
-import { NormalizedAttachment } from 'repo/repo.interfaces';
+import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { AxiosResponse } from 'axios';
+import { WorkerAdapter } from '../workers/worker-adapter';
 
 /**
  * EventType is an enum that defines the different types of events that can be sent to the external extractor from ADaaS.
@@ -186,6 +187,14 @@ export interface EventData {
   stats_file?: string;
 }
 
+
+/**
+ * WorkerMetadata is an interface that defines the structure of the worker metadata that is sent from the external extractor to ADaaS.
+ */
+export interface WorkerMetadata {
+  adaas_library_version: string;
+}
+
 /**
  * DomainObject is an interface that defines the structure of a domain object that can be extracted.
  * It must contain a name, a next chunk ID, the pages, the last modified date, whether it is done, and the count.
@@ -238,6 +247,7 @@ export interface ExtractorEvent {
   event_type: string;
   event_context: EventContext;
   event_data?: EventData;
+  worker_metadata?: WorkerMetadata;
 }
 
 /**
@@ -247,6 +257,7 @@ export interface LoaderEvent {
   event_type: string;
   event_context: EventContext;
   event_data?: EventData;
+  worker_metadata?: WorkerMetadata;
 }
 
 export type ExternalSystemAttachmentStreamingFunction = ({
@@ -269,4 +280,62 @@ export interface StreamAttachmentsResponse {
   error?: ErrorRecord;
   report?: LoaderReport;
   rateLimit?: RateLimited;
+}
+
+export type ProcessAttachmentReturnType =
+  | {
+      delay?: number;
+      error?: { message: string };
+    }
+  | undefined;
+
+export type StreamAttachmentsReturnType =
+  | {
+      delay?: number;
+      error?: ErrorRecord;
+    }
+  | undefined;
+
+export type ExternalSystemAttachmentReducerFunction<
+  Batch,
+  NewBatch,
+  ConnectorState,
+> = ({
+  attachments,
+  adapter,
+}: {
+  attachments: Batch;
+  adapter: WorkerAdapter<ConnectorState>;
+}) => NewBatch;
+
+export type ExternalProcessAttachmentFunction = ({
+  attachment,
+  stream,
+}: {
+  attachment: NormalizedAttachment;
+  stream: ExternalSystemAttachmentStreamingFunction;
+}) => Promise<ProcessAttachmentReturnType>;
+
+export type ExternalSystemAttachmentIteratorFunction<NewBatch, ConnectorState> =
+  ({
+    reducedAttachments,
+    adapter,
+    stream,
+  }: {
+    reducedAttachments: NewBatch;
+    adapter: WorkerAdapter<ConnectorState>;
+    stream: ExternalSystemAttachmentStreamingFunction;
+  }) => Promise<ProcessAttachmentReturnType>;
+
+export interface ExternalSystemAttachmentProcessors<
+  ConnectorState,
+  Batch,
+  NewBatch,
+> {
+  reducer: ExternalSystemAttachmentReducerFunction<
+    Batch,
+    NewBatch,
+    ConnectorState
+  >;
+  iterator: ExternalSystemAttachmentIteratorFunction<NewBatch, ConnectorState>;
 }

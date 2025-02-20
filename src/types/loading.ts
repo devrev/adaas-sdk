@@ -31,6 +31,8 @@ export interface ExternalSystemAttachment {
   created_date: string;
   modified_by_id: string;
   modified_date: string;
+  parent_id?: string;
+  grand_parent_id?: string;
 }
 
 export interface ExternalSystemItem {
