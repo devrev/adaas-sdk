@@ -30,7 +30,6 @@ export function processTask<ConnectorState>({
         const adapter = new WorkerAdapter<ConnectorState>({
           event,
           adapterState,
-          parentPort,
           options,
         });
 

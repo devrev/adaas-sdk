@@ -14,13 +14,11 @@ import { LoaderEventType } from './loading';
  * @constructor
  * @param {AirdropEvent} event - The event object received from the platform
  * @param {object=} initialState - The initial state of the adapter
- * @param {MessagePort} parentPort - The parent port of the worker thread
  * @param {WorkerAdapterInterface} options - The options to create a new instance of WorkerAdapter class
  */
 export interface WorkerAdapterInterface<ConnectorState> {
   event: AirdropEvent;
   adapterState: State<ConnectorState>;
-  parentPort: MessagePort;
   options?: WorkerAdapterOptions;
 }
 
@@ -159,5 +157,4 @@ export interface WorkerData<ConnectorState> {
 export interface GetWorkerPathInterface {
   event: AirdropEvent;
   connectorWorkerPath?: string | null;
-  options?: WorkerAdapterOptions;
 }

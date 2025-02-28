@@ -8,6 +8,7 @@ import {
   LoaderEvent,
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
+import { getLibraryVersion } from './helpers';
 
 export interface EmitInterface {
   event: AirdropEvent;
@@ -25,6 +26,9 @@ export const emit = async ({
     event_context: event.payload.event_context,
     event_data: {
       ...data,
+    },
+    worker_metadata: {
+      adaas_library_version: getLibraryVersion(),
     },
   };
 

@@ -187,7 +187,6 @@ export interface EventData {
   stats_file?: string;
 }
 
-
 /**
  * WorkerMetadata is an interface that defines the structure of the worker metadata that is sent from the external extractor to ADaaS.
  */

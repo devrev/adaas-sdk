@@ -10,6 +10,8 @@ import {
   LoaderReport,
   StatsFileObject,
 } from '../types/loading';
+import { readFileSync } from 'fs';
+import * as path from 'path';
 
 export function getTimeoutErrorEventType(eventType: EventType): {
   eventType: ExtractorEventType | LoaderEventType;
@@ -165,4 +167,19 @@ export function getCircularReplacer() {
     }
     return value;
   };
+}
+
+// read adaas library version from package.json
+export function getLibraryVersion() {
+  try {
+    return JSON.parse(
+      readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8')
+    )?.version;
+  } catch (error) {
+    console.error(
+      'Error reading adaas library version from package.json',
+      error
+    );
+    return '';
+  }
 }

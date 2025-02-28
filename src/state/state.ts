@@ -104,15 +104,16 @@ export class State<ConnectorState> {
 
       this.state = state || this.state;
       console.log(
-        'State updated successfully to:',
+        'State updated successfully to',
         getPrintableState(this.state)
       );
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.error('Failed to update state.', serializeAxiosError(error));
+        console.error('Failed to update state', serializeAxiosError(error));
       } else {
-        console.error('Failed to update state.', error);
+        console.error('Failed to update state', error);
       }
+      process.exit(1);
     }
   }
 
@@ -148,7 +149,7 @@ export class State<ConnectorState> {
       this.state = JSON.parse(response.data.state);
 
       console.log(
-        'State fetched successfully. Current state:',
+        'State fetched successfully. Current state',
         getPrintableState(this.state)
       );
 
@@ -170,7 +171,7 @@ export class State<ConnectorState> {
         return this.state;
       } else {
         console.error('Failed to fetch state.', error);
-        return { message: 'Failed to fetch state.' };
+        process.exit(1);
       }
     }
   }

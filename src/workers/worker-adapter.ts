@@ -26,7 +26,7 @@ import {
 } from '../common/constants';
 import { State } from '../state/state';
 import { WorkerAdapterInterface, WorkerAdapterOptions } from '../types/workers';
-import { MessagePort } from 'node:worker_threads';
+import { parentPort } from 'node:worker_threads';
 import { emit } from '../common/control-protocol';
 import { WorkerMessageEmitted, WorkerMessageSubject } from '../types/workers';
 import { Repo } from '../repo/repo';
@@ -48,13 +48,11 @@ import { SyncMapperRecordStatus } from '../mappers/mappers.interface';
 export function createWorkerAdapter<ConnectorState>({
   event,
   adapterState,
-  parentPort,
   options,
 }: WorkerAdapterInterface<ConnectorState>): WorkerAdapter<ConnectorState> {
   return new WorkerAdapter({
     event,
     adapterState,
-    parentPort,
     options,
   });
 }
@@ -80,7 +78,6 @@ export class WorkerAdapter<ConnectorState> {
   private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];
   private hasWorkerEmitted: boolean;
-  private parentPort: MessagePort;
   private isTimeout: boolean;
   private repos: Repo[] = [];
 
@@ -93,14 +90,12 @@ export class WorkerAdapter<ConnectorState> {
   constructor({
     event,
     adapterState,
-    parentPort,
     options,
   }: WorkerAdapterInterface<ConnectorState>) {
     this.event = event;
     this.options = options;
     this.adapterState = adapterState;
     this._artifacts = [];
-    this.parentPort = parentPort;
     this.hasWorkerEmitted = false;
     this.isTimeout = false;
 
@@ -197,9 +192,7 @@ export class WorkerAdapter<ConnectorState> {
   ): Promise<void> {
     if (this.hasWorkerEmitted) {
       console.warn(
-        'Unable to emit with event type:' +
-          newEventType +
-          '. Lambda is going to be stopped.'
+        `Trying to emit event with event type: ${newEventType}. Ignoring emit request because it has already been emitted.`
       );
       return;
     }
@@ -211,6 +204,9 @@ export class WorkerAdapter<ConnectorState> {
 
     // If the extraction is done, we want to save the timestamp of the last successful sync
     if (newEventType === ExtractorEventType.ExtractionAttachmentsDone) {
+      console.log(
+        `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${this.state.lastSyncStarted}).`
+      );
       this.state.lastSuccessfulSyncStarted = this.state.lastSyncStarted;
       this.state.lastSyncStarted = '';
     }
@@ -218,11 +214,15 @@ export class WorkerAdapter<ConnectorState> {
     // We want to save the state every time we emit an event, except for the start and delete events
     if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
       console.log(
-        `Saving state before emitting event with event type: ` +
-          newEventType +
-          '.'
+        `Saving state before emitting event with event type: ${newEventType}.`
       );
-      await this.adapterState.postState(this.state);
+
+      try {
+        await this.adapterState.postState(this.state);
+      } catch (error) {
+        console.error('Error while posting state', error);
+        parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+      }
     }
 
     try {
@@ -238,27 +238,27 @@ export class WorkerAdapter<ConnectorState> {
             : {}),
         },
       });
+
       const message: WorkerMessageEmitted = {
         subject: WorkerMessageSubject.WorkerMessageEmitted,
         payload: { eventType: newEventType },
       };
       this.artifacts = [];
-      this.parentPort.postMessage(message);
       this.hasWorkerEmitted = true;
+      parentPort?.postMessage(message);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error(
-          'Error while emitting event with event type: ' + newEventType + '.',
+          `Error while emitting event with event type: ${newEventType}`,
           serializeAxiosError(error)
         );
       } else {
         console.error(
-          'Error while emitting event with event type: ' + newEventType + '.',
+          `Unknown error while emitting event with event type: ${newEventType}`,
           error
         );
       }
-
-      this.parentPort.postMessage(WorkerMessageSubject.WorkerMessageExit);
+      parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
     }
   }
 
@@ -276,27 +276,44 @@ export class WorkerAdapter<ConnectorState> {
     itemTypesToLoad,
   }: ItemTypesToLoadParams): Promise<LoadItemTypesResponse> {
     if (this.event.payload.event_type === EventType.StartLoadingData) {
+      const itemTypes = itemTypesToLoad.map(
+        (itemTypeToLoad) => itemTypeToLoad.itemType
+      );
+
+      if (!itemTypes.length) {
+        console.warn('No item types to load, returning.');
+        return {
+          reports: this.reports,
+          processed_files: this.processedFiles,
+        };
+      }
+
+      const filesToLoad = await this.getLoaderBatches({
+        supportedItemTypes: itemTypes,
+      });
       this.adapterState.state.fromDevRev = {
-        filesToLoad: await this.getLoaderBatches({
-          supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
-        }),
+        filesToLoad,
       };
     }
 
-    if (this.adapterState.state.fromDevRev?.filesToLoad.length === 0) {
+    if (
+      !this.adapterState.state.fromDevRev ||
+      !this.adapterState.state.fromDevRev.filesToLoad.length
+    ) {
       console.warn('No files to load, returning.');
       return {
         reports: this.reports,
         processed_files: this.processedFiles,
       };
     }
+
     console.log(
       'Files to load in state',
       this.adapterState.state.fromDevRev?.filesToLoad
     );
 
     outerloop: for (const fileToLoad of this.adapterState.state.fromDevRev
-      ?.filesToLoad || []) {
+      .filesToLoad) {
       const itemTypeToLoad = itemTypesToLoad.find(
         (itemTypeToLoad: ItemTypeToLoad) =>
           itemTypeToLoad.itemType === fileToLoad.itemType
@@ -307,13 +324,9 @@ export class WorkerAdapter<ConnectorState> {
           `Item type to load not found for item type: ${fileToLoad.itemType}.`
         );
 
-        await emit({
-          event: this.event,
-          eventType: LoaderEventType.DataLoadingError,
-          data: {
-            error: {
-              message: `Item type to load not found for item type: ${fileToLoad.itemType}.`,
-            },
+        await this.emit(LoaderEventType.DataLoadingError, {
+          error: {
+            message: `Item type to load not found for item type: ${fileToLoad.itemType}.`,
           },
         });
 
@@ -327,8 +340,14 @@ export class WorkerAdapter<ConnectorState> {
         })) as ExternalSystemItem[];
 
         if (!transformerFile) {
-          console.error('Transformer file not found.');
-          break outerloop;
+          console.error(
+            `Transformer file not found for artifact ID: ${fileToLoad.id}.`
+          );
+          await this.emit(LoaderEventType.DataLoadingError, {
+            error: {
+              message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
+            },
+          });
         }
 
         for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
@@ -338,14 +357,10 @@ export class WorkerAdapter<ConnectorState> {
           });
 
           if (rateLimit?.delay) {
-            await emit({
-              event: this.event,
-              eventType: LoaderEventType.DataLoadingDelay,
-              data: {
-                delay: rateLimit.delay,
-                reports: this.reports,
-                processed_files: this.processedFiles,
-              },
+            await this.emit(LoaderEventType.DataLoadingDelay, {
+              delay: rateLimit.delay,
+              reports: this.reports,
+              processed_files: this.processedFiles,
             });
 
             break outerloop;
@@ -415,6 +430,7 @@ export class WorkerAdapter<ConnectorState> {
       !this.adapterState.state.fromDevRev ||
       this.adapterState.state.fromDevRev?.filesToLoad.length === 0
     ) {
+      console.log('No files to load, returning.');
       return {
         reports: this.reports,
         processed_files: this.processedFiles,
@@ -430,7 +446,9 @@ export class WorkerAdapter<ConnectorState> {
         })) as ExternalSystemAttachment[];
 
         if (!transformerFile) {
-          console.error('Transformer file not found.');
+          console.error(
+            `Transformer file not found for artifact ID: ${fileToLoad.id}.`
+          );
           break outerloop;
         }
 
@@ -441,14 +459,10 @@ export class WorkerAdapter<ConnectorState> {
           });
 
           if (rateLimit?.delay) {
-            await emit({
-              event: this.event,
-              eventType: LoaderEventType.DataLoadingDelay,
-              data: {
-                delay: rateLimit.delay,
-                reports: this.reports,
-                processed_files: this.processedFiles,
-              },
+            await this.emit(LoaderEventType.DataLoadingDelay, {
+              delay: rateLimit.delay,
+              reports: this.reports,
+              processed_files: this.processedFiles,
             });
 
             break outerloop;
@@ -491,7 +505,7 @@ export class WorkerAdapter<ConnectorState> {
 
       const syncMapperRecord = syncMapperRecordResponse.data;
       if (!syncMapperRecord) {
-        console.error('Failed to get sync mapper record from response.');
+        console.warn('Failed to get sync mapper record from response.');
         return {
           error: {
             message: 'Failed to get sync mapper record from response.',
@@ -499,7 +513,7 @@ export class WorkerAdapter<ConnectorState> {
         };
       }
 
-      // Update item
+      // Update item in external system
       const { id, modifiedDate, delay, error } = await itemTypeToLoad.update({
         item,
         mappers: this.mappers,
@@ -509,7 +523,7 @@ export class WorkerAdapter<ConnectorState> {
       if (id) {
         if (modifiedDate) {
           try {
-            const updateSyncMapperRecordResponse = await this.mappers.update({
+            await this.mappers.update({
               id: syncMapperRecord.sync_mapper_record.id,
               sync_unit: this.event.payload.event_context.sync_unit,
               status: SyncMapperRecordStatus.OPERATIONAL,
@@ -528,14 +542,9 @@ export class WorkerAdapter<ConnectorState> {
                 add: [devrevId],
               },
             });
-
-            console.log(
-              'Updated sync mapper record',
-              JSON.stringify(updateSyncMapperRecordResponse.data)
-            );
           } catch (error) {
             if (axios.isAxiosError(error)) {
-              console.error(
+              console.warn(
                 'Failed to update sync mapper record',
                 serializeAxiosError(error)
               );
@@ -545,7 +554,7 @@ export class WorkerAdapter<ConnectorState> {
                 },
               };
             } else {
-              console.error('Failed to update sync mapper record', error);
+              console.warn('Failed to update sync mapper record', error);
               return {
                 error: {
                   message: 'Failed to update sync mapper record' + error,
@@ -562,7 +571,9 @@ export class WorkerAdapter<ConnectorState> {
           },
         };
       } else if (delay) {
-        console.log('Rate limited, delaying for', delay);
+        console.log(
+          `Rate limited while updating item in external system, delaying for ${delay} seconds.`
+        );
 
         return {
           rateLimit: {
@@ -570,7 +581,7 @@ export class WorkerAdapter<ConnectorState> {
           },
         };
       } else {
-        console.error('Failed to update item', error);
+        console.warn('Failed to update item in external system', error);
         return {
           report: {
             item_type: itemTypeToLoad.itemType,
@@ -579,11 +590,11 @@ export class WorkerAdapter<ConnectorState> {
         };
       }
 
-      // Update mapper (optional)
+      // TODO: Update mapper (optional)
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 404) {
-          // Create item
+          // Create item in external system if mapper record not found
           const { id, delay, error } = await itemTypeToLoad.create({
             item,
             mappers: this.mappers,
@@ -593,19 +604,12 @@ export class WorkerAdapter<ConnectorState> {
           if (id) {
             // Create mapper
             try {
-              const createdSyncMapperRecordResponse = await this.mappers.create(
-                {
-                  sync_unit: this.event.payload.event_context.sync_unit,
-                  status: SyncMapperRecordStatus.OPERATIONAL,
-                  external_ids: [id],
-                  targets: [devrevId],
-                }
-              );
-
-              console.log(
-                'Created sync mapper record',
-                createdSyncMapperRecordResponse.data.sync_mapper_record.id
-              );
+              await this.mappers.create({
+                sync_unit: this.event.payload.event_context.sync_unit,
+                status: SyncMapperRecordStatus.OPERATIONAL,
+                external_ids: [id],
+                targets: [devrevId],
+              });
 
               return {
                 report: {
@@ -615,7 +619,7 @@ export class WorkerAdapter<ConnectorState> {
               };
             } catch (error) {
               if (axios.isAxiosError(error)) {
-                console.error(
+                console.warn(
                   'Failed to create sync mapper record',
                   serializeAxiosError(error)
                 );
@@ -626,7 +630,7 @@ export class WorkerAdapter<ConnectorState> {
                 };
               }
 
-              console.error('Failed to create sync mapper record', error);
+              console.warn('Failed to create sync mapper record', error);
               return {
                 error: {
                   message: 'Failed to create sync mapper record' + error,
@@ -640,7 +644,7 @@ export class WorkerAdapter<ConnectorState> {
               },
             };
           } else {
-            console.error('Failed to create item', error);
+            console.warn('Failed to create item in external system', error);
             return {
               report: {
                 item_type: itemTypeToLoad.itemType,
@@ -649,7 +653,7 @@ export class WorkerAdapter<ConnectorState> {
             };
           }
         } else {
-          console.error(
+          console.warn(
             'Failed to get sync mapper record',
             serializeAxiosError(error)
           );
@@ -661,7 +665,7 @@ export class WorkerAdapter<ConnectorState> {
         }
       }
 
-      console.error('Failed to get sync mapper record', error);
+      console.warn('Failed to get sync mapper record', error);
       return {
         error: {
           message: 'Failed to get sync mapper record' + error,
@@ -670,10 +674,10 @@ export class WorkerAdapter<ConnectorState> {
     }
   }
 
-  processAttachment = async (
+  async processAttachment(
     attachment: NormalizedAttachment,
     stream: ExternalSystemAttachmentStreamingFunction
-  ): Promise<ProcessAttachmentReturnType> => {
+  ): Promise<ProcessAttachmentReturnType> {
     const { httpStream, delay, error } = await stream({
       item: attachment,
       event: this.event,
@@ -731,7 +735,7 @@ export class WorkerAdapter<ConnectorState> {
       await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
     }
     return;
-  };
+  }
 
   async loadAttachment({
     item,
@@ -761,7 +765,7 @@ export class WorkerAdapter<ConnectorState> {
         },
       };
     } else {
-      console.error('Failed to create item', error);
+      console.warn('Failed to create attachment in external system', error);
       return {
         report: {
           item_type: 'attachment',

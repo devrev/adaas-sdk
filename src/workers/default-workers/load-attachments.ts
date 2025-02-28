@@ -5,8 +5,9 @@ processTask({
   task: async ({ adapter }) => {
     await adapter.emit(LoaderEventType.UnknownEventType, {
       error: {
-        message: 'Event type ' + adapter.event.payload.event_type + ' not supported.'
-       }
+        message:
+          'Event type ' + adapter.event.payload.event_type + ' not supported.',
+      },
     });
   },
   onTimeout: async ({ adapter }) => {

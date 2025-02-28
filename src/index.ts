@@ -1,6 +1,7 @@
 export * from './deprecated/adapter';
 export * from './deprecated/demo-extractor';
 export * from './deprecated/uploader';
+export * from './deprecated/http/client';
 
 export * from './types';
 export * from './http';

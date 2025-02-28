@@ -6,33 +6,26 @@ const axiosClient = axios.create();
 axiosRetry(axiosClient, {
   retries: 5,
   retryDelay: (retryCount, error) => {
+    // exponential backoff algorithm: 1 * 2 ^ retryCount * 1000ms
+    const delay = axiosRetry.exponentialDelay(retryCount, error, 1000);
+
     console.warn(
-      'Retry attempt: ' + retryCount + 'to url: ' + error.config?.url + '.'
+      `Request to ${error.config?.url} failed with response status code ${error.response?.status}. Method ${error.config?.method}. Retry count: ${retryCount}. Retrying in ${Math.round(delay / 1000)}s.`
     );
 
-    // Exponential backoff algorithm: 1 * 2 ^ retryCount * 1000ms
-    return axiosRetry.exponentialDelay(retryCount, error, 1000);
+    return delay;
   },
   retryCondition: (error: AxiosError) => {
-    if (
-      error.response?.status &&
-      error.response?.status >= 500 &&
-      error.response?.status <= 599
-    ) {
-      return true;
-    } else if (error.response?.status === 429) {
-      console.log(
-        'Rate limit exceeded. Delay: ' + error.response.headers['retry-after']
-      );
-      return false;
-    } else {
-      return false;
-    }
+    return (
+      axiosRetry.isNetworkOrIdempotentRequestError(error) &&
+      error.response?.status !== 429
+    );
   },
-  onMaxRetryTimesExceeded(error: AxiosError, retryCount) {
-    console.log(`Max retries attempted: ${retryCount}`);
-    delete error.config?.headers.Authorization;
+  onMaxRetryTimesExceeded(error: AxiosError) {
+    delete error.config?.headers?.authorization;
+    delete error.config?.headers?.Authorization;
     delete error.request._header;
+    console.warn('Max retry times exceeded. Error', error);
   },
 });
 

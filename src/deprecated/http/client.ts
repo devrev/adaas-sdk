@@ -6,8 +6,8 @@ import axios, {
 import {
   RATE_LIMIT_EXCEEDED,
   RATE_LIMIT_EXCEEDED_STATUS_CODE,
-} from './constants';
-import { HTTPResponse } from './types';
+} from '../../http/constants';
+import { HTTPResponse } from '../../http/types';
 
 export const defaultResponse: HTTPResponse = {
   data: {

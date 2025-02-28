@@ -2,6 +2,12 @@
 
 ## Release Notes
 
+### v1.2.2
+
+- Add library version as a part of control protocol.
+- Improve axios client and adapter logging.
+- Fix bugs related to state handling.
+
 ### v1.2.1
 
 - Reduced the `delayFactor` to minimize unnecessary delays.

@@ -1,5 +1,5 @@
 import fs, { promises as fsPromises } from 'fs';
-import { axios, axiosDevRevClient } from '../http/axios-devrev-client';
+import { axios, axiosClient } from '../http/axios-client';
 import zlib from 'zlib';
 import { jsonl } from 'js-jsonl';
 import FormData from 'form-data';
@@ -48,7 +48,7 @@ export class Uploader {
       await this.downloadToLocal(itemType, fetchedObjects);
     }
 
-    // 1. Compress the fetched objects to a gzipped jsonl object
+    // compress the fetched objects to a gzipped jsonl object
     const file = this.compressGzip(jsonl.stringify(fetchedObjects));
     if (!file) {
       return {
@@ -58,7 +58,7 @@ export class Uploader {
     const filename = itemType + '.jsonl.gz';
     const fileType = 'application/x-gzip';
 
-    // 2. Prepare the artifact for uploading
+    // prepare the artifact for uploading
     const preparedArtifact = await this.prepareArtifact(filename, fileType);
     if (!preparedArtifact) {
       return {
@@ -66,7 +66,7 @@ export class Uploader {
       };
     }
 
-    // 3. Upload the file to the prepared artifact
+    // upload the file to the prepared artifact
     const uploadedArtifact = await this.uploadToArtifact(
       preparedArtifact,
       file
@@ -77,7 +77,7 @@ export class Uploader {
       };
     }
 
-    // 4. Return the artifact information to the platform
+    // return the artifact information to the platform
     const artifact: Artifact = {
       id: preparedArtifact.id,
       item_type: itemType,
@@ -123,15 +123,11 @@ export class Uploader {
     formData.append('file', file);
 
     try {
-      const response = await axiosDevRevClient.post(
-        preparedArtifact.url,
-        formData,
-        {
-          headers: {
-            ...formData.getHeaders(),
-          },
-        }
-      );
+      const response = await axiosClient.post(preparedArtifact.url, formData, {
+        headers: {
+          ...formData.getHeaders(),
+        },
+      });
 
       return response;
     } catch (error) {
@@ -164,18 +160,14 @@ export class Uploader {
       return;
     }
     try {
-      const response = await axiosDevRevClient.post(
-        preparedArtifact.url,
-        formData,
-        {
-          headers: {
-            ...formData.getHeaders(),
-            ...(!fileStreamResponse.headers['content-length'] && {
-              'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
-            }),
-          },
-        }
-      );
+      const response = await axiosClient.post(preparedArtifact.url, formData, {
+        headers: {
+          ...formData.getHeaders(),
+          ...(!fileStreamResponse.headers['content-length'] && {
+            'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
+          }),
+        },
+      });
       return response;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -250,7 +242,7 @@ export class Uploader {
 
   private async downloadArtifact(artifactUrl: string): Promise<Buffer | void> {
     try {
-      const response = await axiosDevRevClient.get(artifactUrl, {
+      const response = await axiosClient.get(artifactUrl, {
         responseType: 'arraybuffer',
       });
 

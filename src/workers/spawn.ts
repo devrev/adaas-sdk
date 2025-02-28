@@ -89,7 +89,6 @@ export async function spawn<ConnectorState>({
   const script = getWorkerPath({
     event,
     connectorWorkerPath: workerPath,
-    options,
   });
 
   if (script) {
