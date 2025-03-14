@@ -39,8 +39,8 @@ export interface NormalizedAttachment {
   url: string;
   id: string;
   file_name: string;
-  author_id: string;
   parent_id: string;
+  author_id?: string;
   grand_parent_id?: number;
 }
 

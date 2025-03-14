@@ -1,4 +1,7 @@
 import axios from 'axios';
+import { hideBin } from 'yargs/helpers';
+import yargs from 'yargs';
+
 import {
   AirdropEvent,
   EventType,
@@ -90,6 +93,21 @@ export async function spawn<ConnectorState>({
     event,
     connectorWorkerPath: workerPath,
   });
+
+  if (options?.isLocalDevelopment) {
+    logger.warn(
+      'WARN: isLocalDevelopment is deprecated. Please use the -- local flag instead.'
+    );
+  }
+
+  // read the command line arguments to check if the local flag is passed
+  const argv = await yargs(hideBin(process.argv)).argv;
+  if (argv._.includes('local')) {
+    options = {
+      ...(options || {}),
+      isLocalDevelopment: true,
+    };
+  }
 
   if (script) {
     try {

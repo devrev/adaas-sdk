@@ -148,6 +148,7 @@ export interface EventContext {
   mode: string;
   request_id: string;
   snap_in_slug: string;
+  snap_in_version_id: string;
   sync_run: string;
   sync_run_id: string;
   sync_tier: string;

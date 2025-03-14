@@ -45,6 +45,7 @@ export function createEvent({
         mode: 'test_mode',
         request_id: 'test_request_id',
         snap_in_slug: 'test_snap_in_slug',
+        snap_in_version_id: 'test_snap_in_version_id',
         sync_run: 'test_sync_run',
         sync_run_id: 'test_sync_run_id',
         sync_tier: 'test_sync_tier',

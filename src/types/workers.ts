@@ -1,5 +1,4 @@
 import { Worker } from 'worker_threads';
-import { MessagePort } from 'node:worker_threads';
 
 import { State } from '../state/state';
 import { WorkerAdapter } from '../workers/worker-adapter';

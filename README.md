@@ -2,6 +2,13 @@
 
 ## Release Notes
 
+### v1.2.3
+
+- Add `local` flag to use for local development of the ADaaS snap-ins.
+- Send library version, snap-in version and snap-in slug in headers while emitting.
+- Make `actor_id` field optional for `SsorAttachment` interface.
+- Fix bugs related to event handling, error logging.
+
 ### v1.2.2
 
 - Add library version as a part of control protocol.

@@ -1,4 +1,5 @@
 import { EventType } from '../types/extraction';
+import { getLibraryVersion } from './helpers';
 
 export const STATELESS_EVENT_TYPES = [
   EventType.ExtractionExternalSyncUnitsStart,
@@ -40,3 +41,5 @@ export const AIRDROP_DEFAULT_ITEM_TYPES = {
   ATTACHMENTS: 'attachments',
   SSOR_ATTACHMENT: 'ssor_attachment',
 };
+
+export const LIBRARY_VERSION = getLibraryVersion();

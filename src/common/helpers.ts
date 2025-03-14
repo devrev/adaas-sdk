@@ -60,6 +60,12 @@ export function getTimeoutErrorEventType(eventType: EventType): {
         eventType: LoaderEventType.LoaderStateDeletionError,
       };
 
+    case EventType.StartLoadingAttachments:
+    case EventType.ContinueLoadingAttachments:
+      return {
+        eventType: LoaderEventType.AttachmentLoadingError,
+      };
+
     case EventType.StartDeletingLoaderAttachmentState:
       return {
         eventType: LoaderEventType.LoaderAttachmentStateDeletionError,
@@ -172,9 +178,14 @@ export function getCircularReplacer() {
 // read adaas library version from package.json
 export function getLibraryVersion() {
   try {
-    return JSON.parse(
+    const version = JSON.parse(
       readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8')
     )?.version;
+
+    if (version) {
+      return version;
+    }
+    return '';
   } catch (error) {
     console.error(
       'Error reading adaas library version from package.json',

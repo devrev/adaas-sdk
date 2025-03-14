@@ -727,10 +727,13 @@ export class WorkerAdapter<ConnectorState> {
         parent_id: {
           external: attachment.parent_id,
         },
-        actor_id: {
-          external: attachment.author_id,
-        },
       };
+
+      if (attachment.author_id) {
+        ssorAttachment.actor_id = {
+          external: attachment.author_id,
+        };
+      }
 
       await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
     }

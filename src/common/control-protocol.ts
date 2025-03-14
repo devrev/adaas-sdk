@@ -8,7 +8,7 @@ import {
   LoaderEvent,
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
-import { getLibraryVersion } from './helpers';
+import { LIBRARY_VERSION } from './constants';
 
 export interface EmitInterface {
   event: AirdropEvent;
@@ -28,7 +28,7 @@ export const emit = async ({
       ...data,
     },
     worker_metadata: {
-      adaas_library_version: getLibraryVersion(),
+      adaas_library_version: LIBRARY_VERSION,
     },
   };
 
@@ -42,6 +42,9 @@ export const emit = async ({
         Accept: 'application/json, text/plain, */*',
         Authorization: event.context.secrets.service_account_token,
         'Content-Type': 'application/json',
+        'X-DevRev-Client-Platform': event.payload.event_context.snap_in_slug,
+        'X-DevRev-Client-Id': event.payload.event_context.snap_in_version_id,
+        'X-DevRev-Client-Version': LIBRARY_VERSION,
       },
     }
   );

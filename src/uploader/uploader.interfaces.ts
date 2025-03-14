@@ -65,7 +65,7 @@ export interface SsorAttachment {
   parent_id: {
     external: string;
   };
-  actor_id: {
+  actor_id?: {
     external: string;
   };
 }
