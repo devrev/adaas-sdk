@@ -853,8 +853,13 @@ export class WorkerAdapter<ConnectorState> {
 
         for (const attachment of attachmentsToProcess) {
           const response = await this.processAttachment(attachment, stream);
-          if (response?.delay || response?.error) {
+
+          if (response?.delay) {
             return response;
+          } else if (response?.error) {
+            console.warn(
+              `Skipping attachment with ID ${attachment.id} due to error.`
+            );
           }
 
           if (this.state.toDevRev) {

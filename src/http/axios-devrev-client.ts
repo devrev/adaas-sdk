@@ -7,7 +7,7 @@ axiosRetry(axiosDevRevClient, {
   retries: 5,
   retryDelay: (retryCount, error) => {
     console.warn(
-      'Retry attempt: ' + retryCount + 'to url: ' + error.config?.url + '.'
+      'Retry attempt: ' + retryCount + ' to url: ' + error.config?.url + '.'
     );
     if (error.response) {
       const retry_after = error.response?.headers['retry-after'];

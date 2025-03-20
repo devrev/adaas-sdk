@@ -2,6 +2,10 @@
 
 ## Release Notes
 
+### v1.2.4
+
+- Do not fail the extraction of attachments if streaming of single attachment fails.
+
 ### v1.2.3
 
 - Add `local` flag to use for local development of the ADaaS snap-ins.
