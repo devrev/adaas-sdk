@@ -3,7 +3,6 @@ import { axios, axiosClient } from '../http/axios-client';
 import zlib from 'zlib';
 import { jsonl } from 'js-jsonl';
 import FormData from 'form-data';
-import { betaSDK, client } from '@devrev/typescript-sdk';
 
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
@@ -11,6 +10,7 @@ import { AirdropEvent } from '../types/extraction';
 
 import {
   Artifact,
+  ArtifactsPrepareResponse,
   UploadResponse,
   UploaderFactoryInterface,
 } from './uploader.interfaces';
@@ -19,15 +19,14 @@ import { AxiosResponse } from 'axios';
 
 export class Uploader {
   private event: AirdropEvent;
-  private betaDevrevSdk: betaSDK.Api<unknown>;
   private isLocalDevelopment?: boolean;
+  private devrevApiEndpoint: string;
+  private devrevApiToken: string;
 
   constructor({ event, options }: UploaderFactoryInterface) {
     this.event = event;
-    this.betaDevrevSdk = client.setupBeta({
-      endpoint: event.execution_metadata.devrev_endpoint,
-      token: event.context.secrets.service_account_token,
-    });
+    this.devrevApiEndpoint = event.execution_metadata.devrev_endpoint;
+    this.devrevApiToken = event.context.secrets.service_account_token;
     this.isLocalDevelopment = options?.isLocalDevelopment;
   }
 
@@ -91,12 +90,20 @@ export class Uploader {
   public async prepareArtifact(
     filename: string,
     fileType: string
-  ): Promise<betaSDK.ArtifactsPrepareResponse | void> {
+  ): Promise<ArtifactsPrepareResponse | void> {
     try {
-      const response = await this.betaDevrevSdk.artifactsPrepare({
-        file_name: filename,
-        file_type: fileType,
-      });
+      const response = await axiosClient.post(
+        `${this.devrevApiEndpoint}/artifacts.prepare`,
+        {
+          file_name: filename,
+          file_type: fileType,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${this.devrevApiToken}`,
+          },
+        }
+      );
 
       return response.data;
     } catch (error) {
@@ -112,9 +119,8 @@ export class Uploader {
   }
 
   private async uploadToArtifact(
-    preparedArtifact: betaSDK.ArtifactsPrepareResponse,
+    preparedArtifact: ArtifactsPrepareResponse,
     file: Buffer
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<AxiosResponse | void> {
     const formData = new FormData();
     for (const field of preparedArtifact.form_data) {
@@ -143,29 +149,33 @@ export class Uploader {
   }
 
   public async streamToArtifact(
-    preparedArtifact: betaSDK.ArtifactsPrepareResponse,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    preparedArtifact: ArtifactsPrepareResponse,
     fileStreamResponse: any
   ): Promise<AxiosResponse | void> {
     const formData = new FormData();
     for (const field of preparedArtifact.form_data) {
       formData.append(field.key, field.value);
     }
-
     formData.append('file', fileStreamResponse.data);
 
     if (
       fileStreamResponse.headers['content-length'] > MAX_DEVREV_ARTIFACT_SIZE
     ) {
+      console.warn(
+        `File size exceeds the maximum limit of ${MAX_DEVREV_ARTIFACT_SIZE} bytes.`
+      );
       return;
     }
+
     try {
       const response = await axiosClient.post(preparedArtifact.url, formData, {
         headers: {
           ...formData.getHeaders(),
-          ...(!fileStreamResponse.headers['content-length'] && {
-            'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
-          }),
+          ...(!fileStreamResponse.headers['content-length']
+            ? {
+                'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
+              }
+            : {}),
         },
       });
       return response;
@@ -190,7 +200,7 @@ export class Uploader {
     attachments?: NormalizedAttachment[];
     error?: { message: string };
   }> {
-    // 1. Get the URL of the attachments metadata artifact
+    // Get the URL of the attachments metadata artifact
     const artifactUrl = await this.getArtifactDownloadUrl(artifact);
 
     if (!artifactUrl) {
@@ -199,7 +209,7 @@ export class Uploader {
       };
     }
 
-    // 2. Download artifact from the URL
+    // Download artifact from the URL
     const gzippedJsonlObject = await this.downloadArtifact(artifactUrl);
     if (!gzippedJsonlObject) {
       return {
@@ -207,7 +217,7 @@ export class Uploader {
       };
     }
 
-    // 3. Decompress the gzipped jsonl object
+    // Decompress the gzipped jsonl object
     const jsonlObject = this.decompressGzip(gzippedJsonlObject);
     if (!jsonlObject) {
       return {
@@ -215,7 +225,7 @@ export class Uploader {
       };
     }
 
-    // 4. Parse the jsonl object to get the attachment metadata
+    // Parse the jsonl object to get the attachment metadata
     const jsonObject = this.parseJsonl(jsonlObject) as NormalizedAttachment[];
     if (!jsonObject) {
       return {
@@ -230,9 +240,17 @@ export class Uploader {
     artifactId: string
   ): Promise<string | void> {
     try {
-      const response = await this.betaDevrevSdk.artifactsLocate({
-        id: artifactId,
-      });
+      const response = await axiosClient.post(
+        `${this.devrevApiEndpoint}/artifacts.locate`,
+        {
+          id: artifactId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${this.devrevApiToken}`,
+          },
+        }
+      );
 
       return response.data.url;
     } catch (error) {

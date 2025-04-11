@@ -2,6 +2,13 @@
 
 ## Release Notes
 
+### v1.2.5
+
+- Replace DevRev Typescript SDK requests with Axios for uploading and downloading artifacts.
+- Removed unneccessary postState from default workers.
+- Add batch size option.
+- Fix bugs related to attachment streaming.
+
 ### v1.2.4
 
 - Do not fail the extraction of attachments if streaming of single attachment fails.
@@ -330,14 +337,14 @@ export interface NormalizedAttachment {
   url: string;
   id: string;
   file_name: string;
-  author_id: string;
   parent_id: string;
+  author_id?: string;
 }
 ```
 
 ## Loading phases
 
-### 1. Loading Data
+### 1. Data Loading
 
 This phase is defined in `load-data.ts` and is responsible for loading the data to the external system.
 
@@ -377,35 +384,3 @@ Loading is done by providing an ordered list of itemTypes to load and their resp
 The loading functions `create` and `update` provide loading to the external system. They provide denormalization of the records to the schema of the external system and provide HTTP calls to the external system. Both loading functions must handle rate limiting for the external system and handle errors.
 
 Functions return an ID and modified date of the record in the external system, or specify rate-liming offset or errors, if the record could not be created or updated.
-
-### 2. Loading Attachments
-
-This phase is defined in `load-attachments.ts` and is responsible for loading the attachments to the external system.
-
-Loading is done by providing the create function to create attachments in the external system.
-
-```typescript
-processTask({
-  task: async ({ adapter }) => {
-    const { reports, processed_files } = await adapter.loadAttachments({
-      create,
-    });
-
-    await adapter.emit(LoaderEventType.AttachmentLoadingDone, {
-      reports,
-      processed_files,
-    });
-  },
-  onTimeout: async ({ adapter }) => {
-    await adapter.postState();
-    await adapter.emit(LoaderEventType.AttachmentLoadingProgress, {
-      reports: adapter.reports,
-      processed_files: adapter.processedFiles,
-    });
-  },
-});
-```
-
-The loading function `create` provides loading to the external system, to make API calls to the external system to create the attachments and handle errors and external system's rate limiting.
-
-Functions return an ID and modified date of the record in the external system, specify rate-liming back-off, or log errors, if the attachment could not be created.

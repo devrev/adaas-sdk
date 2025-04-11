@@ -1,4 +1,4 @@
-import { axios } from '../http/axios-devrev-client';
+import { axios } from '../http/axios-client';
 import {
   AirdropEvent,
   ExtractorEventType,
@@ -700,9 +700,7 @@ export class WorkerAdapter<ConnectorState> {
       );
       if (!preparedArtifact) {
         console.warn(
-          'Error while preparing artifact for attachment ID ' +
-            attachment.id +
-            '. Skipping attachment'
+          `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment.`
         );
         return;
       }
@@ -714,7 +712,7 @@ export class WorkerAdapter<ConnectorState> {
 
       if (!uploadedArtifact) {
         console.warn(
-          'Error while preparing artifact for attachment ID ' + attachment.id
+          `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment.`
         );
         return;
       }
@@ -802,14 +800,26 @@ export class WorkerAdapter<ConnectorState> {
       },
     ];
     this.initializeRepos(repos);
-    const attachmentsState = (
-      this.state.toDevRev?.attachmentsMetadata.artifactIds || []
-    ).slice();
 
-    console.log('Attachments metadata artifact IDs', attachmentsState);
-    for (const attachmentsMetadataArtifactId of attachmentsState) {
+    const attachmentsMetadataArtifactIds =
+      this.state.toDevRev?.attachmentsMetadata?.artifactIds;
+
+    if (
+      !attachmentsMetadataArtifactIds ||
+      attachmentsMetadataArtifactIds.length === 0
+    ) {
+      console.log(`No attachments metadata artifact IDs found in state.`);
+
+      return;
+    } else {
       console.log(
-        `Started processing attachments for artifact ID: ${attachmentsMetadataArtifactId}.`
+        `Found ${attachmentsMetadataArtifactIds.length} attachments metadata artifact IDs in state.`
+      );
+    }
+
+    for (const attachmentsMetadataArtifactId of attachmentsMetadataArtifactIds) {
+      console.log(
+        `Started processing attachments for attachments metadata artifact ID: ${attachmentsMetadataArtifactId}.`
       );
 
       const { attachments, error } =
@@ -831,8 +841,13 @@ export class WorkerAdapter<ConnectorState> {
         continue;
       }
 
+      console.log(
+        `Found ${attachments.length} attachments for artifact ID: ${attachmentsMetadataArtifactId}.`
+      );
+
       if (processors) {
         console.log(`Using custom processors for attachments.`);
+
         const { reducer, iterator } = processors;
         const reducedAttachments = reducer({ attachments, adapter: this });
 
@@ -841,6 +856,7 @@ export class WorkerAdapter<ConnectorState> {
           adapter: this,
           stream,
         });
+
         if (response?.delay || response?.error) {
           return response;
         }

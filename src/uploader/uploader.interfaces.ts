@@ -19,7 +19,6 @@ export interface Artifact {
 
 /**
  * ArtifactsPrepareResponse is an interface that defines the structure of the response from the prepare artifacts endpoint.
- * @deprecated
  */
 export interface ArtifactsPrepareResponse {
   url: string;

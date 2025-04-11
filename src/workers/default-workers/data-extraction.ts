@@ -100,7 +100,6 @@ processTask({
     }
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.postState();
     await adapter.emit(ExtractorEventType.ExtractionDataProgress, {
       progress: 50,
     });

@@ -1,4 +1,4 @@
-import { axiosDevRevClient } from '../../http/axios-devrev-client';
+import { axiosClient } from '../../http/axios-client';
 import { betaSDK, client } from '@devrev/typescript-sdk';
 import fs, { promises as fsPromises } from 'fs';
 import { createFormData } from '../common/helpers';
@@ -108,15 +108,11 @@ export class Uploader {
   ): Promise<any | null> {
     const formData = createFormData(preparedArtifact, fetchedObjects);
     try {
-      const response = await axiosDevRevClient.post(
-        preparedArtifact.url,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form',
-          },
-        }
-      );
+      const response = await axiosClient.post(preparedArtifact.url, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       return response;
     } catch (error) {

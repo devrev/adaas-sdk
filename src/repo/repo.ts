@@ -12,6 +12,7 @@ import {
   NormalizedItem,
   NormalizedAttachment,
 } from './repo.interfaces';
+import { WorkerAdapterOptions } from 'types/workers';
 
 export class Repo {
   readonly itemType: string;
@@ -19,6 +20,7 @@ export class Repo {
   private normalize?: (item: Item) => NormalizedItem | NormalizedAttachment;
   private uploader: Uploader;
   private onUpload: (artifact: Artifact) => void;
+  private options?: WorkerAdapterOptions;
 
   constructor({
     event,
@@ -32,6 +34,7 @@ export class Repo {
     this.normalize = normalize;
     this.onUpload = onUpload;
     this.uploader = new Uploader({ event, options });
+    this.options = options;
   }
 
   getItems(): (NormalizedItem | NormalizedAttachment | Item)[] {
@@ -98,9 +101,10 @@ export class Repo {
     this.items.push(...recordsToPush);
 
     // Upload in batches while the number of items exceeds the batch size
-    while (this.items.length >= ARTIFACT_BATCH_SIZE) {
-      // Slice out a batch of ARTIFACT_BATCH_SIZE items to upload
-      const batch = this.items.splice(0, ARTIFACT_BATCH_SIZE);
+    const batchSize = this.options?.batchSize || ARTIFACT_BATCH_SIZE;
+    while (this.items.length >= batchSize) {
+      // Slice out a batch of batchSize items to upload
+      const batch = this.items.splice(0, batchSize);
 
       try {
         // Upload the batch

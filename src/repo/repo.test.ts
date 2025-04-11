@@ -19,7 +19,6 @@ describe('Repo class push method', () => {
       itemType: 'test_item_type',
       normalize,
       onUpload: jest.fn(),
-      options: {},
     });
   });
 
@@ -104,5 +103,45 @@ describe('Repo class push method', () => {
     expect(uploadSpy).toHaveBeenCalledTimes(2); // Check that upload was called twice
 
     uploadSpy.mockRestore();
+  });
+
+  describe('should take batch size into account', () => {
+    beforeEach(() => {
+      repo = new Repo({
+        event: createEvent({ eventType: EventType.ExtractionDataStart }),
+        itemType: 'test_item_type',
+        normalize,
+        onUpload: jest.fn(),
+        options: {
+          batchSize: 50,
+        },
+      });
+    });
+
+    it('should empty the items array after pushing 50 items with batch size of 50', async () => {
+      const items = createItems(50);
+      await repo.push(items);
+      expect(repo.getItems()).toEqual([]);
+    });
+
+    it('should leave 5 items in the items array after pushing 205 items with batch size of 50', async () => {
+      const items = createItems(205);
+      await repo.push(items);
+
+      expect(repo.getItems().length).toBe(5);
+    });
+
+    it('should upload 4 batches of 50 and leave 5 items in the items array after pushing 205 items with batch size of 50', async () => {
+      const uploadSpy = jest.spyOn(repo, 'upload');
+
+      const items = createItems(205);
+      await repo.push(items);
+
+      expect(normalize).toHaveBeenCalledTimes(205);
+      expect(repo.getItems().length).toBe(5);
+      expect(uploadSpy).toHaveBeenCalledTimes(4);
+
+      uploadSpy.mockRestore();
+    });
   });
 });
