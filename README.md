@@ -1,11 +1,11 @@
-# Airdrop SDK Library
+# Airdrop SDK
 
 [![Coverage Status](https://coveralls.io/repos/github/devrev/adaas-sdk/badge.svg?branch=main&t=s4Otlm)](https://coveralls.io/github/devrev/adaas-sdk?branch=main)
 
 ## Overview
 
-The Airdrop SDK Library for TypeScript helps developers build snap-ins that integrate with DevRev’s Airdrop platform. 
-This library simplifies the workflow for handling data extraction and loading, event-driven actions, state management, and artifact handling.
+The Airdrop SDK for TypeScript helps developers build snap-ins that integrate with DevRev’s Airdrop platform. 
+This SDK simplifies the workflow for handling data extraction and loading, event-driven actions, state management, and artifact handling.
 
 It provides features such as:
 
