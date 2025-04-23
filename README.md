@@ -1,135 +1,297 @@
-# ADaaS Library
-
-## Release Notes
-
-### v1.2.5
-
-- Add batch size option.
-- Replace DevRev Typescript SDK requests with Axios for uploading and downloading artifacts.
-- Remove unneccessary postState from default workers.
-- Fix bugs related to attachment streaming.
-
-### v1.2.4
-
-- Do not fail the extraction of attachments if streaming of single attachment fails.
-
-### v1.2.3
-
-- Add `local` flag to use for local development of the ADaaS snap-ins.
-- Send library version, snap-in version and snap-in slug in headers while emitting.
-- Make `actor_id` field optional for `SsorAttachment` interface.
-- Fix bugs related to event handling, error logging.
-
-### v1.2.2
-
-- Add library version as a part of control protocol.
-- Improve axios client and adapter logging.
-- Fix bugs related to state handling.
-
-### v1.2.1
-
-- Reduced the `delayFactor` to minimize unnecessary delays.
-- Correct the setting of the `lastSyncStarted` timestamp.
-- Improve logging for attachment extraction and loading.
-- Fix several bugs related to the control protocol.
-
-### v1.2.0
-
-- Add support for loading attachments from DevRev to external system.
-
-### v1.1.6
-
-- Add exponential retry and handle rate-limiting towards DevRev.
-- Gracefully handle failure to upload extracted attachments.
-
-### v1.1.5
-
-- Increase `delayFactor` and number of retries for the exponential backoff retry mechanism for HTTP requests.
-- Provide an inject function for streaming attachments.
-- Fix the attachments streaming bug.
-
-### v1.1.4
-
-- Provide log lines and stack traces for runtime worker errors.
-
-### v1.1.3
-
-- Export `axios` and `axiosClient` with the exponential backoff retry mechanism for HTTP requests and omit Authorization headers from Axios errors.
-- Resolve circular structure logging issues.
-- Fix the attachments metadata normalization bug.
-- Improve repository logging.
-
-### v1.1.2
-
-- Unify incoming and outgoing event context.
-- Add `dev_oid` to logger tags.
-
-### v1.1.1
-
-- Add default workers for loading deletion events.
-
-### v1.1.0
-
-- Support sync from DevRev to the external system. (Known limitations: no support for loading attachments.)
-
-### v1.0.4
-
-- Fix logging from worker threads.
-
-### v1.0.3
-
-- Add release notes.
-
-### v1.0.2
-
-- Fix bugs and improve local development.
-- Expose `formatAxiosError` function for error handling.
-
-### v1.0.1
-
-- Fix bugs and improve logging.
-
-### v1.0.0
-
-- Enable extractions to use the full lambda runtime and gracefully handle execution context timeout.
-- Simplify metadata and data normalization and uploading with the repo implementation.
-- Provide default handling of the attachment extraction phase in the ADaaS SDK library.
-- Reduce file size and streamline processes with gzip compression.
-- Fix bugs and improve error handling.
-
-### v0.0.3
-
-- Support new recipe management.
-
-### v0.0.2
-
-- Support the State API.
-- Provide an HTTP client for API requests.
-- Create local artifact files in the local development environment.
-- Improve logging.
-
-### v0.0.1
-
-- Implement a demo of the ADaaS snap-in.
-- Add an adapter for the ADaaS control protocol with helper functions.
-- Provide an uploader for uploading artifacts.
-
-# Overview
+# Airdrop SDK Library
 
 [![Coverage Status](https://coveralls.io/repos/github/devrev/adaas-sdk/badge.svg?branch=main&t=s4Otlm)](https://coveralls.io/github/devrev/adaas-sdk?branch=main)
 
-The ADaaS (Airdrop-as-a-Service) Library for TypeScript helps developers build Snap-ins that integrate with DevRev’s ADaaS platform. This library simplifies the workflow for handling data extraction and loading, event-driven actions, state management, and artifact handling.
+## Overview
+
+The Airdrop SDK Library for TypeScript helps developers build snap-ins that integrate with DevRev’s Airdrop platform. 
+This library simplifies the workflow for handling data extraction and loading, event-driven actions, state management, and artifact handling.
 
 It provides features such as:
 
-- Type Definitions: Structured types for ADaaS control protocol
+- Type Definitions: Structured types for Airdrop control protocol
 - Event Management: Easily emit events for different extraction or loading phases
 - State Handling: Update and access state in real-time within tasks
 - Artifact Management: Supports batched storage of artifacts
 - Error & Timeout Support: Error handling and timeout management for long-running tasks
 
-# Installation
+## Installation
 
 ```bash
 npm install @devrev/ts-adaas
+```
+
+## Reference
+
+### `spawn` function
+
+This function initializes a new worker thread and oversees its lifecycle. 
+It should be invoked when the snap-in receives a message from the Airdrop platform.
+The worker script provided then handles the event accordingly.
+
+#### Usage
+
+```typescript
+spawn({ event, initialState, workerPath, options })
+```
+
+#### Parameters
+
+* _event_
+  
+  Required. An object of type __AirdropEvent__ that is received from the Airdrop platform.
+
+* _initialState_
+
+  Required. Object of __any__ type that represents the initial state of the snap-in.
+
+* _workerPath_
+
+  Required. A __string__ that represents the path to the worker file.
+
+* _options_
+
+  Optional. An object of type **WorkerAdapterOptions**, which will be passed to the newly created worker. This worker will then initialize a `WorkerAdapter` by invoking the `processTask` function. The options include:
+  
+  * `isLocalDevelopment`
+  
+    A __boolean__ flag. If set to `true`, intermediary files containing extracted data will be stored on the local machine, which is useful during development. The default value is `false`.
+
+  * `timeout`
+  
+    A __number__ that specifies the timeout duration for the lambda function, in milliseconds. The default is 10 minutes (10 * 60 * 1000 milliseconds), with a maximum allowable duration of 13 minutes (13 * 60 * 1000 milliseconds).
+  
+  * `batchSize`
+
+    A __number__ that determines the maximum number of items to be processed and saved to an intermediary file before being sent to the Airdrop platform. The default batch size is 2,000.
+
+#### Return value
+
+A __promise__ that resolves once the worker has completed processing.
+
+#### Example
+
+```typescript
+const run = async (events: AirdropEvent[]) => {
+  for (const event of events) {
+    const file = getWorkerPerExtractionPhase(event);
+    await spawn<ExtractorState>({
+      event,
+      initialState,
+      workerPath: file,
+    });
+  }
+};
+```
+
+### `processTask` function
+
+The `processTask` function retrieves the current state from the Airdrop platform and initializes a new `WorkerAdapter`.
+It executes the code specified in the `task` parameter, which contains the worker's functionality.
+If a timeout occurs, the function handles it by executing the `onTimeout` callback, ensuring the worker exits gracefully.
+Both functions receive an `adapter` parameter, representing the initialized `WorkerAdapter` object.
+
+
+#### Usage
+```typescript
+processTask({ task, onTimeout })
+```
+
+#### Parameters
+
+* _task_
+  
+  Required. A __function__ that defines the logic associated with the given event type.
+
+* _onTimeout_
+  
+  Required. A __function__ managing the timeout of the lambda invocation, including saving any necessary progress at the time of timeout.
+
+#### Example
+
+````typescript
+// External sync units extraction
+processTask({
+  task: async ({ adapter }) => {
+    const httpClient = new HttpClient(adapter.event);
+
+    const todoLists = await httpClient.getTodoLists();
+
+    const externalSyncUnits: ExternalSyncUnit[] = todoLists.map((todoList) => normalizeTodoList(todoList));
+
+    await adapter.emit(ExtractorEventType.ExtractionExternalSyncUnitsDone, {
+      external_sync_units: externalSyncUnits,
+    });
+  },
+  onTimeout: async ({ adapter }) => {
+    await adapter.emit(ExtractorEventType.ExtractionExternalSyncUnitsError, {
+      error: {
+        message: 'Failed to extract external sync units. Lambda timeout.',
+      },
+    });
+  },
+});
+````
+
+### `WorkerAdapter` class
+
+Used to interact with Airdrop platform. 
+Provides utilities to emit events to the Airdrop platform, update the state of the snap-in and upload artifacts (files with data) to the platform.
+
+### Usage
+
+```typescript
+new WorkerAdapter({
+  event,
+  adapterState,
+  options,
+});
+```
+
+#### Parameters
+
+* _event_
+  
+  Required. An object of type __AirdropEvent__ that is received from the Airdrop platform.
+
+* _adapterState_
+  
+  Required. An object of type __State__, which represents the initial state of the adapter.
+
+* _options_
+  
+  Optional. An object of type __WorkerAdapterOptions__ that specifies additional configuration options for the `WorkerAdapter`. This object is passed via the `spawn` function.
+
+#### Example
+
+```typescript
+const adapter = new WorkerAdapter<ConnectorState>({
+  event,
+  adapterState,
+  options,
+});
+```
+
+### `WorkerAdapter.state` property
+
+Getter and setter methods for working with the adapter state.
+
+### Usage
+
+```typescript
+// get state
+const adapterState = adapter.state;
+
+// set state
+adapter.state = newAdapterState;
+```
+
+#### Example
+
+```typescript
+export const initialState: ExtractorState = {
+  users: { completed: false },
+  tasks: { completed: false },
+  attachments: { completed: false },
+};
+
+adapter.state = initialState;
+```
+
+### `WorkerAdapter.initializeRepos` method
+
+Initializes a `Repo` object for each item provided.
+
+### Usage
+
+```typescript
+adapter.initializeRepos(repos);
+```
+
+#### Parameters
+
+* _repos_
+  
+  Required. An array of objects of type `RepoInterface`. 
+
+#### Example
+
+This should typically be called within the function passed as a parameter to the `processTask` function in the data extraction phase.
+
+```typescript
+const repos = [
+  {
+    itemType: 'tasks',
+    normalize: normalizeTask,
+  }
+];
+
+adapter.initializeRepos(repos);
+```
+
+### `WorkerAdapter.getRepo` method
+
+Finds a Repo from the initialized repos.
+
+### Usage
+
+```typescript
+adapter.getRepo(itemType);
+```
+
+#### Parameters
+
+* _itemType_
+  
+  Required. A __string__ that represents the itemType property for the searched repo.
+
+#### Return value
+
+An object of type __Repo__ if the repo is found, otherwise __undefined__.
+
+#### Example
+
+This should typically be called within the function passed as a parameter to the `processTask` function.
+
+```typescript
+// Push users to the repository designated for 'users' data.
+await adapter.getRepo('users')?.push(users);
+```
+
+### `WorkerAdapter.emit` method
+
+Emits an event to the Airdrop platform.
+
+### Usage
+
+```typescript
+adapter.emit( newEventType, data ):
+```
+
+#### Parameters
+
+* _newEventType_
+  
+  Required. The event type to be emitted, of type __ExtractorEventType__ or __LoaderEventType__.
+
+* _data_
+  
+  Optional. An object of type __EventData__ which represents the data to be sent with the event.
+
+#### Return value
+
+A __promise__, which resolves to undefined after the emit function completes its execution or rejects with an error.
+
+#### Example
+
+This should typically be called within the function passed as a parameter to the `processTask` function.
+
+```typescript
+// Emitting successfully finished data extraction.
+await adapter.emit(ExtractorEventType.ExtractionDataDone);
+
+// Emitting a delay in attachments extraction phase.
+await adapter.emit(ExtractorEventType.ExtractionAttachmentsDelay, {
+  delay: 10,
+});
 ```
