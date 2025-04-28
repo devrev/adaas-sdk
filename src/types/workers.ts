@@ -7,6 +7,8 @@ import { ExtractorEventType, AirdropEvent } from './extraction';
 
 import { LoaderEventType } from './loading';
 
+import { InitialDomainMapping } from './common';
+
 /**
  * WorkerAdapterInterface is an interface for WorkerAdapter class.
  * @interface WorkerAdapterInterface
@@ -59,6 +61,7 @@ export interface SpawnInterface {
  * @param {AirdropEvent} event - The event object received from the platform
  * @param {object=} initialState - The initial state of the adapter
  * @param {string} workerPath - The path to the worker file
+ * @param {string} initialDomainMapping - The initial domain mapping
  * @param {WorkerAdapterOptions} options - The options to create a new instance of Spawn class
  */
 export interface SpawnFactoryInterface<ConnectorState> {
@@ -66,6 +69,7 @@ export interface SpawnFactoryInterface<ConnectorState> {
   initialState: ConnectorState;
   workerPath?: string;
   options?: WorkerAdapterOptions;
+  initialDomainMapping?: InitialDomainMapping;
 }
 
 /**
@@ -149,6 +153,7 @@ export interface WorkerData<ConnectorState> {
   event: AirdropEvent;
   initialState: ConnectorState;
   workerPath: string;
+  initialDomainMapping?: InitialDomainMapping;
   options?: WorkerAdapterOptions;
 }
 

@@ -199,7 +199,13 @@ export class WorkerAdapter<ConnectorState> {
 
     // We want to upload all the repos before emitting the event, except for the external sync units done event
     if (newEventType !== ExtractorEventType.ExtractionExternalSyncUnitsDone) {
-      await this.uploadAllRepos();
+      try {
+        await this.uploadAllRepos();
+      } catch (error) {
+        console.error('Error while uploading repos', error);
+        parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+        return;
+      }
     }
 
     // If the extraction is done, we want to save the timestamp of the last successful sync
@@ -264,7 +270,10 @@ export class WorkerAdapter<ConnectorState> {
 
   async uploadAllRepos(): Promise<void> {
     for (const repo of this.repos) {
-      await repo.upload();
+      const error = await repo.upload();
+      if (error) {
+        throw error;
+      }
     }
   }
 
@@ -684,7 +693,7 @@ export class WorkerAdapter<ConnectorState> {
     });
 
     if (error) {
-      console.warn('Error while streaming attachment', error?.message);
+      console.warn('Error while streaming attachment', error);
       return { error };
     } else if (delay) {
       return { delay };
@@ -780,7 +789,7 @@ export class WorkerAdapter<ConnectorState> {
    * Streams the attachments to the DevRev platform.
    * The attachments are streamed to the platform and the artifact information is returned.
    * @param {{ stream, processors }: { stream: ExternalSystemAttachmentStreamingFunction, processors?: ExternalSystemAttachmentProcessors  }} Params - The parameters to stream the attachments
-   * @returns {Promise<StreamAttachmentsReturnType>} - The response object containing the ssoAttachment artifact information
+   * @returns {Promise<StreamAttachmentsReturnType>} - The response object containing the ssorAttachment artifact information
    * or error information if there was an error
    */
   async streamAttachments<NewBatch>({
@@ -801,23 +810,22 @@ export class WorkerAdapter<ConnectorState> {
     ];
     this.initializeRepos(repos);
 
-    const attachmentsMetadataArtifactIds =
-      this.state.toDevRev?.attachmentsMetadata?.artifactIds;
-
     if (
-      !attachmentsMetadataArtifactIds ||
-      attachmentsMetadataArtifactIds.length === 0
+      !this.state.toDevRev?.attachmentsMetadata?.artifactIds ||
+      this.state.toDevRev.attachmentsMetadata.artifactIds.length === 0
     ) {
       console.log(`No attachments metadata artifact IDs found in state.`);
-
       return;
     } else {
       console.log(
-        `Found ${attachmentsMetadataArtifactIds.length} attachments metadata artifact IDs in state.`
+        `Found ${this.state.toDevRev.attachmentsMetadata.artifactIds.length} attachments metadata artifact IDs in state.`
       );
     }
 
-    for (const attachmentsMetadataArtifactId of attachmentsMetadataArtifactIds) {
+    while (this.state.toDevRev.attachmentsMetadata.artifactIds.length > 0) {
+      const attachmentsMetadataArtifactId =
+        this.state.toDevRev.attachmentsMetadata.artifactIds[0];
+
       console.log(
         `Started processing attachments for attachments metadata artifact ID: ${attachmentsMetadataArtifactId}.`
       );
@@ -838,6 +846,9 @@ export class WorkerAdapter<ConnectorState> {
         console.warn(
           `No attachments found for artifact ID: ${attachmentsMetadataArtifactId}.`
         );
+        // Remove empty artifact and reset lastProcessed
+        this.state.toDevRev.attachmentsMetadata.artifactIds.shift();
+        this.state.toDevRev.attachmentsMetadata.lastProcessed = 0;
         continue;
       }
 
@@ -862,10 +873,10 @@ export class WorkerAdapter<ConnectorState> {
         }
       } else {
         console.log(`Using default processors for attachments.`);
-        const attachmentsToProcess = attachments.slice(
-          this.state.toDevRev?.attachmentsMetadata?.lastProcessed,
-          attachments.length
-        );
+
+        const startIndex =
+          this.state.toDevRev.attachmentsMetadata.lastProcessed || 0;
+        const attachmentsToProcess = attachments.slice(startIndex);
 
         for (const attachment of attachmentsToProcess) {
           const response = await this.processAttachment(attachment, stream);
@@ -874,7 +885,8 @@ export class WorkerAdapter<ConnectorState> {
             return response;
           } else if (response?.error) {
             console.warn(
-              `Skipping attachment with ID ${attachment.id} due to error.`
+              'Skipping attachment due to an error while processing',
+              attachment
             );
           }
 
@@ -884,13 +896,11 @@ export class WorkerAdapter<ConnectorState> {
         }
       }
 
-      if (this.state.toDevRev) {
-        console.log(
-          `Finished processing attachments for artifact ID. Setting last processed to 0 and removing artifact ID from state.`
-        );
-        this.state.toDevRev.attachmentsMetadata.artifactIds.shift();
-        this.state.toDevRev.attachmentsMetadata.lastProcessed = 0;
-      }
+      console.log(
+        `Finished processing all attachments for artifact ID: ${attachmentsMetadataArtifactId}.`
+      );
+      this.state.toDevRev.attachmentsMetadata.artifactIds.shift();
+      this.state.toDevRev.attachmentsMetadata.lastProcessed = 0;
     }
 
     return;

@@ -1,11 +1,11 @@
 import { axios, axiosClient } from '../http/axios-client';
-import { FunctionInput } from '@devrev/typescript-sdk/dist/snap-ins';
+import { AirdropEvent } from '../types/extraction';
 
 import { InitialDomainMapping } from '../types/common';
 import { serializeAxiosError } from '../logger/logger';
 
 export async function installInitialDomainMapping(
-  event: FunctionInput,
+  event: AirdropEvent,
   initialDomainMappingJson: InitialDomainMapping
 ) {
   const devrevEndpoint = event.execution_metadata.devrev_endpoint;

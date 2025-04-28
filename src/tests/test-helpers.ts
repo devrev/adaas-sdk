@@ -21,6 +21,7 @@ export function createEvent({
         service_account_token: 'test_token',
       },
       snap_in_version_id: 'test_snap_in_version_id',
+      snap_in_id: 'test_snap_in_id',
       ...contextOverrides,
     },
     payload: {

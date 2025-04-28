@@ -86,6 +86,7 @@ export async function spawn<ConnectorState>({
   event,
   initialState,
   workerPath,
+  initialDomainMapping,
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
   const logger = new Logger({ event, options });
@@ -115,6 +116,7 @@ export async function spawn<ConnectorState>({
         event,
         initialState,
         workerPath: script,
+        initialDomainMapping,
         options,
       });
 

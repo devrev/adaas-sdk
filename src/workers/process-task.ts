@@ -17,12 +17,14 @@ export function processTask<ConnectorState>({
     void (async () => {
       const event = workerData.event;
       const initialState = workerData.initialState as ConnectorState;
+      const initialDomainMapping = workerData.initialDomainMapping;
       const options = workerData.options;
       console = new Logger({ event, options });
 
       const adapterState = await createAdapterState<ConnectorState>({
         event,
         initialState,
+        initialDomainMapping,
         options,
       });
 

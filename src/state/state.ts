@@ -4,6 +4,7 @@ import { AirdropEvent, EventType, SyncMode } from '../types/extraction';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { serializeAxiosError, getPrintableState } from '../logger/logger';
 import { ErrorRecord } from '../types/common';
+import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
 
 import { AdapterState, SdkState, StateInterface } from './state.interfaces';
 import { getSyncDirection } from '../common/helpers';
@@ -11,17 +12,45 @@ import { getSyncDirection } from '../common/helpers';
 export async function createAdapterState<ConnectorState>({
   event,
   initialState,
+  initialDomainMapping,
   options,
 }: StateInterface<ConnectorState>): Promise<State<ConnectorState>> {
   const newInitialState = structuredClone(initialState);
   const as = new State<ConnectorState>({
     event,
     initialState: newInitialState,
+    initialDomainMapping,
     options,
   });
 
   if (!STATELESS_EVENT_TYPES.includes(event.payload.event_type)) {
     await as.fetchState(newInitialState);
+
+    const snapInVersionId = event.context.snap_in_version_id;
+
+    const hasSnapInVersionInState = 'snapInVersionId' in as.state;
+
+    const shouldUpdateIDM =
+      !hasSnapInVersionInState || as.state.snapInVersionId !== snapInVersionId;
+
+    if (shouldUpdateIDM) {
+      console.log(
+        `Snap-in version in state (${as.state?.snapInVersionId}) differs from the version in event context (${snapInVersionId}) - initial domain mapping needs to be updated.`
+      );
+      if (initialDomainMapping) {
+        await installInitialDomainMapping(event, initialDomainMapping);
+        as.state.snapInVersionId = snapInVersionId;
+        console.log('Successfully installed new initial domain mapping.');
+      } else {
+        console.warn(
+          'No initial domain mapping was passed to spawn function. Skipping initial domain mapping installation.'
+        );
+      }
+    } else {
+      console.log(
+        `Snap-in version in state matches the version in event context (${snapInVersionId}). Skipping initial domain mapping installation.`
+      );
+    }
 
     if (
       event.payload.event_type === EventType.ExtractionDataStart &&
@@ -47,6 +76,7 @@ export class State<ConnectorState> {
     this.initialSdkState =
       getSyncDirection({ event }) === SyncMode.LOADING
         ? {
+            snapInVersionId: '',
             fromDevRev: {
               filesToLoad: [],
             },
@@ -54,6 +84,7 @@ export class State<ConnectorState> {
         : {
             lastSyncStarted: '',
             lastSuccessfulSyncStarted: '',
+            snapInVersionId: '',
             toDevRev: {
               attachmentsMetadata: {
                 artifactIds: [],
@@ -132,19 +163,15 @@ export class State<ConnectorState> {
     );
 
     try {
-      const response = await axiosClient.post(
-        this.workerUrl + '.get',
-        {},
-        {
-          headers: {
-            Authorization: this.devrevToken,
-          },
-          params: {
-            sync_unit: this.event.payload.event_context.sync_unit_id,
-            request_id: this.event.payload.event_context.uuid,
-          },
-        }
-      );
+      const response = await axiosClient.get(this.workerUrl + '.get', {
+        headers: {
+          Authorization: this.devrevToken,
+        },
+        params: {
+          sync_unit: this.event.payload.event_context.sync_unit_id,
+          request_id: this.event.payload.event_context.uuid,
+        },
+      });
 
       this.state = JSON.parse(response.data.state);
 
