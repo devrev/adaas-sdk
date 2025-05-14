@@ -37,8 +37,9 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@babel/helpers": "^7.27.1",
     "@devrev/typescript-sdk": "^1.1.54",
-    "axios": "^1.7.9",
+    "axios": "^1.9.0",
     "axios-retry": "^4.5.0",
     "form-data": "^4.0.1",
     "js-jsonl": "^1.1.1",
