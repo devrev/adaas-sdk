@@ -89,6 +89,7 @@ export class State<ConnectorState> {
               attachmentsMetadata: {
                 artifactIds: [],
                 lastProcessed: 0,
+                lastProcessedAttachmentsIdsList: [],
               },
             },
           };

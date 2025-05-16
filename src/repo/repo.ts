@@ -78,7 +78,7 @@ export class Repo {
     }
   }
 
-  async push(items: Item[]): Promise<boolean | ErrorRecord> {
+  async push(items: Item[]): Promise<boolean> {
     let recordsToPush: (NormalizedItem | NormalizedAttachment | Item)[];
 
     if (!items || items.length === 0) {

@@ -8,6 +8,8 @@ import {
   ExternalSystemAttachmentProcessors,
   ProcessAttachmentReturnType,
   StreamAttachmentsReturnType,
+  ExternalSystemAttachmentReducerFunction,
+  ExternalSystemAttachmentIteratorFunction,
 } from '../types/extraction';
 import {
   ActionType,
@@ -74,11 +76,11 @@ export function createWorkerAdapter<ConnectorState>({
 export class WorkerAdapter<ConnectorState> {
   readonly event: AirdropEvent;
   readonly options?: WorkerAdapterOptions;
+  isTimeout: boolean;
 
   private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];
   private hasWorkerEmitted: boolean;
-  private isTimeout: boolean;
   private repos: Repo[] = [];
 
   // Loader
@@ -159,7 +161,7 @@ export class WorkerAdapter<ConnectorState> {
     const repo = this.repos.find((repo) => repo.itemType === itemType);
 
     if (!repo) {
-      console.error(`Repo not found for item type: ${itemType}.`);
+      console.error(`Repo for item type ${itemType} not found.`);
       return;
     }
 
@@ -786,6 +788,150 @@ export class WorkerAdapter<ConnectorState> {
   }
 
   /**
+   * Transforms an array of attachments into array of batches of the specified size.
+   * 
+   * @param {Object} parameters - The parameters object
+   * @param {NormalizedAttachment[]} parameters.attachments - Array of attachments to be processed
+   * @param {number} [parameters.batchSize=1] - The size of each batch (defaults to 1)
+   * @param {ConnectorState} parameters.adapter - The adapter instance
+   * @returns {NormalizedAttachment[][]} An array of attachment batches
+   */
+  private defaultAttachmentsReducer: ExternalSystemAttachmentReducerFunction<
+    NormalizedAttachment[],
+    NormalizedAttachment[][],
+    ConnectorState
+  > = ({ attachments, batchSize = 1 }) => {
+    // Transform the attachments array into smaller batches
+    const batches: NormalizedAttachment[][] = attachments.reduce(
+      (
+        result: NormalizedAttachment[][],
+        item: NormalizedAttachment,
+        index: number
+      ) => {
+        // Determine the index of the current batch
+        const batchIndex = Math.floor(index / batchSize);
+
+        // Initialize a new batch if it doesn't already exist
+        if (!result[batchIndex]) {
+          result[batchIndex] = [];
+        }
+
+        // Append the current item to the current batch
+        result[batchIndex].push(item);
+
+        return result;
+      },
+      []
+    );
+
+    // Return the array of batches
+    return batches;
+  };
+
+  /**
+   * This iterator function processes attachments batch by batch, saves progress to state, and handles rate limiting.
+   *
+   * @param {Object} parameters - The parameters object
+   * @param {NormalizedAttachment[][]} parameters.reducedAttachments - Array of attachment batches to process
+   * @param {Object} parameters.adapter - The connector adapter that contains state and processing methods
+   * @param {Object} parameters.stream - Stream object for logging or progress reporting
+   * @returns {Promise<{delay?: number} | void>} Returns an object with delay information if rate-limited, otherwise void
+   * @throws Will not throw exceptions but will log warnings for processing failures
+   */
+  private defaultAttachmentsIterator: ExternalSystemAttachmentIteratorFunction<
+    NormalizedAttachment[][],
+    ConnectorState
+  > = async ({ reducedAttachments, adapter, stream }) => {
+    if (!adapter.state.toDevRev) {
+      const error = new Error(`toDevRev state is not defined.`);
+      console.error(error.message);
+      return { error };
+    }
+
+    // Get index of the last processed batch of this artifact
+    const lastProcessedBatchIndex =
+      adapter.state.toDevRev.attachmentsMetadata.lastProcessed || 0;
+
+    // Get the list of successfully processed attachments in previous (possibly incomplete) batch extraction.
+    // If no such list exists, create an empty one.
+    if (
+      !adapter.state.toDevRev.attachmentsMetadata
+        .lastProcessedAttachmentsIdsList
+    ) {
+      adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList =
+        [];
+    }
+
+    // Loop through the batches of attachments
+    for (let i = lastProcessedBatchIndex; i < reducedAttachments.length; i++) {
+      const attachmentsBatch = reducedAttachments[i];
+
+      // Create a list of promises for parallel processing
+      const promises = [];
+      for (const attachment of attachmentsBatch) {
+        if (
+          adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList.includes(
+            attachment.id
+          )
+        ) {
+          console.log(
+            `Attachment with ID ${attachment.id} has already been processed. Skipping.`
+          );
+          continue; // Skip if the attachment ID is already processed
+        }
+        const promise = adapter
+          .processAttachment(attachment, stream)
+          .then((response) => {
+            // Check if rate limit was hit
+            if (response?.delay) {
+              // Store this promise result to be checked later
+              return { delay: response.delay };
+            }
+            
+            // No rate limiting, process normally
+            if (
+              adapter.state.toDevRev?.attachmentsMetadata
+                ?.lastProcessedAttachmentsIdsList
+            ) {
+              adapter.state.toDevRev?.attachmentsMetadata.lastProcessedAttachmentsIdsList.push(
+                attachment.id
+              );
+            }
+            return null; // Return null for successful processing
+          })
+          .catch((error) => {
+            console.warn(
+              `Skipping attachment with ID ${attachment.id} due to error: ${error}`
+            );
+            return null; // Return null for errors too
+          });
+
+        promises.push(promise);
+      }
+
+      // Wait for all promises to settle and check for rate limiting
+      const results = await Promise.all(promises);
+      
+      // Check if any of the results indicate rate limiting
+      const rateLimit = results.find(result => result?.delay);
+      if (rateLimit) {
+        // Return the delay information to the caller
+        return { delay: rateLimit.delay };
+      }
+
+      if (adapter.state.toDevRev) {
+        // Update the last processed batch index
+        adapter.state.toDevRev.attachmentsMetadata.lastProcessed = i + 1;
+
+        // Reset successfullyProcessedAttachments list
+        adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList.length = 0;
+      }
+    }
+
+    return {};
+  };
+
+  /**
    * Streams the attachments to the DevRev platform.
    * The attachments are streamed to the platform and the artifact information is returned.
    * @param {{ stream, processors }: { stream: ExternalSystemAttachmentStreamingFunction, processors?: ExternalSystemAttachmentProcessors  }} Params - The parameters to stream the attachments
@@ -795,6 +941,7 @@ export class WorkerAdapter<ConnectorState> {
   async streamAttachments<NewBatch>({
     stream,
     processors,
+    batchSize = 1, // By default, we want to stream one attachment at a time
   }: {
     stream: ExternalSystemAttachmentStreamingFunction;
     processors?: ExternalSystemAttachmentProcessors<
@@ -802,7 +949,14 @@ export class WorkerAdapter<ConnectorState> {
       NormalizedAttachment[],
       NewBatch
     >;
+    batchSize?: number;
   }): Promise<StreamAttachmentsReturnType> {
+    if (batchSize <= 0) {
+      const error = new Error(`Invalid attachments batch size: ${batchSize}. Batch size must be greater than 0.`);
+      console.error(error.message);
+      return { error };
+    }
+
     const repos = [
       {
         itemType: 'ssor_attachment',
@@ -810,6 +964,7 @@ export class WorkerAdapter<ConnectorState> {
     ];
     this.initializeRepos(repos);
 
+    // If there are no attachments metadata artifact IDs in state, finish here
     if (
       !this.state.toDevRev?.attachmentsMetadata?.artifactIds ||
       this.state.toDevRev.attachmentsMetadata.artifactIds.length === 0
@@ -822,6 +977,7 @@ export class WorkerAdapter<ConnectorState> {
       );
     }
 
+    // Loop through the attachments metadata artifact IDs
     while (this.state.toDevRev.attachmentsMetadata.artifactIds.length > 0) {
       const attachmentsMetadataArtifactId =
         this.state.toDevRev.attachmentsMetadata.artifactIds[0];
@@ -856,44 +1012,51 @@ export class WorkerAdapter<ConnectorState> {
         `Found ${attachments.length} attachments for artifact ID: ${attachmentsMetadataArtifactId}.`
       );
 
+      // Use the reducer to split into batches.
+      let reducer: ExternalSystemAttachmentReducerFunction<
+        any,
+        any,
+        ConnectorState
+      >;
+      // Use the iterator to process each batch, streaming all attachments inside one batch in parallel.
+      let iterator: ExternalSystemAttachmentIteratorFunction<
+        any,
+        ConnectorState
+      >;
+
       if (processors) {
         console.log(`Using custom processors for attachments.`);
-
-        const { reducer, iterator } = processors;
-        const reducedAttachments = reducer({ attachments, adapter: this });
-
-        const response = await iterator({
-          reducedAttachments,
-          adapter: this,
-          stream,
-        });
-
-        if (response?.delay || response?.error) {
-          return response;
-        }
+        reducer = processors.reducer;
+        iterator = processors.iterator;
       } else {
         console.log(`Using default processors for attachments.`);
+        reducer = this
+          .defaultAttachmentsReducer as ExternalSystemAttachmentReducerFunction<
+          NormalizedAttachment[],
+          NormalizedAttachment[][],
+          ConnectorState
+        >;
+        iterator = this
+          .defaultAttachmentsIterator as ExternalSystemAttachmentIteratorFunction<
+          NormalizedAttachment[][],
+          ConnectorState
+        >;
+      }
 
-        const startIndex =
-          this.state.toDevRev.attachmentsMetadata.lastProcessed || 0;
-        const attachmentsToProcess = attachments.slice(startIndex);
+      const reducedAttachments = reducer({
+        attachments,
+        adapter: this,
+        batchSize,
+      });
 
-        for (const attachment of attachmentsToProcess) {
-          const response = await this.processAttachment(attachment, stream);
+      const response = await iterator({
+        reducedAttachments,
+        adapter: this,
+        stream,
+      });
 
-          if (response?.delay) {
-            return response;
-          } else if (response?.error) {
-            console.warn(
-              'Skipping attachment due to an error while processing',
-              attachment
-            );
-          }
-
-          if (this.state.toDevRev) {
-            this.state.toDevRev.attachmentsMetadata.lastProcessed += 1;
-          }
-        }
+      if (response?.delay || response?.error) {
+        return response;
       }
 
       console.log(

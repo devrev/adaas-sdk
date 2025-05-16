@@ -304,9 +304,11 @@ export type ExternalSystemAttachmentReducerFunction<
 > = ({
   attachments,
   adapter,
+  batchSize,
 }: {
   attachments: Batch;
   adapter: WorkerAdapter<ConnectorState>;
+  batchSize?: number;
 }) => NewBatch;
 
 export type ExternalProcessAttachmentFunction = ({

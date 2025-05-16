@@ -21,6 +21,7 @@ export interface ToDevRev {
   attachmentsMetadata: {
     artifactIds: string[];
     lastProcessed: number;
+    lastProcessedAttachmentsIdsList?: string[];
   };
 }
 
