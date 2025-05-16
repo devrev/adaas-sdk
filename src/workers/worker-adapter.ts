@@ -76,11 +76,11 @@ export function createWorkerAdapter<ConnectorState>({
 export class WorkerAdapter<ConnectorState> {
   readonly event: AirdropEvent;
   readonly options?: WorkerAdapterOptions;
-  isTimeout: boolean;
 
   private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];
   private hasWorkerEmitted: boolean;
+  private isTimeout: boolean;
   private repos: Repo[] = [];
 
   // Loader
