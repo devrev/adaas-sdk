@@ -41,7 +41,10 @@ export interface NormalizedAttachment {
   file_name: string;
   parent_id: string;
   author_id?: string;
-  grand_parent_id?: number;
+
+  // This should be a string, but it was a number in the past. Due to backwards
+  // compatibility we are keeping it also as a number.
+  grand_parent_id?: number | string;
 }
 
 /**

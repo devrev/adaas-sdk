@@ -76,11 +76,11 @@ export function createWorkerAdapter<ConnectorState>({
 export class WorkerAdapter<ConnectorState> {
   readonly event: AirdropEvent;
   readonly options?: WorkerAdapterOptions;
+  isTimeout: boolean;
 
   private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];
   private hasWorkerEmitted: boolean;
-  private isTimeout: boolean;
   private repos: Repo[] = [];
 
   // Loader
@@ -789,7 +789,7 @@ export class WorkerAdapter<ConnectorState> {
 
   /**
    * Transforms an array of attachments into array of batches of the specified size.
-   * 
+   *
    * @param {Object} parameters - The parameters object
    * @param {NormalizedAttachment[]} parameters.attachments - Array of attachments to be processed
    * @param {number} [parameters.batchSize=1] - The size of each batch (defaults to 1)
@@ -887,7 +887,7 @@ export class WorkerAdapter<ConnectorState> {
               // Store this promise result to be checked later
               return { delay: response.delay };
             }
-            
+
             // No rate limiting, process normally
             if (
               adapter.state.toDevRev?.attachmentsMetadata
@@ -911,9 +911,9 @@ export class WorkerAdapter<ConnectorState> {
 
       // Wait for all promises to settle and check for rate limiting
       const results = await Promise.all(promises);
-      
+
       // Check if any of the results indicate rate limiting
-      const rateLimit = results.find(result => result?.delay);
+      const rateLimit = results.find((result) => result?.delay);
       if (rateLimit) {
         // Return the delay information to the caller
         return { delay: rateLimit.delay };
@@ -952,7 +952,9 @@ export class WorkerAdapter<ConnectorState> {
     batchSize?: number;
   }): Promise<StreamAttachmentsReturnType> {
     if (batchSize <= 0) {
-      const error = new Error(`Invalid attachments batch size: ${batchSize}. Batch size must be greater than 0.`);
+      const error = new Error(
+        `Invalid attachments batch size: ${batchSize}. Batch size must be greater than 0.`
+      );
       console.error(error.message);
       return { error };
     }
