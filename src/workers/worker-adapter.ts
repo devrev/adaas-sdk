@@ -952,11 +952,13 @@ export class WorkerAdapter<ConnectorState> {
     batchSize?: number;
   }): Promise<StreamAttachmentsReturnType> {
     if (batchSize <= 0) {
-      const error = new Error(
-        `Invalid attachments batch size: ${batchSize}. Batch size must be greater than 0.`
-      );
-      console.error(error.message);
-      return { error };
+      console.warn(`The specified batch size (${batchSize}) is invalid. Using 1 instead.`);
+      batchSize = 1;
+    }
+
+    if (batchSize > 50) {
+      console.warn(`The specified batch size (${batchSize}) is too large. Using 50 instead.`);
+      batchSize = 50;
     }
 
     const repos = [

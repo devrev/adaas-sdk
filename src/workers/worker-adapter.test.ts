@@ -173,50 +173,6 @@ describe('WorkerAdapter', () => {
       expect(result[0]).toHaveLength(1);
       expect(result[1]).toHaveLength(1);
     });
-
-    it('should handle invalid (0) batch size', async () => {
-      // Arrange
-      const mockStream = jest.fn();
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-      
-      // Act
-      const result = await adapter.streamAttachments({
-        stream: mockStream,
-        batchSize: 0,
-      });
-
-      // Assert
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      expect(result).toEqual({
-        error: expect.any(Error),
-      });
-      expect(result?.error?.message).toContain('Invalid attachments batch size');
-      
-      // Restore console.error
-      consoleErrorSpy.mockRestore();
-    });
-
-    it('should handle invalid (negative) batch size', async () => {
-      // Arrange
-      const mockStream = jest.fn();
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-      
-      // Act
-      const result = await adapter.streamAttachments({
-        stream: mockStream,
-        batchSize: -1,
-      });
-
-      // Assert
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      expect(result).toEqual({
-        error: expect.any(Error),
-      });
-      expect(result?.error?.message).toContain('Invalid attachments batch size');
-      
-      // Restore console.error
-      consoleErrorSpy.mockRestore();
-    });
   });
 
   describe('defaultAttachmentsIterator', () => {
@@ -480,7 +436,29 @@ describe('WorkerAdapter', () => {
     it('should handle invalid batch size', async () => {
       // Arrange
       const mockStream = jest.fn();
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+      // Set up adapter state with artifact IDs
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: ['artifact1'],
+          lastProcessed: 0,
+          lastProcessedAttachmentsIdsList: [],
+        },
+      };
+    
+      // Mock getting attachments
+      adapter['uploader'].getAttachmentsFromArtifactId = jest.fn().mockResolvedValue({
+        attachments: [
+          { url: 'http://example.com/file1.pdf', id: 'attachment1', file_name: 'file1.pdf', parent_id: 'parent1' },
+        ],
+      });
+
+      // Mock the required methods
+      adapter.initializeRepos = jest.fn();
+      const mockReducedAttachments = [['batch1']];
+      adapter['defaultAttachmentsReducer'] = jest.fn().mockReturnValue(mockReducedAttachments);
+      adapter['defaultAttachmentsIterator'] = jest.fn().mockResolvedValue({});
       
       // Act
       const result = await adapter.streamAttachments({
@@ -489,14 +467,72 @@ describe('WorkerAdapter', () => {
       });
 
       // Assert
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      expect(result).toEqual({
-        error: expect.any(Error),
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'The specified batch size (0) is invalid. Using 1 instead.'
+      );
+
+      // Verify that the reducer was called with batchSize 50 (not 100)
+      expect(adapter['defaultAttachmentsReducer']).toHaveBeenCalledWith({
+        attachments: expect.any(Array),
+        adapter: adapter,
+        batchSize: 1,
       });
-      expect(result?.error?.message).toContain('Invalid attachments batch size');
       
-      // Restore console.error
-      consoleErrorSpy.mockRestore();
+      expect(result).toBeUndefined();
+      
+      // Restore console.warn
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should cap batch size to 50 when batchSize is greater than 50', async () => {
+      // Arrange
+      const mockStream = jest.fn();
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      
+      // Set up adapter state with artifact IDs
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: ['artifact1'],
+          lastProcessed: 0,
+          lastProcessedAttachmentsIdsList: [],
+        },
+      };
+    
+      // Mock getting attachments
+      adapter['uploader'].getAttachmentsFromArtifactId = jest.fn().mockResolvedValue({
+        attachments: [
+          { url: 'http://example.com/file1.pdf', id: 'attachment1', file_name: 'file1.pdf', parent_id: 'parent1' },
+        ],
+      });
+    
+      // Mock the required methods
+      adapter.initializeRepos = jest.fn();
+      const mockReducedAttachments = [['batch1']];
+      adapter['defaultAttachmentsReducer'] = jest.fn().mockReturnValue(mockReducedAttachments);
+      adapter['defaultAttachmentsIterator'] = jest.fn().mockResolvedValue({});
+    
+      // Act
+      const result = await adapter.streamAttachments({
+        stream: mockStream,
+        batchSize: 100, // Set batch size greater than 50
+      });
+    
+      // Assert
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'The specified batch size (100) is too large. Using 50 instead.'
+      );
+      
+      // Verify that the reducer was called with batchSize 50 (not 100)
+      expect(adapter['defaultAttachmentsReducer']).toHaveBeenCalledWith({
+        attachments: expect.any(Array),
+        adapter: adapter,
+        batchSize: 50, // Should be capped at 50
+      });
+      
+      expect(result).toBeUndefined();
+      
+      // Restore console.warn
+      consoleWarnSpy.mockRestore();
     });
     
     it('should handle empty attachments metadata artifact IDs', async () => {
