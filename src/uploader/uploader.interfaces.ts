@@ -30,6 +30,18 @@ export interface ArtifactsPrepareResponse {
 }
 
 /**
+ * ArtifactToUpload is an interface that defines the structure of the response from the get upload url endpoint.
+ */
+export interface ArtifactToUpload {
+  upload_url: string;
+  artifact_id: string;
+  form_data: {
+    key: string;
+    value: string;
+  }[];
+}
+
+/**
  * UploadResponse is an interface that defines the structure of the response from upload through Uploader.
  */
 export interface UploadResponse {

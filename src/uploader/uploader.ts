@@ -10,9 +10,9 @@ import { AirdropEvent } from '../types/extraction';
 
 import {
   Artifact,
-  ArtifactsPrepareResponse,
   UploadResponse,
   UploaderFactoryInterface,
+  ArtifactToUpload,
 } from './uploader.interfaces';
 import { serializeAxiosError } from '../logger/logger';
 import { AxiosResponse } from 'axios';
@@ -22,12 +22,18 @@ export class Uploader {
   private isLocalDevelopment?: boolean;
   private devrevApiEndpoint: string;
   private devrevApiToken: string;
+  private requestId: string;
+  private defaultHeaders: Record<string, string>;
 
   constructor({ event, options }: UploaderFactoryInterface) {
     this.event = event;
     this.devrevApiEndpoint = event.execution_metadata.devrev_endpoint;
     this.devrevApiToken = event.context.secrets.service_account_token;
+    this.requestId = event.payload.event_context.request_id;
     this.isLocalDevelopment = options?.isLocalDevelopment;
+    this.defaultHeaders = {
+      Authorization: `Bearer ${this.devrevApiToken}`,
+    };
   }
 
   /**
@@ -46,8 +52,7 @@ export class Uploader {
     if (this.isLocalDevelopment) {
       await this.downloadToLocal(itemType, fetchedObjects);
     }
-
-    // compress the fetched objects to a gzipped jsonl object
+    // Compress the fetched objects to a gzipped jsonl object
     const file = this.compressGzip(jsonl.stringify(fetchedObjects));
     if (!file) {
       return {
@@ -57,84 +62,94 @@ export class Uploader {
     const filename = itemType + '.jsonl.gz';
     const fileType = 'application/x-gzip';
 
-    // prepare the artifact for uploading
-    const preparedArtifact = await this.prepareArtifact(filename, fileType);
+    // Get upload url
+    const preparedArtifact = await this.getArtifactUploadUrl(
+      filename,
+      fileType
+    );
     if (!preparedArtifact) {
       return {
-        error: { message: 'Error while preparing artifact.' },
+        error: { message: 'Error while getting artifact upload URL.' },
       };
     }
 
-    // upload the file to the prepared artifact
-    const uploadedArtifact = await this.uploadToArtifact(
+    // Upload prepared artifact to the given url
+    const uploadItemResponse = await this.uploadArtifact(
       preparedArtifact,
       file
     );
-    if (!uploadedArtifact) {
+    if (!uploadItemResponse) {
       return {
         error: { message: 'Error while uploading artifact.' },
       };
     }
 
-    // return the artifact information to the platform
+    // Confirm upload
+    const confirmArtifactUploadResponse = await this.confirmArtifactUpload(
+      preparedArtifact.artifact_id
+    );
+    if (!confirmArtifactUploadResponse) {
+      return {
+        error: { message: 'Error while confirming artifact upload.' },
+      };
+    }
+
+    // Return the artifact information to the platform
     const artifact: Artifact = {
-      id: preparedArtifact.id,
+      id: preparedArtifact.artifact_id,
       item_type: itemType,
       item_count: Array.isArray(fetchedObjects) ? fetchedObjects.length : 1,
     };
 
-    console.log('Successful upload of artifact', artifact);
     return { artifact };
   }
 
-  public async prepareArtifact(
+  async getArtifactUploadUrl(
     filename: string,
     fileType: string
-  ): Promise<ArtifactsPrepareResponse | void> {
-    try {
-      const response = await axiosClient.post(
-        `${this.devrevApiEndpoint}/artifacts.prepare`,
-        {
-          file_name: filename,
-          file_type: fileType,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${this.devrevApiToken}`,
-          },
-        }
-      );
+  ): Promise<ArtifactToUpload | void> {
+    const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.upload-url`;
 
+    try {
+      const response = await axiosClient.get(url, {
+        headers: {
+          ...this.defaultHeaders,
+        },
+        params: {
+          request_id: this.requestId,
+          file_type: fileType,
+          file_name: filename,
+        },
+      });
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error(
-          'Error while preparing artifact.',
+          'Error while getting artifact upload URL.',
           serializeAxiosError(error)
         );
       } else {
-        console.error('Error while preparing artifact.', error);
+        console.error('Error while getting artifact upload URL.', error);
       }
     }
   }
 
-  private async uploadToArtifact(
-    preparedArtifact: ArtifactsPrepareResponse,
+  async uploadArtifact(
+    artifact: ArtifactToUpload,
     file: Buffer
   ): Promise<AxiosResponse | void> {
     const formData = new FormData();
-    for (const field of preparedArtifact.form_data) {
-      formData.append(field.key, field.value);
+    for (const field in artifact.form_data) {
+      formData.append(field, artifact.form_data[field]);
     }
     formData.append('file', file);
 
     try {
-      const response = await axiosClient.post(preparedArtifact.url, formData, {
+      const response = await axiosClient.post(artifact.upload_url, formData, {
         headers: {
           ...formData.getHeaders(),
         },
       });
-
       return response;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -148,19 +163,17 @@ export class Uploader {
     }
   }
 
-  public async streamToArtifact(
-    preparedArtifact: ArtifactsPrepareResponse,
-    fileStreamResponse: any
+  async streamArtifact(
+    artifact: ArtifactToUpload,
+    fileStream: any
   ): Promise<AxiosResponse | void> {
     const formData = new FormData();
-    for (const field of preparedArtifact.form_data) {
-      formData.append(field.key, field.value);
+    for (const field in artifact.form_data) {
+      formData.append(field, artifact.form_data[field]);
     }
-    formData.append('file', fileStreamResponse.data);
+    formData.append('file', fileStream.data);
 
-    if (
-      fileStreamResponse.headers['content-length'] > MAX_DEVREV_ARTIFACT_SIZE
-    ) {
+    if (fileStream.headers['content-length'] > MAX_DEVREV_ARTIFACT_SIZE) {
       console.warn(
         `File size exceeds the maximum limit of ${MAX_DEVREV_ARTIFACT_SIZE} bytes.`
       );
@@ -168,10 +181,10 @@ export class Uploader {
     }
 
     try {
-      const response = await axiosClient.post(preparedArtifact.url, formData, {
+      const response = await axiosClient.post(artifact.upload_url, formData, {
         headers: {
           ...formData.getHeaders(),
-          ...(!fileStreamResponse.headers['content-length']
+          ...(!fileStream.headers['content-length']
             ? {
                 'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
               }
@@ -192,7 +205,37 @@ export class Uploader {
     }
   }
 
-  public async getAttachmentsFromArtifactId({
+  async confirmArtifactUpload(
+    artifactId: string
+  ): Promise<AxiosResponse | void> {
+    const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.confirm-upload`;
+    try {
+      const response = await axiosClient.post(
+        url,
+        {
+          request_id: this.requestId,
+          artifact_id: artifactId,
+        },
+        {
+          headers: {
+            ...this.defaultHeaders,
+          },
+        }
+      );
+      return response;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error(
+          'Error while confirming artifact upload.',
+          serializeAxiosError(error)
+        );
+      } else {
+        console.error('Error while confirming artifact upload.', error);
+      }
+    }
+  }
+
+  async getAttachmentsFromArtifactId({
     artifact,
   }: {
     artifact: string;
@@ -239,22 +282,29 @@ export class Uploader {
   private async getArtifactDownloadUrl(
     artifactId: string
   ): Promise<string | void> {
-    try {
-      const response = await axiosClient.post(
-        `${this.devrevApiEndpoint}/artifacts.locate`,
-        {
-          id: artifactId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${this.devrevApiToken}`,
-          },
-        }
-      );
+    const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.download-url`;
 
-      return response.data.url;
+    try {
+      const response = await axiosClient.get(url, {
+        headers: {
+          ...this.defaultHeaders,
+        },
+        params: {
+          request_id: this.requestId,
+          artifact_id: artifactId,
+        },
+      });
+
+      return response.data.download_url;
     } catch (error) {
-      console.error('Error while getting artifact download URL.', error);
+      if (axios.isAxiosError(error)) {
+        console.error(
+          'Error while getting artifact download URL.',
+          serializeAxiosError(error)
+        );
+      } else {
+        console.error('Error while getting artifact download URL.', error);
+      }
     }
   }
 

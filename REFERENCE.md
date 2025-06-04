@@ -8,21 +8,21 @@ Defines the base state structure used by the Airdrop SDK.
 
 #### Properties
 
-* _lastSyncStarted_
-  
-  Optional. A __string__ representing the timestamp when the last sync operation started.
+- _lastSyncStarted_
 
-* _lastSuccessfulSyncStarted_
-  
-  Optional. A __string__ representing the timestamp when the last successful sync operation started.
+  Optional. A **string** representing the timestamp when the last sync operation started.
 
-* _toDevRev_
-  
-  Optional. An object of type __ToDevRev__ containing data to be sent to DevRev.
+- _lastSuccessfulSyncStarted_
 
-* _fromDevRev_
-  
-  Optional. An object of type __FromDevRev__ containing data received from DevRev.
+  Optional. A **string** representing the timestamp when the last successful sync operation started.
+
+- _toDevRev_
+
+  Optional. An object of type **ToDevRev** containing data to be sent to DevRev.
+
+- _fromDevRev_
+
+  Optional. An object of type **FromDevRev** containing data received from DevRev.
 
 ### `AdapterState` type
 
@@ -42,9 +42,9 @@ Provides additional information within the state that is available only during d
 
 #### Properties
 
-* _attachmentsMetadata_
-  * _artifactIds_: An array of __strings__ containing artifact IDs
-  * _lastProcessed_: A __number__ which is the index of the last processed attachment from the array  
+- _attachmentsMetadata_
+  - _artifactIds_: An array of **strings** containing artifact IDs
+  - _lastProcessed_: A **number** which is the index of the last processed attachment from the array
 
 ### `FromDevRev` interface
 
@@ -52,9 +52,9 @@ Provides additional information within the state that is available only during d
 
 #### Properties
 
-* _filesToLoad_
-  
-  An array of __FileToLoad__ objects representing files that need to be loaded.
+- _filesToLoad_
+
+  An array of **FileToLoad** objects representing files that need to be loaded.
 
 ### `StateInterface` interface
 
@@ -62,17 +62,17 @@ Defines the configuration structure for initializing state of the worker adapter
 
 #### Properties
 
-* _event_
-  
-  Required. An object of type __AirdropEvent__ that is received from the Airdrop platform.
+- _event_
 
-* _initialState_
-  
-  Required. An object of type __ConnectorState__ representing the initial state of the snap-in.
+  Required. An object of type **AirdropEvent** that is received from the Airdrop platform.
 
-* _options_
-  
-  Optional. An object of type __WorkerAdapterOptions__ for configuring the worker adapter.
+- _initialState_
+
+  Required. An object of type **ConnectorState** representing the initial state of the snap-in.
+
+- _options_
+
+  Optional. An object of type **WorkerAdapterOptions** for configuring the worker adapter.
 
 ### `NormalizedItem` interface
 
@@ -80,21 +80,21 @@ Represents the standardized structure of an item after normalization.
 
 #### Properties
 
-* _id_
-  
-  Required. A __string__ that uniquely identifies the normalized item.
+- _id_
 
-* _created_date_
-  
-  Required. A __string__ representing the timestamp, formatted as RFC3339, when the item was created.
+  Required. A **string** that uniquely identifies the normalized item.
 
-* _modified_date_
-  
-  Required. A __string__ representing the timestamp, formatted as RFC3339, when the item was last modified.
+- _created_date_
 
-* _data_
-  
-  Required. An __object__ containing the actual data of the normalized item.
+  Required. A **string** representing the timestamp, formatted as RFC3339, when the item was created.
+
+- _modified_date_
+
+  Required. A **string** representing the timestamp, formatted as RFC3339, when the item was last modified.
+
+- _data_
+
+  Required. An **object** containing the actual data of the normalized item.
 
 ### `NormalizedAttachment` interface
 
@@ -102,29 +102,29 @@ Represents the standardized structure of an attachment after normalization in th
 
 #### Properties
 
-* _url_
-  
-  Required. A __string__ representing the URL where the attachment can be accessed.
+- _url_
 
-* _id_
-  
-  Required. A __string__ that uniquely identifies the normalized attachment.
+  Required. A **string** representing the URL where the attachment can be accessed.
 
-* _file_name_
-  
-  Required. A __string__ representing the name of the attachment file.
+- _id_
 
-* _parent_id_
-  
-  Required. A __string__ identifying the parent item this attachment belongs to.
+  Required. A **string** that uniquely identifies the normalized attachment.
 
-* _author_id_
-  
-  Optional. A __string__ identifying the author or creator of the attachment.
+- _file_name_
 
-* _grand_parent_id_
-  
-  Optional. A __number__ identifying a higher-level parent entity, if applicable.
+  Required. A **string** representing the name of the attachment file.
+
+- _parent_id_
+
+  Required. A **string** identifying the parent item this attachment belongs to.
+
+- _author_id_
+
+  Optional. A **string** identifying the author or creator of the attachment.
+
+- _grand_parent_id_
+
+  Optional. A **number** identifying a higher-level parent entity, if applicable.
 
 #### Example
 
@@ -135,7 +135,7 @@ const normalizedAttachment: NormalizedAttachment = {
   file_name: 'document.pdf',
   parent_id: 'task_789',
   author_id: 'user_456',
-  grand_parent_id: 1001
+  grand_parent_id: 1001,
 };
 ```
 
@@ -145,13 +145,13 @@ Defines the structure of a repo which is used to store and upload extracted data
 
 #### Properties
 
-* _itemType_
-  
-  Required. A __string__ that specifies the type of items stored in this repository.
+- _itemType_
 
-* _normalize_
-  
-  Optional. A __function__ that takes an object and returns either a __NormalizedItem__ or __NormalizedAttachment__. This function is responsible for transforming raw data into a standardized format.
+  Required. A **string** that specifies the type of items stored in this repository.
+
+- _normalize_
+
+  Optional. A **function** that takes an object and returns either a **NormalizedItem** or **NormalizedAttachment**. This function is responsible for transforming raw data into a standardized format.
 
 #### Example
 
@@ -162,8 +162,8 @@ const taskRepo: RepoInterface = {
     id: rawTask.id,
     created_date: rawTask.created_at,
     modified_date: rawTask.updated_at,
-    data: rawTask
-  })
+    data: rawTask,
+  }),
 };
 ```
 
@@ -173,25 +173,131 @@ Represents an external sync unit (such as repositories, projects, etc.) that can
 
 #### Properties
 
-* _id_
-  
-  Required. A __string__ that uniquely identifies the external sync unit.
+- _id_
 
-* _name_
-  
-  Required. A __string__ representing the name of the external sync unit.
+  Required. A **string** that uniquely identifies the external sync unit.
 
-* _description_
-  
-  Required. A __string__ providing a description of the external sync unit.
+- _name_
 
-* _item_count_
-  
-  Optional. A __number__ indicating the total count of items in this external sync unit.
+  Required. A **string** representing the name of the external sync unit.
 
-* _item_type_
-  
-  Optional. A __string__ specifying the type of items contained in this external sync unit.
+- _description_
+
+  Required. A **string** providing a description of the external sync unit.
+
+- _item_count_
+
+  Optional. A **number** indicating the total count of items in this external sync unit.
+
+- _item_type_
+
+  Optional. A **string** specifying the type of items contained in this external sync unit.
+
+### `EventContext` interface
+
+Defines the structure of the event context that is sent to the external connector from Airdrop.
+
+#### Properties
+
+- _callback_url_
+
+  Required. A **string** representing the callback URL.
+
+- _dev_org_
+
+  Required. A **string** representing the organization ID.
+
+- _dev_org_id_
+
+  Required. A **string** representing the organization ID.
+
+- _dev_user_
+
+  Required. A **string** representing the user ID.
+
+- _dev_user_id_
+
+  Required. A **string** representing the user ID.
+
+- _external_sync_unit_
+
+  Required. A **string** representing the external sync unit ID.
+
+- _external_sync_unit_id_
+
+  Required. A **string** representing the external sync unit ID.
+
+- _external_sync_unit_name_
+
+  Required. A **string** representing the external sync unit name.
+
+- _external_system_
+
+  Required. A **string** representing the external system.
+
+- _external_system_type_
+
+  Required. A **string** representing the external system type.
+
+- _extract_from_
+
+  Optional. A **string** representing the timestamp formatted as RFC3399 from which the extraction should start.
+
+- _import_slug_
+
+  Required. A **string** representing the import slug.
+
+- _initial_sync_scope_
+
+  Optional. An enum **InitialSyncScope** representing the scope of the initial sync (can be 'full-history' or 'time-scoped').
+
+- _mode_
+
+  Required. A **string** representing the mode (can be 'INITIAL', 'INCREMENTAL', or 'LOADING').
+
+- _request_id_
+
+  Required. A **string** representing the request ID.
+
+- _reset_extraction_
+
+  Optional. A **boolean** signifying the incremental sync should start from the given `extract_from` timestamp if true or from `lastSuccessfulSyncStarted` timestamp if false.
+
+- _snap_in_slug_
+
+  Required. A **string** representing the snap-in slug.
+
+- _snap_in_version_id_
+
+  Required. A **string** representing the snap-in version ID.
+
+- _sync_run_
+
+  Required. A **string** representing the sync run ID.
+
+- _sync_run_id_
+
+  Required. A **string** representing the sync run ID.
+
+- _sync_tier_
+
+  Required. A **string** representing the sync tier.
+
+- _sync_unit_
+
+  Required. A **string** representing the sync unit ID.
+
+- _sync_unit_id_
+
+  Required. A **string** representing the sync unit ID.
+
+- _uuid_
+
+  Required. A **string** representing the unique identifier.
+
+- _worker_data_url_
+
+  Required. A **string** representing the worker data URL.
 
 ### `AirdropEvent` interface
 
@@ -199,56 +305,42 @@ Defines the structure of events sent to external extractors from Airdrop platfor
 
 #### Properties
 
-* _context_
-  
+- _context_
+
   Required. An object containing:
-  * _secrets_: An object containing:
-    * _service_account_token_: A __string__ representing the DevRev authentication token for Airdrop platform
-  * _snap_in_version_id_: A __string__ representing the version ID of the snap-in
 
-* _payload_
-  
-  Required. An object of type __AirdropMessage__ containing:
-  * _connection_data_: An object containing:
-    * _org_id_: A __string__ representing the organization ID
-    * _org_name_: A __string__ representing the organization name
-    * _key_: A __string__ representing the key
-    * _key_type_: A __string__ representing the key type
-  * _event_context_: An object containing:
-    * _callback_url_: A __string__ representing the callback URL
-    * _dev_org_: A __string__ representing the dev organization
-    * _dev_org_id_: A __string__ representing the dev organization ID
-    * _dev_user_: A __string__ representing the dev user
-    * _dev_user_id_: A __string__ representing the dev user ID
-    * _external_sync_unit_: A __string__ representing the external sync unit
-    * _external_sync_unit_id_: A __string__ representing the external sync unit ID
-    * _external_sync_unit_name_: A __string__ representing the external sync unit name
-    * _external_system_: A __string__ representing the external system
-    * _external_system_type_: A __string__ representing the external system type
-    * _import_slug_: A __string__ representing the import slug
-    * _mode_: A __string__ representing the mode (can be 'INITIAL', 'INCREMENTAL', or 'LOADING')
-    * _request_id_: A __string__ representing the request ID
-    * _snap_in_slug_: A __string__ representing the snap-in slug
-    * _snap_in_version_id_: A __string__ representing the snap-in version ID
-    * _uuid_: A __string__ representing the unique identifier
-    * _worker_data_url_: A __string__ representing the worker data URL
-  * _event_type_: A value from the __EventType__ enum (see `EventType` enum documentation above)
-  * _event_data_: Optional. An object that may contain:
-    * _external_sync_units_: Optional array of __ExternalSyncUnit__ objects
-    * _progress_: Optional __number__ indicating progress
-    * _error_: Optional error record
-    * _delay_: Optional __number__ indicating delay
-    * _reports_: Optional array of loader reports
-    * _processed_files_: Optional array of __strings__ representing processed files
-    * _stats_file_: Optional __string__ representing stats file
+  - _secrets_: An object containing:
+    - _service_account_token_: A **string** representing the DevRev authentication token for Airdrop platform
+  - _snap_in_version_id_: A **string** representing the version ID of the snap-in
 
-* _execution_metadata_
-  
+- _payload_
+
+  Required. An object of type **AirdropMessage** containing:
+
+  - _connection_data_: An object containing:
+    - _org_id_: A **string** representing the organization ID
+    - _org_name_: A **string** representing the organization name
+    - _key_: A **string** representing the key
+    - _key_type_: A **string** representing the key type
+  - _event_context_: An object of type [**EventContext**](#EventContext-interface)
+  - _event_type_: A value from the **EventType** enum (see `EventType` enum documentation above)
+  - _event_data_: Optional. An object that may contain:
+    - _external_sync_units_: Optional array of **ExternalSyncUnit** objects
+    - _progress_: Optional **number** indicating progress
+    - _error_: Optional error record
+    - _delay_: Optional **number** indicating delay
+    - _reports_: Optional array of loader reports
+    - _processed_files_: Optional array of **strings** representing processed files
+    - _stats_file_: Optional **string** representing stats file
+
+- _execution_metadata_
+
   Required. An object containing:
-  * _devrev_endpoint_: A __string__ representing the DevRev endpoint URL
 
-* _input_data_
-  
+  - _devrev_endpoint_: A **string** representing the DevRev endpoint URL
+
+- _input_data_
+
   Required. An object containing input data for snap-ins from '@devrev/typescript-sdk'
 
 ### `EventData` interface
@@ -257,67 +349,65 @@ Defines the structure of event data that is sent from the external extractor to 
 
 #### Properties
 
-* _external_sync_units_
-  
-  Optional. An array of __ExternalSyncUnit__ objects representing external sync units to be processed.
+- _external_sync_units_
 
-* _progress_
-  
-  Optional. A __number__ indicating the progress of the current operation.
+  Optional. An array of **ExternalSyncUnit** objects representing external sync units to be processed.
 
-* _error_
-  
-  Optional. An object of type __ErrorRecord__ containing error information if an error occurred.
+- _progress_
 
-* _delay_
-  
-  Optional. A __number__ specifying a delay duration in seconds.
+  Optional. A **number** indicating the progress of the current operation.
+
+- _error_
+
+  Optional. An object of type **ErrorRecord** containing error information if an error occurred.
+
+- _delay_
+
+  Optional. A **number** specifying a delay duration in seconds.
 
 ### `spawn` function
 
-This function initializes a new worker thread and oversees its lifecycle. 
-It should be invoked when the snap-in receives a message from the Airdrop platform.
-The worker script provided then handles the event accordingly.
+This function initializes a new worker thread and oversees its lifecycle. It should be invoked when the snap-in receives a message from the Airdrop platform. The worker script provided then handles the event accordingly.
 
 #### Usage
 
 ```typescript
-spawn({ event, initialState, workerPath, options })
+spawn({ event, initialState, workerPath, options });
 ```
 
 #### Parameters
 
-* _event_
-  
-  Required. An object of type __AirdropEvent__ that is received from the Airdrop platform.
+- _event_
 
-* _initialState_
+  Required. An object of type **AirdropEvent** that is received from the Airdrop platform.
 
-  Required. Object of __any__ type that represents the initial state of the snap-in.
+- _initialState_
 
-* _workerPath_
+  Required. Object of **any** type that represents the initial state of the snap-in.
 
-  Required. A __string__ that represents the path to the worker file.
+- _workerPath_
 
-* _options_
+  Required. A **string** that represents the path to the worker file.
+
+- _options_
 
   Optional. An object of type **WorkerAdapterOptions**, which will be passed to the newly created worker. This worker will then initialize a `WorkerAdapter` by invoking the `processTask` function. The options include:
-  
-  * `isLocalDevelopment`
-  
-    A __boolean__ flag. If set to `true`, intermediary files containing extracted data will be stored on the local machine, which is useful during development. The default value is `false`.
 
-  * `timeout`
-  
-    A __number__ that specifies the timeout duration for the lambda function, in milliseconds. The default is 10 minutes (10 * 60 * 1000 milliseconds), with a maximum allowable duration of 13 minutes (13 * 60 * 1000 milliseconds).
-  
-  * `batchSize`
+  - `isLocalDevelopment`
 
-    A __number__ that determines the maximum number of items to be processed and saved to an intermediary file before being sent to the Airdrop platform. The default batch size is 2,000.
+    A **boolean** flag. If set to `true`, intermediary files containing extracted data will be stored on the local machine, which is useful during development. The default value is `false`.
+
+  - `timeout`
+
+    A **number** that specifies the timeout duration for the lambda function, in milliseconds. The default is 10 minutes (10 _ 60 _ 1000 milliseconds), with a maximum allowable duration of 13 minutes (13 _ 60 _ 1000 milliseconds).
+
+  - `batchSize`
+
+    A **number** that determines the maximum number of items to be processed and saved to an intermediary file before being sent to the Airdrop platform. The default batch size is 2,000.
 
 #### Return value
 
-A __promise__ that resolves once the worker has completed processing.
+A **promise** that resolves once the worker has completed processing.
 
 #### Example
 
@@ -336,26 +426,23 @@ const run = async (events: AirdropEvent[]) => {
 
 ### `processTask` function
 
-The `processTask` function retrieves the current state from the Airdrop platform and initializes a new `WorkerAdapter`.
-It executes the code specified in the `task` parameter, which contains the worker's functionality.
-If a timeout occurs, the function handles it by executing the `onTimeout` callback, ensuring the worker exits gracefully.
-Both functions receive an `adapter` parameter, representing the initialized `WorkerAdapter` object.
-
+The `processTask` function retrieves the current state from the Airdrop platform and initializes a new `WorkerAdapter`. It executes the code specified in the `task` parameter, which contains the worker's functionality. If a timeout occurs, the function handles it by executing the `onTimeout` callback, ensuring the worker exits gracefully. Both functions receive an `adapter` parameter, representing the initialized `WorkerAdapter` object.
 
 #### Usage
+
 ```typescript
-processTask({ task, onTimeout })
+processTask({ task, onTimeout });
 ```
 
 #### Parameters
 
-* _task_
-  
-  Required. A __function__ that defines the logic associated with the given event type.
+- _task_
 
-* _onTimeout_
-  
-  Required. A __function__ managing the timeout of the lambda invocation, including saving any necessary progress at the time of timeout.
+  Required. A **function** that defines the logic associated with the given event type.
+
+- _onTimeout_
+
+  Required. A **function** managing the timeout of the lambda invocation, including saving any necessary progress at the time of timeout.
 
 #### Example
 
@@ -367,7 +454,9 @@ processTask({
 
     const todoLists = await httpClient.getTodoLists();
 
-    const externalSyncUnits: ExternalSyncUnit[] = todoLists.map((todoList) => normalizeTodoList(todoList));
+    const externalSyncUnits: ExternalSyncUnit[] = todoLists.map((todoList) =>
+      normalizeTodoList(todoList)
+    );
 
     await adapter.emit(ExtractorEventType.ExtractionExternalSyncUnitsDone, {
       external_sync_units: externalSyncUnits,
@@ -385,9 +474,7 @@ processTask({
 
 ### `Spawn` class
 
-`Spawn` class is responsible for spawning a new worker thread and managing the lifecycle of the worker.
-Provides utilities to emit control events to the platform and exit the worker gracefully.
-In case of lambda timeout, the class emits a lambda timeout event to the platform.
+`Spawn` class is responsible for spawning a new worker thread and managing the lifecycle of the worker. Provides utilities to emit control events to the platform and exit the worker gracefully. In case of lambda timeout, the class emits a lambda timeout event to the platform.
 
 #### Usage
 
@@ -402,22 +489,21 @@ new Spawn({
 
 #### Parameters
 
-* _event_
-  
-  Required. An object of type __AirdropEvent__ that is received from the Airdrop platform.
+- _event_
 
-* _worker_
+  Required. An object of type **AirdropEvent** that is received from the Airdrop platform.
 
-  Required. A Node worker of the __Worker__ class, created with the createWorker function, which represents an independent JavaScript execution thread.
+- _worker_
 
-* _options_
+  Required. A Node worker of the **Worker** class, created with the createWorker function, which represents an independent JavaScript execution thread.
 
-  Optional. An object of type __SpawnInterface__, which defines the options to create a new instance of Spawn class.
+- _options_
 
-* _resolve_
+  Optional. An object of type **SpawnInterface**, which defines the options to create a new instance of Spawn class.
 
-  Required. A resolve __function__ for the promise inside which the Spawn class was created.
+- _resolve_
 
+  Required. A resolve **function** for the promise inside which the Spawn class was created.
 
 #### Example
 
@@ -434,8 +520,7 @@ new Promise((resolve) => {
 
 ### `WorkerAdapter` class
 
-Used to interact with Airdrop platform. 
-Provides utilities to emit events to the Airdrop platform, update the state of the snap-in and upload artifacts (files with data) to the platform.
+Used to interact with Airdrop platform. Provides utilities to emit events to the Airdrop platform, update the state of the snap-in and upload artifacts (files with data) to the platform.
 
 ### Usage
 
@@ -449,17 +534,17 @@ new WorkerAdapter({
 
 #### Parameters
 
-* _event_
-  
-  Required. An object of type __AirdropEvent__ that is received from the Airdrop platform.
+- _event_
 
-* _adapterState_
-  
-  Required. An object of type __State__, which represents the initial state of the adapter.
+  Required. An object of type **AirdropEvent** that is received from the Airdrop platform.
 
-* _options_
-  
-  Optional. An object of type __WorkerAdapterOptions__ that specifies additional configuration options for the `WorkerAdapter`. This object is passed via the `spawn` function.
+- _adapterState_
+
+  Required. An object of type **State**, which represents the initial state of the adapter.
+
+- _options_
+
+  Optional. An object of type **WorkerAdapterOptions** that specifies additional configuration options for the `WorkerAdapter`. This object is passed via the `spawn` function.
 
 #### Example
 
@@ -509,9 +594,9 @@ adapter.initializeRepos(repos);
 
 #### Parameters
 
-* _repos_
-  
-  Required. An array of objects of type `RepoInterface`. 
+- _repos_
+
+  Required. An array of objects of type `RepoInterface`.
 
 #### Example
 
@@ -522,7 +607,7 @@ const repos = [
   {
     itemType: 'tasks',
     normalize: normalizeTask,
-  }
+  },
 ];
 
 adapter.initializeRepos(repos);
@@ -540,13 +625,13 @@ adapter.getRepo(itemType);
 
 #### Parameters
 
-* _itemType_
-  
-  Required. A __string__ that represents the itemType property for the searched repo.
+- _itemType_
+
+  Required. A **string** that represents the itemType property for the searched repo.
 
 #### Return value
 
-An object of type __Repo__ if the repo is found, otherwise __undefined__.
+An object of type **Repo** if the repo is found, otherwise **undefined**.
 
 #### Example
 
@@ -569,17 +654,17 @@ adapter.emit( newEventType, data ):
 
 #### Parameters
 
-* _newEventType_
-  
-  Required. The event type to be emitted, of type __ExtractorEventType__ or __LoaderEventType__.
+- _newEventType_
 
-* _data_
-  
-  Optional. An object of type __EventData__ which represents the data to be sent with the event.
+  Required. The event type to be emitted, of type **ExtractorEventType** or **LoaderEventType**.
+
+- _data_
+
+  Optional. An object of type **EventData** which represents the data to be sent with the event.
 
 #### Return value
 
-A __promise__, which resolves to undefined after the emit function completes its execution or rejects with an error.
+A **promise**, which resolves to undefined after the emit function completes its execution or rejects with an error.
 
 #### Example
 

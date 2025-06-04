@@ -93,6 +93,14 @@ export interface ExternalSyncUnit {
 }
 
 /**
+ * InitialSyncScope is an enum that defines the different scopes of initial sync that can be used by the external extractor.
+ */
+export enum InitialSyncScope {
+  FULL_HISTORY = 'full-history',
+  TIME_SCOPED = 'time-scoped',
+}
+
+/**
  * EventContextIn is an interface that defines the structure of the input event context that is sent to the external extractor from ADaaS.
  * @deprecated
  */
@@ -131,7 +139,7 @@ export interface EventContextOut {
 }
 
 /**
- * EventContext is an interface that defines the structure of the event context that is sent to and from the external connector.
+ * EventContext is an interface that defines the structure of the event context that is sent to the external connector from Airdrop.
  */
 export interface EventContext {
   callback_url: string;
@@ -144,9 +152,12 @@ export interface EventContext {
   external_sync_unit_name: string;
   external_system: string;
   external_system_type: string;
+  extract_from?: string;
   import_slug: string;
+  initial_sync_scope?: InitialSyncScope;
   mode: string;
   request_id: string;
+  reset_extraction?: boolean;
   snap_in_slug: string;
   snap_in_version_id: string;
   sync_run: string;

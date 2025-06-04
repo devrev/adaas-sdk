@@ -4,8 +4,7 @@
 
 ## Overview
 
-The Airdrop SDK for TypeScript helps developers build snap-ins that integrate with DevRev’s Airdrop platform. 
-This SDK simplifies the workflow for handling data extraction and loading, event-driven actions, state management, and artifact handling.
+The Airdrop SDK for TypeScript helps developers build snap-ins that integrate with DevRev’s Airdrop platform. This SDK simplifies the workflow for handling data extraction and loading, event-driven actions, state management, and artifact handling.
 
 It provides features such as:
 

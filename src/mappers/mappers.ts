@@ -12,12 +12,12 @@ import {
 } from './mappers.interface';
 
 export class Mappers {
-  private endpoint: string;
-  private token: string;
+  private devrevApiEndpoint: string;
+  private devrevApiToken: string;
 
   constructor({ event }: MappersFactoryInterface) {
-    this.endpoint = event.execution_metadata.devrev_endpoint;
-    this.token = event.context.secrets.service_account_token;
+    this.devrevApiEndpoint = event.execution_metadata.devrev_endpoint;
+    this.devrevApiToken = event.context.secrets.service_account_token;
   }
 
   async getByTargetId(
@@ -25,10 +25,10 @@ export class Mappers {
   ): Promise<AxiosResponse<MappersGetByTargetIdResponse>> {
     const { sync_unit, target } = params;
     return axiosClient.get<MappersGetByTargetIdResponse>(
-      `${this.endpoint}/internal/airdrop.sync-mapper-record.get-by-target`,
+      `${this.devrevApiEndpoint}/internal/airdrop.sync-mapper-record.get-by-target`,
       {
         headers: {
-          Authorization: this.token,
+          Authorization: this.devrevApiToken,
         },
         params: { sync_unit, target },
       }
@@ -39,11 +39,11 @@ export class Mappers {
     params: MappersCreateParams
   ): Promise<AxiosResponse<MappersCreateResponse>> {
     return axiosClient.post<MappersCreateResponse>(
-      `${this.endpoint}/internal/airdrop.sync-mapper-record.create`,
+      `${this.devrevApiEndpoint}/internal/airdrop.sync-mapper-record.create`,
       params,
       {
         headers: {
-          Authorization: this.token,
+          Authorization: this.devrevApiToken,
         },
       }
     );
@@ -53,11 +53,11 @@ export class Mappers {
     params: MappersUpdateParams
   ): Promise<AxiosResponse<MappersUpdateResponse>> {
     return axiosClient.post<MappersUpdateResponse>(
-      `${this.endpoint}/internal/airdrop.sync-mapper-record.update`,
+      `${this.devrevApiEndpoint}/internal/airdrop.sync-mapper-record.update`,
       params,
       {
         headers: {
-          Authorization: this.token,
+          Authorization: this.devrevApiToken,
         },
       }
     );

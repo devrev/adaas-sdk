@@ -705,10 +705,12 @@ export class WorkerAdapter<ConnectorState> {
       const fileType =
         httpStream.headers?.['content-type'] || 'application/octet-stream';
 
-      const preparedArtifact = await this.uploader.prepareArtifact(
+      // Get upload URL
+      const preparedArtifact = await this.uploader.getArtifactUploadUrl(
         attachment.file_name,
         fileType
       );
+
       if (!preparedArtifact) {
         console.warn(
           `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment.`
@@ -716,7 +718,8 @@ export class WorkerAdapter<ConnectorState> {
         return;
       }
 
-      const uploadedArtifact = await this.uploader.streamToArtifact(
+      // Stream attachment
+      const uploadedArtifact = await this.uploader.streamArtifact(
         preparedArtifact,
         httpStream
       );
@@ -728,9 +731,19 @@ export class WorkerAdapter<ConnectorState> {
         return;
       }
 
+      // Confirm attachment upload
+      const confirmArtifactUploadResponse =
+        await this.uploader.confirmArtifactUpload(preparedArtifact.artifact_id);
+      if (!confirmArtifactUploadResponse) {
+        console.warn(
+          'Error while confirming upload for attachment ID ' + attachment.id
+        );
+        return;
+      }
+
       const ssorAttachment: SsorAttachment = {
         id: {
-          devrev: preparedArtifact.id,
+          devrev: preparedArtifact.artifact_id,
           external: attachment.id,
         },
         parent_id: {
