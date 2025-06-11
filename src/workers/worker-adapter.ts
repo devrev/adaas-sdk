@@ -25,6 +25,7 @@ import {
   AIRDROP_DEFAULT_ITEM_TYPES,
   ALLOWED_EXTRACTION_EVENT_TYPES,
   STATELESS_EVENT_TYPES,
+  DEFAULT_SLEEP_DELAY_MS,
 } from '../common/constants';
 import { State } from '../state/state';
 import { WorkerAdapterInterface, WorkerAdapterOptions } from '../types/workers';
@@ -46,6 +47,7 @@ import { Mappers } from '../mappers/mappers';
 import { Uploader } from '../uploader/uploader';
 import { serializeAxiosError } from '../logger/logger';
 import { SyncMapperRecordStatus } from '../mappers/mappers.interface';
+import { sleep } from '../common/helpers';
 
 export function createWorkerAdapter<ConnectorState>({
   event,
@@ -877,6 +879,12 @@ export class WorkerAdapter<ConnectorState> {
 
     // Loop through the batches of attachments
     for (let i = lastProcessedBatchIndex; i < reducedAttachments.length; i++) {
+
+      // Check if we hit timeout 
+      if (adapter.isTimeout) {
+        await sleep(DEFAULT_SLEEP_DELAY_MS);
+      }
+      
       const attachmentsBatch = reducedAttachments[i];
 
       // Create a list of promises for parallel processing

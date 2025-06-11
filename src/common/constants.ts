@@ -43,3 +43,5 @@ export const AIRDROP_DEFAULT_ITEM_TYPES = {
 };
 
 export const LIBRARY_VERSION = getLibraryVersion();
+
+export const DEFAULT_SLEEP_DELAY_MS = 180000; // 3 minutes
