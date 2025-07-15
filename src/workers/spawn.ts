@@ -20,6 +20,10 @@ import {
 
 import { createWorker } from './create-worker';
 import { LogLevel } from '../logger/logger.interfaces';
+import {
+  DEFAULT_LAMBDA_TIMEOUT,
+  HARD_TIMEOUT_MULTIPLIER,
+} from '../common/constants';
 
 function getWorkerPath({
   event,
@@ -162,9 +166,10 @@ export async function spawn<ConnectorState>({
 export class Spawn {
   private event: AirdropEvent;
   private alreadyEmitted: boolean;
-  private defaultLambdaTimeout: number = 10 * 60 * 1000; // 10 minutes in milliseconds
+  private defaultLambdaTimeout: number = DEFAULT_LAMBDA_TIMEOUT;
   private lambdaTimeout: number;
-  private timer: ReturnType<typeof setTimeout> | undefined;
+  private softTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
+  private hardTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
   private logger: Logger;
   private resolve: (value: void | PromiseLike<void>) => void;
 
@@ -177,53 +182,65 @@ export class Spawn {
       : this.defaultLambdaTimeout;
     this.resolve = resolve;
 
-    // if lambda timeout is reached, then send a message to the worker to gracefully exit
-    this.timer = setTimeout(async () => {
+    // If soft timeout is reached, send a message to the worker to gracefully exit.
+    this.softTimeoutTimer = setTimeout(async () => {
       this.logger.log(
-        'Lambda timeout reached. Sending a message to the worker to gracefully exit.'
+        'SOFT TIMEOUT: Sending a message to the worker to gracefully exit.'
       );
       if (worker) {
         worker.postMessage({
           subject: WorkerMessageSubject.WorkerMessageExit,
         });
       } else {
-        console.log("Worker doesn't exist. Exiting from main thread.");
+        console.log('Worker does not exist. Exiting from main thread.');
         await this.exitFromMainThread();
       }
     }, this.lambdaTimeout);
 
-    // if worker exits with process.exit(code) then we need to clear the timer and exit from main thread
+    // If hard timeout is reached, that means the worker did not exit in time. Terminate the worker.
+    this.hardTimeoutTimer = setTimeout(async () => {
+      this.logger.log(
+        'HARD TIMEOUT: Worker did not exit in time. Terminating the worker.'
+      );
+      if (worker) {
+        worker.terminate();
+      } else {
+        console.log('Worker does not exist. Exiting from main thread.');
+        await this.exitFromMainThread();
+      }
+    }, this.lambdaTimeout * HARD_TIMEOUT_MULTIPLIER);
+
+    // If worker exits with process.exit(code), clear the timeouts and exit from main thread.
     worker.on(WorkerEvent.WorkerExit, async (code) => {
       this.logger.info('Worker exited with exit code: ' + code + '.');
-      if (this.timer) {
-        clearTimeout(this.timer);
-      }
+      this.clearTimeouts();
       await this.exitFromMainThread();
     });
 
     worker.on(WorkerEvent.WorkerMessage, async (message) => {
-      // if worker send a log message, then log it from the main thread with logger
+      // Since it is not possible to log from the worker thread, we need to log
+      // from the main thread.
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
         const args = message.payload?.args;
         const level = message.payload?.level as LogLevel;
         this.logger.logFn(args, level);
       }
 
-      // if worker sends a message that it has completed work, then clear the timer and exit from main thread
-      if (message?.subject === WorkerMessageSubject.WorkerMessageDone) {
-        this.logger.info('Worker has completed with executing the task.');
-        if (this.timer) {
-          clearTimeout(this.timer);
-        }
-        await this.exitFromMainThread();
-      }
-
-      // if worker sends a message that it has emitted an event, then set alreadyEmitted to true
+      // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.
       if (message?.subject === WorkerMessageSubject.WorkerMessageEmitted) {
         this.logger.info('Worker has emitted message to ADaaS.');
         this.alreadyEmitted = true;
       }
     });
+  }
+
+  private clearTimeouts(): void {
+    if (this.softTimeoutTimer) {
+      clearTimeout(this.softTimeoutTimer);
+    }
+    if (this.hardTimeoutTimer) {
+      clearTimeout(this.hardTimeoutTimer);
+    }
   }
 
   private async exitFromMainThread(): Promise<void> {
@@ -233,33 +250,27 @@ export class Spawn {
     }
     this.alreadyEmitted = true;
 
-    const timeoutEventType = getTimeoutErrorEventType(
+    const { eventType } = getTimeoutErrorEventType(
       this.event.payload.event_type
     );
 
-    if (timeoutEventType) {
-      const { eventType } = timeoutEventType;
-
-      try {
-        await emit({
-          eventType,
-          event: this.event,
-          data: {
-            error: {
-              message: 'Worker has not emitted anything. Exited.',
-            },
+    try {
+      await emit({
+        eventType,
+        event: this.event,
+        data: {
+          error: {
+            message: 'Worker has not emitted anything. Exited.',
           },
-        });
-        this.resolve();
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          console.error(
-            'Error while emitting event',
-            serializeAxiosError(error)
-          );
-        } else {
-          console.error('Error while emitting event', error);
-        }
+        },
+      });
+
+      this.resolve();
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Error while emitting event', serializeAxiosError(error));
+      } else {
+        console.error('Error while emitting event', error);
       }
     }
   }

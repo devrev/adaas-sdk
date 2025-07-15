@@ -5,6 +5,7 @@ import { jsonl } from 'js-jsonl';
 import FormData from 'form-data';
 
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
+import { truncateFilename } from '../common/helpers';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { AirdropEvent } from '../types/extraction';
 
@@ -118,7 +119,7 @@ export class Uploader {
         params: {
           request_id: this.requestId,
           file_type: fileType,
-          file_name: filename,
+          file_name: truncateFilename(filename),
         },
       });
       return response.data;

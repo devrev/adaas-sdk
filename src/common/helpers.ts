@@ -12,10 +12,11 @@ import {
 } from '../types/loading';
 import { readFileSync } from 'fs';
 import * as path from 'path';
+import { MAX_DEVREV_FILENAME_EXTENSION_LENGTH, MAX_DEVREV_FILENAME_LENGTH } from './constants';
 
 export function getTimeoutErrorEventType(eventType: EventType): {
   eventType: ExtractorEventType | LoaderEventType;
-} | null {
+} {
   switch (eventType) {
     case EventType.ExtractionMetadataStart:
       return {
@@ -198,4 +199,24 @@ export function getLibraryVersion() {
 export function sleep(ms: number) {
   console.log(`Sleeping for ${ms}ms.`);
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function truncateFilename(filename: string): string {
+  // If the filename is already within the limit, return it as is.
+  if (filename.length <= MAX_DEVREV_FILENAME_LENGTH) {
+    return filename;
+  }
+
+  console.warn(
+    `Filename length exceeds the maximum limit of ${MAX_DEVREV_FILENAME_LENGTH} characters. Truncating filename.`
+  );
+  
+  let extension = filename.slice(-MAX_DEVREV_FILENAME_EXTENSION_LENGTH);
+  // Calculate how many characters are available for the name part after accounting for the extension and "..."
+  const availableNameLength = MAX_DEVREV_FILENAME_LENGTH - MAX_DEVREV_FILENAME_EXTENSION_LENGTH - 3; // -3 for "..."
+
+  // Truncate the name part and add an ellipsis
+  const truncatedFilename = filename.slice(0, availableNameLength);
+
+  return `${truncatedFilename}...${extension}`;
 }

@@ -1,5 +1,5 @@
-import { getFilesToLoad } from '../../common/helpers';
-import { ItemTypeToLoad, StatsFileObject } from '../../types/loading';
+import { getFilesToLoad } from './helpers';
+import { ItemTypeToLoad, StatsFileObject } from '../types/loading';
 
 describe('getFilesToLoad', () => {
   let statsFile: StatsFileObject[];

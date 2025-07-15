@@ -1,11 +1,7 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { createAdapterState } from '../state/state';
 import { WorkerAdapter } from './worker-adapter';
-import {
-  WorkerEvent,
-  WorkerMessageDone,
-  WorkerMessageSubject,
-} from '../types/workers';
+import { WorkerEvent, WorkerMessageSubject } from '../types/workers';
 import { ProcessTaskInterface } from '../types/workers';
 import { Logger } from '../logger/logger';
 
@@ -43,10 +39,6 @@ export function processTask<ConnectorState>({
           }
         });
         await task({ adapter });
-        const message: WorkerMessageDone = {
-          subject: WorkerMessageSubject.WorkerMessageDone,
-        };
-        parentPort.postMessage(message);
         process.exit(0);
       }
     })();

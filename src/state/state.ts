@@ -1,6 +1,7 @@
 import { axios, axiosClient } from '../http/axios-client';
 
 import { AirdropEvent, EventType, SyncMode } from '../types/extraction';
+import { InitialDomainMapping } from '../types/common';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { serializeAxiosError, getPrintableState } from '../logger/logger';
 import { ErrorRecord } from '../types/common';
@@ -26,32 +27,39 @@ export async function createAdapterState<ConnectorState>({
   if (!STATELESS_EVENT_TYPES.includes(event.payload.event_type)) {
     await as.fetchState(newInitialState);
 
+    // Check if IDM needs to be updated
     const snapInVersionId = event.context.snap_in_version_id;
-
     const hasSnapInVersionInState = 'snapInVersionId' in as.state;
-
     const shouldUpdateIDM =
       !hasSnapInVersionInState || as.state.snapInVersionId !== snapInVersionId;
 
-    if (shouldUpdateIDM) {
-      console.log(
-        `Snap-in version in state (${as.state?.snapInVersionId}) differs from the version in event context (${snapInVersionId}) - initial domain mapping needs to be updated.`
-      );
-      if (initialDomainMapping) {
-        await installInitialDomainMapping(event, initialDomainMapping);
-        as.state.snapInVersionId = snapInVersionId;
-        console.log('Successfully installed new initial domain mapping.');
-      } else {
-        console.warn(
-          'No initial domain mapping was passed to spawn function. Skipping initial domain mapping installation.'
-        );
-      }
-    } else {
+    if (!shouldUpdateIDM) {
       console.log(
         `Snap-in version in state matches the version in event context (${snapInVersionId}). Skipping initial domain mapping installation.`
       );
+    } else {
+      try {
+        if (initialDomainMapping) {
+          await installInitialDomainMapping(event, initialDomainMapping);
+          as.state.snapInVersionId = snapInVersionId;
+        } else {
+          console.warn(
+            'No initial domain mapping was passed to spawn function. Skipping initial domain mapping installation.'
+          );
+        }
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          console.error(
+            'Error while installing initial domain mapping',
+            serializeAxiosError(error)
+          );
+        } else {
+          console.error('Error while installing initial domain mapping', error);
+        }
+      }
     }
 
+    // Set lastSyncStarted if the event type is ExtractionDataStart
     if (
       event.payload.event_type === EventType.ExtractionDataStart &&
       !as.state.lastSyncStarted

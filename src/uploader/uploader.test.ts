@@ -38,13 +38,16 @@ describe('Uploader Class Tests', () => {
   const mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
 
   let uploader: Uploader;
+  let consoleWarnSpy: jest.SpyInstance;
 
   beforeEach(() => {
     uploader = new Uploader({ event: mockEvent });
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    consoleWarnSpy.mockRestore();
   });
 
   it('should upload the file to the DevRev platform and return the artifact information', async () => {

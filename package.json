@@ -1,6 +1,6 @@
 {
   "name": "@devrev/ts-adaas",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "description": "Typescript library containing the ADaaS(AirDrop as a Service) control protocol.",
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -11,7 +11,7 @@
     "start": "ts-node src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
-    "test": "jest --forceExit --coverage"
+    "test": "jest --forceExit --coverage --runInBand"
   },
   "repository": {
     "type": "git",

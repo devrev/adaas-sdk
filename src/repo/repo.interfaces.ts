@@ -41,6 +41,7 @@ export interface NormalizedAttachment {
   file_name: string;
   parent_id: string;
   author_id?: string;
+  inline?: boolean;
 
   // This should be a string, but it was a number in the past. Due to backwards
   // compatibility we are keeping it also as a number.

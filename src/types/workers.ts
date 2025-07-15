@@ -109,7 +109,6 @@ export enum WorkerEvent {
  */
 export enum WorkerMessageSubject {
   WorkerMessageEmitted = 'emit',
-  WorkerMessageDone = 'done',
   WorkerMessageExit = 'exit',
   WorkerMessageLog = 'log',
 }
@@ -125,13 +124,6 @@ export interface WorkerMessageEmitted {
 }
 
 /**
- * WorkerMessageDone interface represents the structure of the done worker message.
- */
-export interface WorkerMessageDone {
-  subject: WorkerMessageSubject.WorkerMessageDone;
-}
-
-/**
  * WorkerMessageExit interface represents the structure of the exit worker message.
  */
 export interface WorkerMessageExit {
@@ -141,10 +133,7 @@ export interface WorkerMessageExit {
 /**
  * WorkerMessage represents the structure of the worker message.
  */
-export type WorkerMessage =
-  | WorkerMessageDone
-  | WorkerMessageEmitted
-  | WorkerMessageExit;
+export type WorkerMessage = WorkerMessageEmitted | WorkerMessageExit;
 
 /**
  * WorkerData represents the structure of the worker data object.
