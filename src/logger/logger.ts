@@ -1,5 +1,5 @@
-import log from 'lambda-log';
 import { Console } from 'node:console';
+import { inspect } from 'node:util';
 
 import {
   LoggerFactoryInterface,
@@ -11,21 +11,31 @@ import { isMainThread, parentPort } from 'node:worker_threads';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import { AxiosError, RawAxiosResponseHeaders } from 'axios';
 import { getCircularReplacer } from '../common/helpers';
+import { EventContext } from '../types/extraction';
 
 export class Logger extends Console {
   private options?: WorkerAdapterOptions;
+  private tags: EventContext & { dev_oid: string };
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
     this.options = options;
-
-    log.options.levelKey = null;
-    log.options.tagsKey = null;
-    log.options.messageKey = 'message';
-    log.options.meta = {
+    this.tags = {
       ...event.payload.event_context,
       dev_oid: event.payload.event_context.dev_org,
     };
+  }
+
+  private valueToString(value: unknown): string {
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    // Use Node.js built-in inspect for everything including errors
+    return inspect(value, {
+      compact: false,
+      breakLength: Infinity,
+    });
   }
 
   logFn(args: unknown[], level: LogLevel): void {
@@ -33,13 +43,30 @@ export class Logger extends Console {
       if (this.options?.isLocalDevelopment) {
         console[level](...args);
       } else {
-        log.log(level, JSON.stringify(args));
+        let message: string;
+        if (args.length === 1 && typeof args[0] === 'string') {
+          // Single string argument - use directly
+          message = args[0];
+        } else if (args.length === 1) {
+          // Single non-string argument - convert to string properly
+          message = this.valueToString(args[0]);
+        } else {
+          // Multiple arguments - create a readable format
+          message = args.map((arg) => this.valueToString(arg)).join(' ');
+        }
+
+        const logObject = {
+          message,
+          ...this.tags,
+        };
+
+        console[level](JSON.stringify(logObject));
       }
     } else {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
         payload: {
-          args: JSON.parse(JSON.stringify(args, getCircularReplacer())),
+          args: args.map((arg) => this.valueToString(arg)),
           level,
         },
       });

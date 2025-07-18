@@ -35,10 +35,11 @@ export async function installInitialDomainMapping(
 
   if (!importSlug || !snapInSlug) {
     const errorMessage = `No import slug or snap-in slug found. Snap-in response: ${snapInResponse.data}`;
-    throw new Error(errorMessage); 
+    throw new Error(errorMessage);
   }
 
-  const startingRecipeBlueprint = initialDomainMappingJson?.starting_recipe_blueprint;
+  const startingRecipeBlueprint =
+    initialDomainMappingJson?.starting_recipe_blueprint;
 
   // Try to create a recipe blueprint
   let recipeBlueprintId;
@@ -58,7 +59,7 @@ export async function installInitialDomainMapping(
           },
         }
       );
-        
+
       recipeBlueprintId = recipeBlueprintResponse.data.recipe_blueprint.id;
 
       console.log(
@@ -67,10 +68,7 @@ export async function installInitialDomainMapping(
     } catch (error) {
       const errorMessage = `Error while creating recipe blueprint. Continuing without it.`;
       if (axios.isAxiosError(error)) {
-        console.error(
-          errorMessage,
-          serializeAxiosError(error)
-        );
+        console.error(errorMessage, serializeAxiosError(error));
       } else {
         console.error(errorMessage, error);
       }
@@ -78,8 +76,7 @@ export async function installInitialDomainMapping(
   }
 
   // Install the initial domain mappings
-  const additionalMappings =
-    initialDomainMappingJson.additional_mappings || {};
+  const additionalMappings = initialDomainMappingJson.additional_mappings || {};
   const initialDomainMappingInstallResponse = await axiosClient.post(
     `${devrevEndpoint}/internal/airdrop.recipe.initial-domain-mappings.install`,
     {
@@ -99,7 +96,6 @@ export async function installInitialDomainMapping(
   );
 
   console.log(
-    'Successfully installed initial domain mapping: ' +
-      JSON.stringify(initialDomainMappingInstallResponse.data)
+    `Successfully installed initial domain mapping ${JSON.stringify(initialDomainMappingInstallResponse.data)}`
   );
 }

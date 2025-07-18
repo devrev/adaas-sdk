@@ -1,0 +1,126 @@
+# Heavily borrowed from https://dev.to/superface/automate-npm-publishing-with-github-actions-proper-changelog-and-release-notes-2pii
+
+name: Release package
+run-name: "Release ${{ inputs.release-type }} by ${{ github.actor }}${{ inputs.dry-run && ' --dry-run' || '' }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      release-type:
+        description: 'Release type'
+        type: choice
+        required: true
+        options: [patch, minor, major, prepatch, preminor, premajor, prerelease]
+      dry-run:
+        description: 'Dry Run - skip commit and publish'
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      # Checkout project repository
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_SVC_TOKEN }}
+
+      # Check if user is authorized to run this workflow
+      - name: Check authorization
+        run: |
+          # Extract individual users from CODEOWNERS
+          AUTHORIZED_USERS=$(grep -o '@[a-zA-Z0-9_-]*[^/]' .github/CODEOWNERS | grep -v '@devrev/' | sed 's/@//' | tr '\n' ' ')
+
+          # Check if current actor is authorized
+          if ! echo "$AUTHORIZED_USERS" | grep -q "\b${{ github.actor }}\b"; then
+            echo "ERROR: User ${{ github.actor }} is not authorized to run this workflow"
+            echo "Only users listed in .github/CODEOWNERS can run this workflow"
+            exit 1
+          fi
+
+      # Check branch restriction for non-beta releases
+      - name: Check branch for production releases
+        if: startsWith(github.event.inputs.release-type, 'pre') != true
+        run: |
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            echo "ERROR: Production releases (non-pre releases) can only be made from the main branch"
+            echo "Current branch: ${{ github.ref_name }}"
+            echo "Release type: ${{ github.event.inputs.release-type }}"
+            exit 1
+          fi
+
+      # Setup Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          registry-url: https://registry.npmjs.org/
+          node-version: '18.x'
+          scope: '@devrev'
+          token: ${{ secrets.NPMJS_NPM_TOKEN }}
+
+      - name: Git configuration
+        run: |
+          git config --global user.email "svc-devrev-sdk@devrev.ai"
+          git config --global user.name "svc-devrev-sdk"
+
+      # Bump package version
+      # Use tag latest
+      - name: Bump release version
+        if: startsWith(github.event.inputs.release-type, 'pre') != true
+        run: |
+          echo "NEW_VERSION=$(npm --no-git-tag-version version $RELEASE_TYPE)" >> $GITHUB_ENV
+          echo "RELEASE_TAG=latest" >> $GITHUB_ENV
+        env:
+          RELEASE_TYPE: ${{ github.event.inputs.release-type }}
+
+      # Bump package pre-release version
+      # Use tag beta for pre-release versions
+      - name: Bump pre-release version
+        if: startsWith(github.event.inputs.release-type, 'pre')
+        run: |
+          echo "NEW_VERSION=$(npm --no-git-tag-version --preid=beta version $RELEASE_TYPE)" >> $GITHUB_ENV
+          echo "RELEASE_TAG=beta" >> $GITHUB_ENV
+        env:
+          RELEASE_TYPE: ${{ github.event.inputs.release-type }}
+
+      # Commit changes
+      - name: Commit package.json changes and create tag
+        run: |
+          git add "package.json"
+          git commit -m "chore: release ${{ env.NEW_VERSION }}"
+          git tag ${{ env.NEW_VERSION }}
+
+      # Push repository changes
+      - name: Push changes to repository
+        if: ${{ github.event.inputs.dry-run == 'false' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_SVC_TOKEN }}
+        run: |
+          git push origin && git push --tags
+
+      # Documentation on config options https://github.com/softprops/action-gh-release
+      - name: Update GitHub release documentation
+        if: ${{ github.event.inputs.dry-run == 'false' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.NEW_VERSION }}
+          name: ${{ env.NEW_VERSION }}
+          generate_release_notes: true
+          prerelease: ${{ startsWith(github.event.inputs.release-type, 'pre') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_SVC_TOKEN }}
+
+      # Publish version to public repository
+      - name: Publish
+        run: |
+          npm ci \
+          && npm run build \
+          && npm publish --verbose --access public --tag ${{ env.RELEASE_TAG }} ${{ env.DRY_RUN }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_NPM_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry-run != 'false' && '--dry-run' || ' '}}

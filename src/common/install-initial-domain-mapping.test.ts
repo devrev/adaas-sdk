@@ -1,4 +1,4 @@
-import axios from 'axios'; 
+import axios from 'axios';
 import { installInitialDomainMapping } from './install-initial-domain-mapping';
 import { axiosClient } from '../http/axios-client';
 import { serializeAxiosError } from '../logger/logger';
@@ -53,7 +53,9 @@ describe('installInitialDomainMapping', () => {
     // Re-initialize the spy and its mock implementation
     mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
     mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockConsoleError = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
   });
 
   // After each test, clear all mocks to prevent state from leaking.
@@ -134,7 +136,7 @@ describe('installInitialDomainMapping', () => {
       'Successfully created recipe blueprint with id: recipe-blueprint-123'
     );
     expect(mockConsoleLog).toHaveBeenCalledWith(
-      'Successfully installed initial domain mapping: {"success":true,"mapping_id":"mapping-123"}'
+      `Successfully installed initial domain mapping ${JSON.stringify(mockDomainMappingResponse.data)}`
     );
   });
 
@@ -196,7 +198,9 @@ describe('installInitialDomainMapping', () => {
   it('should return early with warning when no initial domain mapping provided', async () => {
     await installInitialDomainMapping(mockEvent, null as any);
 
-    expect(mockConsoleWarn).toHaveBeenCalledWith('No initial domain mapping found.');
+    expect(mockConsoleWarn).toHaveBeenCalledWith(
+      'No initial domain mapping found.'
+    );
     expect(mockAxiosClient.get).not.toHaveBeenCalled();
     expect(mockAxiosClient.post).not.toHaveBeenCalled();
   });
@@ -204,7 +208,9 @@ describe('installInitialDomainMapping', () => {
   it('should return early with warning when undefined initial domain mapping provided', async () => {
     await installInitialDomainMapping(mockEvent, undefined as any);
 
-    expect(mockConsoleWarn).toHaveBeenCalledWith('No initial domain mapping found.');
+    expect(mockConsoleWarn).toHaveBeenCalledWith(
+      'No initial domain mapping found.'
+    );
     expect(mockAxiosClient.get).not.toHaveBeenCalled();
     expect(mockAxiosClient.post).not.toHaveBeenCalled();
   });
@@ -267,7 +273,7 @@ describe('installInitialDomainMapping', () => {
   it('should propagate error from domain mapping installation', async () => {
     mockAxiosClient.get.mockResolvedValueOnce(mockSnapInResponse);
 
-      // Mock successful recipe blueprint creation
+    // Mock successful recipe blueprint creation
     const mockRecipeBlueprintResponse = {
       data: {
         recipe_blueprint: {
