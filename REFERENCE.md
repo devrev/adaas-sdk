@@ -259,7 +259,7 @@ Defines the structure of the event context that is sent to the external connecto
 
   Required. A **string** representing the request ID.
 
-- _reset_extraction_
+- _reset_extract_from_
 
   Optional. A **boolean** signifying the incremental sync should start from the given `extract_from` timestamp if true or from `lastSuccessfulSyncStarted` timestamp if false.
 

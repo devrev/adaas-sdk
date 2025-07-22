@@ -17,7 +17,7 @@ describe('EventContext type tests', () => {
         ...baseEvent.payload.event_context,
         extract_from: '2024-01-01T00:00:00Z',
         initial_sync_scope: InitialSyncScope.TIME_SCOPED,
-        reset_extraction: true
+        reset_extract_from: true
     } as EventContext;
 
     // Test with all optionals present

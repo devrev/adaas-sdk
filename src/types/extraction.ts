@@ -157,7 +157,11 @@ export interface EventContext {
   initial_sync_scope?: InitialSyncScope;
   mode: string;
   request_id: string;
+  /**
+   * @deprecated reset_extraction is deprecated and should not be used. Use reset_extract_from instead.
+   */
   reset_extraction?: boolean;
+  reset_extract_from?: boolean;
   snap_in_slug: string;
   snap_in_version_id: string;
   sync_run: string;
