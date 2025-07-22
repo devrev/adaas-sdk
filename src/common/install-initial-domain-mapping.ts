@@ -1,8 +1,8 @@
-import { axios, axiosClient } from '../http/axios-client';
+import { axiosClient } from '../http/axios-client';
 import { AirdropEvent } from '../types/extraction';
 
 import { InitialDomainMapping } from '../types/common';
-import { serializeAxiosError } from '../logger/logger';
+import { serializeError } from '../logger/logger';
 
 export async function installInitialDomainMapping(
   event: AirdropEvent,
@@ -66,12 +66,10 @@ export async function installInitialDomainMapping(
         'Successfully created recipe blueprint with id: ' + recipeBlueprintId
       );
     } catch (error) {
-      const errorMessage = `Error while creating recipe blueprint. Continuing without it.`;
-      if (axios.isAxiosError(error)) {
-        console.error(errorMessage, serializeAxiosError(error));
-      } else {
-        console.error(errorMessage, error);
-      }
+      console.warn(
+        'Error while creating recipe blueprint. Continuing without it.',
+        serializeError(error)
+      );
     }
   }
 

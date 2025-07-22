@@ -45,7 +45,7 @@ import {
 import { addReportToLoaderReport, getFilesToLoad } from '../common/helpers';
 import { Mappers } from '../mappers/mappers';
 import { Uploader } from '../uploader/uploader';
-import { serializeAxiosError } from '../logger/logger';
+import { serializeError } from '../logger/logger';
 import { SyncMapperRecordStatus } from '../mappers/mappers.interface';
 import { sleep } from '../common/helpers';
 
@@ -257,17 +257,10 @@ export class WorkerAdapter<ConnectorState> {
       this.hasWorkerEmitted = true;
       parentPort?.postMessage(message);
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          `Error while emitting event with event type: ${newEventType}`,
-          serializeAxiosError(error)
-        );
-      } else {
-        console.error(
-          `Unknown error while emitting event with event type: ${newEventType}`,
-          error
-        );
-      }
+      console.error(
+        `Error while emitting event with event type: ${newEventType}.`,
+        serializeError(error)
+      );
       parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
     }
   }
@@ -556,24 +549,16 @@ export class WorkerAdapter<ConnectorState> {
               },
             });
           } catch (error) {
-            if (axios.isAxiosError(error)) {
-              console.warn(
-                'Failed to update sync mapper record',
-                serializeAxiosError(error)
-              );
-              return {
-                error: {
-                  message: error.message,
-                },
-              };
-            } else {
-              console.warn('Failed to update sync mapper record', error);
-              return {
-                error: {
-                  message: 'Failed to update sync mapper record' + error,
-                },
-              };
-            }
+            console.warn(
+              'Failed to update sync mapper record.',
+              serializeError(error)
+            );
+            return {
+              error: {
+                message:
+                  'Failed to update sync mapper record' + serializeError(error),
+              },
+            };
           }
         }
 
@@ -631,22 +616,15 @@ export class WorkerAdapter<ConnectorState> {
                 },
               };
             } catch (error) {
-              if (axios.isAxiosError(error)) {
-                console.warn(
-                  'Failed to create sync mapper record',
-                  serializeAxiosError(error)
-                );
-                return {
-                  error: {
-                    message: error.message,
-                  },
-                };
-              }
-
-              console.warn('Failed to create sync mapper record', error);
+              console.warn(
+                'Failed to create sync mapper record.',
+                serializeError(error)
+              );
               return {
                 error: {
-                  message: 'Failed to create sync mapper record' + error,
+                  message:
+                    'Failed to create sync mapper record. ' +
+                    serializeError(error),
                 },
               };
             }
@@ -657,7 +635,10 @@ export class WorkerAdapter<ConnectorState> {
               },
             };
           } else {
-            console.warn('Failed to create item in external system', error);
+            console.warn(
+              'Failed to create item in external system.',
+              serializeError(error)
+            );
             return {
               report: {
                 item_type: itemTypeToLoad.itemType,
@@ -667,8 +648,8 @@ export class WorkerAdapter<ConnectorState> {
           }
         } else {
           console.warn(
-            'Failed to get sync mapper record',
-            serializeAxiosError(error)
+            'Failed to get sync mapper record.',
+            serializeError(error)
           );
           return {
             error: {
@@ -678,10 +659,10 @@ export class WorkerAdapter<ConnectorState> {
         }
       }
 
-      console.warn('Failed to get sync mapper record', error);
+      console.warn('Failed to get sync mapper record.', serializeError(error));
       return {
         error: {
-          message: 'Failed to get sync mapper record' + error,
+          message: 'Failed to get sync mapper record. ' + serializeError(error),
         },
       };
     }
@@ -879,12 +860,11 @@ export class WorkerAdapter<ConnectorState> {
 
     // Loop through the batches of attachments
     for (let i = lastProcessedBatchIndex; i < reducedAttachments.length; i++) {
-
-      // Check if we hit timeout 
+      // Check if we hit timeout
       if (adapter.isTimeout) {
         await sleep(DEFAULT_SLEEP_DELAY_MS);
       }
-      
+
       const attachmentsBatch = reducedAttachments[i];
 
       // Create a list of promises for parallel processing

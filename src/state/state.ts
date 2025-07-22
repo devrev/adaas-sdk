@@ -1,9 +1,8 @@
 import { axios, axiosClient } from '../http/axios-client';
 
 import { AirdropEvent, EventType, SyncMode } from '../types/extraction';
-import { InitialDomainMapping } from '../types/common';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
-import { serializeAxiosError, getPrintableState } from '../logger/logger';
+import { getPrintableState, serializeError } from '../logger/logger';
 import { ErrorRecord } from '../types/common';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
 
@@ -48,14 +47,10 @@ export async function createAdapterState<ConnectorState>({
           );
         }
       } catch (error) {
-        if (axios.isAxiosError(error)) {
-          console.error(
-            'Error while installing initial domain mapping',
-            serializeAxiosError(error)
-          );
-        } else {
-          console.error('Error while installing initial domain mapping', error);
-        }
+        console.error(
+          'Error while installing initial domain mapping.',
+          serializeError(error)
+        );
       }
     }
 
@@ -148,11 +143,7 @@ export class State<ConnectorState> {
         getPrintableState(this.state)
       );
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('Failed to update state', serializeAxiosError(error));
-      } else {
-        console.error('Failed to update state', error);
-      }
+      console.error('Failed to update the state.', serializeError(error));
       process.exit(1);
     }
   }

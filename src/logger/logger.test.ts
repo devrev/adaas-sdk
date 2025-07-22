@@ -97,7 +97,7 @@ describe('Logger', () => {
 
       const expectedMessage = inspect(data, {
         compact: false,
-        breakLength: Infinity,
+        depth: Infinity,
       });
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
@@ -116,7 +116,7 @@ describe('Logger', () => {
 
       const expectedDataMessage = inspect(data, {
         compact: false,
-        breakLength: Infinity,
+        depth: Infinity,
       });
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
@@ -136,7 +136,7 @@ describe('Logger', () => {
 
       const expectedDataMessage = inspect(data, {
         compact: false,
-        breakLength: Infinity,
+        depth: Infinity,
       });
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
@@ -248,7 +248,7 @@ describe('Logger', () => {
       // The logger uses inspect() with formatting, not JSON.stringify()
       const expectedMessage = require('util').inspect(complexObject, {
         compact: false,
-        breakLength: Infinity,
+        depth: Infinity,
       });
       expect(logObject.message).toBe(expectedMessage);
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_org);

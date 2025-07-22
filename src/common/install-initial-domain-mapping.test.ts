@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { installInitialDomainMapping } from './install-initial-domain-mapping';
 import { axiosClient } from '../http/axios-client';
-import { serializeAxiosError } from '../logger/logger';
 import { InitialDomainMapping } from '../types';
 import { createEvent } from '../tests/test-helpers';
 import { EventType } from '../types/extraction';
@@ -16,7 +15,6 @@ jest.mock('../logger/logger');
 
 const mockAxiosClient = axiosClient as jest.Mocked<typeof axiosClient>;
 const mockIsAxiosError = axios.isAxiosError as unknown as jest.Mock;
-const mockSerializeAxiosError = serializeAxiosError as jest.Mock;
 
 describe('installInitialDomainMapping', () => {
   // Create mock objects

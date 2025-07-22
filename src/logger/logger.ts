@@ -9,7 +9,7 @@ import {
 } from './logger.interfaces';
 import { isMainThread, parentPort } from 'node:worker_threads';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
-import { AxiosError, RawAxiosResponseHeaders } from 'axios';
+import { AxiosError, RawAxiosResponseHeaders, isAxiosError } from 'axios';
 import { getCircularReplacer } from '../common/helpers';
 import { EventContext } from '../types/extraction';
 
@@ -34,7 +34,7 @@ export class Logger extends Console {
     // Use Node.js built-in inspect for everything including errors
     return inspect(value, {
       compact: false,
-      breakLength: Infinity,
+      depth: Infinity,
     });
   }
 
@@ -127,16 +127,11 @@ export function formatAxiosError(error: AxiosError): object {
   return serializeAxiosError(error);
 }
 
-export const serializeError = (error: unknown): Error => {
-  let serializedError = error;
-  try {
-    serializedError = JSON.parse(
-      JSON.stringify(error, Object.getOwnPropertyNames(error))
-    );
-  } catch (err) {
-    console.error('Failed to serialize error object for logger', err);
+export const serializeError = (error: unknown) => {
+  if (isAxiosError(error)) {
+    return serializeAxiosError(error);
   }
-  return serializedError as Error;
+  return error;
 };
 
 export function serializeAxiosError(error: AxiosError) {

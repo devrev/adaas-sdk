@@ -79,9 +79,8 @@ describe('Uploader Class Tests', () => {
     const fetchedObjects = [{ key: 'value' }];
     const uploadResponse = await uploader.upload(entity, fetchedObjects);
 
-    expect(uploadResponse).toEqual({
-      error: { message: 'Error while getting artifact upload URL.' },
-    });
+    expect(uploadResponse.error).toBeInstanceOf(Error);
+    expect(uploadResponse.error?.message).toBe('Error while getting artifact upload URL.');
   });
 
   it('should handle failure in uploadArtifact', async () => {
@@ -96,9 +95,8 @@ describe('Uploader Class Tests', () => {
     const fetchedObjects = [{ key: 'value' }];
     const uploadResponse = await uploader.upload(entity, fetchedObjects);
 
-    expect(uploadResponse).toEqual({
-      error: { message: 'Error while uploading artifact.' },
-    });
+    expect(uploadResponse.error).toBeInstanceOf(Error);
+    expect(uploadResponse.error?.message).toBe('Error while uploading artifact.');
   });
 
   it('should handle failure in confirmArtifactUpload', async () => {
@@ -115,8 +113,7 @@ describe('Uploader Class Tests', () => {
     const fetchedObjects = [{ key: 'value' }];
     const uploadResponse = await uploader.upload(entity, fetchedObjects);
 
-    expect(uploadResponse).toEqual({
-      error: { message: 'Error while confirming artifact upload.' },
-    });
+    expect(uploadResponse.error).toBeInstanceOf(Error);
+    expect(uploadResponse.error?.message).toBe('Error while confirming artifact upload.');
   });
 });

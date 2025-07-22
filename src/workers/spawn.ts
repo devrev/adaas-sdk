@@ -9,7 +9,7 @@ import {
 } from '../types/extraction';
 import { emit } from '../common/control-protocol';
 import { getTimeoutErrorEventType } from '../common/helpers';
-import { Logger, serializeAxiosError } from '../logger/logger';
+import { Logger, serializeError } from '../logger/logger';
 import {
   GetWorkerPathInterface,
   WorkerEvent,
@@ -154,11 +154,7 @@ export async function spawn<ConnectorState>({
         },
       });
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('Error while emitting event', serializeAxiosError(error));
-      } else {
-        console.error('Error while emitting event', error);
-      }
+      console.error('Error while emitting event.', serializeError(error));
     }
   }
 }
@@ -267,11 +263,7 @@ export class Spawn {
 
       this.resolve();
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('Error while emitting event', serializeAxiosError(error));
-      } else {
-        console.error('Error while emitting event', error);
-      }
+      console.error('Error while emitting event.', serializeError(error));
     }
   }
 }

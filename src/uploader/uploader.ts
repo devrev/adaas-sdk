@@ -15,7 +15,7 @@ import {
   UploaderFactoryInterface,
   ArtifactToUpload,
 } from './uploader.interfaces';
-import { serializeAxiosError } from '../logger/logger';
+import { serializeError } from '../logger/logger';
 import { AxiosResponse } from 'axios';
 
 export class Uploader {
@@ -57,7 +57,7 @@ export class Uploader {
     const file = this.compressGzip(jsonl.stringify(fetchedObjects));
     if (!file) {
       return {
-        error: { message: 'Error while compressing jsonl object.' },
+        error: new Error('Error while compressing jsonl object.'),
       };
     }
     const filename = itemType + '.jsonl.gz';
@@ -70,7 +70,7 @@ export class Uploader {
     );
     if (!preparedArtifact) {
       return {
-        error: { message: 'Error while getting artifact upload URL.' },
+        error: new Error('Error while getting artifact upload URL.'),
       };
     }
 
@@ -81,7 +81,7 @@ export class Uploader {
     );
     if (!uploadItemResponse) {
       return {
-        error: { message: 'Error while uploading artifact.' },
+        error: new Error('Error while uploading artifact.'),
       };
     }
 
@@ -91,7 +91,7 @@ export class Uploader {
     );
     if (!confirmArtifactUploadResponse) {
       return {
-        error: { message: 'Error while confirming artifact upload.' },
+        error: new Error('Error while confirming artifact upload.'),
       };
     }
 
@@ -124,14 +124,10 @@ export class Uploader {
       });
       return response.data;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          'Error while getting artifact upload URL.',
-          serializeAxiosError(error)
-        );
-      } else {
-        console.error('Error while getting artifact upload URL.', error);
-      }
+      console.error(
+        'Error while getting artifact upload URL.',
+        serializeError(error)
+      );
     }
   }
 
@@ -153,14 +149,7 @@ export class Uploader {
       });
       return response;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          'Error while uploading artifact.',
-          serializeAxiosError(error)
-        );
-      } else {
-        console.error('Error while uploading artifact.', error);
-      }
+      console.error('Error while uploading artifact.', serializeError(error));
     }
   }
 
@@ -194,14 +183,7 @@ export class Uploader {
       });
       return response;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          'Error while streaming artifact.',
-          serializeAxiosError(error)
-        );
-      } else {
-        console.error('Error while streaming artifact.', error);
-      }
+      console.error('Error while streaming artifact.', serializeError(error));
       return;
     }
   }
@@ -225,14 +207,10 @@ export class Uploader {
       );
       return response;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          'Error while confirming artifact upload.',
-          serializeAxiosError(error)
-        );
-      } else {
-        console.error('Error while confirming artifact upload.', error);
-      }
+      console.error(
+        'Error while confirming artifact upload.',
+        serializeError(error)
+      );
     }
   }
 
@@ -249,7 +227,7 @@ export class Uploader {
 
     if (!artifactUrl) {
       return {
-        error: { message: 'Error while getting artifact download URL.' },
+        error: new Error('Error while getting artifact download URL.'),
       };
     }
 
@@ -257,7 +235,7 @@ export class Uploader {
     const gzippedJsonlObject = await this.downloadArtifact(artifactUrl);
     if (!gzippedJsonlObject) {
       return {
-        error: { message: 'Error while downloading gzipped jsonl object.' },
+        error: new Error('Error while downloading gzipped jsonl object.'),
       };
     }
 
@@ -265,7 +243,7 @@ export class Uploader {
     const jsonlObject = this.decompressGzip(gzippedJsonlObject);
     if (!jsonlObject) {
       return {
-        error: { message: 'Error while decompressing gzipped jsonl object.' },
+        error: new Error('Error while decompressing gzipped jsonl object.'),
       };
     }
 
@@ -273,7 +251,7 @@ export class Uploader {
     const jsonObject = this.parseJsonl(jsonlObject) as NormalizedAttachment[];
     if (!jsonObject) {
       return {
-        error: { message: 'Error while parsing jsonl object.' },
+        error: new Error('Error while parsing jsonl object.'),
       };
     }
 
@@ -298,14 +276,10 @@ export class Uploader {
 
       return response.data.download_url;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          'Error while getting artifact download URL.',
-          serializeAxiosError(error)
-        );
-      } else {
-        console.error('Error while getting artifact download URL.', error);
-      }
+      console.error(
+        'Error while getting artifact download URL.',
+        serializeError(error)
+      );
     }
   }
 
@@ -317,14 +291,10 @@ export class Uploader {
 
       return response.data;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          'Error while downloading artifact from URL.',
-          serializeAxiosError(error)
-        );
-      } else {
-        console.error('Error while downloading artifact from URL.', error);
-      }
+      console.error(
+        'Error while downloading artifact from URL.',
+        serializeError(error)
+      );
     }
   }
 
