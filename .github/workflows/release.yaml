@@ -10,7 +10,7 @@ on:
         description: 'Release type'
         type: choice
         required: true
-        options: [patch, minor, major, prepatch, preminor, premajor, prerelease]
+        options: [patch, minor, prepatch, preminor, prerelease]
       dry-run:
         description: 'Dry Run - skip commit and publish'
         type: boolean
