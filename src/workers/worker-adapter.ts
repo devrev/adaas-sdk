@@ -742,6 +742,8 @@ export class WorkerAdapter<ConnectorState> {
 
       if (attachment.inline) {
         ssorAttachment.inline = true;
+      } else {
+        ssorAttachment.inline = false;
       }
 
       await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
