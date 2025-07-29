@@ -79,6 +79,7 @@ export interface SsorAttachment {
   actor_id?: {
     external: string;
   };
+  inline?: boolean;
 }
 
 export interface StatsFileResponse {

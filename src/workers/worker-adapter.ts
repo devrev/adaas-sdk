@@ -740,6 +740,10 @@ export class WorkerAdapter<ConnectorState> {
         };
       }
 
+      if (attachment.inline) {
+        ssorAttachment.inline = true;
+      }
+
       await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
     }
     return;
