@@ -24,7 +24,7 @@ import { State, createAdapterState } from '../../state/state';
  *
  * @class Adapter
  * @constructor
- * @deprecated
+ * @deprecated This Adapter class is deprecated. Use the new WorkerAdapter from '../workers/worker-adapter' instead, which provides better error handling, state management, and follows the modern worker-based architecture pattern.
  * @param {AirdropEvent} event - The event object received from the platform
  * @param {object=} initialState - The initial state of the adapter
  * @param {boolean=} isLocalDevelopment - A flag to indicate if the adapter is being used in local development

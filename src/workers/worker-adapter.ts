@@ -791,23 +791,27 @@ export class WorkerAdapter<ConnectorState> {
     }
   }
 
-  /**
+ /**
    * Transforms an array of attachments into array of batches of the specified size.
    *
    * @param {Object} parameters - The parameters object
-   * @param {NormalizedAttachment[]} parameters.attachments - Array of attachments to be processed
-   * @param {number} [parameters.batchSize=1] - The size of each batch (defaults to 1)
-   * @param {ConnectorState} parameters.adapter - The adapter instance
    * @returns {NormalizedAttachment[][]} An array of attachment batches
    */
   private defaultAttachmentsReducer: ExternalSystemAttachmentReducerFunction<
     NormalizedAttachment[],
     NormalizedAttachment[][],
     ConnectorState
-  > = ({ attachments, batchSize = 1 }) => {
-    // Transform the attachments array into smaller batches
-    const batches: NormalizedAttachment[][] = attachments.reduce(
-      (
+  > = ({
+    attachments,
+    batchSize = 1
+  }: {
+    attachments: NormalizedAttachment[],
+    batchSize?: number,
+    adapter: WorkerAdapter<ConnectorState>
+  }): NormalizedAttachment[][] => {
+      // Transform the attachments array into smaller batches
+      const batches: NormalizedAttachment[][] = attachments.reduce(
+        (
         result: NormalizedAttachment[][],
         item: NormalizedAttachment,
         index: number
@@ -836,16 +840,22 @@ export class WorkerAdapter<ConnectorState> {
    * This iterator function processes attachments batch by batch, saves progress to state, and handles rate limiting.
    *
    * @param {Object} parameters - The parameters object
-   * @param {NormalizedAttachment[][]} parameters.reducedAttachments - Array of attachment batches to process
-   * @param {Object} parameters.adapter - The connector adapter that contains state and processing methods
-   * @param {Object} parameters.stream - Stream object for logging or progress reporting
-   * @returns {Promise<{delay?: number} | void>} Returns an object with delay information if rate-limited, otherwise void
+   * @returns {Promise<ProcessAttachmentReturnType>} Returns an object with delay information if rate-limited, otherwise void
    * @throws Will not throw exceptions but will log warnings for processing failures
    */
   private defaultAttachmentsIterator: ExternalSystemAttachmentIteratorFunction<
     NormalizedAttachment[][],
     ConnectorState
-  > = async ({ reducedAttachments, adapter, stream }) => {
+  > = async (
+    {
+      reducedAttachments,
+      adapter,
+      stream
+    }: {
+      reducedAttachments: NormalizedAttachment[][],
+      adapter: WorkerAdapter<ConnectorState>,
+      stream: ExternalSystemAttachmentStreamingFunction, 
+    }): Promise<ProcessAttachmentReturnType> => {
     if (!adapter.state.toDevRev) {
       const error = new Error(`toDevRev state is not defined.`);
       console.error(error.message);

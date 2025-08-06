@@ -61,7 +61,7 @@ export enum ExtractorEventType {
 }
 
 /**
- * @deprecated
+ * @deprecated This enum is deprecated. Use SyncMode instead, which provides the same functionality with additional LOADING mode support.
  * ExtractionMode is an enum that defines the different modes of extraction that can be used by the external extractor.
  * It can be either INITIAL or INCREMENTAL. INITIAL mode is used for the first/initial import, while INCREMENTAL mode is used for doing syncs.
  */
@@ -102,7 +102,7 @@ export enum InitialSyncScope {
 
 /**
  * EventContextIn is an interface that defines the structure of the input event context that is sent to the external extractor from ADaaS.
- * @deprecated
+ * @deprecated This interface is deprecated. Use EventContext instead, which provides the same fields with better type safety and additional features.
  */
 export interface EventContextIn {
   callback_url: string;
@@ -130,7 +130,7 @@ export interface EventContextIn {
 
 /**
  * EventContextOut is an interface that defines the structure of the output event context that is sent from the external extractor to ADaaS.
- * @deprecated
+ * @deprecated This interface is deprecated. Use the worker-based event handling pattern with WorkerAdapter instead.
  */
 export interface EventContextOut {
   uuid: string;
@@ -213,7 +213,7 @@ export interface WorkerMetadata {
 /**
  * DomainObject is an interface that defines the structure of a domain object that can be extracted.
  * It must contain a name, a next chunk ID, the pages, the last modified date, whether it is done, and the count.
- * @deprecated
+ * @deprecated This interface is deprecated. Use the new state management patterns with the state module instead.
  */
 export interface DomainObjectState {
   name: string;

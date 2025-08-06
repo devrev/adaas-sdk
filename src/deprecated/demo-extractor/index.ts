@@ -14,7 +14,7 @@ type ConnectorState = object;
  * Demo extractor is a reference implementation of an ADaaS connector to facilitate rapid immersion into ADaaS.
  *
  * @class DemoExtractor
- * @deprecated
+ * @deprecated This demo extractor is deprecated. Use the new worker-based architecture with WorkerAdapter instead. See the workers/ directory for examples of the new implementation pattern.
  **/
 export class DemoExtractor {
   private event: AirdropEvent;

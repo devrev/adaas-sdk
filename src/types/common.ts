@@ -2,7 +2,7 @@ import { Artifact } from '../uploader/uploader.interfaces';
 
 /**
  * ErrorLevel is an enum that represents the level of an error.
- * @deprecated
+ * @deprecated This enum is deprecated. Use standard logging levels or create domain-specific error level enums instead.
  */
 export enum ErrorLevel {
   Warning = 'WARNING',
@@ -19,7 +19,7 @@ export interface ErrorRecord {
 
 /**
  * LogRecord is an interface that defines the structure of a log record.
- * @deprecated
+ * @deprecated This interface is deprecated. Use structured logging libraries or create domain-specific log record interfaces instead.
  */
 export interface LogRecord {
   level: ErrorLevel;
@@ -28,7 +28,7 @@ export interface LogRecord {
 
 /**
  * AdapterUpdateParams is an interface that defines the structure of the parameters that can be passed to the update adapter.
- * @deprecated
+ * @deprecated This interface is deprecated. Use the new WorkerAdapter pattern instead, which handles updates through the worker-based architecture.
  */
 export interface AdapterUpdateParams {
   artifact?: Artifact;
