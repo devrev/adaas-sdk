@@ -117,7 +117,7 @@ export function extractCurrentApiInfo(): ApiMember[] {
  */
 export function extractPreviousApiInfo(version: string): ApiMember[] {
   try {
-    const apiJsonPath = path.resolve(process.cwd(), `api-reports/${version}.api.json`);
+    const apiJsonPath = path.resolve(process.cwd(), `version-api/v${version}.api.json`);
     if (!fs.existsSync(apiJsonPath)) {
       return [];
     }
