@@ -24,6 +24,7 @@
   "author": "devrev",
   "license": "ISC",
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.52.10",
     "@types/jest": "^29.5.14",
     "@types/lambda-log": "^3.0.3",
     "@types/node": "^22.15.18",

@@ -131,3 +131,6 @@ dist
 
 .npmrc
 .idea
+
+temp
+api-reports

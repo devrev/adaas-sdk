@@ -1,0 +1,72 @@
+{
+    "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
+    "mainEntryPointFilePath": "<projectFolder>/dist/index.d.ts",
+    "bundledPackages": [],
+    "compiler": {
+        "tsconfigFilePath": "<projectFolder>/tsconfig.json",
+        "overrideTsconfig": {
+        "compilerOptions": {
+            "declaration": true,
+            "declarationDir": "<projectFolder>/dist",
+            "outDir": "<projectFolder>/dist"
+        }
+        }
+    },
+    "apiReport": {
+        "enabled": true,
+        "reportFolder": "<projectFolder>/api-reports/",
+        "reportTempFolder": "<projectFolder>/temp/"
+    },
+    "docModel": {
+        "enabled": true,
+        "apiJsonFilePath": "<projectFolder>/temp/api.json"
+    },
+    "dtsRollup": {
+        "enabled": true,
+        "untrimmedFilePath": "<projectFolder>/dist/index.d.ts"
+    },
+    "messages": {
+        "compilerMessageReporting": {
+        "default": {
+            "logLevel": "warning",
+            "addToApiReportFile": false
+        }
+        },
+        "extractorMessageReporting": {
+        "default": {
+            "logLevel": "warning",
+            "addToApiReportFile": false
+        },
+        "ae-missing-release-tag": {
+            "logLevel": "none"
+        },
+        "ae-unresolved-link": {
+            "logLevel": "none"
+        },
+        "ae-wrong-input-file-type": {
+            "logLevel": "none"
+        }
+        },
+        "tsdocMessageReporting": {
+        "default": {
+            "logLevel": "warning",
+            "addToApiReportFile": false
+        },
+        "tsdoc-undefined-tag": {
+            "logLevel": "none"
+        },
+        "tsdoc-escape-right-brace": {
+            "logLevel": "none"
+        },
+        "tsdoc-malformed-inline-tag": {
+            "logLevel": "none"
+        },
+        "tsdoc-param-tag-with-invalid-type": {
+            "logLevel": "none"
+        },
+        "tsdoc-param-tag-missing-hyphen": {
+            "logLevel": "none"
+        }
+        }
+    }
+}
