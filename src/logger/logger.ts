@@ -121,7 +121,7 @@ export function getPrintableState(state: Record<string, any>): PrintableState {
   return processValue(state) as PrintableState;
 }
 /**
- * @deprecated
+ * @deprecated This function is deprecated. Use serializeAxiosError directly instead, which provides the same functionality with a clearer name.
  */
 export function formatAxiosError(error: AxiosError): object {
   return serializeAxiosError(error);
