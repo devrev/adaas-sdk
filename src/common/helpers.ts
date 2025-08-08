@@ -12,7 +12,10 @@ import {
 } from '../types/loading';
 import { readFileSync } from 'fs';
 import * as path from 'path';
-import { MAX_DEVREV_FILENAME_EXTENSION_LENGTH, MAX_DEVREV_FILENAME_LENGTH } from './constants';
+import {
+  MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
+  MAX_DEVREV_FILENAME_LENGTH,
+} from './constants';
 
 export function getTimeoutErrorEventType(eventType: EventType): {
   eventType: ExtractorEventType | LoaderEventType;
@@ -210,13 +213,47 @@ export function truncateFilename(filename: string): string {
   console.warn(
     `Filename length exceeds the maximum limit of ${MAX_DEVREV_FILENAME_LENGTH} characters. Truncating filename.`
   );
-  
+
   let extension = filename.slice(-MAX_DEVREV_FILENAME_EXTENSION_LENGTH);
   // Calculate how many characters are available for the name part after accounting for the extension and "..."
-  const availableNameLength = MAX_DEVREV_FILENAME_LENGTH - MAX_DEVREV_FILENAME_EXTENSION_LENGTH - 3; // -3 for "..."
+  const availableNameLength =
+    MAX_DEVREV_FILENAME_LENGTH - MAX_DEVREV_FILENAME_EXTENSION_LENGTH - 3; // -3 for "..."
 
   // Truncate the name part and add an ellipsis
   const truncatedFilename = filename.slice(0, availableNameLength);
 
   return `${truncatedFilename}...${extension}`;
+}
+
+export function logMemory(step: string): void {
+  const mem = process.memoryUsage();
+  const v8 = require('v8');
+  const heapStats = v8.getHeapStatistics();
+
+  const rssMB = Math.round(mem.rss / 1024 / 1024);
+  const heapMB = Math.round(mem.heapUsed / 1024 / 1024);
+  const externalMB = Math.round(mem.external / 1024 / 1024);
+  const heapLimitMB = Math.round(heapStats.heap_size_limit / 1024 / 1024);
+  const totalLimitMB = Math.round(heapStats.total_available_size / 1024 / 1024);
+
+  const availableHeapMB = heapLimitMB - heapMB;
+  const heapUsagePercent = Math.round((heapMB / heapLimitMB) * 100);
+  const rssLimitMB = process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE
+    ? parseInt(process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE)
+    : totalLimitMB;
+  const rssUsagePercent = Math.round((rssMB / rssLimitMB) * 100);
+
+  console.log(
+    `[MEM] ${step}: RSS=${rssMB}MB/${rssLimitMB}MB(${rssUsagePercent}%) Heap=${heapMB}MB/${heapLimitMB}MB(${heapUsagePercent}%) External=${externalMB}MB Available=${availableHeapMB}MB`
+  );
+
+  if (rssUsagePercent > 90 || heapUsagePercent > 90) {
+    console.error(
+      `[MEM] CRITICAL: Memory usage RSS=${rssUsagePercent}% Heap=${heapUsagePercent}% - OOM imminent!`
+    );
+  } else if (rssUsagePercent > 80 || heapUsagePercent > 80) {
+    console.warn(
+      `[MEM] WARNING: High memory usage RSS=${rssUsagePercent}% Heap=${heapUsagePercent}% - OOM risk!`
+    );
+  }
 }

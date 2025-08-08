@@ -5,7 +5,7 @@ import { jsonl } from 'js-jsonl';
 import FormData from 'form-data';
 
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
-import { truncateFilename } from '../common/helpers';
+import { truncateFilename, logMemory } from '../common/helpers';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { AirdropEvent } from '../types/extraction';
 
@@ -109,6 +109,8 @@ export class Uploader {
     filename: string,
     fileType: string
   ): Promise<ArtifactToUpload | void> {
+    logMemory('getArtifactUploadUrl start');
+
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.upload-url`;
 
     try {
@@ -122,12 +124,15 @@ export class Uploader {
           file_name: truncateFilename(filename),
         },
       });
+
+      logMemory('getArtifactUploadUrl success');
       return response.data;
     } catch (error) {
       console.error(
         'Error while getting artifact upload URL.',
         serializeError(error)
       );
+      logMemory('getArtifactUploadUrl error');
     }
   }
 
@@ -157,11 +162,16 @@ export class Uploader {
     artifact: ArtifactToUpload,
     fileStream: any
   ): Promise<AxiosResponse | void> {
+    logMemory('streamArtifact start');
+
     const formData = new FormData();
     for (const field in artifact.form_data) {
       formData.append(field, artifact.form_data[field]);
     }
+
+    logMemory('before FormData append');
     formData.append('file', fileStream.data);
+    logMemory('after FormData append');
 
     if (fileStream.headers['content-length'] > MAX_DEVREV_ARTIFACT_SIZE) {
       console.warn(
@@ -171,6 +181,8 @@ export class Uploader {
     }
 
     try {
+      logMemory('before axios post');
+
       const response = await axiosClient.post(artifact.upload_url, formData, {
         headers: {
           ...formData.getHeaders(),
@@ -180,10 +192,15 @@ export class Uploader {
               }
             : {}),
         },
+        maxRedirects: 0, // Prevents buffering
+        validateStatus: () => true, // Prevents errors on redirects
       });
+
+      logMemory('after axios post');
       return response;
     } catch (error) {
       console.error('Error while streaming artifact.', serializeError(error));
+      logMemory('after upload error');
       return;
     }
   }
@@ -191,6 +208,8 @@ export class Uploader {
   async confirmArtifactUpload(
     artifactId: string
   ): Promise<AxiosResponse | void> {
+    logMemory('confirmArtifactUpload start');
+
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.confirm-upload`;
     try {
       const response = await axiosClient.post(
@@ -205,12 +224,15 @@ export class Uploader {
           },
         }
       );
+
+      logMemory('confirmArtifactUpload success');
       return response;
     } catch (error) {
       console.error(
         'Error while confirming artifact upload.',
         serializeError(error)
       );
+      logMemory('confirmArtifactUpload error');
     }
   }
 
@@ -222,39 +244,49 @@ export class Uploader {
     attachments?: NormalizedAttachment[];
     error?: { message: string };
   }> {
+    logMemory('getAttachmentsFromArtifactId start');
+
     // Get the URL of the attachments metadata artifact
     const artifactUrl = await this.getArtifactDownloadUrl(artifact);
 
     if (!artifactUrl) {
+      logMemory('getAttachmentsFromArtifactId error - no download URL');
       return {
         error: new Error('Error while getting artifact download URL.'),
       };
     }
 
     // Download artifact from the URL
+    logMemory('before downloadArtifact');
     const gzippedJsonlObject = await this.downloadArtifact(artifactUrl);
     if (!gzippedJsonlObject) {
+      logMemory('getAttachmentsFromArtifactId error - download failed');
       return {
         error: new Error('Error while downloading gzipped jsonl object.'),
       };
     }
 
     // Decompress the gzipped jsonl object
+    logMemory('before decompressGzip');
     const jsonlObject = this.decompressGzip(gzippedJsonlObject);
     if (!jsonlObject) {
+      logMemory('getAttachmentsFromArtifactId error - decompress failed');
       return {
         error: new Error('Error while decompressing gzipped jsonl object.'),
       };
     }
 
     // Parse the jsonl object to get the attachment metadata
+    logMemory('before parseJsonl');
     const jsonObject = this.parseJsonl(jsonlObject) as NormalizedAttachment[];
     if (!jsonObject) {
+      logMemory('getAttachmentsFromArtifactId error - parse failed');
       return {
         error: new Error('Error while parsing jsonl object.'),
       };
     }
 
+    logMemory('getAttachmentsFromArtifactId success');
     return { attachments: jsonObject };
   }
 

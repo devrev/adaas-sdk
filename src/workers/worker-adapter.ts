@@ -47,7 +47,7 @@ import { Mappers } from '../mappers/mappers';
 import { Uploader } from '../uploader/uploader';
 import { serializeError } from '../logger/logger';
 import { SyncMapperRecordStatus } from '../mappers/mappers.interface';
-import { sleep } from '../common/helpers';
+import { sleep, logMemory } from '../common/helpers';
 
 export function createWorkerAdapter<ConnectorState>({
   event,
@@ -672,6 +672,8 @@ export class WorkerAdapter<ConnectorState> {
     attachment: NormalizedAttachment,
     stream: ExternalSystemAttachmentStreamingFunction
   ): Promise<ProcessAttachmentReturnType> {
+    logMemory('processAttachment start');
+
     const { httpStream, delay, error } = await stream({
       item: attachment,
       event: this.event,
@@ -685,6 +687,8 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     if (httpStream) {
+      logMemory('after stream');
+
       const fileType =
         httpStream.headers?.['content-type'] || 'application/octet-stream';
 
@@ -701,11 +705,15 @@ export class WorkerAdapter<ConnectorState> {
         return;
       }
 
+      logMemory('before upload');
+
       // Stream attachment
       const uploadedArtifact = await this.uploader.streamArtifact(
         preparedArtifact,
         httpStream
       );
+
+      logMemory('after upload');
 
       if (!uploadedArtifact) {
         console.warn(
@@ -749,6 +757,8 @@ export class WorkerAdapter<ConnectorState> {
       }
 
       await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
+
+      logMemory('processAttachment end');
     }
     return;
   }
@@ -868,6 +878,8 @@ export class WorkerAdapter<ConnectorState> {
 
     // Loop through the batches of attachments
     for (let i = lastProcessedBatchIndex; i < reducedAttachments.length; i++) {
+      logMemory(`batch ${i} start`);
+
       // Check if we hit timeout
       if (adapter.isTimeout) {
         await sleep(DEFAULT_SLEEP_DELAY_MS);
@@ -921,6 +933,8 @@ export class WorkerAdapter<ConnectorState> {
       // Wait for all promises to settle and check for rate limiting
       const results = await Promise.all(promises);
 
+      logMemory(`batch ${i} end`);
+
       // Check if any of the results indicate rate limiting
       const rateLimit = results.find((result) => result?.delay);
       if (rateLimit) {
@@ -960,6 +974,8 @@ export class WorkerAdapter<ConnectorState> {
     >;
     batchSize?: number;
   }): Promise<StreamAttachmentsReturnType> {
+    logMemory('streamAttachments start');
+
     if (batchSize <= 0) {
       console.warn(
         `The specified batch size (${batchSize}) is invalid. Using 1 instead.`
@@ -1082,6 +1098,8 @@ export class WorkerAdapter<ConnectorState> {
       this.state.toDevRev.attachmentsMetadata.artifactIds.shift();
       this.state.toDevRev.attachmentsMetadata.lastProcessed = 0;
     }
+
+    logMemory('streamAttachments end');
 
     return;
   }
