@@ -180,6 +180,8 @@ export class Uploader {
               }
             : {}),
         },
+        maxRedirects: 0, // Prevents buffering
+        validateStatus: () => true, // Prevents errors on redirects
       });
       return response;
     } catch (error) {
