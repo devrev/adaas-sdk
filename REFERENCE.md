@@ -205,6 +205,10 @@ Defines the structure of the event context that is sent to the external connecto
 
 - _dev_org_
 
+  Required. A **string** representing the organization ID. **Deprecated** - use `dev_oid` instead.
+
+- _dev_oid_
+
   Required. A **string** representing the organization ID.
 
 - _dev_org_id_
@@ -213,15 +217,23 @@ Defines the structure of the event context that is sent to the external connecto
 
 - _dev_user_
 
-  Required. A **string** representing the user ID.
+  Required. A **string** representing the user ID. **Deprecated** - use `dev_uid` instead.
 
 - _dev_user_id_
 
+  Required. A **string** representing the user ID. **Deprecated** - use `dev_uid` instead.
+
+- _dev_uid_
+
   Required. A **string** representing the user ID.
+
+- _event_type_adaas_
+
+  Required. A **string** representing the event type in ADaaS.
 
 - _external_sync_unit_
 
-  Required. A **string** representing the external sync unit ID.
+  Required. A **string** representing the external sync unit ID. **Deprecated** - use `external_sync_unit_id` instead.
 
 - _external_sync_unit_id_
 
@@ -233,7 +245,15 @@ Defines the structure of the event context that is sent to the external connecto
 
 - _external_system_
 
-  Required. A **string** representing the external system.
+  Required. A **string** representing the external system. **Deprecated** - use `external_system_id` instead.
+
+- _external_system_id_
+
+  Required. A **string** representing the external system ID.
+
+- _external_system_name_
+
+  Required. A **string** representing the external system name.
 
 - _external_system_type_
 
@@ -241,7 +261,7 @@ Defines the structure of the event context that is sent to the external connecto
 
 - _extract_from_
 
-  Optional. A **string** representing the timestamp formatted as RFC3399 from which the extraction should start.
+  Optional. A **string** representing the timestamp formatted as RFC3339 from which the extraction should start.
 
 - _import_slug_
 
@@ -259,9 +279,25 @@ Defines the structure of the event context that is sent to the external connecto
 
   Required. A **string** representing the request ID.
 
+- _request_id_adaas_
+
+  Required. A **string** representing the ADaaS request ID.
+
+- _reset_extraction_
+
+  Optional. A **boolean** signifying the incremental sync should start from the given `extract_from` timestamp if true or from `lastSuccessfulSyncStarted` timestamp if false. **Deprecated** - use `reset_extract_from` instead.
+
 - _reset_extract_from_
 
   Optional. A **boolean** signifying the incremental sync should start from the given `extract_from` timestamp if true or from `lastSuccessfulSyncStarted` timestamp if false.
+
+- _run_id_
+
+  Required. A **string** representing the run ID.
+
+- _sequence_version_
+
+  Required. A **string** representing the sequence version.
 
 - _snap_in_slug_
 
@@ -273,11 +309,11 @@ Defines the structure of the event context that is sent to the external connecto
 
 - _sync_run_
 
-  Required. A **string** representing the sync run ID.
+  Required. A **string** representing the sync run ID. **Deprecated** - use `run_id` instead.
 
 - _sync_run_id_
 
-  Required. A **string** representing the sync run ID.
+  Required. A **string** representing the sync run ID. **Deprecated** - use `run_id` instead.
 
 - _sync_tier_
 
@@ -293,7 +329,7 @@ Defines the structure of the event context that is sent to the external connecto
 
 - _uuid_
 
-  Required. A **string** representing the unique identifier.
+  Required. A **string** representing the unique identifier. **Deprecated** - use `request_id_adaas` instead.
 
 - _worker_data_url_
 
