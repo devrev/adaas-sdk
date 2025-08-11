@@ -192,7 +192,7 @@ export interface EventContext {
    */
   sync_run: string;
   /**
-   * @deprecated sync_run is deprecated and should not be used. Use run_id instead.
+   * @deprecated sync_run_id is deprecated and should not be used. Use run_id instead.
    */
   sync_run_id: string;
   sync_tier: string;
