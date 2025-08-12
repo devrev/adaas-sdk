@@ -19,6 +19,16 @@ import {
   MAX_DEVREV_FILENAME_LENGTH,
 } from './constants';
 
+export function isEventType({
+  event,
+  eventType,
+}: {
+  event: AirdropEvent;
+  eventType: EventType;
+}): boolean {
+  return event.payload.event_type === eventType;
+}
+
 export function getTimeoutErrorEventType(eventType: EventType): {
   eventType: ExtractorEventType | LoaderEventType;
 } {
