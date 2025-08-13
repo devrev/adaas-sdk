@@ -6,7 +6,7 @@ import { State } from '../state/state';
 import { createAdapterState } from '../state/state';
 
 import { createEvent } from '../tests/test-helpers';
-import { EventType, NormalizedAttachment, AdapterState } from '../types';
+import { EventType, NormalizedAttachment, AdapterState, ExtractorEventType } from '../types';
 
 // Mock dependencies
 jest.mock('../common/control-protocol', () => ({
@@ -831,4 +831,75 @@ describe('WorkerAdapter', () => {
 
   });
 
+  describe('emit', () => {
+    let counter: {counter: number};
+    let mockPostMessage: jest.Mock;
+    
+    beforeEach(() => {
+      counter = {counter: 0};
+      
+      // Import the worker_threads module and spy on parentPort.postMessage
+      const workerThreads = require('node:worker_threads');
+      mockPostMessage = jest.fn().mockImplementation((a: any) => {
+        console.log('postMessage called with:', a);
+        counter.counter += 1;
+      });
+      
+      // Spy on the parentPort.postMessage method
+      if (workerThreads.parentPort) {
+        jest.spyOn(workerThreads.parentPort, 'postMessage').mockImplementation(mockPostMessage);
+      } else {
+        // If parentPort is null (not in worker context), create a mock
+        workerThreads.parentPort = {
+          postMessage: mockPostMessage,
+        };
+      }
+    });
+    
+    afterEach(() => {
+      // Restore all mocks
+      jest.restoreAllMocks();
+    });
+
+    test('should correctly emit event', async () => {
+      adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
+      adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+
+      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+        reports: [],
+        processed_files: [],
+      });
+      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+        reports: [],
+        processed_files: [],
+      });
+      await adapter.emit(ExtractorEventType.ExtractionMetadataDone, {
+        reports: [],
+        processed_files: [],
+      });
+      expect(counter.counter).toBe(1);
+    });
+     
+    test('should correctly emit one event even if postState errors', async () => {
+      adapter['adapterState'].postState = jest.fn().mockRejectedValue(new Error('postState error'));
+      adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+
+      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+        reports: [],
+        processed_files: [],
+      });
+      expect(counter.counter).toBe(1);
+    });
+
+    test('should correctly emit one event even if uploadAllRepos errors', async () => {
+      adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
+      adapter.uploadAllRepos = jest.fn().mockRejectedValue(new Error('uploadAllRepos error'));
+
+      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+        reports: [],
+        processed_files: [],
+      });
+      expect(counter.counter).toBe(1);
+    });
+  });
 });
