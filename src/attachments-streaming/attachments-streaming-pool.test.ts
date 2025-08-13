@@ -150,7 +150,7 @@ describe('AttachmentsStreamingPool', () => {
       expect(result).toEqual({});
       expect(mockAdapter.processAttachment).not.toHaveBeenCalled();
       expect(console.log).toHaveBeenCalledWith(
-        'Starting download of 0 attachments with 10 workers'
+        'Starting download of 0 attachments with 10 workers.'
       );
     });
 
