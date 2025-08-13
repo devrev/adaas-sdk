@@ -831,23 +831,21 @@ export class WorkerAdapter<ConnectorState> {
     ];
     this.initializeRepos(repos);
 
+    const attachmentsMetadata = this.state.toDevRev?.attachmentsMetadata;
+    
     // If there are no attachments metadata artifact IDs in state, finish here
-    if (
-      !this.state.toDevRev?.attachmentsMetadata?.artifactIds ||
-      this.state.toDevRev.attachmentsMetadata.artifactIds.length === 0
-    ) {
+    if (!attachmentsMetadata?.artifactIds?.length) {
       console.log(`No attachments metadata artifact IDs found in state.`);
       return;
     } else {
       console.log(
-        `Found ${this.state.toDevRev.attachmentsMetadata.artifactIds.length} attachments metadata artifact IDs in state.`
+        `Found ${attachmentsMetadata.artifactIds.length} attachments metadata artifact IDs in state.`
       );
     }
 
     // Loop through the attachments metadata artifact IDs
-    while (this.state.toDevRev.attachmentsMetadata.artifactIds.length > 0) {
-      const attachmentsMetadataArtifactId =
-        this.state.toDevRev.attachmentsMetadata.artifactIds[0];
+    while (attachmentsMetadata.artifactIds.length > 0) {
+      const attachmentsMetadataArtifactId = attachmentsMetadata.artifactIds[0];
 
       console.log(
         `Started processing attachments for attachments metadata artifact ID: ${attachmentsMetadataArtifactId}.`
@@ -870,8 +868,8 @@ export class WorkerAdapter<ConnectorState> {
           `No attachments found for artifact ID: ${attachmentsMetadataArtifactId}.`
         );
         // Remove empty artifact and reset lastProcessed
-        this.state.toDevRev.attachmentsMetadata.artifactIds.shift();
-        this.state.toDevRev.attachmentsMetadata.lastProcessed = 0;
+        attachmentsMetadata.artifactIds.shift();
+        attachmentsMetadata.lastProcessed = 0;
         continue;
       }
 
@@ -918,10 +916,10 @@ export class WorkerAdapter<ConnectorState> {
       console.log(
         `Finished processing all attachments for artifact ID: ${attachmentsMetadataArtifactId}.`
       );
-      this.state.toDevRev.attachmentsMetadata.artifactIds.shift();
-      this.state.toDevRev.attachmentsMetadata.lastProcessed = 0;
-      if (this.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList) {
-        this.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList.length = 0;
+      attachmentsMetadata.artifactIds.shift();
+      attachmentsMetadata.lastProcessed = 0;
+      if (attachmentsMetadata.lastProcessedAttachmentsIdsList) {
+        attachmentsMetadata.lastProcessedAttachmentsIdsList.length = 0;
       }
     }
 

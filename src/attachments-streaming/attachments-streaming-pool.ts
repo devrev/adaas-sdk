@@ -3,6 +3,7 @@ import {
   ExternalSystemAttachmentStreamingFunction,
   ProcessAttachmentReturnType
 } from '../types';
+import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 import { WorkerAdapter } from '../workers/worker-adapter';
 
 export class AttachmentsStreamingPool<ConnectorState> {
@@ -17,12 +18,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
     attachments,
     batchSize = 10,
     stream,
-  }: {
-    adapter: WorkerAdapter<ConnectorState>;
-    attachments: NormalizedAttachment[];
-    batchSize?: number;
-    stream: ExternalSystemAttachmentStreamingFunction;
-  }) {
+  }: AttachmentsStreamingPoolParams<ConnectorState>) {
     this.adapter = adapter;
     this.attachments = [...attachments]; // Create a copy we can mutate
     this.batchSize = batchSize;
@@ -32,7 +28,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
 
   async streamAll(): Promise<ProcessAttachmentReturnType> {
     console.log(
-      `Starting download of ${this.attachments.length} attachments with ${this.batchSize} workers.`
+      `Starting download of ${this.attachments.length} attachments, streaming ${this.batchSize} at once.`
     );
 
     if (!this.adapter.state.toDevRev) {
@@ -51,15 +47,15 @@ export class AttachmentsStreamingPool<ConnectorState> {
         [];
     }
 
-    // Start initial batch of workers up to batchSize limit
+    // Start initial batch of promises up to batchSize limit
     const initialBatchSize = Math.min(this.batchSize, this.attachments.length);
     const initialPromises = [];
 
     for (let i = 0; i < initialBatchSize; i++) {
-      initialPromises.push(this.startPoolWorker());
+      initialPromises.push(this.startPoolStreaming());
     }
 
-    // Wait for all workers to complete
+    // Wait for all promises to complete
     await Promise.all(initialPromises);
 
     if (this.delay) {
@@ -69,13 +65,13 @@ export class AttachmentsStreamingPool<ConnectorState> {
     return {};
   }
 
-  async startPoolWorker() {
-    // Worker keeps taking jobs until the attachments array is empty
+  async startPoolStreaming() {
+    // Process attachments until the attachments array is empty
     while (this.attachments.length > 0) {
       if (this.delay) {
         break; // Exit if we have a delay
       }
-      // Check if we can start a new worker
+      // Check if we can process next attachment
       const attachment = this.attachments.shift();
 
       if (!attachment) {
