@@ -115,8 +115,8 @@ describe('AttachmentsStreamingPool', () => {
         stream: mockStream
       });
 
-      // Mock startPoolWorker to avoid actual processing
-      jest.spyOn(pool as any, 'startPoolWorker').mockResolvedValue(undefined);
+      // Mock startPoolStreaming to avoid actual processing
+      jest.spyOn(pool as any, 'startPoolStreaming').mockResolvedValue(undefined);
 
       await pool.streamAll();
 
@@ -150,7 +150,7 @@ describe('AttachmentsStreamingPool', () => {
       expect(result).toEqual({});
       expect(mockAdapter.processAttachment).not.toHaveBeenCalled();
       expect(console.log).toHaveBeenCalledWith(
-        'Starting download of 0 attachments with 10 workers.'
+        'Starting download of 0 attachments, streaming 10 at once.'
       );
     });
 
@@ -170,7 +170,7 @@ describe('AttachmentsStreamingPool', () => {
     });
   });
 
-  describe('startPoolWorker', () => {
+  describe('startPoolStreaming', () => {
     it('should skip already processed attachments', async () => {
       mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList = ['attachment-1'];
       mockAdapter.processAttachment.mockResolvedValue({});
