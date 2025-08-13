@@ -28,6 +28,7 @@ export {
   ExternalProcessAttachmentFunction,
   ExternalSystemAttachmentReducerFunction,
   ExternalSystemAttachmentIteratorFunction,
+  ProcessAttachmentReturnType,
 } from './extraction';
 
 // Loading
