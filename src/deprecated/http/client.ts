@@ -21,7 +21,7 @@ export const defaultResponse: HTTPResponse = {
 
 /**
  * HTTPClient class to make HTTP requests
- * @deprecated
+ * @deprecated This HTTPClient is deprecated. Use the new AxiosClient from '../http/axios-client' instead, which provides better error handling and modern axios patterns.
  */
 export class HTTPClient {
   private retryAfter = 0;

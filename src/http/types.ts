@@ -1,6 +1,6 @@
 /**
  * HTTP Response type
- * @deprecated
+ * @deprecated This HTTPResponse type is deprecated. Use native axios response types or create domain-specific response interfaces instead of this generic wrapper.
  */
 export type HTTPResponse = {
   success: boolean;
