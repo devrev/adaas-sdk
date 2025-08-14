@@ -143,32 +143,64 @@ export interface EventContextOut {
  */
 export interface EventContext {
   callback_url: string;
+  /**
+   * @deprecated dev_org is deprecated and should not be used. Use dev_oid instead.
+   */
   dev_org: string;
+  dev_oid: string;
   dev_org_id: string;
+  /**
+   * @deprecated dev_user is deprecated and should not be used. Use dev_uid instead.
+   */
   dev_user: string;
+  /**
+   * @deprecated dev_user_id is deprecated and should not be used. Use dev_uid instead.
+   */
   dev_user_id: string;
+  dev_uid: string;
+  event_type_adaas: string;
+  /**
+   * @deprecated external_sync_unit is deprecated and should not be used. Use external_sync_unit_id instead.
+   */
   external_sync_unit: string;
   external_sync_unit_id: string;
   external_sync_unit_name: string;
+  /**
+   * @deprecated external_system is deprecated and should not be used. Use external_system_id instead.
+   */
   external_system: string;
+  external_system_id: string;
+  external_system_name: string;
   external_system_type: string;
   extract_from?: string;
   import_slug: string;
   initial_sync_scope?: InitialSyncScope;
   mode: string;
   request_id: string;
+  request_id_adaas: string;
   /**
    * @deprecated reset_extraction is deprecated and should not be used. Use reset_extract_from instead.
    */
   reset_extraction?: boolean;
   reset_extract_from?: boolean;
+  run_id: string;
+  sequence_version: string;
   snap_in_slug: string;
   snap_in_version_id: string;
+  /**
+   * @deprecated sync_run is deprecated and should not be used. Use run_id instead.
+   */
   sync_run: string;
+  /**
+   * @deprecated sync_run_id is deprecated and should not be used. Use run_id instead.
+   */
   sync_run_id: string;
   sync_tier: string;
   sync_unit: DonV2;
   sync_unit_id: string;
+  /**
+   * @deprecated uuid is deprecated and should not be used. Use request_id_adaas instead.
+   */
   uuid: string;
   worker_data_url: string;
 }

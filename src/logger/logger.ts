@@ -22,7 +22,7 @@ export class Logger extends Console {
     this.options = options;
     this.tags = {
       ...event.payload.event_context,
-      dev_oid: event.payload.event_context.dev_org,
+      dev_oid: event.payload.event_context.dev_oid,
     };
   }
 

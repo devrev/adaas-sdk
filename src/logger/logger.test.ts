@@ -63,7 +63,7 @@ describe('Logger', () => {
 
       expect(tags).toEqual({
         ...mockEvent.payload.event_context,
-        dev_oid: mockEvent.payload.event_context.dev_org,
+        dev_oid: mockEvent.payload.event_context.dev_oid,
       });
     });
   });
@@ -85,7 +85,7 @@ describe('Logger', () => {
         JSON.stringify({
           message,
           ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_org,
+          dev_oid: mockEvent.payload.event_context.dev_oid,
         })
       );
     });
@@ -103,7 +103,7 @@ describe('Logger', () => {
         JSON.stringify({
           message: expectedMessage,
           ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_org,
+          dev_oid: mockEvent.payload.event_context.dev_oid,
         })
       );
     });
@@ -122,7 +122,7 @@ describe('Logger', () => {
         JSON.stringify({
           message: `${text} ${expectedDataMessage}`,
           ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_org,
+          dev_oid: mockEvent.payload.event_context.dev_oid,
         })
       );
     });
@@ -142,7 +142,7 @@ describe('Logger', () => {
         JSON.stringify({
           message: `${text1} ${expectedDataMessage} ${text2}`,
           ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_org,
+          dev_oid: mockEvent.payload.event_context.dev_oid,
         })
       );
     });
@@ -211,7 +211,7 @@ describe('Logger', () => {
       const logObject = JSON.parse(callArgs);
 
       expect(logObject.message).toBe('');
-      expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_org);
+      expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
       expect(logObject.request_id).toBe(
         mockEvent.payload.event_context.request_id
       );
@@ -226,7 +226,7 @@ describe('Logger', () => {
 
       // inspect shows 'null' and 'undefined' as strings
       expect(logObject.message).toBe('test null undefined');
-      expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_org);
+      expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
     });
 
     it('should handle complex nested objects', () => {
@@ -251,7 +251,7 @@ describe('Logger', () => {
         depth: Infinity,
       });
       expect(logObject.message).toBe(expectedMessage);
-      expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_org);
+      expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
       expect(typeof logObject.callback_url).toBe('string');
     });
   });

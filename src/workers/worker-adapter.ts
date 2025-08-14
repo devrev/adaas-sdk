@@ -207,6 +207,7 @@ export class WorkerAdapter<ConnectorState> {
       } catch (error) {
         console.error('Error while uploading repos', error);
         parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+        this.hasWorkerEmitted = true;
         return;
       }
     }
@@ -231,6 +232,8 @@ export class WorkerAdapter<ConnectorState> {
       } catch (error) {
         console.error('Error while posting state', error);
         parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+        this.hasWorkerEmitted = true;
+        return;
       }
     }
 
@@ -253,14 +256,15 @@ export class WorkerAdapter<ConnectorState> {
         payload: { eventType: newEventType },
       };
       this.artifacts = [];
-      this.hasWorkerEmitted = true;
       parentPort?.postMessage(message);
+      this.hasWorkerEmitted = true;
     } catch (error) {
       console.error(
         `Error while emitting event with event type: ${newEventType}.`,
         serializeError(error)
       );
       parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+      this.hasWorkerEmitted = true;
     }
   }
 

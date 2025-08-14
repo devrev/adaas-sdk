@@ -132,7 +132,7 @@ export class State<ConnectorState> {
           },
           params: {
             sync_unit: this.event.payload.event_context.sync_unit_id,
-            request_id: this.event.payload.event_context.uuid,
+            request_id: this.event.payload.event_context.request_id_adaas,
           },
         }
       );
@@ -169,7 +169,7 @@ export class State<ConnectorState> {
         },
         params: {
           sync_unit: this.event.payload.event_context.sync_unit_id,
-          request_id: this.event.payload.event_context.uuid,
+          request_id: this.event.payload.event_context.request_id_adaas,
         },
       });
 
