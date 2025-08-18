@@ -1,24 +1,32 @@
 import axios, { AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
-
 const axiosClient = axios.create();
 
 axiosRetry(axiosClient, {
   retries: 5,
   retryDelay: (retryCount, error) => {
-    // exponential backoff algorithm: 1 * 2 ^ retryCount * 1000ms
+    // Handle 429 by using the Retry-After header
+    if (error.response?.status === 429) {
+      const retryAfter = error.response.headers?.['retry-after'];
+      if (retryAfter) {
+        const delay = parseInt(retryAfter, 10) * 1000;
+        console.warn(
+          `Request to ${error.config?.url} failed with 429 Too Many Requests. Method ${error.config?.method}. Retry count: ${retryCount}. Retrying after ${Math.round(delay / 1000)}s as specified by Retry-After header.`
+        );
+        return delay;
+      }
+    }
+    // Default exponential backoff algorithm: 1 * 2 ^ retryCount * 1000ms
     const delay = axiosRetry.exponentialDelay(retryCount, error, 1000);
-
     console.warn(
       `Request to ${error.config?.url} failed with response status code ${error.response?.status}. Method ${error.config?.method}. Retry count: ${retryCount}. Retrying in ${Math.round(delay / 1000)}s.`
     );
-
     return delay;
   },
   retryCondition: (error: AxiosError) => {
     return (
-      (axiosRetry.isNetworkOrIdempotentRequestError(error) &&
-        error.response?.status !== 429) ||
+      axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+      error.response?.status === 429 ||
       (error.response?.status ?? 0) >= 500
     );
   },
@@ -29,5 +37,4 @@ axiosRetry(axiosClient, {
     console.warn('Max retry times exceeded. Error', error);
   },
 });
-
 export { axios, axiosClient };
