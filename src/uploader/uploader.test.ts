@@ -2,10 +2,10 @@ import { createEvent } from '../tests/test-helpers';
 import { EventType } from '../types';
 import { Uploader } from './uploader';
 import { AxiosResponse } from 'axios';
-import { axiosClient } from '../http/axios-client';
+import { axiosClient } from '../http/axios-client-internal';
 
-jest.mock('../http/axios-client', () => {
-  const originalModule = jest.requireActual('../http/axios-client');
+jest.mock('../http/axios-client-internal', () => {
+  const originalModule = jest.requireActual('../http/axios-client-internal');
   return {
     ...originalModule,
     axiosClient: {
@@ -80,7 +80,9 @@ describe('Uploader Class Tests', () => {
     const uploadResponse = await uploader.upload(entity, fetchedObjects);
 
     expect(uploadResponse.error).toBeInstanceOf(Error);
-    expect(uploadResponse.error?.message).toBe('Error while getting artifact upload URL.');
+    expect(uploadResponse.error?.message).toBe(
+      'Error while getting artifact upload URL.'
+    );
   });
 
   it('should handle failure in uploadArtifact', async () => {
@@ -96,7 +98,9 @@ describe('Uploader Class Tests', () => {
     const uploadResponse = await uploader.upload(entity, fetchedObjects);
 
     expect(uploadResponse.error).toBeInstanceOf(Error);
-    expect(uploadResponse.error?.message).toBe('Error while uploading artifact.');
+    expect(uploadResponse.error?.message).toBe(
+      'Error while uploading artifact.'
+    );
   });
 
   it('should handle failure in confirmArtifactUpload', async () => {
@@ -114,6 +118,8 @@ describe('Uploader Class Tests', () => {
     const uploadResponse = await uploader.upload(entity, fetchedObjects);
 
     expect(uploadResponse.error).toBeInstanceOf(Error);
-    expect(uploadResponse.error?.message).toBe('Error while confirming artifact upload.');
+    expect(uploadResponse.error?.message).toBe(
+      'Error while confirming artifact upload.'
+    );
   });
 });

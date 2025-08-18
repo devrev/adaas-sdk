@@ -1,4 +1,4 @@
-import { axios, axiosClient } from '../http/axios-client';
+import { axios, axiosClient } from '../http/axios-client-internal';
 
 import { AirdropEvent, EventType, SyncMode } from '../types/extraction';
 import { STATELESS_EVENT_TYPES } from '../common/constants';

@@ -7,7 +7,7 @@ import {
   ExtractorEventType,
   serializeAxiosError,
 } from '../../index';
-import { axios, axiosClient } from '../../http/axios-client';
+import { axios, axiosClient } from '../../http/axios-client-internal';
 
 const getAttachmentStream = async ({
   item,

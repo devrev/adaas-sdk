@@ -1,2 +1,2 @@
 export * from './types';
-export * from './axios-client';
+export * from './axios-client-internal';

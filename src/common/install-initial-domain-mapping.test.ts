@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { installInitialDomainMapping } from './install-initial-domain-mapping';
-import { axiosClient } from '../http/axios-client';
+import { axiosClient } from '../http/axios-client-internal';
 import { InitialDomainMapping } from '../types';
 import { createEvent } from '../tests/test-helpers';
 import { EventType } from '../types/extraction';

@@ -1,4 +1,4 @@
-import { axiosClient } from '../http/axios-client';
+import { axiosClient } from '../http/axios-client-internal';
 import { AirdropEvent } from '../types/extraction';
 
 import { InitialDomainMapping } from '../types/common';

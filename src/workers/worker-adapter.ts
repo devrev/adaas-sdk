@@ -1,4 +1,4 @@
-import { axios } from '../http/axios-client';
+import { axios } from '../http/axios-client-internal';
 import {
   AirdropEvent,
   ExtractorEventType,
@@ -836,7 +836,7 @@ export class WorkerAdapter<ConnectorState> {
     this.initializeRepos(repos);
 
     const attachmentsMetadata = this.state.toDevRev?.attachmentsMetadata;
-    
+
     // If there are no attachments metadata artifact IDs in state, finish here
     if (!attachmentsMetadata?.artifactIds?.length) {
       console.log(`No attachments metadata artifact IDs found in state.`);
@@ -901,14 +901,16 @@ export class WorkerAdapter<ConnectorState> {
           stream,
         });
       } else {
-        console.log(`Using attachments streaming pool for attachments streaming.`);
+        console.log(
+          `Using attachments streaming pool for attachments streaming.`
+        );
 
         const attachmentsPool = new AttachmentsStreamingPool<ConnectorState>({
           adapter: this,
           attachments,
           batchSize,
           stream,
-        })
+        });
 
         response = await attachmentsPool.streamAll();
       }

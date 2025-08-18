@@ -1,4 +1,4 @@
-import { axiosClient } from '../../http/axios-client';
+import { axiosClient } from '../../http/axios-client-internal';
 import { betaSDK, client } from '@devrev/typescript-sdk';
 import fs, { promises as fsPromises } from 'fs';
 import { createFormData } from '../common/helpers';
