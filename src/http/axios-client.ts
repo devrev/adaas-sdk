@@ -8,6 +8,7 @@
  * 1. Network errors (where no response is received).
  * 2. Idempotent requests (defaults include GET, HEAD, OPTIONS, PUT).
  * 3. All 5xx server errors.
+ * 4. 429 Too Many Requests (respects Retry-After header when present).
  *
  * Retry Strategy:
  * - A maximum of 5 retries are attempted.
