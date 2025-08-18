@@ -1,7 +1,7 @@
 import { AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
 
-describe('axios-client', () => {
+describe('axios-client-internal', () => {
   describe('429 response', () => {
     it('should identify 429 as retryable', () => {
       const error429: Partial<AxiosError> = {
