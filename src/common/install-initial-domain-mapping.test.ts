@@ -10,7 +10,16 @@ jest.mock('axios', () => ({
   ...jest.requireActual('axios'),
   isAxiosError: jest.fn(),
 }));
-jest.mock('../http/axios-client');
+jest.mock('../http/axios-client-internal', () => {
+  const originalModule = jest.requireActual('../http/axios-client-internal');
+  return {
+    ...originalModule,
+    axiosClient: {
+      get: jest.fn(),
+      post: jest.fn(),
+    },
+  };
+});
 jest.mock('../logger/logger');
 
 const mockAxiosClient = axiosClient as jest.Mocked<typeof axiosClient>;
