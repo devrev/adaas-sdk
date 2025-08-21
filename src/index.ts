@@ -11,7 +11,6 @@ export * from './common/install-initial-domain-mapping';
 export { WorkerAdapter } from './workers/worker-adapter';
 export { processTask } from './workers/process-task';
 export { spawn } from './workers/spawn';
-export { isEventType } from './common/helpers';
 
 export * from './types/workers';
 
