@@ -274,7 +274,7 @@ describe('AttachmentsStreamingPool', () => {
     });
   });
 
-  describe('edge cases', () => {
+  describe('[Edges]', () => {
     it('should handle single attachment', async () => {
       mockAdapter.processAttachment.mockResolvedValue({});
 

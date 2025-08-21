@@ -4,8 +4,8 @@ import { createEvent } from '../tests/test-helpers';
 import { EventType } from '../types/extraction';
 import { createWorker } from './create-worker';
 
-describe('createWorker function', () => {
-  it('should return a Worker instance when a valid worker script is found', async () => {
+describe(createWorker.name, () => {
+  it('should create a Worker instance when valid worker script path is provided', async () => {
     const workerPath = __dirname + '../tests/dummy-worker.ts';
     const worker = isMainThread
       ? await createWorker<object>({

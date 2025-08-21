@@ -202,58 +202,60 @@ describe(installInitialDomainMapping.name, () => {
     expect(mockAxiosClient.post).toHaveBeenCalledTimes(1);
   });
 
-  it('should return early with warning when no initial domain mapping provided', async () => {
-    await installInitialDomainMapping(mockEvent, null as any);
+  describe('[Edges]', () => {
+    it('should return early with warning when initial domain mapping is null', async () => {
+      await installInitialDomainMapping(mockEvent, null as any);
 
-    expect(mockConsoleWarn).toHaveBeenCalledWith(
-      'No initial domain mapping found.'
-    );
-    expect(mockAxiosClient.get).not.toHaveBeenCalled();
-    expect(mockAxiosClient.post).not.toHaveBeenCalled();
-  });
+      expect(mockConsoleWarn).toHaveBeenCalledWith(
+        'No initial domain mapping found.'
+      );
+      expect(mockAxiosClient.get).not.toHaveBeenCalled();
+      expect(mockAxiosClient.post).not.toHaveBeenCalled();
+    });
 
-  it('should return early with warning when undefined initial domain mapping provided', async () => {
-    await installInitialDomainMapping(mockEvent, undefined as any);
+    it('should return early with warning when initial domain mapping is undefined', async () => {
+      await installInitialDomainMapping(mockEvent, undefined as any);
 
-    expect(mockConsoleWarn).toHaveBeenCalledWith(
-      'No initial domain mapping found.'
-    );
-    expect(mockAxiosClient.get).not.toHaveBeenCalled();
-    expect(mockAxiosClient.post).not.toHaveBeenCalled();
-  });
+      expect(mockConsoleWarn).toHaveBeenCalledWith(
+        'No initial domain mapping found.'
+      );
+      expect(mockAxiosClient.get).not.toHaveBeenCalled();
+      expect(mockAxiosClient.post).not.toHaveBeenCalled();
+    });
 
-  it('should throw error when import slug is missing', async () => {
-    const snapInResponseWithoutImport = {
-      data: {
-        snap_in: {
-          imports: [],
-          snap_in_version: { slug: 'snap-in-slug-123' },
+    it('should throw error when import slug is missing', async () => {
+      const snapInResponseWithoutImport = {
+        data: {
+          snap_in: {
+            imports: [],
+            snap_in_version: { slug: 'snap-in-slug-123' },
+          },
         },
-      },
-    };
+      };
 
-    mockAxiosClient.get.mockResolvedValueOnce(snapInResponseWithoutImport);
+      mockAxiosClient.get.mockResolvedValueOnce(snapInResponseWithoutImport);
 
-    await expect(
-      installInitialDomainMapping(mockEvent, mockInitialDomainMapping)
-    ).rejects.toThrow('No import slug or snap-in slug found');
-  });
+      await expect(
+        installInitialDomainMapping(mockEvent, mockInitialDomainMapping)
+      ).rejects.toThrow('No import slug or snap-in slug found');
+    });
 
-  it('should throw error when snap-in slug is missing', async () => {
-    const snapInResponseWithoutSlug = {
-      data: {
-        snap_in: {
-          imports: [{ name: 'import-slug-123' }],
-          snap_in_version: {},
+    it('should throw error when snap-in slug is missing', async () => {
+      const snapInResponseWithoutSlug = {
+        data: {
+          snap_in: {
+            imports: [{ name: 'import-slug-123' }],
+            snap_in_version: {},
+          },
         },
-      },
-    };
+      };
 
-    mockAxiosClient.get.mockResolvedValueOnce(snapInResponseWithoutSlug);
+      mockAxiosClient.get.mockResolvedValueOnce(snapInResponseWithoutSlug);
 
-    await expect(
-      installInitialDomainMapping(mockEvent, mockInitialDomainMapping)
-    ).rejects.toThrow('No import slug or snap-in slug found');
+      await expect(
+        installInitialDomainMapping(mockEvent, mockInitialDomainMapping)
+      ).rejects.toThrow('No import slug or snap-in slug found');
+    });
   });
 
   it('should handle the error during recipe blueprint creation', async () => {

@@ -4,13 +4,13 @@ import { createEvent } from '../tests/test-helpers';
 describe('EventContext', () => {
   const baseEvent = createEvent({ eventType: EventType.ExtractionDataStart });
 
-  it('should handle context without optional fields', () => {
+  it('should create event context without optional fields', () => {
     const event = { ...baseEvent };
     // If this compiles, the test passes
     expect(event).toBeDefined();
   });
 
-  it('should handle context with all optional fields', () => {
+  it('should create event context with all optional fields', () => {
     const event = { ...baseEvent };
 
     event.payload.event_context = {
@@ -24,7 +24,7 @@ describe('EventContext', () => {
     expect(event).toBeDefined();
   });
 
-  it('should handle partial optional fields', () => {
+  it('should create event context with partial optional fields', () => {
     const event = { ...baseEvent };
 
     event.payload.event_context = {

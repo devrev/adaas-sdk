@@ -195,7 +195,7 @@ describe(Logger.name, () => {
     });
   });
 
-  describe('edge cases', () => {
+  describe('[Edges]', () => {
     let logger: Logger;
 
     beforeEach(() => {
