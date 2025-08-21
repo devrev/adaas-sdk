@@ -50,30 +50,20 @@ const EVENT_TYPE_TRANSLATION_TABLE = {
 /**
  * Translates Event type from the old naming scheme to the new one
  */
-export function translateEventType(event_type: string): EventType | ExtractorEventType {
+export function getEventType(eventType: string): EventType | ExtractorEventType {
   // If we notice that the event has a newer translation, translate to that
-  if(event_type in EVENT_TYPE_TRANSLATION_TABLE){
-    return EVENT_TYPE_TRANSLATION_TABLE[event_type as keyof typeof EVENT_TYPE_TRANSLATION_TABLE];
+  if(eventType in EVENT_TYPE_TRANSLATION_TABLE){
+    return EVENT_TYPE_TRANSLATION_TABLE[eventType as keyof typeof EVENT_TYPE_TRANSLATION_TABLE];
   }
 
   // Return the correct event type
-  if (event_type in ExtractorEventType) {
-    return event_type as ExtractorEventType;
-  }else if (event_type in EventType) {
-    return event_type as EventType;
+  if (eventType in ExtractorEventType) {
+    return eventType as ExtractorEventType;
+  }else if (eventType in EventType) {
+    return eventType as EventType;
   }
 
   return ExtractorEventType.UnknownEventType;
-}
-
-export function isEventType({
-  event,
-  eventType,
-}: {
-  event: AirdropEvent;
-  eventType: EventType;
-}): boolean {
-  return translateEventType(event.payload.event_type) === translateEventType(eventType);
 }
 
 export function getTimeoutErrorEventType(eventType: EventType): {
