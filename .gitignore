@@ -131,3 +131,7 @@ dist
 
 .npmrc
 .idea
+
+# OOM test artifacts
+oom-test-logs/
+tmp/localstack/
