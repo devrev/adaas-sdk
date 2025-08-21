@@ -59,9 +59,11 @@ export function translateEventType(event_type: string): EventType | ExtractorEve
   // Return the correct event type
   if (event_type in ExtractorEventType) {
     return event_type as ExtractorEventType;
+  }else if (event_type in EventType) {
+    return event_type as EventType;
   }
 
-  return event_type as EventType;
+  return ExtractorEventType.UnknownEventType;
 }
 
 export function isEventType({
