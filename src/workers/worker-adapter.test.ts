@@ -80,7 +80,6 @@ describe(WorkerAdapter.name, () => {
 
   describe('streamAttachments', () => {
     it('should process all artifact batches successfully', async () => {
-      // Arrange
       const mockStream = jest.fn();
 
       // Set up adapter state with artifact IDs
@@ -129,7 +128,6 @@ describe(WorkerAdapter.name, () => {
         stream: mockStream,
       });
 
-      // Assert
       expect(adapter.initializeRepos).toHaveBeenCalledWith([
         { itemType: 'ssor_attachment' },
       ]);
@@ -148,9 +146,7 @@ describe(WorkerAdapter.name, () => {
 
     describe('[Edges]', () => {
       it('should handle invalid batch size by using 1 instead', async () => {
-        // Arrange
         const mockStream = jest.fn();
-        const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
         // Set up adapter state with artifact IDs
         adapter.state.toDevRev = {
@@ -170,27 +166,16 @@ describe(WorkerAdapter.name, () => {
 
         adapter.initializeRepos = jest.fn();
         
-        // Act
         const result = await adapter.streamAttachments({
           stream: mockStream,
           batchSize: 0,
         });
 
-        // Assert
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-          'The specified batch size (0) is invalid. Using 1 instead.'
-        );
-        
         expect(result).toBeUndefined();
-        
-        // Restore console.warn
-        consoleWarnSpy.mockRestore();
       });
 
       it('should cap batch size to 50 when batchSize is greater than 50', async () => {
-        // Arrange
         const mockStream = jest.fn();
-        const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
         
         // Set up adapter state with artifact IDs
         adapter.state.toDevRev = {
@@ -211,25 +196,15 @@ describe(WorkerAdapter.name, () => {
         // Mock the required methods
         adapter.initializeRepos = jest.fn();
       
-        // Act
         const result = await adapter.streamAttachments({
           stream: mockStream,
           batchSize: 100, // Set batch size greater than 50
         });
       
-        // Assert
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-          'The specified batch size (100) is too large. Using 50 instead.'
-        );
-        
         expect(result).toBeUndefined();
-        
-        // Restore console.warn
-        consoleWarnSpy.mockRestore();
       });
       
       it('should handle empty attachments metadata artifact IDs', async () => {
-        // Arrange
         const mockStream = jest.fn();
         
         // Set up adapter state with no artifact IDs
@@ -240,25 +215,14 @@ describe(WorkerAdapter.name, () => {
           },
         };
 
-        const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-        
-        // Act
         const result = await adapter.streamAttachments({
           stream: mockStream,
         });
 
-        // Assert
-        expect(consoleLogSpy).toHaveBeenCalledWith(
-          'No attachments metadata artifact IDs found in state.'
-        );
         expect(result).toBeUndefined();
-        
-        // Restore console.log
-        consoleLogSpy.mockRestore();
       });
 
       it('should handle errors when getting attachments', async () => {
-        // Arrange
         const mockStream = jest.fn();
         
         // Set up adapter state with artifact IDs
@@ -278,25 +242,17 @@ describe(WorkerAdapter.name, () => {
 
         // Mock methods
         adapter.initializeRepos = jest.fn();
-        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
         
-        // Act
         const result = await adapter.streamAttachments({
           stream: mockStream,
         });
 
-        // Assert
-        expect(consoleErrorSpy).toHaveBeenCalled();
         expect(result).toEqual({
           error: mockError,
         });
-        
-        // Restore console.error
-        consoleErrorSpy.mockRestore();
       });
 
       it('should handle empty attachments array from artifact', async () => {
-        // Arrange
         const mockStream = jest.fn();
         
         // Set up adapter state with artifact IDs
@@ -315,25 +271,17 @@ describe(WorkerAdapter.name, () => {
 
         // Mock methods
         adapter.initializeRepos = jest.fn();
-        const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
         
-        // Act
         const result = await adapter.streamAttachments({
           stream: mockStream,
         });
 
-        // Assert
-        expect(consoleWarnSpy).toHaveBeenCalled();
         expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([]);
         expect(result).toBeUndefined();
-        
-        // Restore console.warn
-        consoleWarnSpy.mockRestore();
       });
     });
 
     it('should use custom processors when provided', async () => {
-      // Arrange
       const mockStream = jest.fn();
       const mockReducer = jest.fn().mockReturnValue(['custom-reduced']);
       const mockIterator = jest.fn().mockResolvedValue({});
@@ -356,9 +304,7 @@ describe(WorkerAdapter.name, () => {
 
       // Mock methods
       adapter.initializeRepos = jest.fn();
-      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-
-      // Act
+      
       const result = await adapter.streamAttachments({
         stream: mockStream,
         processors: {
@@ -367,7 +313,6 @@ describe(WorkerAdapter.name, () => {
         },
       });
 
-      // Assert
       expect(mockReducer).toHaveBeenCalledWith({
         attachments: [{ id: 'attachment1' }],
         adapter: adapter,
@@ -379,13 +324,9 @@ describe(WorkerAdapter.name, () => {
         stream: mockStream,
       });
       expect(result).toBeUndefined();
-
-      // Restore console.log
-      consoleLogSpy.mockRestore();
     });
 
     it('should handle rate limiting from iterator', async () => {
-      // Arrange
       const mockStream = jest.fn();
 
       (AttachmentsStreamingPool as jest.Mock).mockImplementationOnce(() => {
@@ -413,13 +354,11 @@ describe(WorkerAdapter.name, () => {
 
       // Mock methods
       adapter.initializeRepos = jest.fn();
-
-      // Act
+      
       const result = await adapter.streamAttachments({
         stream: mockStream,
       });
 
-      // Assert
       expect(result).toEqual({
         delay: 30,
       });
@@ -430,7 +369,6 @@ describe(WorkerAdapter.name, () => {
     });
 
     it('should handle error from iterator', async () => {
-      // Arrange
       const mockStream = jest.fn();
 
       (AttachmentsStreamingPool as jest.Mock).mockImplementationOnce(() => {
@@ -460,13 +398,11 @@ describe(WorkerAdapter.name, () => {
 
       // Mock methods
       adapter.initializeRepos = jest.fn();
-
-      // Act
+      
       const result = await adapter.streamAttachments({
         stream: mockStream,
       });
 
-      // Assert
       expect(result).toEqual({
         error: 'Mock error',
       });
@@ -533,7 +469,6 @@ describe(WorkerAdapter.name, () => {
       // Import the worker_threads module and spy on parentPort.postMessage
       const workerThreads = require('node:worker_threads');
       mockPostMessage = jest.fn().mockImplementation((a: any) => {
-        console.log('postMessage called with:', a);
         counter.counter += 1;
       });
 

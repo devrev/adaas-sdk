@@ -11,7 +11,7 @@ interface TestState {
     attachments: { completed: boolean };
 }
 
-describe('AttachmentsStreamingPool', () => {
+describe(AttachmentsStreamingPool.name, () => {
   let mockAdapter: jest.Mocked<WorkerAdapter<TestState>>;
   let mockStream: jest.MockedFunction<ExternalSystemAttachmentStreamingFunction>;
   let mockAttachments: NormalizedAttachment[];
