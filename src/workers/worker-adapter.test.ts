@@ -555,7 +555,7 @@ describe(WorkerAdapter.name, () => {
       jest.restoreAllMocks();
     });
 
-    test('should emit only one event when multiple events of same type are sent', async () => {
+    it('should emit only one event when multiple events of same type are sent', async () => {
       adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
@@ -571,7 +571,7 @@ describe(WorkerAdapter.name, () => {
       expect(counter.counter).toBe(1);
     });
 
-    test('should emit event when different event type is sent after previous events', async () => {
+    it('should emit event when different event type is sent after previous events', async () => {
       adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
@@ -590,11 +590,9 @@ describe(WorkerAdapter.name, () => {
       
       expect(counter.counter).toBe(1);
     });
-
-    test('should correctly emit one event even if postState errors', async () => {
-      adapter['adapterState'].postState = jest
-        .fn()
-        .mockRejectedValue(new Error('postState error'));
+     
+    it('should correctly emit one event even if postState errors', async () => {
+      adapter['adapterState'].postState = jest.fn().mockRejectedValue(new Error('postState error'));
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
       await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
@@ -604,13 +602,9 @@ describe(WorkerAdapter.name, () => {
       expect(counter.counter).toBe(1);
     });
 
-    test('should correctly emit one event even if uploadAllRepos errors', async () => {
-      adapter['adapterState'].postState = jest
-        .fn()
-        .mockResolvedValue(undefined);
-      adapter.uploadAllRepos = jest
-        .fn()
-        .mockRejectedValue(new Error('uploadAllRepos error'));
+    it('should correctly emit one event even if uploadAllRepos errors', async () => {
+      adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
+      adapter.uploadAllRepos = jest.fn().mockRejectedValue(new Error('uploadAllRepos error'));
 
       await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
         reports: [],
