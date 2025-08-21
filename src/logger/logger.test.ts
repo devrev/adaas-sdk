@@ -18,7 +18,7 @@ jest.mock('node:worker_threads', () => ({
   parentPort: null,
 }));
 
-describe('Logger', () => {
+describe(Logger.name, () => {
   let mockEvent: AirdropEvent;
   let mockOptions: WorkerAdapterOptions;
 

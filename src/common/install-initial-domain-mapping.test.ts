@@ -25,7 +25,7 @@ jest.mock('../logger/logger');
 const mockAxiosClient = axiosClient as jest.Mocked<typeof axiosClient>;
 const mockIsAxiosError = axios.isAxiosError as unknown as jest.Mock;
 
-describe('installInitialDomainMapping', () => {
+describe(installInitialDomainMapping.name, () => {
   // Create mock objects
   const mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
 

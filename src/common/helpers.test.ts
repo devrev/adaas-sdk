@@ -1,7 +1,7 @@
 import { getFilesToLoad } from './helpers';
 import { ItemTypeToLoad, StatsFileObject } from '../types/loading';
 
-describe('getFilesToLoad', () => {
+describe(getFilesToLoad.name, () => {
   let statsFile: StatsFileObject[];
 
   beforeEach(() => {

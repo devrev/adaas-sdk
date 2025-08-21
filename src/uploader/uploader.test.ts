@@ -34,7 +34,7 @@ const getArtifactUploadUrlMockResponse = {
   },
 };
 
-describe('Uploader Class Tests', () => {
+describe(Uploader.name, () => {
   const mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
 
   let uploader: Uploader;

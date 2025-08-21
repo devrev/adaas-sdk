@@ -8,7 +8,7 @@ jest.mock('../tests/test-helpers', () => ({
   normalizeItem: jest.fn(),
 }));
 
-describe('Repo class push method', () => {
+describe(Repo.name, () => {
   let repo: Repo;
   let normalize: jest.Mock;
 

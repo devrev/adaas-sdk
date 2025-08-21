@@ -36,7 +36,7 @@ jest.mock('../attachments-streaming/attachments-streaming-pool', () => {
   };
 });
 
-describe('WorkerAdapter', () => {
+describe(WorkerAdapter.name, () => {
   interface TestState {
     attachments: { completed: boolean };
   }

@@ -1,7 +1,7 @@
 import { EventContext, EventType, InitialSyncScope } from './extraction';
 import { createEvent } from '../tests/test-helpers';
 
-describe('EventContext type tests', () => {
+describe('EventContext', () => {
   const baseEvent = createEvent({ eventType: EventType.ExtractionDataStart });
 
   it('should handle context without optional fields', () => {
