@@ -59,28 +59,62 @@ describe(ClassName.name, () => {
 3. **Behavior Testing**: Tests should verify behavior, not implementation details
 4. **Edge Cases**: Handle `null`, `undefined`, and other edge cases in the `[Edges]` section
 5. **Simplicity**: Keep tests simple and easy to understand
+6. **AAA Pattern**: Follow the Arrange, Act, Assert pattern for test structure:
+   - **Arrange**: Set up test data, dependencies, and initial state
+   - **Act**: Execute the function or method being tested
+   - **Assert**: Verify the expected outcome or behavior
 
 ### Example
 
 ```typescript
 describe(Calculator.name, () => {
   it('should add two positive numbers correctly', () => {
-    const result = calculator.add(2, 3);
-    expect(result).toBe(5);
+    // Arrange
+    const calculator = new Calculator();
+    const firstNumber = 2;
+    const secondNumber = 3;
+    const expectedResult = 5;
+
+    // Act
+    const result = calculator.add(firstNumber, secondNumber);
+
+    // Assert
+    expect(result).toBe(expectedResult);
   });
 
   it('should add negative numbers correctly', () => {
-    const result = calculator.add(-2, -3);
-    expect(result).toBe(-5);
+    // Arrange
+    const calculator = new Calculator();
+    const firstNumber = -2;
+    const secondNumber = -3;
+    const expectedResult = -5;
+
+    // Act
+    const result = calculator.add(firstNumber, secondNumber);
+
+    // Assert
+    expect(result).toBe(expectedResult);
   });
 
   describe('[Edges]', () => {
     it('should handle null input by throwing an error', () => {
-      expect(() => calculator.add(null, 5)).toThrow();
+      // Arrange
+      const calculator = new Calculator();
+      const nullValue = null;
+      const validNumber = 5;
+
+      // Act & Assert
+      expect(() => calculator.add(nullValue, validNumber)).toThrow();
     });
 
     it('should handle undefined input by throwing an error', () => {
-      expect(() => calculator.add(undefined, 5)).toThrow();
+      // Arrange
+      const calculator = new Calculator();
+      const undefinedValue = undefined;
+      const validNumber = 5;
+
+      // Act & Assert
+      expect(() => calculator.add(undefinedValue, validNumber)).toThrow();
     });
   });
 });
