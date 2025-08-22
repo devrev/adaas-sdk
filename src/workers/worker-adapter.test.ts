@@ -78,7 +78,7 @@ describe(WorkerAdapter.name, () => {
     });
   });
 
-  describe('streamAttachments', () => {
+  describe(WorkerAdapter.prototype.streamAttachments.name, () => {
     it('should process all artifact batches successfully', async () => {
       const mockStream = jest.fn();
 
@@ -457,8 +457,8 @@ describe(WorkerAdapter.name, () => {
     });
   });
 
-  describe('emit', () => {
-    let counter: { counter: number };
+  describe(WorkerAdapter.prototype.emit.name, () => {
+    let counter: {counter: number};
     let mockPostMessage: jest.Mock;
 
     beforeEach(() => {

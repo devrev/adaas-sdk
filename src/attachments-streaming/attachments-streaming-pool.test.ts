@@ -66,7 +66,7 @@ describe(AttachmentsStreamingPool.name, () => {
     jest.restoreAllMocks();
   });
 
-  describe('constructor', () => {
+  describe(AttachmentsStreamingPool.prototype.constructor.name, () => {
     it('should initialize with default values', () => {
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
@@ -104,7 +104,7 @@ describe(AttachmentsStreamingPool.name, () => {
     });
   });
 
-  describe('streamAll', () => {
+  describe(AttachmentsStreamingPool.prototype.streamAll.name, () => {
     it('should initialize lastProcessedAttachmentsIdsList if it does not exist', async () => {
       mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList = undefined as any;
       mockAdapter.processAttachment.mockResolvedValue({});
@@ -170,7 +170,7 @@ describe(AttachmentsStreamingPool.name, () => {
     });
   });
 
-  describe('startPoolStreaming', () => {
+  describe(AttachmentsStreamingPool.prototype.startPoolStreaming.name, () => {
     it('should skip already processed attachments', async () => {
       mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList = ['attachment-1'];
       mockAdapter.processAttachment.mockResolvedValue({});
