@@ -144,8 +144,7 @@ describe(WorkerAdapter.name, () => {
       expect(result).toBeUndefined();
     });
 
-    describe('[Edges]', () => {
-      it('should handle invalid batch size by using 1 instead', async () => {
+    it('[edge] should handle invalid batch size by using 1 instead', async () => {
         const mockStream = jest.fn();
 
         // Set up adapter state with artifact IDs
@@ -174,7 +173,7 @@ describe(WorkerAdapter.name, () => {
         expect(result).toBeUndefined();
       });
 
-      it('should cap batch size to 50 when batchSize is greater than 50', async () => {
+    it('[edge] should cap batch size to 50 when batchSize is greater than 50', async () => {
         const mockStream = jest.fn();
         
         // Set up adapter state with artifact IDs
@@ -204,7 +203,7 @@ describe(WorkerAdapter.name, () => {
         expect(result).toBeUndefined();
       });
       
-      it('should handle empty attachments metadata artifact IDs', async () => {
+    it('[edge] should handle empty attachments metadata artifact IDs', async () => {
         const mockStream = jest.fn();
         
         // Set up adapter state with no artifact IDs
@@ -222,7 +221,7 @@ describe(WorkerAdapter.name, () => {
         expect(result).toBeUndefined();
       });
 
-      it('should handle errors when getting attachments', async () => {
+    it('[edge] should handle errors when getting attachments', async () => {
         const mockStream = jest.fn();
         
         // Set up adapter state with artifact IDs
@@ -252,7 +251,7 @@ describe(WorkerAdapter.name, () => {
         });
       });
 
-      it('should handle empty attachments array from artifact', async () => {
+    it('[edge] should handle empty attachments array from artifact', async () => {
         const mockStream = jest.fn();
         
         // Set up adapter state with artifact IDs
@@ -279,7 +278,6 @@ describe(WorkerAdapter.name, () => {
         expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([]);
         expect(result).toBeUndefined();
       });
-    });
 
     it('should use custom processors when provided', async () => {
       const mockStream = jest.fn();

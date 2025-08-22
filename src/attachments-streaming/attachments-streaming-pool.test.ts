@@ -274,8 +274,7 @@ describe(AttachmentsStreamingPool.name, () => {
     });
   });
 
-  describe('[Edges]', () => {
-    it('should handle single attachment', async () => {
+  it('[edge] should handle single attachment', async () => {
       mockAdapter.processAttachment.mockResolvedValue({});
 
       const pool = new AttachmentsStreamingPool({
@@ -290,7 +289,7 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle batch size larger than attachments array', async () => {
+  it('[edge] should handle batch size larger than attachments array', async () => {
       mockAdapter.processAttachment.mockResolvedValue({});
 
       const pool = new AttachmentsStreamingPool({
@@ -305,7 +304,7 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
     });
 
-    it('should handle batch size of 1', async () => {
+  it('[edge] should handle batch size of 1', async () => {
       mockAdapter.processAttachment.mockResolvedValue({});
 
       const pool = new AttachmentsStreamingPool({
@@ -319,7 +318,6 @@ describe(AttachmentsStreamingPool.name, () => {
 
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
     });
-  });
 
   describe('concurrency behavior', () => {
     it('should process attachments concurrently within batch size', async () => {

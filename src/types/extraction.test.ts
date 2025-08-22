@@ -52,8 +52,7 @@ describe('ExtractionTypes', () => {
     expect(event.payload.event_context.initial_sync_scope).toBe(InitialSyncScope.FULL_HISTORY);
   });
 
-  describe('[Edges]', () => {
-    it('should handle null event context gracefully', () => {
+  it('[edge] should handle null event context gracefully', () => {
       const event = { ...baseEvent };
 
       event.payload.event_context = null as any;
@@ -61,7 +60,7 @@ describe('ExtractionTypes', () => {
       expect(event.payload.event_context).toBeNull();
     });
 
-    it('should handle undefined optional fields', () => {
+  it('[edge] should handle undefined optional fields', () => {
       const event = { ...baseEvent };
 
       event.payload.event_context = {
@@ -76,7 +75,7 @@ describe('ExtractionTypes', () => {
       expect(event.payload.event_context.reset_extract_from).toBeUndefined();
     });
 
-    it('should handle invalid date format in extract_from', () => {
+  it('[edge] should handle invalid date format in extract_from', () => {
       const event = { ...baseEvent };
 
       event.payload.event_context = {
@@ -88,7 +87,7 @@ describe('ExtractionTypes', () => {
       // Note: Type validation would typically happen at runtime, not compile time
     });
 
-    it('should handle explicit boolean values for reset_extract_from', () => {
+  it('[edge] should handle explicit boolean values for reset_extract_from', () => {
       const eventWithTrue = createEvent({
         eventType: EventType.ExtractionDataStart,
         eventContextOverrides: {
@@ -108,5 +107,4 @@ describe('ExtractionTypes', () => {
       expect(typeof eventWithTrue.payload.event_context.reset_extract_from).toBe('boolean');
       expect(typeof eventWithFalse.payload.event_context.reset_extract_from).toBe('boolean');
     });
-  });
 });

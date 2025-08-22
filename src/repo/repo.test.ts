@@ -48,12 +48,10 @@ describe(Repo.name, () => {
     expect(normalize).not.toHaveBeenCalled();
   });
 
-  describe('[Edges]', () => {
-    it('should not push items when items array is empty', async () => {
+  it('[edge] should not push items when items array is empty', async () => {
       await repo.push([]);
       expect(repo.getItems()).toEqual([]);
     });
-  });
 
   it('should not normalize items when item type is external_domain_metadata', async () => {
     repo = new Repo({

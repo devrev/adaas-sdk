@@ -195,7 +195,7 @@ describe(Logger.name, () => {
     });
   });
 
-  describe('[Edges]', () => {
+  describe('edge cases', () => {
     let logger: Logger;
 
     beforeEach(() => {
@@ -203,7 +203,7 @@ describe(Logger.name, () => {
       logger = new Logger({ event: mockEvent, options: mockOptions });
     });
 
-    it('should handle empty string message', () => {
+    it('[edge] should handle empty string message', () => {
       logger.info('');
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
@@ -217,7 +217,7 @@ describe(Logger.name, () => {
       );
     });
 
-    it('should handle null and undefined values', () => {
+    it('[edge] should handle null and undefined values', () => {
       logger.info('test', null, undefined);
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
@@ -229,7 +229,7 @@ describe(Logger.name, () => {
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
     });
 
-    it('should handle complex nested objects', () => {
+    it('[edge] should handle complex nested objects', () => {
       const complexObject = {
         level1: {
           level2: {

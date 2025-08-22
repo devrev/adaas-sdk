@@ -68,8 +68,7 @@ describe(Uploader.name, () => {
     });
   });
 
-  describe('[Edges]', () => {
-    it('should handle failure when getting artifact upload URL', async () => {
+  it('[edge] should handle failure when getting artifact upload URL', async () => {
       // Mock unsuccessful response for getArtifactUploadUrl
       (axiosClient.get as jest.Mock).mockResolvedValueOnce(undefined);
 
@@ -81,7 +80,7 @@ describe(Uploader.name, () => {
       expect(uploadResponse.error?.message).toBeDefined();
     });
 
-    it('should handle failure when uploading artifact', async () => {
+  it('[edge] should handle failure when uploading artifact', async () => {
       // Mock successful response for getArtifactUploadUrl
       (axiosClient.get as jest.Mock).mockResolvedValueOnce(
         getArtifactUploadUrlMockResponse
@@ -97,7 +96,7 @@ describe(Uploader.name, () => {
       expect(uploadResponse.error?.message).toBeDefined();
     });
 
-    it('should handle failure when confirming artifact upload', async () => {
+  it('[edge] should handle failure when confirming artifact upload', async () => {
       // Mock successful response for getArtifactUploadUrl
       (axiosClient.get as jest.Mock).mockResolvedValueOnce(
         getArtifactUploadUrlMockResponse
@@ -114,5 +113,4 @@ describe(Uploader.name, () => {
       expect(uploadResponse.error).toBeInstanceOf(Error);
       expect(uploadResponse.error?.message).toBeDefined();
     });
-  });
 });

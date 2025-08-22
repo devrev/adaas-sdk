@@ -181,22 +181,21 @@ describe(installInitialDomainMapping.name, () => {
     expect(mockAxiosClient.post).toHaveBeenCalledTimes(1);
   });
 
-  describe('[Edges]', () => {
-    it('should return early with warning when initial domain mapping is null', async () => {
+  it('[edge] should return early with warning when initial domain mapping is null', async () => {
       await installInitialDomainMapping(mockEvent, null as any);
 
       expect(mockAxiosClient.get).not.toHaveBeenCalled();
       expect(mockAxiosClient.post).not.toHaveBeenCalled();
     });
 
-    it('should return early with warning when initial domain mapping is undefined', async () => {
+  it('[edge] should return early with warning when initial domain mapping is undefined', async () => {
       await installInitialDomainMapping(mockEvent, undefined as any);
 
       expect(mockAxiosClient.get).not.toHaveBeenCalled();
       expect(mockAxiosClient.post).not.toHaveBeenCalled();
     });
 
-    it('should throw error when import slug is missing', async () => {
+  it('[edge] should throw error when import slug is missing', async () => {
       const snapInResponseWithoutImport = {
         data: {
           snap_in: {
@@ -213,7 +212,7 @@ describe(installInitialDomainMapping.name, () => {
       ).rejects.toThrow();
     });
 
-    it('should throw error when snap-in slug is missing', async () => {
+  it('[edge] should throw error when snap-in slug is missing', async () => {
       const snapInResponseWithoutSlug = {
         data: {
           snap_in: {
@@ -229,7 +228,6 @@ describe(installInitialDomainMapping.name, () => {
         installInitialDomainMapping(mockEvent, mockInitialDomainMapping)
       ).rejects.toThrow();
     });
-  });
 
   it('should handle the error during recipe blueprint creation', async () => {
     mockAxiosClient.get.mockResolvedValueOnce(mockSnapInResponse);

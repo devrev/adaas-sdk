@@ -45,8 +45,7 @@ describe(createWorker.name, () => {
     (isMainThread as any) = originalIsMainThread;
   });
 
-  describe('[Edges]', () => {
-    it('should handle worker creation with minimal valid data', async () => {
+  it('[edge] should handle worker creation with minimal valid data', async () => {
       const workerPath = __dirname + '../tests/dummy-worker.ts';
 
       if (isMainThread) {
@@ -63,7 +62,7 @@ describe(createWorker.name, () => {
       }
     });
 
-    it('should handle worker creation with complex initial state', async () => {
+  it('[edge] should handle worker creation with complex initial state', async () => {
       const workerPath = __dirname + '../tests/dummy-worker.ts';
       const complexState = {
         nested: {
@@ -86,7 +85,7 @@ describe(createWorker.name, () => {
       }
     });
 
-    it('should handle different event types', async () => {
+  it('[edge] should handle different event types', async () => {
       const workerPath = __dirname + '../tests/dummy-worker.ts';
 
       if (isMainThread) {
@@ -102,5 +101,4 @@ describe(createWorker.name, () => {
         await worker.terminate();
       }
     });
-  });
 });
