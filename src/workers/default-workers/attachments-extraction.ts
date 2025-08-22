@@ -1,3 +1,4 @@
+import axios from 'axios';
 import {
   ExternalSystemAttachmentStreamingParams,
   ExternalSystemAttachmentStreamingResponse,
@@ -7,7 +8,7 @@ import {
   ExtractorEventType,
   serializeAxiosError,
 } from '../../index';
-import { axios, axiosClient } from '../../http/axios-client-internal';
+import { axiosClient } from '../../http/axios-client-internal';
 
 const getAttachmentStream = async ({
   item,

@@ -1,5 +1,5 @@
-import { axios, axiosClient } from '../http/axios-client-internal';
-
+import axios from 'axios';
+import { axiosClient } from '../http/axios-client-internal';
 import { AirdropEvent, EventType, SyncMode } from '../types/extraction';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { getPrintableState, serializeError } from '../logger/logger';

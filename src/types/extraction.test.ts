@@ -14,10 +14,10 @@ describe('EventContext type tests', () => {
     const event = { ...baseEvent };
 
     event.payload.event_context = {
-        ...baseEvent.payload.event_context,
-        extract_from: '2024-01-01T00:00:00Z',
-        initial_sync_scope: InitialSyncScope.TIME_SCOPED,
-        reset_extract_from: true
+      ...baseEvent.payload.event_context,
+      extract_from: '2024-01-01T00:00:00Z',
+      initial_sync_scope: InitialSyncScope.TIME_SCOPED,
+      reset_extract_from: true,
     } as EventContext;
 
     // Test with all optionals present
@@ -28,8 +28,8 @@ describe('EventContext type tests', () => {
     const event = { ...baseEvent };
 
     event.payload.event_context = {
-        ...baseEvent.payload.event_context,
-        extract_from: '2024-01-01T00:00:00Z'
+      ...baseEvent.payload.event_context,
+      extract_from: '2024-01-01T00:00:00Z',
     } as EventContext;
 
     expect(event).toBeDefined();

@@ -1,5 +1,5 @@
 import fs, { promises as fsPromises } from 'fs';
-import { axios, axiosClient } from '../http/axios-client-internal';
+import { axiosClient } from '../http/axios-client-internal';
 import zlib from 'zlib';
 import { jsonl } from 'js-jsonl';
 import FormData from 'form-data';

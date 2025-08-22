@@ -1,149 +1,243 @@
-import { AxiosError } from 'axios';
-import axiosRetry from 'axios-retry';
+import MockAdapter from 'axios-mock-adapter';
 
-describe('axios-client-internal', () => {
-  describe('429 response', () => {
-    it('should identify 429 as retryable', () => {
-      const error429: Partial<AxiosError> = {
-        response: {
-          status: 429,
-          data: {},
-          statusText: 'Too Many Requests',
-          headers: {},
-          config: {},
-        } as any,
-        config: { url: '/test', method: 'GET' } as any,
-      };
+import { axiosClient } from './axios-client-internal';
 
-      // Test our retry condition logic directly
-      const shouldRetry =
-        axiosRetry.isNetworkOrIdempotentRequestError(error429 as AxiosError) ||
-        error429.response?.status === 429 ||
-        (error429.response?.status ?? 0) >= 500;
+describe('Internal Axios Client', () => {
+  let mockAdapter: MockAdapter;
 
-      expect(shouldRetry).toBe(true);
-    });
-
-    it('should calculate delay for 429 with Retry-After header', () => {
-      const retryAfterSeconds = 5;
-      const error429WithRetryAfter: Partial<AxiosError> = {
-        response: {
-          status: 429,
-          headers: { 'retry-after': retryAfterSeconds.toString() },
-          data: {},
-          statusText: 'Too Many Requests',
-          config: {},
-        } as any,
-        config: { url: '/test', method: 'GET' } as any,
-      };
-
-      // Test delay calculation logic for 429 with Retry-After
-      let delay: number;
-      if (error429WithRetryAfter.response?.status === 429) {
-        const retryAfter =
-          error429WithRetryAfter.response.headers?.['retry-after'];
-        if (retryAfter) {
-          delay = parseInt(retryAfter, 10) * 1000;
-        } else {
-          delay = axiosRetry.exponentialDelay(
-            1,
-            error429WithRetryAfter as AxiosError,
-            1000
-          );
-        }
-      } else {
-        delay = axiosRetry.exponentialDelay(
-          1,
-          error429WithRetryAfter as AxiosError,
-          1000
-        );
-      }
-
-      expect(delay).toBe(retryAfterSeconds * 1000);
-    });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockAdapter = new MockAdapter(axiosClient);
   });
 
-  describe('5xx response', () => {
-    it('should identify 500 as retryable', () => {
-      const error500: Partial<AxiosError> = {
-        response: {
-          status: 500,
-          data: {},
-          statusText: 'Internal Server Error',
-          headers: {},
-          config: {},
-        } as any,
-        config: { url: '/test', method: 'GET' } as any,
-      };
-
-      const shouldRetry =
-        axiosRetry.isNetworkOrIdempotentRequestError(error500 as AxiosError) ||
-        error500.response?.status === 429 ||
-        (error500.response?.status ?? 0) >= 500;
-
-      expect(shouldRetry).toBe(true);
-    });
-
-    it('should identify 502 as retryable', () => {
-      const error502: Partial<AxiosError> = {
-        response: {
-          status: 502,
-          data: {},
-          statusText: 'Bad Gateway',
-          headers: {},
-          config: {},
-        } as any,
-        config: { url: '/test', method: 'POST' } as any,
-      };
-
-      const shouldRetry =
-        axiosRetry.isNetworkOrIdempotentRequestError(error502 as AxiosError) ||
-        error502.response?.status === 429 ||
-        (error502.response?.status ?? 0) >= 500;
-
-      expect(shouldRetry).toBe(true);
-    });
+  afterEach(() => {
+    jest.restoreAllMocks();
+    mockAdapter.restore();
   });
 
-  describe('4xx response', () => {
-    it('should NOT retry 400 Bad Request', () => {
-      const error400: Partial<AxiosError> = {
-        response: {
-          status: 400,
-          data: {},
-          statusText: 'Bad Request',
-          headers: {},
-          config: {},
-        } as any,
-        config: { url: '/test', method: 'GET' } as any,
-      };
+  it('should not retry on 200 response', async () => {
+    // Arrange
+    const testUrl = '/test-endpoint';
+    const responseData = { id: 1, title: 'test title' };
+    mockAdapter.onGet(testUrl).reply(200, responseData);
 
-      const shouldRetry =
-        axiosRetry.isNetworkOrIdempotentRequestError(error400 as AxiosError) ||
-        error400.response?.status === 429 ||
-        (error400.response?.status ?? 0) >= 500;
+    // Act
+    await axiosClient.get(testUrl);
 
-      expect(shouldRetry).toBe(false);
+    // Assert
+    expect(mockAdapter.history.get).toHaveLength(1);
+  });
+
+  it('should not retry when response is 400', async () => {
+    // Arrange
+    const testUrl = '/test-endpoint';
+    const errorData = { error: 'Bad Request' };
+    mockAdapter.onGet(testUrl).reply(400, errorData);
+
+    // Act
+    await expect(axiosClient.get(testUrl)).rejects.toMatchObject({
+      response: { status: 400 },
     });
 
-    it('should NOT retry 404 Not Found', () => {
-      const error404: Partial<AxiosError> = {
-        response: {
-          status: 404,
-          data: {},
-          statusText: 'Not Found',
-          headers: {},
-          config: {},
-        } as any,
-        config: { url: '/test', method: 'GET' } as any,
-      };
+    // Assert
+    expect(mockAdapter.history.get).toHaveLength(1);
+  });
 
-      const shouldRetry =
-        axiosRetry.isNetworkOrIdempotentRequestError(error404 as AxiosError) ||
-        error404.response?.status === 429 ||
-        (error404.response?.status ?? 0) >= 500;
+  // TODO: This test is working as expected, but it takes too long to run. Not
+  // sure if it is good idea to have it.
+  // it('should retry on 500 response', async () => {
+  //   // Arrange
+  //   const testUrl = '/test-endpoint';
+  //   mockAdapter.onGet(testUrl).reply(500);
 
-      expect(shouldRetry).toBe(false);
+  //   // Act & Assert
+  //   await expect(axiosClient.get(testUrl)).rejects.toMatchObject({
+  //     response: { status: 500 },
+  //   });
+
+  //   // Assert
+  //   expect(mockAdapter.history.get).toHaveLength(6);
+  // }, 100000);
+
+  it('should retry 2 times when response is 500 and then succeed third time when response is 200', async () => {
+    // Arrange
+    const testUrl = '/test-endpoint';
+    const successData = { message: 'success after 2 retries' };
+    mockAdapter
+      .onGet(testUrl)
+      .replyOnce(500)
+      .onGet(testUrl)
+      .replyOnce(500)
+      .onGet(testUrl)
+      .reply(200, successData);
+
+    // Act
+    const response = await axiosClient.get(testUrl);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.data).toEqual(successData);
+    expect(mockAdapter.history.get).toHaveLength(3); // 1 initial + 2 retries
+  }, 10000); // Allow time for 2 retries
+
+  it('should retry once after 2 seconds when response is 429 and Retry-After header is valid value', async () => {
+    // Arrange
+    const testUrl = '/test-endpoint';
+    const errorData = { error: 'Too Many Requests' };
+    const successData = { message: 'success after rate limit retry' };
+
+    mockAdapter
+      .onGet(testUrl)
+      .replyOnce(429, errorData, {
+        'Retry-After': '2',
+      })
+      .onGet(testUrl)
+      .reply(200, successData);
+
+    // Act
+    const response = await axiosClient.get(testUrl);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.data).toEqual(successData);
+    expect(mockAdapter.history.get).toHaveLength(2); // 1 initial + 1 retry
+  });
+
+  it('should retry once after 2 seconds and measure time between retries when response is 429 and Retry-After header is valid value', async () => {
+    // Arrange
+    const testUrl = '/test-endpoint';
+    const errorData = { error: 'Too Many Requests' };
+    const successData = { message: 'success after rate limit retry' };
+    const retryAfterSeconds = 2;
+
+    mockAdapter
+      .onGet(testUrl)
+      .replyOnce(429, errorData, {
+        'Retry-After': retryAfterSeconds.toString(),
+      })
+      .onGet(testUrl)
+      .reply(200, successData);
+
+    // Act
+    const startTime = Date.now();
+    const response = await axiosClient.get(testUrl);
+    const endTime = Date.now();
+    const actualWaitTime = endTime - startTime;
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.data).toEqual(successData);
+    expect(mockAdapter.history.get).toHaveLength(2); // 1 initial + 1 retry
+    const expectedWaitTime = retryAfterSeconds * 1000;
+    expect(actualWaitTime).toBeGreaterThanOrEqual(expectedWaitTime - 100);
+    expect(actualWaitTime).toBeLessThan(expectedWaitTime + 1000); // Allow up to 1s extra for processing
+  });
+
+  it('should retry when response is 429 and Retry-After header is lowercase', async () => {
+    // Arrange
+    const testUrl = '/test-endpoint';
+    const errorData = { error: 'Too Many Requests' };
+    const successData = { message: 'success after rate limit retry' };
+    mockAdapter
+      .onGet(testUrl)
+      .replyOnce(429, errorData, { 'retry-after': '2' })
+      .onGet(testUrl)
+      .reply(200, successData);
+
+    // Act
+    const response = await axiosClient.get(testUrl);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.data).toEqual(successData);
+    expect(mockAdapter.history.get).toHaveLength(2); // 1 initial + 1 retry
+  });
+
+  it('should retry when response is 429 and Retry-After header is capitalized', async () => {
+    // Arrange
+    const testUrl = '/test-endpoint';
+    const errorData = { error: 'Too Many Requests' };
+    const successData = { message: 'success after rate limit retry' };
+    mockAdapter
+      .onGet(testUrl)
+      .replyOnce(429, errorData, { 'Retry-After': '2' })
+      .onGet(testUrl)
+      .reply(200, successData);
+
+    // Act
+    const response = await axiosClient.get(testUrl);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.data).toEqual(successData);
+    expect(mockAdapter.history.get).toHaveLength(2); // 1 initial + 1 retry
+  });
+
+  it('[edge] should not retry when response is 429 and there is no Retry-After header', async () => {
+    // Arrange
+    const testUrl = '/test-endpoint';
+    const errorData = { error: 'Too Many Requests' };
+    mockAdapter.onGet(testUrl).reply(429, errorData);
+
+    // Act
+    await expect(axiosClient.get(testUrl)).rejects.toMatchObject({
+      response: { status: 429 },
     });
+
+    // Assert
+    expect(mockAdapter.history.get).toHaveLength(1);
+  });
+
+  it('[edge] should retry when response is 429 and Retry-After header is 0', async () => {
+    // Arrange
+    const testUrl = '/test-endpoint';
+    const errorData = { error: 'Too Many Requests' };
+    const successData = { message: 'success after rate limit retry' };
+    mockAdapter
+      .onGet(testUrl)
+      .replyOnce(429, errorData, { 'Retry-After': '0' })
+      .onGet(testUrl)
+      .reply(200, successData);
+
+    // Act
+    const response = await axiosClient.get(testUrl);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(response.data).toEqual(successData);
+    expect(mockAdapter.history.get).toHaveLength(2); // 1 initial + 1 retry
+  });
+
+  it('[edge] should not retry when response is 429 and Retry-After header is negative', async () => {
+    // Arrange
+    const testUrl = '/test-endpoint';
+    const errorData = { error: 'Too Many Requests' };
+    mockAdapter.onGet(testUrl).reply(429, errorData, { 'Retry-After': '-1' });
+
+    // Act
+    await expect(axiosClient.get(testUrl)).rejects.toMatchObject({
+      response: { status: 429 },
+    });
+
+    // Assert
+    expect(mockAdapter.history.get).toHaveLength(1);
+  });
+
+  it('[edge] should not retry when response is 429 and Retry-After header is invalid value', async () => {
+    // Arrange
+    const testUrl = '/test-endpoint';
+    const errorData = { error: 'Too Many Requests' };
+    mockAdapter
+      .onGet(testUrl)
+      .reply(429, errorData, { 'Retry-After': 'invalid' });
+
+    // Act
+    await expect(axiosClient.get(testUrl)).rejects.toMatchObject({
+      response: { status: 429 },
+    });
+
+    // Assert
+    expect(mockAdapter.history.get).toHaveLength(1);
   });
 });

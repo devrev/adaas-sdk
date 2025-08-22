@@ -1,4 +1,4 @@
-import { axios } from '../http/axios-client-internal';
+import axios from 'axios';
 import {
   AirdropEvent,
   ExtractorEventType,
