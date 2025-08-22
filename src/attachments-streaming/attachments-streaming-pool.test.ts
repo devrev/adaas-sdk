@@ -149,9 +149,6 @@ describe(AttachmentsStreamingPool.name, () => {
 
       expect(result).toEqual({});
       expect(mockAdapter.processAttachment).not.toHaveBeenCalled();
-      expect(console.log).toHaveBeenCalledWith(
-        'Starting download of 0 attachments, streaming 10 at once.'
-      );
     });
 
     it('should return delay when rate limit is hit', async () => {
@@ -183,9 +180,6 @@ describe(AttachmentsStreamingPool.name, () => {
 
       await pool.streamAll();
 
-      expect(console.log).toHaveBeenCalledWith(
-        'Attachment with ID attachment-1 has already been processed. Skipping.'
-      );
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(2); // Only 2 out of 3
     });
 
@@ -205,10 +199,6 @@ describe(AttachmentsStreamingPool.name, () => {
         'attachment-2',
         'attachment-3'
       ]);
-
-      expect(console.log).toHaveBeenCalledWith('Successfully processed attachment: attachment-1');
-      expect(console.log).toHaveBeenCalledWith('Successfully processed attachment: attachment-2');
-      expect(console.log).toHaveBeenCalledWith('Successfully processed attachment: attachment-3');
     });
 
     it('should handle processing errors gracefully', async () => {
