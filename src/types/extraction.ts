@@ -19,9 +19,9 @@ export enum EventType {
   ExtractionMetadataStart = 'START_EXTRACTING_METADATA',
   ExtractionDataStart = 'START_EXTRACTING_DATA',
   ExtractionDataContinue = 'CONTINUE_EXTRACTING_DATA',
+  ExtractionDataDelete = 'START_DELETING_EXTRACTOR_STATE',
   ExtractionAttachmentsStart = 'START_EXTRACTING_ATTACHMENTS',
   ExtractionAttachmentsContinue = 'CONTINUE_EXTRACTING_ATTACHMENTS',
-  ExtractionDataDelete = 'START_DELETING_EXTRACTOR_STATE',
   ExtractionAttachmentsDelete = 'START_DELETING_EXTRACTOR_ATTACHMENTS_STATE',
 
   // Loading
