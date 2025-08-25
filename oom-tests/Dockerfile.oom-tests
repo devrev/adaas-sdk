@@ -1,0 +1,32 @@
+# Dockerfile for OOM Tests
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache \
+    curl \
+    bash \
+    && rm -rf /var/cache/apk/*
+
+# Copy package files first for better caching
+COPY package*.json ./
+COPY tsconfig.json ./
+COPY jest.config.cjs ./
+
+# Copy source code (needed for TypeScript compilation)
+COPY src/ ./src/
+COPY oom-tests/ ./oom-tests/
+
+# Install dependencies (including dev dependencies for building and testing)
+RUN npm ci
+
+# Build the project
+RUN npm run build
+
+# Set memory constraints for Node.js
+ENV NODE_OPTIONS="--max-old-space-size=256"
+
+# Default command (can be overridden by docker-compose)
+CMD ["node", "--expose-gc", "node_modules/.bin/jest", "--config", "oom-tests/jest.config.oom.cjs", "--forceExit", "--runInBand"]

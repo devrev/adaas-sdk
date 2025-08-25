@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-COMPOSE_FILE="docker-compose.oom-tests.yml"
+COMPOSE_FILE="oom-tests/docker-compose.oom-tests.yml"
 PROJECT_NAME="adaas-oom-tests"
 LOG_DIR="./oom-test-logs"
 REPORT_FILE="$LOG_DIR/oom-test-report.md"
@@ -88,10 +88,16 @@ run_oom_tests() {
     
     # Build and start services
     log_info "Building test runner image..."
-    docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" build oom-test-runner
+    if ! docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" build oom-test-runner; then
+        log_error "Failed to build test runner image"
+        return 1
+    fi
     
     log_info "Starting LocalStack..."
-    docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" up -d localstack
+    if ! docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" up -d localstack; then
+        log_error "Failed to start LocalStack"
+        return 1
+    fi
     
     # Wait for LocalStack to be healthy
     log_info "Waiting for LocalStack to be ready..."
@@ -117,15 +123,19 @@ run_oom_tests() {
     
     # Start monitoring
     log_info "Starting monitoring services..."
-    docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" up -d oom-monitor
+    if ! docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" up -d oom-monitor; then
+        log_error "Failed to start monitoring services"
+        return 1
+    fi
     monitor_containers
     
     # Run the actual tests
     log_info "Running OOM test scenarios..."
     set +e  # Don't exit on test failures
     
+    # Use PIPESTATUS to capture the exit code of docker-compose, not tee
     docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" run --rm oom-test-runner 2>&1 | tee "$LOG_DIR/test-output.log"
-    TEST_EXIT_CODE=$?
+    TEST_EXIT_CODE=${PIPESTATUS[0]}
     
     set -e
     
@@ -245,7 +255,7 @@ main() {
         if [ $test_result -eq 0 ]; then
             log_success "All OOM tests completed successfully!"
         else
-            log_warning "Some OOM tests failed or encountered issues (exit code: $test_result)"
+            log_error "OOM tests failed or encountered issues (exit code: $test_result)"
         fi
         
         exit $test_result

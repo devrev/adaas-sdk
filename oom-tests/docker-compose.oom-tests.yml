@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   localstack:
     image: localstack/localstack:latest
@@ -13,7 +11,7 @@ services:
       - LAMBDA_EXECUTOR=${LAMBDA_EXECUTOR-}
       - LOCALSTACK_API_KEY=${LOCALSTACK_API_KEY-}
     volumes:
-      - "${LOCALSTACK_VOLUME_DIR:-./tmp/localstack}:/var/lib/localstack"
+      - "${LOCALSTACK_VOLUME_DIR:-../tmp/localstack}:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
       resources:
@@ -30,8 +28,8 @@ services:
 
   oom-test-runner:
     build:
-      context: .
-      dockerfile: Dockerfile.oom-tests
+      context: ..
+      dockerfile: oom-tests/Dockerfile.oom-tests
     container_name: adaas-oom-test-runner
     depends_on:
       localstack:
@@ -43,12 +41,12 @@ services:
       - AWS_DEFAULT_REGION=us-east-1
       - NODE_OPTIONS=--max-old-space-size=256  # Limit Node.js heap to 256MB
     volumes:
-      - ./src:/app/src
-      - ./oom-tests:/app/oom-tests
-      - ./package.json:/app/package.json
-      - ./package-lock.json:/app/package-lock.json
-      - ./tsconfig.json:/app/tsconfig.json
-      - ./jest.config.cjs:/app/jest.config.cjs
+      - ../src:/app/src
+      - .:/app/oom-tests
+      - ../package.json:/app/package.json
+      - ../package-lock.json:/app/package-lock.json
+      - ../tsconfig.json:/app/tsconfig.json
+      - ../jest.config.cjs:/app/jest.config.cjs
     deploy:
       resources:
         limits:

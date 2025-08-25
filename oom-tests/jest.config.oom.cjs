@@ -2,6 +2,9 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   
+  // Set the root directory to the project root
+  rootDir: '..',
+  
   // Test patterns
   testMatch: [
     '**/oom-tests/**/*.test.ts',
@@ -19,7 +22,25 @@ module.exports = {
   
   // Transform settings
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest'
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: {
+        target: 'es2020',
+        module: 'commonjs',
+        lib: ['es2020'],
+        allowJs: true,
+        skipLibCheck: true,
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+        strict: true,
+        forceConsistentCasingInFileNames: true,
+        moduleResolution: 'node',
+        resolveJsonModule: true,
+        isolatedModules: true,
+        noEmit: true,
+        experimentalDecorators: true,
+        emitDecoratorMetadata: true
+      }
+    }]
   },
   
   // Test setup
@@ -41,31 +62,6 @@ module.exports = {
   // Detect open handles (useful for OOM debugging)
   detectOpenHandles: true,
   forceExit: true,
-  
-  // Global settings
-  globals: {
-    'ts-jest': {
-      tsconfig: {
-        compilerOptions: {
-          target: 'es2020',
-          module: 'commonjs',
-          lib: ['es2020'],
-          allowJs: true,
-          skipLibCheck: true,
-          esModuleInterop: true,
-          allowSyntheticDefaultImports: true,
-          strict: true,
-          forceConsistentCasingInFileNames: true,
-          moduleResolution: 'node',
-          resolveJsonModule: true,
-          isolatedModules: true,
-          noEmit: true,
-          experimentalDecorators: true,
-          emitDecoratorMetadata: true
-        }
-      }
-    }
-  },
   
   // Reporter configuration
   reporters: [

@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
     "test": "jest --forceExit --coverage --runInBand",
-    "test:oom": "NODE_OPTIONS=\"--max-old-space-size=256 --expose-gc\" jest --config oom-tests/jest.config.oom.cjs --forceExit --runInBand",
+    "test:oom": "NODE_OPTIONS=\"--max-old-space-size=256\" node --expose-gc node_modules/.bin/jest --config oom-tests/jest.config.oom.cjs --forceExit --runInBand",
     "test:oom:docker": "./oom-tests/run-oom-tests.sh",
     "test:oom:setup": "./oom-tests/run-oom-tests.sh --skip-tests",
     "test:oom:cleanup": "./oom-tests/run-oom-tests.sh --cleanup-only"

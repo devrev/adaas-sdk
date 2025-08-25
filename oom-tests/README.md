@@ -1,215 +1,111 @@
-# OOM (Out of Memory) Testing Suite
+# ADaaS SDK OOM Testing Suite
 
-This directory contains a comprehensive testing suite designed to simulate and test Out of Memory (OOM) conditions using Docker containers with constrained memory and LocalStack for AWS service simulation.
+This directory contains Out of Memory (OOM) testing for the ADaaS SDK to validate how the SDK behaves under memory pressure and when approaching memory limits.
 
-## Overview
+## What These Tests Do
 
-The OOM testing suite helps identify memory leaks, test memory pressure scenarios, and validate application behavior under memory constraints. It uses:
+The OOM tests exercise the **actual ADaaS SDK functionality** under memory constraints to understand:
 
-- **LocalStack**: AWS service emulation in a memory-constrained container
-- **Docker Compose**: Orchestration with memory limits
-- **Jest**: Testing framework with extended timeouts
-- **Memory Monitoring**: Real-time memory usage tracking
+- How the SDK handles data extraction when memory is exhausted
+- Whether the SDK properly emits error events when OOM occurs
+- How HTTP requests and response caching behave under memory pressure
+- The difference between timeout errors and OOM conditions
+
+**Key Point**: These tests use real SDK workers, real event emission, and real HTTP requests - they're not generic memory allocation tests.
+
+## Test Scenarios
+
+### SDK Data Extraction Under Memory Pressure
+- Tests the SDK's data extraction process with excessive memory consumption
+- Uses real SDK repos, adapters, and event emission
+- Validates that `EXTRACTION_DATA_ERROR` events are emitted on OOM
+
+### SDK HTTP Extraction Under Memory Pressure  
+- Tests HTTP-intensive extraction scenarios with memory leaks
+- Simulates large response caching and request buffering
+- Validates proper SDK error handling when memory is exhausted
+
+### SDK Error Handling: Timeout vs OOM
+- Compares SDK behavior between timeout and OOM scenarios
+- Ensures the SDK can distinguish between different failure modes
+- Validates appropriate event emission in each case
 
 ## Quick Start
 
 ### Prerequisites
-
 - Docker and Docker Compose installed
-- Node.js 18+ 
-- npm or yarn
+- Node.js 18+
 
-### Running OOM Tests
+### Running Tests
 
-1. **Run all tests with monitoring:**
+1. **Run all OOM tests (recommended):**
    ```bash
-   ./oom-tests/run-oom-tests.sh
+   npm run test:oom:docker
    ```
 
-2. **Cleanup only:**
-   ```bash
-   ./oom-tests/run-oom-tests.sh --cleanup-only
-   ```
-
-3. **Setup environment without running tests:**
-   ```bash
-   ./oom-tests/run-oom-tests.sh --skip-tests
-   ```
-
-4. **Run tests via npm:**
+2. **Run locally (without Docker):**
    ```bash
    npm run test:oom
    ```
 
-## Test Scenarios
+3. **Setup environment only:**
+   ```bash
+   npm run test:oom:setup
+   ```
 
-### 1. Memory Leak Scenarios
+4. **Cleanup containers:**
+   ```bash
+   npm run test:oom:cleanup
+   ```
 
-- **Gradual Array Growth**: Continuously append large objects to arrays
-- **Rapid Memory Bursts**: Allocate large memory chunks rapidly  
-- **Circular References**: Create objects with circular references preventing GC
+## How It Works
 
-### 2. LocalStack Integration Tests
+The tests run in Docker containers with strict memory limits:
+- **LocalStack**: 512MB limit (simulates AWS services)
+- **Test Runner**: 384MB limit
+- **Node.js Heap**: 256MB limit
 
-- **Large File Uploads**: Upload large files to S3 until OOM
-- **Concurrent Operations**: Multiple simultaneous AWS operations
-- **Service Pressure**: Stress test multiple AWS services
+When memory is exhausted, the SDK worker processes crash with OOM errors, and the SDK's error handling should emit appropriate error events.
 
-### 3. Worker Thread Tests
-
-- **Worker Memory Pressure**: Create memory pressure in worker threads
-- **Multi-Worker Scenarios**: Test concurrent worker memory usage
-
-## Architecture
+## Files
 
 ```
 oom-tests/
-├── docker-compose.oom-tests.yml    # Docker orchestration with memory limits
-├── Dockerfile.oom-tests            # Test runner container
-├── run-oom-tests.sh               # Main test runner script
-├── jest.config.oom.cjs            # Jest configuration for OOM tests
-├── jest.setup.ts                  # Test setup and global utilities
-├── types.ts                       # TypeScript interfaces
-├── oom-test-helpers.ts            # Test utilities and runner
-├── oom-scenarios.test.ts          # Main test scenarios
-└── README.md                      # This file
+├── oom-scenarios.test.ts          # Main SDK OOM test scenarios
+├── workers/
+│   ├── oom-data-extraction.ts     # SDK data extraction worker (memory intensive)
+│   └── oom-http-extraction.ts     # SDK HTTP extraction worker (memory intensive)
+├── run-oom-tests.sh              # Test runner script with Docker monitoring
+├── jest.config.oom.cjs           # Jest configuration for OOM tests
+├── jest.setup.ts                 # Test setup with memory utilities
+├── docker-compose.oom-tests.yml  # Docker orchestration with memory limits
+├── Dockerfile.oom-tests          # Test runner container
+└── README.md                     # This file
 ```
 
-## Memory Constraints
+## Output
 
-### Container Limits
+Test results and logs are stored in `./oom-test-logs/`:
+- `test-output.log`: Complete test execution output
+- `oom-test-report.md`: Test summary report
+- `monitor.log`: Container monitoring data
+- `docker-events.log`: Docker events timeline
 
-- **LocalStack**: 512MB limit, 256MB reservation
-- **Test Runner**: 384MB limit, 128MB reservation  
-- **Node.js Heap**: 256MB (via NODE_OPTIONS)
+## Expected Behavior
 
-### Monitoring
+When tests run successfully, you should see:
+1. SDK workers start processing data extraction
+2. Memory usage grows rapidly as workers consume memory
+3. Workers crash with "JavaScript heap out of memory" errors
+4. SDK error handling kicks in and emits `EXTRACTION_DATA_ERROR` events
+5. Tests validate that the proper error events were emitted
 
-The test suite includes comprehensive monitoring:
-
-- Real-time container memory usage
-- Process memory tracking
-- Docker events logging
-- Memory snapshots during tests
-
-## Configuration
-
-### Environment Variables
-
-- `LOCALSTACK_ENDPOINT`: LocalStack endpoint (default: http://localstack:4566)
-- `AWS_ACCESS_KEY_ID`: AWS access key (default: test)
-- `AWS_SECRET_ACCESS_KEY`: AWS secret key (default: test)
-- `AWS_DEFAULT_REGION`: AWS region (default: us-east-1)
-- `NODE_OPTIONS`: Node.js options (default: --max-old-space-size=256)
-
-### Test Timeouts
-
-- Individual test timeout: 2 minutes
-- Scenario timeout: 1 minute (configurable)
-- Global test suite timeout: Extended for OOM conditions
-
-## Output and Reporting
-
-### Log Files
-
-All logs are stored in `./oom-test-logs/`:
-
-- `test-output.log`: Complete test execution log
-- `monitor.log`: Container monitoring output
-- `docker-events.log`: Docker events during tests
-- `final-stats.log`: Final container statistics
-- `oom-test-report.md`: Generated test report
-
-### Test Results
-
-The test runner generates a comprehensive report including:
-
-- Test execution summary
-- Container statistics
-- Memory usage patterns
-- Error details and stack traces
-- Docker events timeline
-
-## Debugging OOM Issues
-
-### Memory Monitoring
-
-Use the global utilities available in tests:
-
-```typescript
-// Log current memory usage
-global.logMemoryUsage('Before allocation');
-
-// Force garbage collection
-global.forceGC();
-```
-
-### Container Inspection
-
-Monitor containers during test execution:
-
-```bash
-# Watch memory usage in real-time
-docker stats adaas-localstack-oom adaas-oom-test-runner
-
-# Check container logs
-docker-compose -f docker-compose.oom-tests.yml logs -f oom-test-runner
-```
-
-### Memory Analysis
-
-Enable garbage collection exposure for better debugging:
-
-```bash
-NODE_OPTIONS="--max-old-space-size=256 --expose-gc" npm run test:oom
-```
-
-## Best Practices
-
-### Writing OOM Tests
-
-1. **Start Small**: Begin with small memory allocations and gradually increase
-2. **Monitor Continuously**: Use memory snapshots throughout tests
-3. **Clean Up**: Always cleanup resources in test teardown
-4. **Timeout Appropriately**: Set realistic timeouts for OOM conditions
-5. **Isolate Tests**: Run memory-intensive tests sequentially
-
-### Memory Management
-
-1. **Force GC**: Use `global.forceGC()` between test scenarios
-2. **Clear References**: Explicitly null large objects
-3. **Monitor Patterns**: Watch for unexpected memory growth
-4. **Validate Cleanup**: Ensure memory is released after tests
+This confirms the SDK gracefully handles OOM conditions by emitting error events rather than crashing silently.
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **Container OOM Kill**: Increase memory limits in docker-compose file
-2. **LocalStack Startup**: Check health check and increase timeout
-3. **Test Timeouts**: Adjust timeout values for slower systems
-4. **Port Conflicts**: Ensure ports 4566, 4510-4559 are available
-
-### Error Messages
-
-- `ECONNREFUSED`: LocalStack not ready, wait longer or check health
-- `JavaScript heap out of memory`: Increase Node.js heap size
-- `Container killed`: Docker memory limit reached, increase limits
-
-## Contributing
-
-When adding new OOM test scenarios:
-
-1. Follow existing patterns in `oom-scenarios.test.ts`
-2. Use the `OOMTestRunner` for consistent monitoring
-3. Add appropriate cleanup in test teardown
-4. Document expected memory usage patterns
-5. Update this README with new scenarios
-
-## Security Notes
-
-- Tests run in isolated Docker containers
-- No real AWS credentials required (uses LocalStack)
-- Memory constraints prevent system-wide impact
-- Cleanup procedures remove all test artifacts
+- **"Missing script: test:oom"**: Run `npm install` to ensure scripts are available
+- **Container OOM**: Increase memory limits in `docker-compose.oom-tests.yml`
+- **LocalStack issues**: Check that ports 4566, 4510-4559 are available
+- **Docker issues**: Ensure Docker daemon is running
 
