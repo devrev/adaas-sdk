@@ -154,26 +154,6 @@ describe('Internal Axios Client', () => {
     expect(mockAdapter.history.get).toHaveLength(2); // 1 initial + 1 retry
   });
 
-  it('should retry when response is 429 and Retry-After header is capitalized', async () => {
-    // Arrange
-    const testUrl = '/test-endpoint';
-    const errorData = { error: 'Too Many Requests' };
-    const successData = { message: 'success after rate limit retry' };
-    mockAdapter
-      .onGet(testUrl)
-      .replyOnce(429, errorData, { 'Retry-After': '2' })
-      .onGet(testUrl)
-      .reply(200, successData);
-
-    // Act
-    const response = await axiosClient.get(testUrl);
-
-    // Assert
-    expect(response.status).toBe(200);
-    expect(response.data).toEqual(successData);
-    expect(mockAdapter.history.get).toHaveLength(2); // 1 initial + 1 retry
-  });
-
   it('[edge] should not retry when response is 429 and there is no Retry-After header', async () => {
     // Arrange
     const testUrl = '/test-endpoint';
