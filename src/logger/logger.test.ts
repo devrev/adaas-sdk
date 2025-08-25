@@ -18,7 +18,7 @@ jest.mock('node:worker_threads', () => ({
   parentPort: null,
 }));
 
-describe('Logger', () => {
+describe(Logger.name, () => {
   let mockEvent: AirdropEvent;
   let mockOptions: WorkerAdapterOptions;
 
@@ -203,7 +203,7 @@ describe('Logger', () => {
       logger = new Logger({ event: mockEvent, options: mockOptions });
     });
 
-    it('should handle empty string message', () => {
+    it('[edge] should handle empty string message', () => {
       logger.info('');
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
@@ -217,7 +217,7 @@ describe('Logger', () => {
       );
     });
 
-    it('should handle null and undefined values', () => {
+    it('[edge] should handle null and undefined values', () => {
       logger.info('test', null, undefined);
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
@@ -229,7 +229,7 @@ describe('Logger', () => {
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
     });
 
-    it('should handle complex nested objects', () => {
+    it('[edge] should handle complex nested objects', () => {
       const complexObject = {
         level1: {
           level2: {

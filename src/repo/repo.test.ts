@@ -8,7 +8,7 @@ jest.mock('../tests/test-helpers', () => ({
   normalizeItem: jest.fn(),
 }));
 
-describe('Repo class push method', () => {
+describe(Repo.name, () => {
   let repo: Repo;
   let normalize: jest.Mock;
 
@@ -26,12 +26,7 @@ describe('Repo class push method', () => {
     jest.clearAllMocks();
   });
 
-  it('should not push items if items array is empty', async () => {
-    await repo.push([]);
-    expect(repo.getItems()).toEqual([]);
-  });
-
-  it('should normalize and push 10 items if array is not empty', async () => {
+  it('should normalize and push items when array contains items', async () => {
     const items = createItems(10);
     await repo.push(items);
     expect(normalize).toHaveBeenCalledTimes(10);
@@ -40,7 +35,7 @@ describe('Repo class push method', () => {
     expect(repo.getItems()).toEqual(normalizedItems);
   });
 
-  it('should not normalize items if normalize function is not provided', async () => {
+  it('should not normalize items when normalize function is not provided', async () => {
     repo = new Repo({
       event: createEvent({ eventType: EventType.ExtractionDataStart }),
       itemType: 'test_item_type',
@@ -53,36 +48,39 @@ describe('Repo class push method', () => {
     expect(normalize).not.toHaveBeenCalled();
   });
 
-  describe('should not normalize items if type is "external_domain_metadata" or "ssor_attachment"', () => {
-    it('item type: external_domain_metadata', async () => {
-      repo = new Repo({
-        event: createEvent({ eventType: EventType.ExtractionDataStart }),
-        itemType: AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_DOMAIN_METADATA,
-        normalize,
-        onUpload: jest.fn(),
-        options: {},
-      });
-
-      const items = createItems(10);
-      await repo.push(items);
-
-      expect(normalize).not.toHaveBeenCalled();
+  it('[edge] should not push items when items array is empty', async () => {
+      await repo.push([]);
+      expect(repo.getItems()).toEqual([]);
     });
 
-    it('item type: ssor_attachment', async () => {
-      repo = new Repo({
-        event: createEvent({ eventType: EventType.ExtractionDataStart }),
-        itemType: AIRDROP_DEFAULT_ITEM_TYPES.SSOR_ATTACHMENT,
-        normalize,
-        onUpload: jest.fn(),
-        options: {},
-      });
-
-      const items = createItems(10);
-      await repo.push(items);
-
-      expect(normalize).not.toHaveBeenCalled();
+  it('should not normalize items when item type is external_domain_metadata', async () => {
+    repo = new Repo({
+      event: createEvent({ eventType: EventType.ExtractionDataStart }),
+      itemType: AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_DOMAIN_METADATA,
+      normalize,
+      onUpload: jest.fn(),
+      options: {},
     });
+
+    const items = createItems(10);
+    await repo.push(items);
+
+    expect(normalize).not.toHaveBeenCalled();
+  });
+
+  it('should not normalize items when item type is ssor_attachment', async () => {
+    repo = new Repo({
+      event: createEvent({ eventType: EventType.ExtractionDataStart }),
+      itemType: AIRDROP_DEFAULT_ITEM_TYPES.SSOR_ATTACHMENT,
+      normalize,
+      onUpload: jest.fn(),
+      options: {},
+    });
+
+    const items = createItems(10);
+    await repo.push(items);
+
+    expect(normalize).not.toHaveBeenCalled();
   });
 
   it('should leave 5 items in the items array after pushing 2005 items with batch size of 2000', async () => {
@@ -92,17 +90,28 @@ describe('Repo class push method', () => {
     expect(repo.getItems().length).toBe(5);
   });
 
-  it('should upload 2 batches of 2000 and leave 5 items in the items array after pushing 4005 items with batch size of 2000', async () => {
+  it('should normalize all items when pushing 4005 items with batch size of 2000', async () => {
+    const items = createItems(4005);
+    await repo.push(items);
+
+    expect(normalize).toHaveBeenCalledTimes(4005);
+  });
+
+  it('should upload 2 batches when pushing 4005 items with batch size of 2000', async () => {
     const uploadSpy = jest.spyOn(repo, 'upload');
 
     const items = createItems(4005);
     await repo.push(items);
 
-    expect(normalize).toHaveBeenCalledTimes(4005);
-    expect(repo.getItems().length).toBe(5);
-    expect(uploadSpy).toHaveBeenCalledTimes(2); // Check that upload was called twice
-
+    expect(uploadSpy).toHaveBeenCalledTimes(2);
     uploadSpy.mockRestore();
+  });
+
+  it('should leave 5 items in array after pushing 4005 items with batch size of 2000', async () => {
+    const items = createItems(4005);
+    await repo.push(items);
+
+    expect(repo.getItems().length).toBe(5);
   });
 
   describe('should take batch size into account', () => {
@@ -131,17 +140,28 @@ describe('Repo class push method', () => {
       expect(repo.getItems().length).toBe(5);
     });
 
-    it('should upload 4 batches of 50 and leave 5 items in the items array after pushing 205 items with batch size of 50', async () => {
+    it('should normalize all items when pushing 205 items with batch size of 50', async () => {
+      const items = createItems(205);
+      await repo.push(items);
+
+      expect(normalize).toHaveBeenCalledTimes(205);
+    });
+
+    it('should upload 4 batches when pushing 205 items with batch size of 50', async () => {
       const uploadSpy = jest.spyOn(repo, 'upload');
 
       const items = createItems(205);
       await repo.push(items);
 
-      expect(normalize).toHaveBeenCalledTimes(205);
-      expect(repo.getItems().length).toBe(5);
       expect(uploadSpy).toHaveBeenCalledTimes(4);
-
       uploadSpy.mockRestore();
+    });
+
+    it('should leave 5 items in array after pushing 205 items with batch size of 50', async () => {
+      const items = createItems(205);
+      await repo.push(items);
+
+      expect(repo.getItems().length).toBe(5);
     });
   });
 });

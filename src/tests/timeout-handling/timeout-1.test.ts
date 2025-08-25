@@ -3,7 +3,7 @@ import { createEvent } from '../test-helpers';
 import run from './extraction';
 import { MockServer } from '../mock-server';
 
-describe('timeout-1', () => {
+describe('timeout-1 extraction', () => {
   let mockServer: MockServer;
 
   beforeAll(async () => {
