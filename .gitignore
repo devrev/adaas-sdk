@@ -131,3 +131,6 @@ dist
 
 .npmrc
 .idea
+
+
+src/tests/backwards-compatibility/temp/
