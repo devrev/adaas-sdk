@@ -5,6 +5,7 @@ export {
   LogRecord,
   AdapterUpdateParams,
   InitialDomainMapping,
+  SyncMode,
 } from './common';
 
 // Extraction
@@ -21,7 +22,6 @@ export {
   AirdropEvent,
   AirdropMessage,
   ExtractorEvent,
-  SyncMode,
   ExternalSystemAttachmentStreamingParams,
   ExternalSystemAttachmentStreamingResponse,
   ExternalSystemAttachmentStreamingFunction,

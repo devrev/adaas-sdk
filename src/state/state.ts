@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { axiosClient } from '../http/axios-client-internal';
-import { AirdropEvent, EventType, SyncMode } from '../types/extraction';
+import { AirdropEvent, EventType } from '../types/extraction';
+import { SyncMode } from '../types/common';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { getPrintableState, serializeError } from '../logger/logger';
 import { ErrorRecord } from '../types/common';
@@ -22,6 +23,10 @@ export async function createAdapterState<ConnectorState>({
     initialDomainMapping,
     options,
   });
+
+  if (!initialDomainMapping) {
+    process.exit(1);
+  }
 
   if (!STATELESS_EVENT_TYPES.includes(event.payload.event_type)) {
     await as.fetchState(newInitialState);
