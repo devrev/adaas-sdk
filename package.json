@@ -11,9 +11,7 @@
     "start": "ts-node src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
-    "test": "jest --silent --verbose=false",
-    "test:full": "jest --forceExit --runInBand --testPathIgnorePatterns='./dist/' --silent --verbose=false",
-    "test:cov": "jest --forceExit --coverage --runInBand --testPathIgnorePatterns='./dist/' --silent --verbose=false"
+    "test": "jest --forceExit --coverage --runInBand --testPathIgnorePatterns='./dist/'"
   },
   "repository": {
     "type": "git",
