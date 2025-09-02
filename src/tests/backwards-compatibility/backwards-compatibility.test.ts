@@ -6,6 +6,17 @@ import {
   ExtractorConfig,
   ExtractorResult,
 } from '@microsoft/api-extractor';
+import {
+  ApiClass,
+  ApiConstructor,
+  ApiEnum,
+  ApiEnumMember,
+  ApiFunction,
+  ApiItem,
+  ApiModel,
+  ApiProperty,
+  Parameter
+} from '@microsoft/api-extractor-model';
 
 describe('Generate API report', () => {
   it('should generate an api report', () => {
@@ -50,29 +61,45 @@ describe('Validate API report', () => {
   });
 
   // Helper function to load API data
-  const loadApiData = () => {
+  const loadApiData = (): { newApiMembers: readonly ApiItem[], currentApiMembers: readonly ApiItem[] } => {
     if (!fs.existsSync(newApiJsonPath)) {
       throw new Error(
         'API reports not found. Run the generate-api-report test first.'
       );
     }
 
-    const newApiJson = fs.readFileSync(newApiJsonPath, 'utf-8');
-    const newApi = JSON.parse(newApiJson);
-    const newApiMembers = newApi.members[0].members;
 
-    const currentApiJson = fs.readFileSync(currentApiJsonPath, 'utf-8');
-    const currentApi = JSON.parse(currentApiJson);
-    const currentApiMembers = currentApi.members[0].members;
+    const newApiModel = new ApiModel().loadPackage(newApiJsonPath);
+    const newApiMembers = newApiModel.entryPoints[0].members;
+
+    const currentApiModel = new ApiModel().loadPackage(currentApiJsonPath);
+    const currentApiMembers = currentApiModel.entryPoints[0].members;
 
     return { newApiMembers, currentApiMembers };
   };
 
+  // Helper functions for getting different kinds of items from the API members
+  const getFunctions = (members: readonly ApiItem[]): ApiFunction[] => {
+    return members.filter((m: ApiItem) => m instanceof ApiFunction && m.kind === 'Function') as ApiFunction[];
+  }
+  const getConstructor = (members: readonly ApiItem[]): ApiConstructor => {
+    return (members.filter((m: ApiItem) => m instanceof ApiConstructor && m.kind === 'Constructor') as ApiConstructor[])[0];
+  }
+  const getEnums = (members: readonly ApiItem[]): ApiEnum[] => {
+    return members.filter((m: ApiItem) => m instanceof ApiEnum && m.kind === 'Enum') as ApiEnum[];
+  }
+  const getClasses = (members: readonly ApiItem[]): ApiClass[] => {
+    return members.filter((m: ApiItem) => m instanceof ApiClass && m.kind === 'Class') as ApiClass[];
+  }
+  const getProperties = (members: readonly ApiItem[]): ApiProperty[] => {
+    return members.filter((m: ApiItem) => m instanceof ApiProperty && m.kind === 'Property') as ApiProperty[];
+  }
+
   describe('Exports', () => {
     it('should verify that all exports in current are still in new', () => {
       const { newApiMembers, currentApiMembers } = loadApiData();
-      const newExports = newApiMembers.map((m: any) => m.name);
-      const currentExports = currentApiMembers.map((m: any) => m.name);
+      const newExports = newApiMembers.map((m) => m.displayName);
+      const currentExports = currentApiMembers.map((m: any) => m.displayName);
       for (const exportName of currentExports) {
         expect(newExports).toContain(exportName);
       }
@@ -82,8 +109,8 @@ describe('Validate API report', () => {
   it('should verify that all functions in current are still in new and are compatible', () => {
     const { newApiMembers, currentApiMembers } = loadApiData();
 
-    const newFunctions = newApiMembers.filter((m: any) => m.kind === 'Function');
-    const currentFunctions = currentApiMembers.filter((m: any) => m.kind === 'Function');
+    const newFunctions: ApiFunction[] = getFunctions(newApiMembers);
+    const currentFunctions: ApiFunction[] = getFunctions(currentApiMembers);
 
     expect(newFunctions.length).toBeGreaterThanOrEqual(currentFunctions.length);
 
@@ -102,95 +129,97 @@ describe('Validate API report', () => {
     // TODO: Check that function overloads weren't removed
   });
 
-  const checkFunctionCompatibility = (newFunction: any, currentFunction: any) => {
+  const checkFunctionCompatibility = (newFunction: ApiFunction | ApiConstructor, currentFunction: ApiFunction | ApiConstructor) => {
     const lengthOfPreviousParameters = currentFunction.parameters.length;
 
     // Verify that the number of parameters is the same or greater
     expect(newFunction.parameters.length).toBeGreaterThanOrEqual(currentFunction.parameters.length);
 
     // Verify that the parameters are in the same order
-    const newFunctionParamNames = newFunction.parameters.slice(0, lengthOfPreviousParameters).map((p: any) => p.parameterName);
-    const currentFunctionParamNames = currentFunction.parameters.map((p: any) => p.parameterName);
+    const newFunctionParamNames = newFunction.parameters.slice(0, lengthOfPreviousParameters).map((p: Parameter) => p.name);
+    const currentFunctionParamNames = currentFunction.parameters.map((p: Parameter) => p.name);
     expect(newFunctionParamNames).toEqual(currentFunctionParamNames);
     // Verify that the parameter types are compatible
-    const newFunctionParamTypes = newFunction.parameters.slice(0, lengthOfPreviousParameters).map((p: any) => getValueFromTokenRange(p.parameterTypeTokenRange, newFunction.excerptTokens));
-    const currentFunctionParameterTypes = currentFunction.parameters.map((p: any) => getValueFromTokenRange(p.parameterTypeTokenRange, currentFunction.excerptTokens));
+    const newFunctionParamTypes = newFunction.parameters.slice(0, lengthOfPreviousParameters).map((p: Parameter) => p.parameterTypeExcerpt.text);
+    const currentFunctionParameterTypes = currentFunction.parameters.map((p: Parameter) => p.parameterTypeExcerpt.text);
     expect(newFunctionParamTypes).toEqual(currentFunctionParameterTypes);
     
     // Verify that the return type is compatible
     // This check fails if it's a constructor, as those don't have a return type
-    if(currentFunction.returnTypeTokenRange) {
-      expect(getValueFromTokenRange(newFunction.returnTypeTokenRange, newFunction.excerptTokens)).toEqual(getValueFromTokenRange(currentFunction.returnTypeTokenRange, currentFunction.excerptTokens));
+    if(currentFunction instanceof ApiFunction && newFunction instanceof ApiFunction){
+      if(!currentFunction.returnTypeExcerpt?.isEmpty) {
+        expect(newFunction.returnTypeExcerpt.text).toEqual(currentFunction.returnTypeExcerpt.text);
+      }
     }
 
     // Verify that parameters are added to the end and are optional
     const newParameters = newFunction.parameters.slice(lengthOfPreviousParameters);
-    expect(newParameters.every((p: any) => p.isOptional)).toBe(true);
+    expect(newParameters.every((p: Parameter) => p.isOptional)).toBe(true);
 
     // Verify that no optional parameters became required
-    const requiredParameters = newFunction.parameters.filter((p: any) => !p.isOptional);
+    const requiredParameters = newFunction.parameters.filter((p: Parameter) => !p.isOptional);
     try {
-      expect(requiredParameters.length).toBeLessThanOrEqual(currentFunction.parameters.filter((p: any) => !p.isOptional).length);
+      expect(requiredParameters.length).toBeLessThanOrEqual(currentFunction.parameters.filter((p: Parameter) => !p.isOptional).length);
     } catch (error) {
-      const currentRequiredParameters = currentFunction.parameters.filter((p: any) => !p.isOptional);
-      const changedParameters = requiredParameters.filter((p: any) => !currentRequiredParameters.map((p: any) => p.parameterName).includes(p.parameterName));
-      throw new Error(`The following optional argument became required in "${newFunction.name}": ${changedParameters.map((p: any) => p.parameterName).join(', ')}`);
+      const currentRequiredParameters = currentFunction.parameters.filter((p: Parameter) => !p.isOptional);
+      const changedParameters = requiredParameters.filter((p: Parameter) => !currentRequiredParameters.map((p: Parameter) => p.name).includes(p.name));
+      throw new Error(`The following optional argument became required in "${newFunction.displayName}": ${changedParameters.map((p: any) => p.parameterName).join(', ')}`);
     }
   }
 
   it('should verify that all classes in current are still in new and are compatible', () => {
     const { newApiMembers, currentApiMembers } = loadApiData();
 
-    const newClasses = newApiMembers.filter((m: any) => m.kind === 'Class');
-    const currentClasses = currentApiMembers.filter((m: any) => m.kind === 'Class');
+    const newClasses: ApiClass[] = getClasses(newApiMembers);
+    const currentClasses: ApiClass[] = getClasses(currentApiMembers);
 
     for (const newClass of newClasses) {
-      const currentClass = currentClasses.find((c: any) => c.name === newClass.name);
+      const currentClass = currentClasses.find((c: ApiClass) => c.name === newClass.name);
 
       // Skip if class doesn't exist in current API
       if (!currentClass) {
         continue;
       }
 
-      const newClassProperties = newClass.members.filter((m: any) => m.kind === 'Property');
-      const currentClassProperties = currentClass.members.filter((m: any) => m.kind === 'Property');
+      const newClassProperties: ApiProperty[] = getProperties(newClass.members);
+      const currentClassProperties: ApiProperty[] = getProperties(currentClass.members);
 
       // Verify no public properties were removed
       expect(newClassProperties.length).toBeGreaterThanOrEqual(currentClassProperties.length);
 
       // Verify no optional properties became required
-      const requiredProperties = newClassProperties.filter((p: any) => !p.optional);
-      expect(requiredProperties.length).toBeLessThanOrEqual(currentClassProperties.filter((p: any) => !p.optional).length);
+      const requiredProperties = newClassProperties.filter((p: ApiProperty) => !p.isOptional);
+      expect(requiredProperties.length).toBeLessThanOrEqual(currentClassProperties.filter((p: ApiProperty) => !p.isOptional).length);
 
       // Verify property names haven't changed
       const oldProperties = currentClassProperties;
       const newProperties = newClassProperties;
       for(const newProperty of newProperties) {
-        const currentProperty = oldProperties.find((p: any) => p.name === newProperty.name);
+        const currentProperty = oldProperties.find((p: ApiProperty) => p.name === newProperty.name);
         // If the property is new, there's no need to check for compatibility
         if(!currentProperty) {
           continue;
         }
         // Verify property types are compatible
-        expect(newProperty.type).toEqual(currentProperty.type);
+        expect(newProperty.propertyTypeExcerpt.text).toEqual(currentProperty.propertyTypeExcerpt.text);
         // Verify that optional properties haven't become required
-        expect(newProperty.optional).toEqual(currentProperty.optional);
+        expect(newProperty.isOptional).toEqual(currentProperty.isOptional);
       }
 
       // Check constructor signature compatibility (same rules as functions)
-      const currentMethod = currentClass.members.find((m: any) => m.kind === 'Constructor');
-      const newMethod = newClass.members.find((m: any) => m.kind === 'Constructor');
+      const currentMethod = getConstructor(currentClass.members);
+      const newMethod = getConstructor(newClass.members);
       checkFunctionCompatibility(newMethod, currentMethod);
 
       // Verify no public methods were removed
-      const newClassMethods = newClass.members.filter((m: any) => m.kind === 'Method');
-      const currentClassMethods = currentClass.members.filter((m: any) => m.kind === 'Method');
+      const newClassMethods = getFunctions(newClass.members);
+      const currentClassMethods = getFunctions(currentClass.members);
       expect(newClassMethods.length).toBeGreaterThanOrEqual(currentClassMethods.length);
 
       // Check that functions are compatible (same rules as functions)
       // Make sure to allow optional parameters to be added to the end
       for(const newMethod of newClassMethods) {
-        const currentMethod = currentClassMethods.find((m: any) => m.name === newMethod.name);
+        const currentMethod = currentClassMethods.find((m: ApiFunction) => m.name === newMethod.name);
         // If the method is new, there's no need to check for compatibility
         if(!currentMethod) {
           continue;
@@ -202,13 +231,6 @@ describe('Validate API report', () => {
     }
   });
 
-  const getValueFromTokenRange = (tokenRange: {startIndex: number, endIndex: number}, tokens: string[]): string => {
-    const { startIndex, endIndex } = tokenRange;
-    const usefulTokens = tokens.slice(startIndex, endIndex);
-    const returnType = usefulTokens.map((t: any) => t.text).join('');
-    return returnType;
-  }
-
   describe('Interfaces', () => {
     // TODO: Verify no properties were removed
     // TODO: Verify no optional properties became required
@@ -219,25 +241,37 @@ describe('Validate API report', () => {
   });
 
   describe('Enums', () => {
-    let newEnums: any[];
-    let currentEnums: any[];
+    let newEnums: ApiEnum[];
+    let currentEnums: ApiEnum[];
 
     beforeAll(() => {
       const { newApiMembers, currentApiMembers } = loadApiData();
-      newEnums = newApiMembers.filter((m: any) => m.kind === 'Enum');
-      currentEnums = currentApiMembers.filter((m: any) => m.kind === 'Enum');
+      newEnums = getEnums(newApiMembers);
+      currentEnums = getEnums(currentApiMembers);
     });
 
     it('should verify that all enum values in current are still in new and are compatible', () => {
       // TODO: Verify no enum values were removed
       for(const newEnum of newEnums) {
-        const currentEnum = currentEnums.find((e: any) => e.name === newEnum.name);
+        const currentEnum = currentEnums.find((e: ApiEnum) => e.name === newEnum.name);
+
+        // If it's a new enum, there's no need to check for compatibility
+        if(!currentEnum) {
+          continue;
+        }
 
         const currentEnumValues = currentEnum.members;
         const newEnumValues = newEnum.members;
         expect(newEnumValues.length).toBeGreaterThanOrEqual(currentEnumValues.length);
+
         for(const currentEnumValue of currentEnumValues) {
-          const newEnumValue = newEnumValues.find((v: any) => v.name === currentEnumValue.name);
+          const newEnumValue = newEnumValues.find((v: ApiEnumMember) => v.name === currentEnumValue.name);
+
+          // If it's a new enum value, there's no need to check for compatibility
+          if(!newEnumValue) {
+            continue;
+          }
+
           try {
             expect(newEnumValue).toBeDefined();
           } catch (error) {
@@ -249,21 +283,33 @@ describe('Validate API report', () => {
     // TODO: Verify numeric enum values haven't changed (if numeric enum)
     it('should verify that numeric enum values have not changed', () => {
       for(const newEnum of newEnums) {
-        const currentEnum = currentEnums.find((e: any) => e.name === newEnum.name);
-        const newEnumNumeric = newEnum.members.every((m: any) => typeof m === 'number');
-        const currentEnumNumeric = currentEnum.members.every((m: any) => typeof m === 'number');
+        const currentEnum = currentEnums.find((e: ApiEnum) => e.name === newEnum.name);
+
+        // If it's a new enum, there's no need to check for compatibility
+        if(!currentEnum) {
+          continue;
+        }
+
+        const newEnumNumeric = newEnum.members.every((m: ApiEnumMember) => typeof m === 'number');
+        const currentEnumNumeric = currentEnum.members.every((m: ApiEnumMember) => typeof m === 'number');
 
         // Check if enum types have changed
         expect(newEnumNumeric).toBe(currentEnumNumeric);
 
-        const currentEnumValues = currentEnums.find((e: any) => e.name === newEnum.name)?.members;
+        const currentEnumValues = currentEnum.members;
+
         const newEnumValues = newEnum.members;
         expect(newEnumValues.length).toBeGreaterThanOrEqual(currentEnumValues.length);
         for(const currentEnumValue of currentEnumValues) {
-          const newEnumValue = newEnumValues.find((v: any) => v.name === currentEnumValue.name);
+          const newEnumValue = newEnumValues.find((v: ApiEnumMember) => v.name === currentEnumValue.name);
+
+          // If it's not defined, an existing value is missing from the new enum
+          expect(newEnumValue).toBeDefined();
+
           try {
-            const newValue = getValueFromTokenRange(newEnumValue.initializerTokenRange, newEnumValue.excerptTokens);
-            const currentValue = getValueFromTokenRange(currentEnumValue.initializerTokenRange, currentEnumValue.excerptTokens);
+            // Both can be undefined, but they should always equal each other
+            const newValue = newEnumValue!.initializerExcerpt?.text;
+            const currentValue = currentEnumValue.initializerExcerpt?.text;
             expect(newValue).toEqual(currentValue);
           } catch (error) {
             throw new Error(`The following numeric enum value was changed in "${newEnum.name}": ${currentEnumValue.name}`);
