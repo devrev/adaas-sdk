@@ -96,139 +96,161 @@ describe('Validate API report', () => {
   }
 
   describe('Exports', () => {
-    it('should verify that all exports in current are still in new', () => {
+    describe('should verify that all exports in current are still in new', () => {
       const { newApiMembers, currentApiMembers } = loadApiData();
       const newExports = newApiMembers.map((m) => m.displayName);
       const currentExports = currentApiMembers.map((m: any) => m.displayName);
+      
       for (const exportName of currentExports) {
-        expect(newExports).toContain(exportName);
+        it(`should contain export: ${exportName}`, () => {
+          expect(newExports).toContain(exportName);
+        });
       }
     });
-  });
-
-  it('should verify that all functions in current are still in new and are compatible', () => {
-    const { newApiMembers, currentApiMembers } = loadApiData();
-
-    const newFunctions: ApiFunction[] = getFunctions(newApiMembers);
-    const currentFunctions: ApiFunction[] = getFunctions(currentApiMembers);
-
-    expect(newFunctions.length).toBeGreaterThanOrEqual(currentFunctions.length);
-
-    for (const newFunction of newFunctions) {
-      const currentFunction = currentFunctions.find((f: any) => f.name === newFunction.name);
-
-      // Skip if function doesn't exist in current API
-      if (!currentFunction) {
-        continue;
-      }
-
-      checkFunctionCompatibility(newFunction, currentFunction);
-    }
-
-    // TODO: Check that optional promotion works only one way (no required parameters becoming optional, but optional parameters can become required)
-    // TODO: Check that function overloads weren't removed
   });
 
   const checkFunctionCompatibility = (newFunction: ApiFunction | ApiConstructor, currentFunction: ApiFunction | ApiConstructor) => {
     const lengthOfPreviousParameters = currentFunction.parameters.length;
 
-    // Verify that the number of parameters is the same or greater
-    expect(newFunction.parameters.length).toBeGreaterThanOrEqual(currentFunction.parameters.length);
+    it(`Function ${newFunction.displayName} should have at least as many parameters as the current function`, () => {
+      expect(newFunction.parameters.length).toBeGreaterThanOrEqual(currentFunction.parameters.length);
+    });
 
-    // Verify that the parameters are in the same order
-    const newFunctionParamNames = newFunction.parameters.slice(0, lengthOfPreviousParameters).map((p: Parameter) => p.name);
-    const currentFunctionParamNames = currentFunction.parameters.map((p: Parameter) => p.name);
-    expect(newFunctionParamNames).toEqual(currentFunctionParamNames);
-    // Verify that the parameter types are compatible
-    const newFunctionParamTypes = newFunction.parameters.slice(0, lengthOfPreviousParameters).map((p: Parameter) => p.parameterTypeExcerpt.text);
-    const currentFunctionParameterTypes = currentFunction.parameters.map((p: Parameter) => p.parameterTypeExcerpt.text);
-    expect(newFunctionParamTypes).toEqual(currentFunctionParameterTypes);
+    it(`Function ${newFunction.displayName} should have parameters in the same order as the current function`, () => {
+      const newFunctionParamNames = newFunction.parameters.slice(0, lengthOfPreviousParameters).map((p: Parameter) => p.name);
+      const currentFunctionParamNames = currentFunction.parameters.map((p: Parameter) => p.name);
+      expect(newFunctionParamNames).toEqual(currentFunctionParamNames);
+    });
+
+    it(`Function ${newFunction.displayName} should have compatible parameter types with the current function`, () => {
+      const newFunctionParamTypes = newFunction.parameters.slice(0, lengthOfPreviousParameters).map((p: Parameter) => p.parameterTypeExcerpt.text);
+      const currentFunctionParameterTypes = currentFunction.parameters.map((p: Parameter) => p.parameterTypeExcerpt.text);
+      expect(newFunctionParamTypes).toEqual(currentFunctionParameterTypes);
+    });
     
-    // Verify that the return type is compatible
+    // Check return type compatibility
     // This check fails if it's a constructor, as those don't have a return type
     if(currentFunction instanceof ApiFunction && newFunction instanceof ApiFunction){
       if(!currentFunction.returnTypeExcerpt?.isEmpty) {
-        expect(newFunction.returnTypeExcerpt.text).toEqual(currentFunction.returnTypeExcerpt.text);
+        it(`Function ${newFunction.displayName} should have the same return type as the current function`, () => {
+          expect(newFunction.returnTypeExcerpt.text).toEqual(currentFunction.returnTypeExcerpt.text);
+        });
       }
     }
 
-    // Verify that parameters are added to the end and are optional
-    const newParameters = newFunction.parameters.slice(lengthOfPreviousParameters);
-    expect(newParameters.every((p: Parameter) => p.isOptional)).toBe(true);
+    it(`Function ${newFunction.displayName} should have all new parameters as optional`, () => {
+      const newParameters = newFunction.parameters.slice(lengthOfPreviousParameters);
+      expect(newParameters.every((p: Parameter) => p.isOptional)).toBe(true);
+    });
 
-    // Verify that no optional parameters became required
-    const requiredParameters = newFunction.parameters.filter((p: Parameter) => !p.isOptional);
-    try {
-      expect(requiredParameters.length).toBeLessThanOrEqual(currentFunction.parameters.filter((p: Parameter) => !p.isOptional).length);
-    } catch (error) {
+    it(`Function ${newFunction.displayName} should not have any optional parameters that became required`, () => {
+      const requiredParameters = newFunction.parameters.filter((p: Parameter) => !p.isOptional);
       const currentRequiredParameters = currentFunction.parameters.filter((p: Parameter) => !p.isOptional);
-      const changedParameters = requiredParameters.filter((p: Parameter) => !currentRequiredParameters.map((p: Parameter) => p.name).includes(p.name));
-      throw new Error(`The following optional argument became required in "${newFunction.displayName}": ${changedParameters.map((p: any) => p.parameterName).join(', ')}`);
-    }
+      expect(requiredParameters.length).toBeLessThanOrEqual(currentRequiredParameters.length);
+    });
   }
 
-  it('should verify that all classes in current are still in new and are compatible', () => {
-    const { newApiMembers, currentApiMembers } = loadApiData();
+  describe('Functions', () => {
+    it('should have at least as many functions in new API as in current', () => {
+      const { newApiMembers, currentApiMembers } = loadApiData();
+      const newFunctions: ApiFunction[] = getFunctions(newApiMembers);
+      const currentFunctions: ApiFunction[] = getFunctions(currentApiMembers);
+      expect(newFunctions.length).toBeGreaterThanOrEqual(currentFunctions.length);
+    });
 
-    const newClasses: ApiClass[] = getClasses(newApiMembers);
-    const currentClasses: ApiClass[] = getClasses(currentApiMembers);
+    describe('should verify function compatibility for each function', () => {
+      const { newApiMembers, currentApiMembers } = loadApiData();
+      const newFunctions: ApiFunction[] = getFunctions(newApiMembers);
+      const currentFunctions: ApiFunction[] = getFunctions(currentApiMembers);
 
-    for (const newClass of newClasses) {
-      const currentClass = currentClasses.find((c: ApiClass) => c.name === newClass.name);
+      for (const newFunction of newFunctions) {
+        const currentFunction = currentFunctions.find((f: any) => f.name === newFunction.name);
 
-      // Skip if class doesn't exist in current API
-      if (!currentClass) {
-        continue;
-      }
-
-      const newClassProperties: ApiProperty[] = getProperties(newClass.members);
-      const currentClassProperties: ApiProperty[] = getProperties(currentClass.members);
-
-      // Verify no public properties were removed
-      expect(newClassProperties.length).toBeGreaterThanOrEqual(currentClassProperties.length);
-
-      // Verify no optional properties became required
-      const requiredProperties = newClassProperties.filter((p: ApiProperty) => !p.isOptional);
-      expect(requiredProperties.length).toBeLessThanOrEqual(currentClassProperties.filter((p: ApiProperty) => !p.isOptional).length);
-
-      // Verify property names haven't changed
-      const oldProperties = currentClassProperties;
-      const newProperties = newClassProperties;
-      for(const newProperty of newProperties) {
-        const currentProperty = oldProperties.find((p: ApiProperty) => p.name === newProperty.name);
-        // If the property is new, there's no need to check for compatibility
-        if(!currentProperty) {
+        // Skip if function doesn't exist in current API
+        if (!currentFunction) {
           continue;
         }
-        // Verify property types are compatible
-        expect(newProperty.propertyTypeExcerpt.text).toEqual(currentProperty.propertyTypeExcerpt.text);
-        // Verify that optional properties haven't become required
-        expect(newProperty.isOptional).toEqual(currentProperty.isOptional);
+
+        checkFunctionCompatibility(newFunction, currentFunction);
       }
 
-      // Check constructor signature compatibility (same rules as functions)
-      const currentMethod = getConstructor(currentClass.members);
-      const newMethod = getConstructor(newClass.members);
-      checkFunctionCompatibility(newMethod, currentMethod);
+      // TODO: Check that optional promotion works only one way (no required parameters becoming optional, but optional parameters can become required)
+      // TODO: Check that function overloads weren't removed
+    });
+  });
 
-      // Verify no public methods were removed
-      const newClassMethods = getFunctions(newClass.members);
-      const currentClassMethods = getFunctions(currentClass.members);
-      expect(newClassMethods.length).toBeGreaterThanOrEqual(currentClassMethods.length);
+  describe('Classes', () => {
+    describe('should verify class property counts and compatibility', () => {
+      const { newApiMembers, currentApiMembers } = loadApiData();
+      const newClasses: ApiClass[] = getClasses(newApiMembers);
+      const currentClasses: ApiClass[] = getClasses(currentApiMembers);
 
-      // Check that functions are compatible (same rules as functions)
-      // Make sure to allow optional parameters to be added to the end
-      for(const newMethod of newClassMethods) {
-        const currentMethod = currentClassMethods.find((m: ApiFunction) => m.name === newMethod.name);
-        // If the method is new, there's no need to check for compatibility
-        if(!currentMethod) {
+      for (const newClass of newClasses) {
+        const currentClass = currentClasses.find((c: ApiClass) => c.name === newClass.name);
+
+        // Skip if class doesn't exist in current API
+        if (!currentClass) {
           continue;
         }
+
+        const newClassProperties: ApiProperty[] = getProperties(newClass.members);
+        const currentClassProperties: ApiProperty[] = getProperties(currentClass.members);
+
+        it(`Class ${newClass.name} should have at least as many public properties as the current class`, () => {
+          expect(newClassProperties.length).toBeGreaterThanOrEqual(currentClassProperties.length);
+        });
+
+        it(`Class ${newClass.name} should not have any optional properties that became required`, () => {
+          const requiredProperties = newClassProperties.filter((p: ApiProperty) => !p.isOptional);
+          expect(requiredProperties.length).toBeLessThanOrEqual(currentClassProperties.filter((p: ApiProperty) => !p.isOptional).length);
+        });
+
+        // Check property compatibility
+        const oldProperties = currentClassProperties;
+        const newProperties = newClassProperties;
+        for(const newProperty of newProperties) {
+          const currentProperty = oldProperties.find((p: ApiProperty) => p.name === newProperty.name);
+          // If the property is new, there's no need to check for compatibility
+          if(!currentProperty) {
+            continue;
+          }
+
+          it(`Class ${newClass.name} property ${newProperty.name} should have the same type as the current property`, () => {
+            expect(newProperty.propertyTypeExcerpt.text).toEqual(currentProperty.propertyTypeExcerpt.text);
+          });
+
+          it(`Class ${newClass.name} property ${newProperty.name} should have the same optionality as the current property`, () => {
+            expect(newProperty.isOptional).toEqual(currentProperty.isOptional);
+          });
+        }
+
+        // Check constructor signature compatibility (same rules as functions)
+        const currentMethod = getConstructor(currentClass.members);
+        const newMethod = getConstructor(newClass.members);
         checkFunctionCompatibility(newMethod, currentMethod);
-      }
 
-      // TODO: Verify class inheritance hierarchy hasn't changed in breaking ways
-    }
+        // Check method count
+        const newClassMethods = getFunctions(newClass.members);
+        const currentClassMethods = getFunctions(currentClass.members);
+        
+        it(`Class ${newClass.name} should have at least as many public methods as the current class`, () => {
+          expect(newClassMethods.length).toBeGreaterThanOrEqual(currentClassMethods.length);
+        });
+
+        // Check method compatibility (same rules as functions)
+        // Make sure to allow optional parameters to be added to the end
+        for(const newMethod of newClassMethods) {
+          const currentMethod = currentClassMethods.find((m: ApiFunction) => m.name === newMethod.name);
+          // If the method is new, there's no need to check for compatibility
+          if(!currentMethod) {
+            continue;
+          }
+          checkFunctionCompatibility(newMethod, currentMethod);
+        }
+
+        // TODO: Verify class inheritance hierarchy hasn't changed in breaking ways
+      }
+    });
   });
 
   describe('Interfaces', () => {
@@ -244,13 +266,11 @@ describe('Validate API report', () => {
     let newEnums: ApiEnum[];
     let currentEnums: ApiEnum[];
 
-    beforeAll(() => {
+    describe('should verify enum value counts and existence', () => {
       const { newApiMembers, currentApiMembers } = loadApiData();
       newEnums = getEnums(newApiMembers);
       currentEnums = getEnums(currentApiMembers);
-    });
-
-    it('should verify that all enum values in current are still in new and are compatible', () => {
+ 
       // TODO: Verify no enum values were removed
       for(const newEnum of newEnums) {
         const currentEnum = currentEnums.find((e: ApiEnum) => e.name === newEnum.name);
@@ -262,7 +282,10 @@ describe('Validate API report', () => {
 
         const currentEnumValues = currentEnum.members;
         const newEnumValues = newEnum.members;
-        expect(newEnumValues.length).toBeGreaterThanOrEqual(currentEnumValues.length);
+        
+        it(`Enum ${newEnum.name} should have at least as many enum values as the current enum`, () => {
+          expect(newEnumValues.length).toBeGreaterThanOrEqual(currentEnumValues.length);
+        });
 
         for(const currentEnumValue of currentEnumValues) {
           const newEnumValue = newEnumValues.find((v: ApiEnumMember) => v.name === currentEnumValue.name);
@@ -272,16 +295,19 @@ describe('Validate API report', () => {
             continue;
           }
 
-          try {
+          it(`Enum ${newEnum.name} should contain enum value: ${currentEnumValue.name}`, () => {
             expect(newEnumValue).toBeDefined();
-          } catch (error) {
-            throw new Error(`The following enum value was removed in "${newEnum.name}": ${currentEnumValue.name}`);
-          }
+          });
         }
       }
     });
+
     // TODO: Verify numeric enum values haven't changed (if numeric enum)
-    it('should verify that numeric enum values have not changed', () => {
+    describe('should verify numeric enum values have not changed', () => {
+      const { newApiMembers, currentApiMembers } = loadApiData();
+      newEnums = getEnums(newApiMembers);
+      currentEnums = getEnums(currentApiMembers);
+ 
       for(const newEnum of newEnums) {
         const currentEnum = currentEnums.find((e: ApiEnum) => e.name === newEnum.name);
 
@@ -293,27 +319,31 @@ describe('Validate API report', () => {
         const newEnumNumeric = newEnum.members.every((m: ApiEnumMember) => typeof m === 'number');
         const currentEnumNumeric = currentEnum.members.every((m: ApiEnumMember) => typeof m === 'number');
 
-        // Check if enum types have changed
-        expect(newEnumNumeric).toBe(currentEnumNumeric);
+        it(`Enum ${newEnum.name} should have the same numeric type as the current enum`, () => {
+          expect(newEnumNumeric).toBe(currentEnumNumeric);
+        });
 
         const currentEnumValues = currentEnum.members;
-
         const newEnumValues = newEnum.members;
-        expect(newEnumValues.length).toBeGreaterThanOrEqual(currentEnumValues.length);
+        
+        it(`Enum ${newEnum.name} should have at least as many enum values as the current enum`, () => {
+          expect(newEnumValues.length).toBeGreaterThanOrEqual(currentEnumValues.length);
+        });
+        
         for(const currentEnumValue of currentEnumValues) {
           const newEnumValue = newEnumValues.find((v: ApiEnumMember) => v.name === currentEnumValue.name);
 
           // If it's not defined, an existing value is missing from the new enum
-          expect(newEnumValue).toBeDefined();
+          it(`Enum ${newEnum.name} should contain enum value: ${currentEnumValue.name}`, () => {
+            expect(newEnumValue).toBeDefined();
+          });
 
-          try {
+          it(`Enum ${newEnum.name} should have the same value for enum member: ${currentEnumValue.name}`, () => {
             // Both can be undefined, but they should always equal each other
             const newValue = newEnumValue!.initializerExcerpt?.text;
             const currentValue = currentEnumValue.initializerExcerpt?.text;
             expect(newValue).toEqual(currentValue);
-          } catch (error) {
-            throw new Error(`The following numeric enum value was changed in "${newEnum.name}": ${currentEnumValue.name}`);
-          }
+          });
         }
       }
     });
