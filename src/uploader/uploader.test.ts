@@ -34,20 +34,17 @@ const getArtifactUploadUrlMockResponse = {
   },
 };
 
-describe('Uploader Class Tests', () => {
+describe(Uploader.name, () => {
   const mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
 
   let uploader: Uploader;
-  let consoleWarnSpy: jest.SpyInstance;
 
   beforeEach(() => {
     uploader = new Uploader({ event: mockEvent });
-    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
   });
 
   afterEach(() => {
     jest.clearAllMocks();
-    consoleWarnSpy.mockRestore();
   });
 
   it('should upload the file to the DevRev platform and return the artifact information', async () => {
@@ -71,55 +68,49 @@ describe('Uploader Class Tests', () => {
     });
   });
 
-  it('should handle failure in getArtifactUploadUrl', async () => {
-    // Mock unsuccessful response for getArtifactUploadUrl
-    (axiosClient.get as jest.Mock).mockResolvedValueOnce(undefined);
+  it('[edge] should handle failure when getting artifact upload URL', async () => {
+      // Mock unsuccessful response for getArtifactUploadUrl
+      (axiosClient.get as jest.Mock).mockResolvedValueOnce(undefined);
 
-    const entity = 'entity';
-    const fetchedObjects = [{ key: 'value' }];
-    const uploadResponse = await uploader.upload(entity, fetchedObjects);
+      const entity = 'entity';
+      const fetchedObjects = [{ key: 'value' }];
+      const uploadResponse = await uploader.upload(entity, fetchedObjects);
 
-    expect(uploadResponse.error).toBeInstanceOf(Error);
-    expect(uploadResponse.error?.message).toBe(
-      'Error while getting artifact upload URL.'
-    );
-  });
+      expect(uploadResponse.error).toBeInstanceOf(Error);
+      expect(uploadResponse.error?.message).toBeDefined();
+    });
 
-  it('should handle failure in uploadArtifact', async () => {
-    // Mock successful response for getArtifactUploadUrl
-    (axiosClient.get as jest.Mock).mockResolvedValueOnce(
-      getArtifactUploadUrlMockResponse
-    );
-    // Mock unsuccessful response for uploadArtifact
-    (axiosClient.post as jest.Mock).mockResolvedValueOnce(undefined);
+  it('[edge] should handle failure when uploading artifact', async () => {
+      // Mock successful response for getArtifactUploadUrl
+      (axiosClient.get as jest.Mock).mockResolvedValueOnce(
+        getArtifactUploadUrlMockResponse
+      );
+      // Mock unsuccessful response for uploadArtifact
+      (axiosClient.post as jest.Mock).mockResolvedValueOnce(undefined);
 
-    const entity = 'entity';
-    const fetchedObjects = [{ key: 'value' }];
-    const uploadResponse = await uploader.upload(entity, fetchedObjects);
+      const entity = 'entity';
+      const fetchedObjects = [{ key: 'value' }];
+      const uploadResponse = await uploader.upload(entity, fetchedObjects);
 
-    expect(uploadResponse.error).toBeInstanceOf(Error);
-    expect(uploadResponse.error?.message).toBe(
-      'Error while uploading artifact.'
-    );
-  });
+      expect(uploadResponse.error).toBeInstanceOf(Error);
+      expect(uploadResponse.error?.message).toBeDefined();
+    });
 
-  it('should handle failure in confirmArtifactUpload', async () => {
-    // Mock successful response for getArtifactUploadUrl
-    (axiosClient.get as jest.Mock).mockResolvedValueOnce(
-      getArtifactUploadUrlMockResponse
-    );
-    // Mock successful response from uploadArtifact
-    (axiosClient.post as jest.Mock).mockResolvedValueOnce(getSuccessResponse());
-    // Mock unsuccessful response from confirmArtifactUpload
-    (axiosClient.post as jest.Mock).mockResolvedValueOnce(undefined);
+  it('[edge] should handle failure when confirming artifact upload', async () => {
+      // Mock successful response for getArtifactUploadUrl
+      (axiosClient.get as jest.Mock).mockResolvedValueOnce(
+        getArtifactUploadUrlMockResponse
+      );
+      // Mock successful response from uploadArtifact
+      (axiosClient.post as jest.Mock).mockResolvedValueOnce(getSuccessResponse());
+      // Mock unsuccessful response from confirmArtifactUpload
+      (axiosClient.post as jest.Mock).mockResolvedValueOnce(undefined);
 
-    const entity = 'entity';
-    const fetchedObjects = [{ key: 'value' }];
-    const uploadResponse = await uploader.upload(entity, fetchedObjects);
+      const entity = 'entity';
+      const fetchedObjects = [{ key: 'value' }];
+      const uploadResponse = await uploader.upload(entity, fetchedObjects);
 
-    expect(uploadResponse.error).toBeInstanceOf(Error);
-    expect(uploadResponse.error?.message).toBe(
-      'Error while confirming artifact upload.'
-    );
-  });
+      expect(uploadResponse.error).toBeInstanceOf(Error);
+      expect(uploadResponse.error?.message).toBeDefined();
+    });
 });

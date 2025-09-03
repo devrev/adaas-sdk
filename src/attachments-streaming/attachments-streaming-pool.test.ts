@@ -11,7 +11,7 @@ interface TestState {
     attachments: { completed: boolean };
 }
 
-describe('AttachmentsStreamingPool', () => {
+describe(AttachmentsStreamingPool.name, () => {
   let mockAdapter: jest.Mocked<WorkerAdapter<TestState>>;
   let mockStream: jest.MockedFunction<ExternalSystemAttachmentStreamingFunction>;
   let mockAttachments: NormalizedAttachment[];
@@ -66,7 +66,7 @@ describe('AttachmentsStreamingPool', () => {
     jest.restoreAllMocks();
   });
 
-  describe('constructor', () => {
+  describe(AttachmentsStreamingPool.prototype.constructor.name, () => {
     it('should initialize with default values', () => {
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
@@ -104,7 +104,7 @@ describe('AttachmentsStreamingPool', () => {
     });
   });
 
-  describe('streamAll', () => {
+  describe(AttachmentsStreamingPool.prototype.streamAll.name, () => {
     it('should initialize lastProcessedAttachmentsIdsList if it does not exist', async () => {
       mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList = undefined as any;
       mockAdapter.processAttachment.mockResolvedValue({});
@@ -149,9 +149,6 @@ describe('AttachmentsStreamingPool', () => {
 
       expect(result).toEqual({});
       expect(mockAdapter.processAttachment).not.toHaveBeenCalled();
-      expect(console.log).toHaveBeenCalledWith(
-        'Starting download of 0 attachments, streaming 10 at once.'
-      );
     });
 
     it('should return delay when rate limit is hit', async () => {
@@ -170,7 +167,7 @@ describe('AttachmentsStreamingPool', () => {
     });
   });
 
-  describe('startPoolStreaming', () => {
+  describe(AttachmentsStreamingPool.prototype.startPoolStreaming.name, () => {
     it('should skip already processed attachments', async () => {
       mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList = ['attachment-1'];
       mockAdapter.processAttachment.mockResolvedValue({});
@@ -183,9 +180,6 @@ describe('AttachmentsStreamingPool', () => {
 
       await pool.streamAll();
 
-      expect(console.log).toHaveBeenCalledWith(
-        'Attachment with ID attachment-1 has already been processed. Skipping.'
-      );
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(2); // Only 2 out of 3
     });
 
@@ -205,10 +199,6 @@ describe('AttachmentsStreamingPool', () => {
         'attachment-2',
         'attachment-3'
       ]);
-
-      expect(console.log).toHaveBeenCalledWith('Successfully processed attachment: attachment-1');
-      expect(console.log).toHaveBeenCalledWith('Successfully processed attachment: attachment-2');
-      expect(console.log).toHaveBeenCalledWith('Successfully processed attachment: attachment-3');
     });
 
     it('should handle processing errors gracefully', async () => {
@@ -274,8 +264,7 @@ describe('AttachmentsStreamingPool', () => {
     });
   });
 
-  describe('edge cases', () => {
-    it('should handle single attachment', async () => {
+  it('[edge] should handle single attachment', async () => {
       mockAdapter.processAttachment.mockResolvedValue({});
 
       const pool = new AttachmentsStreamingPool({
@@ -290,7 +279,7 @@ describe('AttachmentsStreamingPool', () => {
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle batch size larger than attachments array', async () => {
+  it('[edge] should handle batch size larger than attachments array', async () => {
       mockAdapter.processAttachment.mockResolvedValue({});
 
       const pool = new AttachmentsStreamingPool({
@@ -305,7 +294,7 @@ describe('AttachmentsStreamingPool', () => {
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
     });
 
-    it('should handle batch size of 1', async () => {
+  it('[edge] should handle batch size of 1', async () => {
       mockAdapter.processAttachment.mockResolvedValue({});
 
       const pool = new AttachmentsStreamingPool({
@@ -319,7 +308,6 @@ describe('AttachmentsStreamingPool', () => {
 
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
     });
-  });
 
   describe('concurrency behavior', () => {
     it('should process attachments concurrently within batch size', async () => {

@@ -5,7 +5,7 @@ import { MockServer } from '../mock-server';
 
 jest.setTimeout(15000);
 
-describe('timeout-3b', () => {
+describe('timeout-3b extraction', () => {
   let mockServer: MockServer;
 
   beforeAll(async () => {
