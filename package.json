@@ -11,7 +11,8 @@
     "start": "ts-node src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
-    "test": "jest --forceExit --coverage --runInBand --testPathIgnorePatterns='./dist/'"
+    "test": "jest --forceExit --coverage --runInBand",
+    "test:state": "jest src/state/state.test.ts --coverage --collectCoverageFrom=\"src/state/**/*.ts\" --coverageReporters=text --silent"
   },
   "repository": {
     "type": "git",
