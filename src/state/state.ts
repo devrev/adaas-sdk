@@ -24,10 +24,6 @@ export async function createAdapterState<ConnectorState>({
     options,
   });
 
-  if (!initialDomainMapping) {
-    process.exit(1);
-  }
-
   if (!STATELESS_EVENT_TYPES.includes(event.payload.event_type)) {
     await as.fetchState(newInitialState);
 
@@ -39,10 +35,14 @@ export async function createAdapterState<ConnectorState>({
 
     if (!shouldUpdateIDM) {
       console.log(
-        `Snap-in version in state matches the version in event context (${snapInVersionId}). Skipping initial domain mapping installation.`
+        `Snap-in version in state matches the version in event context "${snapInVersionId}". Skipping initial domain mapping installation.`
       );
     } else {
       try {
+        console.log(
+          `Snap-in version in state "${as.state.snapInVersionId}" does not match the version in event context "${snapInVersionId}". Installing initial domain mapping.`
+        );
+
         if (initialDomainMapping) {
           await installInitialDomainMapping(event, initialDomainMapping);
           as.state.snapInVersionId = snapInVersionId;

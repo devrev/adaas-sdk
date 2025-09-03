@@ -23,7 +23,6 @@ import {
   AIRDROP_DEFAULT_ITEM_TYPES,
   ALLOWED_EXTRACTION_EVENT_TYPES,
   STATELESS_EVENT_TYPES,
-  DEFAULT_SLEEP_DELAY_MS,
 } from '../common/constants';
 import { State } from '../state/state';
 import { WorkerAdapterInterface, WorkerAdapterOptions } from '../types/workers';

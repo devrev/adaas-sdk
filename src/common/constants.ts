@@ -3,7 +3,6 @@ import { getLibraryVersion } from './helpers';
 
 export const STATELESS_EXTRACTION_EVENT_TYPES = [
   EventType.ExtractionExternalSyncUnitsStart,
-  EventType.ExtractionMetadataStart,
   EventType.ExtractionDataDelete,
   EventType.ExtractionAttachmentsDelete,
 ];
