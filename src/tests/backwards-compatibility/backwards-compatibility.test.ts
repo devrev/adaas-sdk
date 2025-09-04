@@ -271,7 +271,7 @@ describe('Validate API report', () => {
       newEnums = getEnums(newApiMembers);
       currentEnums = getEnums(currentApiMembers);
  
-      // TODO: Verify no enum values were removed
+      // Verify no enum values were removed
       for(const newEnum of newEnums) {
         const currentEnum = currentEnums.find((e: ApiEnum) => e.name === newEnum.name);
 
@@ -302,7 +302,7 @@ describe('Validate API report', () => {
       }
     });
 
-    // TODO: Verify numeric enum values haven't changed (if numeric enum)
+    // Verify numeric enum values haven't changed (if numeric enum)
     describe('should verify numeric enum values have not changed', () => {
       const { newApiMembers, currentApiMembers } = loadApiData();
       newEnums = getEnums(newApiMembers);
@@ -348,6 +348,28 @@ describe('Validate API report', () => {
       }
     });
     // TODO: Check that new enum values were only added at the end (best practice)
+    describe('should verify enum value types have been added to the end', () => {
+      const { newApiMembers, currentApiMembers } = loadApiData();
+      newEnums = getEnums(newApiMembers);
+      currentEnums = getEnums(currentApiMembers);
+      
+      for(const newEnum of newEnums) {
+        const currentEnum = currentEnums.find((e: ApiEnum) => e.name === newEnum.name);
+
+        // If it's a new enum, there's no need to check for compatibility
+        if(!currentEnum) {
+          continue;
+        }
+
+        const currentEnumValues = currentEnum.members.map((a: ApiEnumMember) => a.name);
+        const newEnumValues = newEnum.members.slice(0, currentEnumValues.length).map((a: ApiEnumMember) => a.name);
+
+        // This might appear to not be working sometimes, but remember that the order of enum values is determined by the enum member key name
+        it(`Enum ${newEnum.name} should have added new options to the end of the array`, () => {
+          expect(newEnumValues).toStrictEqual(currentEnumValues);
+        });
+      }
+    });
    });
 
   describe('Types', () => {

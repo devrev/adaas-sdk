@@ -860,9 +860,9 @@ export enum WorkerMessageSubject {
 // Warnings were encountered during analysis:
 //
 // src/http/types.ts:8:3 - (ae-forgotten-export) The symbol "Data" needs to be exported by the entry point index.d.ts
-// src/workers/worker-adapter.ts:428:5 - (ae-forgotten-export) The symbol "ExternalSystemLoadingFunction" needs to be exported by the entry point index.d.ts
-// src/workers/worker-adapter.ts:505:5 - (ae-forgotten-export) The symbol "ItemTypeToLoad" needs to be exported by the entry point index.d.ts
-// src/workers/worker-adapter.ts:810:5 - (ae-forgotten-export) The symbol "ExternalSystemAttachmentProcessors" needs to be exported by the entry point index.d.ts
+// src/workers/worker-adapter.ts:429:5 - (ae-forgotten-export) The symbol "ExternalSystemLoadingFunction" needs to be exported by the entry point index.d.ts
+// src/workers/worker-adapter.ts:506:5 - (ae-forgotten-export) The symbol "ItemTypeToLoad" needs to be exported by the entry point index.d.ts
+// src/workers/worker-adapter.ts:811:5 - (ae-forgotten-export) The symbol "ExternalSystemAttachmentProcessors" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

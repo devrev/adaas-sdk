@@ -1573,8 +1573,29 @@
           "fileUrlPath": "src/types/common.ts",
           "releaseTag": "Public",
           "name": "ErrorLevel",
-          "preserveMemberOrder": false,
+          "preserveMemberOrder": true,
           "members": [
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ErrorLevel.Warning:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "Warning = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"WARNING\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "Warning"
+            },
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ErrorLevel.Error:member",
@@ -1616,27 +1637,6 @@
               },
               "releaseTag": "Public",
               "name": "Info"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ErrorLevel.Warning:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "Warning = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"WARNING\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "Warning"
             }
           ]
         },
@@ -2633,20 +2633,20 @@
           "fileUrlPath": "src/types/extraction.ts",
           "releaseTag": "Public",
           "name": "EventType",
-          "preserveMemberOrder": false,
+          "preserveMemberOrder": true,
           "members": [
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!EventType.ContinueLoadingAttachments:member",
+              "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionExternalSyncUnitsStart:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "ContinueLoadingAttachments = "
+                  "text": "ExtractionExternalSyncUnitsStart = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"CONTINUE_LOADING_ATTACHMENTS\""
+                  "text": "\"EXTRACTION_EXTERNAL_SYNC_UNITS_START\""
                 }
               ],
               "initializerTokenRange": {
@@ -2654,20 +2654,20 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "ContinueLoadingAttachments"
+              "name": "ExtractionExternalSyncUnitsStart"
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!EventType.ContinueLoadingData:member",
+              "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionMetadataStart:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "ContinueLoadingData = "
+                  "text": "ExtractionMetadataStart = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"CONTINUE_LOADING_DATA\""
+                  "text": "\"EXTRACTION_METADATA_START\""
                 }
               ],
               "initializerTokenRange": {
@@ -2675,20 +2675,20 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "ContinueLoadingData"
+              "name": "ExtractionMetadataStart"
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionAttachmentsContinue:member",
+              "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionDataStart:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "ExtractionAttachmentsContinue = "
+                  "text": "ExtractionDataStart = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"EXTRACTION_ATTACHMENTS_CONTINUE\""
+                  "text": "\"EXTRACTION_DATA_START\""
                 }
               ],
               "initializerTokenRange": {
@@ -2696,49 +2696,7 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "ExtractionAttachmentsContinue"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionAttachmentsDelete:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionAttachmentsDelete = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_ATTACHMENTS_DELETE\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionAttachmentsDelete"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionAttachmentsStart:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionAttachmentsStart = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_ATTACHMENTS_START\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionAttachmentsStart"
+              "name": "ExtractionDataStart"
             },
             {
               "kind": "EnumMember",
@@ -2784,16 +2742,16 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionDataStart:member",
+              "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionAttachmentsStart:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "ExtractionDataStart = "
+                  "text": "ExtractionAttachmentsStart = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"EXTRACTION_DATA_START\""
+                  "text": "\"EXTRACTION_ATTACHMENTS_START\""
                 }
               ],
               "initializerTokenRange": {
@@ -2801,20 +2759,20 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "ExtractionDataStart"
+              "name": "ExtractionAttachmentsStart"
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionExternalSyncUnitsStart:member",
+              "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionAttachmentsContinue:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "ExtractionExternalSyncUnitsStart = "
+                  "text": "ExtractionAttachmentsContinue = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"EXTRACTION_EXTERNAL_SYNC_UNITS_START\""
+                  "text": "\"EXTRACTION_ATTACHMENTS_CONTINUE\""
                 }
               ],
               "initializerTokenRange": {
@@ -2822,20 +2780,20 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "ExtractionExternalSyncUnitsStart"
+              "name": "ExtractionAttachmentsContinue"
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionMetadataStart:member",
+              "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionAttachmentsDelete:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "ExtractionMetadataStart = "
+                  "text": "ExtractionAttachmentsDelete = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"EXTRACTION_METADATA_START\""
+                  "text": "\"EXTRACTION_ATTACHMENTS_DELETE\""
                 }
               ],
               "initializerTokenRange": {
@@ -2843,20 +2801,20 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "ExtractionMetadataStart"
+              "name": "ExtractionAttachmentsDelete"
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!EventType.StartDeletingLoaderAttachmentState:member",
+              "canonicalReference": "@devrev/ts-adaas!EventType.StartLoadingData:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "StartDeletingLoaderAttachmentState = "
+                  "text": "StartLoadingData = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"START_DELETING_LOADER_ATTACHMENT_STATE\""
+                  "text": "\"START_LOADING_DATA\""
                 }
               ],
               "initializerTokenRange": {
@@ -2864,20 +2822,20 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "StartDeletingLoaderAttachmentState"
+              "name": "StartLoadingData"
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!EventType.StartDeletingLoaderState:member",
+              "canonicalReference": "@devrev/ts-adaas!EventType.ContinueLoadingData:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "StartDeletingLoaderState = "
+                  "text": "ContinueLoadingData = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"START_DELETING_LOADER_STATE\""
+                  "text": "\"CONTINUE_LOADING_DATA\""
                 }
               ],
               "initializerTokenRange": {
@@ -2885,7 +2843,7 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "StartDeletingLoaderState"
+              "name": "ContinueLoadingData"
             },
             {
               "kind": "EnumMember",
@@ -2910,16 +2868,16 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!EventType.StartLoadingData:member",
+              "canonicalReference": "@devrev/ts-adaas!EventType.ContinueLoadingAttachments:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "StartLoadingData = "
+                  "text": "ContinueLoadingAttachments = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"START_LOADING_DATA\""
+                  "text": "\"CONTINUE_LOADING_ATTACHMENTS\""
                 }
               ],
               "initializerTokenRange": {
@@ -2927,7 +2885,49 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "StartLoadingData"
+              "name": "ContinueLoadingAttachments"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!EventType.StartDeletingLoaderState:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "StartDeletingLoaderState = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"START_DELETING_LOADER_STATE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "StartDeletingLoaderState"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!EventType.StartDeletingLoaderAttachmentState:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "StartDeletingLoaderAttachmentState = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"START_DELETING_LOADER_ATTACHMENT_STATE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "StartDeletingLoaderAttachmentState"
             }
           ]
         },
@@ -4316,29 +4316,8 @@
           "fileUrlPath": "src/types/extraction.ts",
           "releaseTag": "Public",
           "name": "ExtractionMode",
-          "preserveMemberOrder": false,
+          "preserveMemberOrder": true,
           "members": [
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractionMode.INCREMENTAL:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "INCREMENTAL = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"INCREMENTAL\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "INCREMENTAL"
-            },
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractionMode.INITIAL:member",
@@ -4359,6 +4338,27 @@
               },
               "releaseTag": "Public",
               "name": "INITIAL"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractionMode.INCREMENTAL:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "INCREMENTAL = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"INCREMENTAL\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "INCREMENTAL"
             }
           ]
         },
@@ -4504,260 +4504,8 @@
           "fileUrlPath": "src/types/extraction.ts",
           "releaseTag": "Public",
           "name": "ExtractorEventType",
-          "preserveMemberOrder": false,
+          "preserveMemberOrder": true,
           "members": [
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsDelay:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionAttachmentsDelay = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_ATTACHMENTS_DELAY\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionAttachmentsDelay"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsDeleteDone:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionAttachmentsDeleteDone = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_ATTACHMENTS_DELETE_DONE\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionAttachmentsDeleteDone"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsDeleteError:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionAttachmentsDeleteError = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_ATTACHMENTS_DELETE_ERROR\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionAttachmentsDeleteError"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsDone:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionAttachmentsDone = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_ATTACHMENTS_DONE\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionAttachmentsDone"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsError:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionAttachmentsError = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_ATTACHMENTS_ERROR\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionAttachmentsError"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsProgress:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionAttachmentsProgress = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_ATTACHMENTS_PROGRESS\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionAttachmentsProgress"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataDelay:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionDataDelay = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_DATA_DELAY\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionDataDelay"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataDeleteDone:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionDataDeleteDone = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_DATA_DELETE_DONE\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionDataDeleteDone"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataDeleteError:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionDataDeleteError = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_DATA_DELETE_ERROR\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionDataDeleteError"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataDone:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionDataDone = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_DATA_DONE\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionDataDone"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataError:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionDataError = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_DATA_ERROR\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionDataError"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataProgress:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExtractionDataProgress = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"EXTRACTION_DATA_PROGRESS\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExtractionDataProgress"
-            },
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionExternalSyncUnitsDone:member",
@@ -4841,6 +4589,258 @@
               },
               "releaseTag": "Public",
               "name": "ExtractionMetadataError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataProgress:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractionDataProgress = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTION_DATA_PROGRESS\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractionDataProgress"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataDelay:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractionDataDelay = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTION_DATA_DELAY\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractionDataDelay"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataDone:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractionDataDone = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTION_DATA_DONE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractionDataDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractionDataError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTION_DATA_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractionDataError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataDeleteDone:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractionDataDeleteDone = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTION_DATA_DELETE_DONE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractionDataDeleteDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataDeleteError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractionDataDeleteError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTION_DATA_DELETE_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractionDataDeleteError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsProgress:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractionAttachmentsProgress = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTION_ATTACHMENTS_PROGRESS\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractionAttachmentsProgress"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsDelay:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractionAttachmentsDelay = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTION_ATTACHMENTS_DELAY\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractionAttachmentsDelay"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsDone:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractionAttachmentsDone = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTION_ATTACHMENTS_DONE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractionAttachmentsDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractionAttachmentsError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTION_ATTACHMENTS_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractionAttachmentsError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsDeleteDone:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractionAttachmentsDeleteDone = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTION_ATTACHMENTS_DELETE_DONE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractionAttachmentsDeleteDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsDeleteError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractionAttachmentsDeleteError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTION_ATTACHMENTS_DELETE_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractionAttachmentsDeleteError"
             },
             {
               "kind": "EnumMember",
@@ -5301,20 +5301,20 @@
           "fileUrlPath": "src/types/loading.ts",
           "releaseTag": "Public",
           "name": "LoaderEventType",
-          "preserveMemberOrder": false,
+          "preserveMemberOrder": true,
           "members": [
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.AttachmentLoadingDelayed:member",
+              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.DataLoadingProgress:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "AttachmentLoadingDelayed = "
+                  "text": "DataLoadingProgress = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"ATTACHMENT_LOADING_DELAYED\""
+                  "text": "\"DATA_LOADING_PROGRESS\""
                 }
               ],
               "initializerTokenRange": {
@@ -5322,70 +5322,7 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "AttachmentLoadingDelayed"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.AttachmentLoadingDone:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "AttachmentLoadingDone = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"ATTACHMENT_LOADING_DONE\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "AttachmentLoadingDone"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.AttachmentLoadingError:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "AttachmentLoadingError = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"ATTACHMENT_LOADING_ERROR\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "AttachmentLoadingError"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.AttachmentLoadingProgress:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "AttachmentLoadingProgress = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"ATTACHMENT_LOADING_PROGRESS\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "AttachmentLoadingProgress"
+              "name": "DataLoadingProgress"
             },
             {
               "kind": "EnumMember",
@@ -5452,16 +5389,16 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.DataLoadingProgress:member",
+              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.AttachmentLoadingProgress:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "DataLoadingProgress = "
+                  "text": "AttachmentLoadingProgress = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"DATA_LOADING_PROGRESS\""
+                  "text": "\"ATTACHMENT_LOADING_PROGRESS\""
                 }
               ],
               "initializerTokenRange": {
@@ -5469,20 +5406,20 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "DataLoadingProgress"
+              "name": "AttachmentLoadingProgress"
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.LoaderAttachmentStateDeletionDone:member",
+              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.AttachmentLoadingDelayed:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "LoaderAttachmentStateDeletionDone = "
+                  "text": "AttachmentLoadingDelayed = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"LOADER_ATTACHMENT_STATE_DELETION_DONE\""
+                  "text": "\"ATTACHMENT_LOADING_DELAYED\""
                 }
               ],
               "initializerTokenRange": {
@@ -5490,20 +5427,20 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "LoaderAttachmentStateDeletionDone"
+              "name": "AttachmentLoadingDelayed"
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.LoaderAttachmentStateDeletionError:member",
+              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.AttachmentLoadingDone:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "LoaderAttachmentStateDeletionError = "
+                  "text": "AttachmentLoadingDone = "
                 },
                 {
                   "kind": "Content",
-                  "text": "\"LOADER_ATTACHMENT_STATE_DELETION_ERROR\""
+                  "text": "\"ATTACHMENT_LOADING_DONE\""
                 }
               ],
               "initializerTokenRange": {
@@ -5511,7 +5448,28 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "LoaderAttachmentStateDeletionError"
+              "name": "AttachmentLoadingDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.AttachmentLoadingError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "AttachmentLoadingError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ATTACHMENT_LOADING_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "AttachmentLoadingError"
             },
             {
               "kind": "EnumMember",
@@ -5554,6 +5512,48 @@
               },
               "releaseTag": "Public",
               "name": "LoaderStateDeletionError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.LoaderAttachmentStateDeletionDone:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "LoaderAttachmentStateDeletionDone = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"LOADER_ATTACHMENT_STATE_DELETION_DONE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "LoaderAttachmentStateDeletionDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.LoaderAttachmentStateDeletionError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "LoaderAttachmentStateDeletionError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"LOADER_ATTACHMENT_STATE_DELETION_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "LoaderAttachmentStateDeletionError"
             },
             {
               "kind": "EnumMember",
@@ -7001,29 +7001,8 @@
           "fileUrlPath": "src/types/extraction.ts",
           "releaseTag": "Public",
           "name": "SyncMode",
-          "preserveMemberOrder": false,
+          "preserveMemberOrder": true,
           "members": [
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!SyncMode.INCREMENTAL:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "INCREMENTAL = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"INCREMENTAL\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "INCREMENTAL"
-            },
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!SyncMode.INITIAL:member",
@@ -7044,6 +7023,27 @@
               },
               "releaseTag": "Public",
               "name": "INITIAL"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMode.INCREMENTAL:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "INCREMENTAL = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"INCREMENTAL\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "INCREMENTAL"
             },
             {
               "kind": "EnumMember",
@@ -7401,7 +7401,7 @@
         {
           "kind": "Class",
           "canonicalReference": "@devrev/ts-adaas!WorkerAdapter:class",
-          "docComment": "/**\n * WorkerAdapter class is used to interact with Airdrop platform. It is passed to the snap-in as parameter in processTask and onTimeout functions. The class provides utilities to emit control events to the platform, update the state of the connector, and upload artifacts to the platform.  @class WorkerAdapter  @constructor\n *\n * @param options - The options to create a new instance of WorkerAdapter class\n *\n * @param event - The event object received from the platform\n *\n * @param initialState - The initial state of the adapter\n *\n * @param isLocalDevelopment - A flag to indicate if the adapter is being used in local development\n *\n * @param workerPath - The path to the worker file\n */\n",
+          "docComment": "/**\n * WorkerAdapter class is used to interact with Airdrop platform. It is passed to the snap-in as parameter in processTask and onTimeout functions. The class provides utilities to emit control events to the platform, update the state of the connector, and upload artifacts to the platform.  @class WorkerAdapter  @constructor\n *\n * @param options - The options to create a new instance of WorkerAdapter class\n *\n * @param event - The event object received from the platform\n *\n * @param initialState - The initial state of the adapter\n *\n * @param isLocalDevelopment - A flag to indicate if the adapter is being used in local development\n *\n * @param workerPath - The path to the worker file\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -8419,7 +8419,7 @@
             {
               "kind": "Method",
               "canonicalReference": "@devrev/ts-adaas!WorkerAdapter#streamAttachments:member(1)",
-              "docComment": "/**\n * Streams the attachments to the DevRev platform. The attachments are streamed to the platform and the artifact information is returned.\n *\n * @param Params - The parameters to stream the attachments\n *\n * @returns {Promise<StreamAttachmentsReturnType>} - The response object containing the ssorAttachment artifact information or error information if there was an error\n */\n",
+              "docComment": "/**\n * Streams the attachments to the DevRev platform. The attachments are streamed to the platform and the artifact information is returned.\n *\n * @param params - The parameters to stream the attachments\n *\n * @returns The response object containing the ssorAttachment artifact information or error information if there was an error\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -8957,50 +8957,8 @@
           "fileUrlPath": "src/types/workers.ts",
           "releaseTag": "Public",
           "name": "WorkerEvent",
-          "preserveMemberOrder": false,
+          "preserveMemberOrder": true,
           "members": [
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!WorkerEvent.WorkerError:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "WorkerError = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"error\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "WorkerError"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@devrev/ts-adaas!WorkerEvent.WorkerExit:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "WorkerExit = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "\"exit\""
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "WorkerExit"
-            },
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!WorkerEvent.WorkerMessage:member",
@@ -9042,6 +9000,48 @@
               },
               "releaseTag": "Public",
               "name": "WorkerOnline"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!WorkerEvent.WorkerError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "WorkerError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"error\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "WorkerError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!WorkerEvent.WorkerExit:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "WorkerExit = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"exit\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "WorkerExit"
             }
           ]
         },
@@ -9231,7 +9231,7 @@
           "fileUrlPath": "src/types/workers.ts",
           "releaseTag": "Public",
           "name": "WorkerMessageSubject",
-          "preserveMemberOrder": false,
+          "preserveMemberOrder": true,
           "members": [
             {
               "kind": "EnumMember",
