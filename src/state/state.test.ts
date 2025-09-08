@@ -1,22 +1,15 @@
 import MockAdapter from 'axios-mock-adapter';
 import { State, createAdapterState } from './state';
-import { axiosClient } from '../http/axios-client-internal';
 import { EventType } from '../types/extraction';
 import { createEvent } from '../tests/test-helpers';
 import {
   STATELESS_EVENT_TYPES,
-  STATELESS_EXTRACTION_EVENT_TYPES,
-  STATELESS_LOADING_EVENT_TYPES,
   STATEFUL_EVENT_TYPES,
-  STATEFUL_EXTRACTION_EVENT_TYPES,
-  STATEFUL_LOADING_EVENT_TYPES,
 } from '../common/constants';
-import { SyncMode } from '../types/common';
-import { AirdropEvent } from '../types/extraction';
 import { extractionSdkState } from './state.interfaces';
 
 // NEW TESTS
-describe(createAdapterState.name, () => {
+describe(State.name, () => {
   let initSpy: jest.SpyInstance;
   let postStateSpy: jest.SpyInstance;
   let fetchStateSpy: jest.SpyInstance;
@@ -305,22 +298,4 @@ describe(createAdapterState.name, () => {
       expect(installInitialDomainMappingSpy).toHaveBeenCalled();
     }
   );
-});
-
-describe(State.name, () => {
-  describe(State.prototype.init.name, () => {
-    it('expects that true is true', () => {
-      expect(true).toBe(true);
-    });
-  });
-  describe(State.prototype.postState.name, () => {
-    it('expects that true is true', () => {
-      expect(true).toBe(true);
-    });
-  });
-  describe(State.prototype.fetchState.name, () => {
-    it('expects that true is true', () => {
-      expect(true).toBe(true);
-    });
-  });
 });
