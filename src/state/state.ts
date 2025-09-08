@@ -1,13 +1,20 @@
 import axios from 'axios';
+
 import { axiosClient } from '../http/axios-client-internal';
 import { EventType } from '../types/extraction';
 import { SyncMode } from '../types/common';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { getPrintableState, serializeError } from '../logger/logger';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
-
-import { AdapterState, SdkState, StateInterface } from './state.interfaces';
 import { getSyncDirection } from '../common/helpers';
+
+import {
+  AdapterState,
+  extractionSdkState,
+  loadingSdkState,
+  SdkState,
+  StateInterface,
+} from './state.interfaces';
 
 export async function createAdapterState<ConnectorState>({
   event,
@@ -48,7 +55,7 @@ export async function createAdapterState<ConnectorState>({
           await installInitialDomainMapping(event, initialDomainMapping);
           as.state.snapInVersionId = snapInVersionId;
         } else {
-          console.warn(
+          throw new Error(
             'No initial domain mapping was passed to spawn function. Skipping initial domain mapping installation.'
           );
         }
@@ -57,6 +64,7 @@ export async function createAdapterState<ConnectorState>({
           'Error while installing initial domain mapping.',
           serializeError(error)
         );
+        process.exit(1);
       }
     }
 
@@ -75,42 +83,21 @@ export async function createAdapterState<ConnectorState>({
 
 export class State<ConnectorState> {
   private _state: AdapterState<ConnectorState>;
-
   private initialSdkState: SdkState;
   private workerUrl: string;
   private devrevToken: string;
   private syncUnitId: string;
   private requestId: string;
 
-  private loadingSdkState = {
-    snapInVersionId: '',
-    fromDevRev: {
-      filesToLoad: [],
-    },
-  };
-  private extractionSdkState = {
-    lastSyncStarted: '',
-    lastSuccessfulSyncStarted: '',
-    snapInVersionId: '',
-    toDevRev: {
-      attachmentsMetadata: {
-        artifactIds: [],
-        lastProcessed: 0,
-        lastProcessedAttachmentsIdsList: [],
-      },
-    },
-  };
-
   constructor({ event, initialState }: StateInterface<ConnectorState>) {
     this.initialSdkState =
       getSyncDirection({ event }) === SyncMode.LOADING
-        ? this.loadingSdkState
-        : this.extractionSdkState;
+        ? loadingSdkState
+        : extractionSdkState;
     this._state = {
       ...initialState,
       ...this.initialSdkState,
     } as AdapterState<ConnectorState>;
-
     this.workerUrl = event.payload.event_context.worker_data_url;
     this.devrevToken = event.context.secrets.service_account_token;
     this.syncUnitId = event.payload.event_context.sync_unit_id;
@@ -123,10 +110,6 @@ export class State<ConnectorState> {
 
   set state(value: AdapterState<ConnectorState>) {
     this._state = value;
-    console.log(
-      'State set successfully. Current state',
-      getPrintableState(this._state)
-    );
   }
 
   /**
@@ -136,29 +119,26 @@ export class State<ConnectorState> {
    */
   async init(initialState: ConnectorState): Promise<void> {
     try {
-      const rawState = await this.fetchState();
-      if (!rawState) {
-        console.error('No state found in response.');
-        process.exit(1);
+      const stringifiedState = await this.fetchState();
+      if (!stringifiedState) {
+        throw new Error('No state found in response.');
       }
 
+      let parsedState: AdapterState<ConnectorState>;
+      try {
+        parsedState = JSON.parse(stringifiedState);
+      } catch (error) {
+        throw new Error('Failed to parse state.');
+      }
+
+      this.state = parsedState;
       console.log(
         'State fetched successfully. Current state',
         getPrintableState(this.state)
       );
-
-      let parsedState: AdapterState<ConnectorState>;
-      try {
-        parsedState = JSON.parse(rawState);
-      } catch (error) {
-        console.error('Failed to parse state.', serializeError(error));
-        process.exit(1);
-      }
-
-      this.state = parsedState;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
-        console.log('State not found. Creating and posting initial state.');
+        console.log('State not found. Initializing state with initial state.');
         const initialAdapterState: AdapterState<ConnectorState> = {
           ...initialState,
           ...this.initialSdkState,
@@ -167,7 +147,7 @@ export class State<ConnectorState> {
         this.state = initialAdapterState;
         await this.postState(initialAdapterState);
       } else {
-        console.error('Failed to fetch state.', serializeError(error));
+        console.error('Failed to init state.', serializeError(error));
         process.exit(1);
       }
     }

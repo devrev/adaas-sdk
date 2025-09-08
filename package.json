@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
     "test": "jest --forceExit --coverage --runInBand",
-    "test:state": "jest src/state/state.test.ts --coverage --collectCoverageFrom=\"src/state/**/*.ts\" --coverageReporters=text --silent"
+    "test:state": "jest src/state/state.test.ts --coverage --collectCoverageFrom=\"src/state/**/*.ts\" --coverageReporters=text"
   },
   "repository": {
     "type": "git",
