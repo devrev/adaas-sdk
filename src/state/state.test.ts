@@ -8,7 +8,6 @@ import {
 } from '../common/constants';
 import { extractionSdkState } from './state.interfaces';
 
-// NEW TESTS
 describe(State.name, () => {
   let initSpy: jest.SpyInstance;
   let postStateSpy: jest.SpyInstance;
