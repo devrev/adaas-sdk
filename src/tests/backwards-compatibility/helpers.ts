@@ -17,18 +17,24 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 
+export const newApiMdPath = path.join(__dirname, 'temp', 'ts-adaas.md');
+export const currentApiMdPath = path.join(__dirname, 'ts-adaas.md');
 export const newApiJsonPath = path.join(__dirname, 'temp', 'ts-adaas.api.json');
-export const currentApiJsonPath = path.join(__dirname, 'ts-adaas.api.json');
-
+export const currentApiJsonPath = path.join(__dirname, 'latest.json');
 
 // Helper function to load API data
 export const loadApiData = (): { newApiMembers: readonly ApiItem[], currentApiMembers: readonly ApiItem[] } => {
   if (!fs.existsSync(newApiJsonPath)) {
     throw new Error(
-      'API reports not found. Run the generate-api-report test first.'
+      'New API reports not found. Run the generate-api-report test first.'
     );
   }
 
+  if (!fs.existsSync(currentApiJsonPath)) {
+    throw new Error(
+      'Latest API baseline not found. Run backwards compatibility tests first to generate latest.json.'
+    );
+  }
 
   const newApiModel = new ApiModel().loadPackage(newApiJsonPath);
   const newApiMembers = newApiModel.entryPoints[0].members;
@@ -115,4 +121,18 @@ export const checkFunctionCompatibility = (newFunction: ApiFunction | ApiConstru
     const currentRequiredParameters = currentFunction.parameters.filter((p: Parameter) => !p.isOptional);
     expect(requiredParameters.length).toBeLessThanOrEqual(currentRequiredParameters.length);
   });
+}
+
+export const updateCurrentApiJson = () => {
+  if (fs.existsSync(newApiMdPath) && fs.existsSync(newApiJsonPath)) {
+    fs.copyFileSync(newApiMdPath, currentApiMdPath);
+    
+    // Copy new API JSON into latest.json after all tests pass
+    const latestJsonPath = path.join(__dirname, 'latest.json');
+    fs.copyFileSync(newApiJsonPath, latestJsonPath);
+
+    console.log(`Updated current API baseline files and created latest.json.`);
+  } else {
+    console.warn('No new API reports found.');
+  }
 }

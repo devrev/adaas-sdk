@@ -25,14 +25,11 @@ import {
   getInterfaces,
   getMethodSignatures,
   getPropertySignatures,
+  updateCurrentApiJson,
 } from './helpers';
 
 describe('Backwards Compatibility', () => {
   let failure = false;
-  const newApiMdPath = path.join(__dirname, 'temp', 'ts-adaas.md');
-  const currentApiMdPath = path.join(__dirname, 'ts-adaas.md');
-  const newApiJsonPath = path.join(__dirname, 'temp', 'ts-adaas.api.json');
-  const currentApiJsonPath = path.join(__dirname, 'ts-adaas.api.json');
 
   afterEach(() => {
     // Check if current test failed
@@ -410,13 +407,6 @@ describe('Backwards Compatibility', () => {
     if(failure) {
       return;
     }
-    if (fs.existsSync(newApiMdPath) && fs.existsSync(newApiJsonPath)) {
-      fs.copyFileSync(newApiMdPath, currentApiMdPath);
-      fs.copyFileSync(newApiJsonPath, currentApiJsonPath);
-
-      console.log(`Updated current API baseline files.`);
-    } else {
-      console.warn('No new API reports found.');
-    }
+    updateCurrentApiJson();
   });
 });
