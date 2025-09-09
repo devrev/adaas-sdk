@@ -446,7 +446,7 @@
      */
     "tsdocMessageReporting": {
       "default": {
-        "logLevel": "none"
+        "logLevel": "warning"
         // "addToApiReportFile": false
       },
       "tsdoc-undefined-tag": {
@@ -459,6 +459,9 @@
         "logLevel": "none"
       },
       "tsdoc-malformed-inline-tag": {
+        "logLevel": "none"
+      },
+      "tsdoc-missing-deprecation-message": {
         "logLevel": "none"
       }
 
