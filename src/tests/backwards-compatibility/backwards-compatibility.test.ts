@@ -10,6 +10,7 @@ import {
   ApiItem,
   ApiModel,
   ApiProperty,
+  ApiTypeAlias,
   Parameter
 } from '@microsoft/api-extractor-model';
 
@@ -61,6 +62,9 @@ describe('Backwards Compatibility', () => {
   }
   const getProperties = (members: readonly ApiItem[]): ApiProperty[] => {
     return members.filter((m: ApiItem) => m instanceof ApiProperty && m.kind === 'Property') as ApiProperty[];
+  }
+  const getTypes = (members: readonly ApiItem[]): ApiTypeAlias[] => {
+    return members.filter((m: ApiItem) => m instanceof ApiTypeAlias && m.kind === 'TypeAlias') as ApiTypeAlias[];
   }
 
   describe('Exports', () => {
@@ -339,7 +343,33 @@ describe('Backwards Compatibility', () => {
    });
 
   describe('Types', () => {
-    // TODO: Verify type aliases weren't removed
+    const { newApiMembers, currentApiMembers } = loadApiData();
+    const newTypes = getTypes(newApiMembers);
+    const currentTypes = getTypes(currentApiMembers);
+
+    // Verify type aliases weren't removed
+    for(const newType of newTypes) {
+      const currentType = currentTypes.find((t: ApiTypeAlias) => t.name === newType.name);
+      if(!currentType) {
+        continue;
+      }
+      it(`Type ${newType.name} should not have been removed`, () => {
+        expect(currentType).toBeDefined();
+      });
+    }
+
+    // Verify that the type alias is the same as the current type alias
+    for(const newType of newTypes) {
+      const currentType = currentTypes.find((t: ApiTypeAlias) => t.name === newType.name);
+      if(!currentType) {
+        continue;
+      }
+      it(`Type ${newType.name} should have the same type as the current type`, () => {
+        // Replace all whitespace with an empty string to ignore whitespace differences
+        expect(newType.typeExcerpt.text.replace(/\s/g, "")).toEqual(currentType.typeExcerpt.text.replace(/\s/g, ""));
+      });
+    }
+
     // TODO: Verify union types didn't become more restrictive (no types removed from union)
     // TODO: Verify intersection types didn't become more permissive (no required types removed)
     // TODO: Check generic type parameter compatibility

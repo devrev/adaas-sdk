@@ -11,12 +11,12 @@ import {
 export function generateApiReport(): void {
   const apiExtractorJsonPath: string = path.join(
     __dirname,
-    'src/tests/backwards-compatibility/api-extractor.json'
+    'api-extractor.json'
   );
   
   // Ensure the temp and report directories exist
-  const tempDir = path.join(__dirname, 'src/tests/backwards-compatibility/temp');
-  const reportDir = path.join(__dirname, 'src/tests/backwards-compatibility/report');
+  const tempDir = path.join(__dirname, 'temp');
+  const reportDir = path.join(__dirname, 'report');
   
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
