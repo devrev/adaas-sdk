@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-
 import {
   ApiClass,
   ApiConstructor,
@@ -14,9 +13,7 @@ import {
   Parameter
 } from '@microsoft/api-extractor-model';
 
-
-
-describe('Validate API report', () => {
+describe('Backwards Compatibility', () => {
   let failure = false;
   const newApiMdPath = path.join(__dirname, 'temp', 'ts-adaas.md');
   const currentApiMdPath = path.join(__dirname, 'ts-adaas.md');
@@ -72,11 +69,9 @@ describe('Validate API report', () => {
       const newExports = newApiMembers.map((m) => m.displayName);
       const currentExports = currentApiMembers.map((m: any) => m.displayName);
       
-      for (const exportName of currentExports) {
-        it(`should contain export: ${exportName}`, () => {
+      it.each(currentExports)('should contain export: %s', (exportName) => {
           expect(newExports).toContain(exportName);
-        });
-      }
+      });
     });
   });
 
