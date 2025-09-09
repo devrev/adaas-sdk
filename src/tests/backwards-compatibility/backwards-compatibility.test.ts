@@ -6,7 +6,10 @@ import {
   ApiEnum,
   ApiEnumMember,
   ApiFunction,
+  ApiInterface,
+  ApiMethodSignature,
   ApiProperty,
+  ApiPropertySignature,
   ApiTypeAlias,
 } from '@microsoft/api-extractor-model';
 
@@ -19,6 +22,9 @@ import {
   getProperties,
   getTypes,
   checkFunctionCompatibility,
+  getInterfaces,
+  getMethodSignatures,
+  getPropertySignatures,
 } from './helpers';
 
 describe('Backwards Compatibility', () => {
@@ -152,11 +158,76 @@ describe('Backwards Compatibility', () => {
   });
 
   describe('Interfaces', () => {
-    // TODO: Verify no properties were removed
-    // TODO: Verify no optional properties became required
-    // TODO: Verify property names haven't changed
-    // TODO: Verify property types are compatible
-    // TODO: Check that method signatures are compatible (if interface has methods)
+    const { newApiMembers, currentApiMembers } = loadApiData();
+    const newInterfaces = getInterfaces(newApiMembers);
+    const currentInterfaces = getInterfaces(currentApiMembers);
+
+    describe('should verify interface property counts and compatibility', () => {
+      for(const newInterface of newInterfaces) {
+        const currentInterface = currentInterfaces.find((i: ApiInterface) => i.name === newInterface.name);
+        if(!currentInterface) {
+          continue;
+        }
+
+        const newInterfaceProperties = getPropertySignatures(newInterface.members);
+        const currentInterfaceProperties = getPropertySignatures(currentInterface.members);
+
+        it(`Interface ${newInterface.name} should have at least as many properties as the current interface`, () => {
+          expect(newInterfaceProperties.length).toBeGreaterThanOrEqual(currentInterfaceProperties.length);
+        });
+        
+        it(`Interface ${newInterface.name} should not have any optional properties that became required`, () => {
+          const requiredProperties = newInterfaceProperties.filter((p: ApiPropertySignature) => !p.isOptional);
+          expect(requiredProperties.length).toBeLessThanOrEqual(currentInterfaceProperties.filter((p: ApiPropertySignature) => !p.isOptional).length);
+        });
+        
+        // Check property compatibility
+        const oldProperties = currentInterfaceProperties;
+        const newProperties = newInterfaceProperties;
+        for(const newProperty of newProperties) {
+          const currentProperty = oldProperties.find((p: ApiPropertySignature) => p.name === newProperty.name);
+          // If the property is new, there's no need to check for compatibility
+          if(!currentProperty) {
+            continue;
+          }
+
+          it(`Interface ${newInterface.name} property ${newProperty.name} should have the same type as the current property`, () => {
+            expect(newProperty.propertyTypeExcerpt.text).toEqual(currentProperty.propertyTypeExcerpt.text);
+          });
+
+          it(`Interface ${newInterface.name} property ${newProperty.name} should have not been made required if it was optional`, () => {
+              // If the new property is required, it must have been required before.
+              // Otherwise we break backward-compatibility.
+              expect(
+                // If it was required before, it can be either now.
+                !currentProperty.isOptional ||
+                // If it was optional before, it can only be optional now.
+                newProperty.isOptional
+              ).toEqual(true);
+          });
+        }
+
+        // Check method count
+        const newInterfaceMethods = getMethodSignatures(newInterface.members);
+        const currentInterfaceMethods = getMethodSignatures(currentInterface.members);
+        
+        it(`Interface ${newInterface.name} should have at least as many public methods as the current interface`, () => {
+          expect(newInterfaceMethods.length).toBeGreaterThanOrEqual(currentInterfaceMethods.length);
+        });
+
+        // Check method compatibility (same rules as functions)
+        // Make sure to allow optional parameters to be added to the end
+        for(const newMethod of newInterfaceMethods) {
+          const currentMethod = currentInterfaceMethods.find((m: ApiMethodSignature) => m.name === newMethod.name);
+          // If the method is new, there's no need to check for compatibility
+          if(!currentMethod) {
+            continue;
+          }
+          checkFunctionCompatibility(newMethod, currentMethod);
+        }
+      }
+    });
+
     // TODO: Verify interface inheritance hierarchy hasn't changed
   });
 
@@ -276,27 +347,31 @@ describe('Backwards Compatibility', () => {
     const currentTypes = getTypes(currentApiMembers);
 
     // Verify type aliases weren't removed
-    for(const newType of newTypes) {
-      const currentType = currentTypes.find((t: ApiTypeAlias) => t.name === newType.name);
-      if(!currentType) {
-        continue;
+    describe('should verify type aliases weren\'t removed', () => {
+      for(const newType of newTypes) {
+        const currentType = currentTypes.find((t: ApiTypeAlias) => t.name === newType.name);
+        if(!currentType) {
+          continue;
+        }
+        it(`Type ${newType.name} should not have been removed`, () => {
+          expect(currentType).toBeDefined();
+        });
       }
-      it(`Type ${newType.name} should not have been removed`, () => {
-        expect(currentType).toBeDefined();
-      });
-    }
+    });
 
     // Verify that the type alias is the same as the current type alias
-    for(const newType of newTypes) {
-      const currentType = currentTypes.find((t: ApiTypeAlias) => t.name === newType.name);
-      if(!currentType) {
-        continue;
+    describe('should verify type aliases are the same as the current type aliases', () => {
+      for(const newType of newTypes) {
+        const currentType = currentTypes.find((t: ApiTypeAlias) => t.name === newType.name);
+        if(!currentType) {
+          continue;
+        }
+        it(`Type ${newType.name} should have the same type as the current type`, () => {
+          // Replace all whitespace with an empty string to ignore whitespace differences
+          expect(newType.typeExcerpt.text.replace(/\s/g, "")).toEqual(currentType.typeExcerpt.text.replace(/\s/g, ""));
+        });
       }
-      it(`Type ${newType.name} should have the same type as the current type`, () => {
-        // Replace all whitespace with an empty string to ignore whitespace differences
-        expect(newType.typeExcerpt.text.replace(/\s/g, "")).toEqual(currentType.typeExcerpt.text.replace(/\s/g, ""));
-      });
-    }
+    });
 
     // TODO: Verify union types didn't become more restrictive (no types removed from union)
     // TODO: Verify intersection types didn't become more permissive (no required types removed)

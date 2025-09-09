@@ -4,9 +4,12 @@ import {
   ApiEnum,
   ApiEnumMember,
   ApiFunction,
+  ApiInterface,
   ApiItem,
+  ApiMethodSignature,
   ApiModel,
   ApiProperty,
+  ApiPropertySignature,
   ApiTypeAlias,
   Parameter
 } from '@microsoft/api-extractor-model';
@@ -61,7 +64,19 @@ export const getTypes = (members: readonly ApiItem[]): ApiTypeAlias[] => {
   return members.filter((m: ApiItem) => m instanceof ApiTypeAlias && m.kind === 'TypeAlias') as ApiTypeAlias[];
 }
 
-export const checkFunctionCompatibility = (newFunction: ApiFunction | ApiConstructor, currentFunction: ApiFunction | ApiConstructor) => {
+export const getInterfaces = (members: readonly ApiItem[]): ApiInterface[] => {
+  return members.filter((m: ApiItem) => m instanceof ApiInterface && m.kind === 'Interface') as ApiInterface[];
+}
+
+export const getMethodSignatures = (members: readonly ApiItem[]): ApiMethodSignature[] => {
+  return members.filter((m: ApiItem) => m instanceof ApiMethodSignature && m.kind === 'MethodSignature') as ApiMethodSignature[];
+}
+
+export const getPropertySignatures = (members: readonly ApiItem[]): ApiPropertySignature[] => {
+  return members.filter((m: ApiItem) => m instanceof ApiPropertySignature && m.kind === 'PropertySignature') as ApiPropertySignature[];
+}
+
+export const checkFunctionCompatibility = (newFunction: ApiFunction | ApiConstructor | ApiMethodSignature, currentFunction: ApiFunction | ApiConstructor | ApiMethodSignature) => {
   const lengthOfPreviousParameters = currentFunction.parameters.length;
 
   it(`Function ${newFunction.displayName} should have at least as many parameters as the current function`, () => {
