@@ -35,3 +35,23 @@ export interface StateInterface<ConnectorState> {
   initialDomainMapping?: InitialDomainMapping;
   options?: WorkerAdapterOptions;
 }
+
+export const extractionSdkState = {
+  lastSyncStarted: '',
+  lastSuccessfulSyncStarted: '',
+  snapInVersionId: '',
+  toDevRev: {
+    attachmentsMetadata: {
+      artifactIds: [],
+      lastProcessed: 0,
+      lastProcessedAttachmentsIdsList: [],
+    },
+  },
+};
+
+export const loadingSdkState = {
+  snapInVersionId: '',
+  fromDevRev: {
+    filesToLoad: [],
+  },
+};

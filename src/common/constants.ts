@@ -1,15 +1,6 @@
 import { EventType } from '../types/extraction';
 import { getLibraryVersion } from './helpers';
 
-export const STATELESS_EVENT_TYPES = [
-  EventType.ExtractionExternalSyncUnitsStart,
-  EventType.ExtractionMetadataStart,
-  EventType.ExtractionDataDelete,
-  EventType.ExtractionAttachmentsDelete,
-  EventType.StartDeletingLoaderState,
-  EventType.StartDeletingLoaderAttachmentState,
-];
-
 export const ALLOWED_EXTRACTION_EVENT_TYPES = [
   EventType.ExtractionExternalSyncUnitsStart,
   EventType.ExtractionMetadataStart,
@@ -31,6 +22,36 @@ export const ALLOWED_LOADING_EVENT_TYPES = [
 export const ALLOWED_EVENT_TYPES = [
   ...ALLOWED_EXTRACTION_EVENT_TYPES,
   ...ALLOWED_LOADING_EVENT_TYPES,
+];
+
+export const STATELESS_EXTRACTION_EVENT_TYPES = [
+  EventType.ExtractionExternalSyncUnitsStart,
+  EventType.ExtractionDataDelete,
+  EventType.ExtractionAttachmentsDelete,
+];
+
+export const STATELESS_LOADING_EVENT_TYPES = [
+  EventType.StartDeletingLoaderState,
+  EventType.StartDeletingLoaderAttachmentState,
+];
+
+export const STATELESS_EVENT_TYPES = [
+  ...STATELESS_EXTRACTION_EVENT_TYPES,
+  ...STATELESS_LOADING_EVENT_TYPES,
+];
+
+export const STATEFUL_EXTRACTION_EVENT_TYPES =
+  ALLOWED_EXTRACTION_EVENT_TYPES.filter(
+    (eventType) => !STATELESS_EXTRACTION_EVENT_TYPES.includes(eventType)
+  );
+
+export const STATEFUL_LOADING_EVENT_TYPES = ALLOWED_LOADING_EVENT_TYPES.filter(
+  (eventType) => !STATELESS_LOADING_EVENT_TYPES.includes(eventType)
+);
+
+export const STATEFUL_EVENT_TYPES = [
+  ...STATEFUL_EXTRACTION_EVENT_TYPES,
+  ...STATEFUL_LOADING_EVENT_TYPES,
 ];
 
 export const ARTIFACT_BATCH_SIZE = 2000;

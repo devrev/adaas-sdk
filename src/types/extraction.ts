@@ -71,16 +71,6 @@ export enum ExtractionMode {
 }
 
 /**
- * ExtractionMode is an enum that defines the different modes of extraction that can be used by the external extractor.
- * It can be either INITIAL or INCREMENTAL. INITIAL mode is used for the first/initial import, while INCREMENTAL mode is used for doing syncs.
- */
-export enum SyncMode {
-  INITIAL = 'INITIAL',
-  INCREMENTAL = 'INCREMENTAL',
-  LOADING = 'LOADING',
-}
-
-/**
  * ExternalSyncUnit is an interface that defines the structure of an external sync unit (repos, projects, ...) that can be extracted.
  * It must contain an ID, a name, and a description. It can also contain the number of items in the external sync unit.
  */

@@ -1,13 +1,20 @@
 import axios from 'axios';
+
 import { axiosClient } from '../http/axios-client-internal';
-import { AirdropEvent, EventType, SyncMode } from '../types/extraction';
+import { EventType } from '../types/extraction';
+import { SyncMode } from '../types/common';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { getPrintableState, serializeError } from '../logger/logger';
-import { ErrorRecord } from '../types/common';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
-
-import { AdapterState, SdkState, StateInterface } from './state.interfaces';
 import { getSyncDirection } from '../common/helpers';
+
+import {
+  AdapterState,
+  extractionSdkState,
+  loadingSdkState,
+  SdkState,
+  StateInterface,
+} from './state.interfaces';
 
 export async function createAdapterState<ConnectorState>({
   event,
@@ -15,16 +22,18 @@ export async function createAdapterState<ConnectorState>({
   initialDomainMapping,
   options,
 }: StateInterface<ConnectorState>): Promise<State<ConnectorState>> {
-  const newInitialState = structuredClone(initialState);
+  // Deep clone the initial state to avoid mutating the original state
+  const deepCloneInitialState: ConnectorState = structuredClone(initialState);
+
   const as = new State<ConnectorState>({
     event,
-    initialState: newInitialState,
+    initialState: deepCloneInitialState,
     initialDomainMapping,
     options,
   });
 
   if (!STATELESS_EVENT_TYPES.includes(event.payload.event_type)) {
-    await as.fetchState(newInitialState);
+    await as.init(deepCloneInitialState);
 
     // Check if IDM needs to be updated
     const snapInVersionId = event.context.snap_in_version_id;
@@ -34,15 +43,19 @@ export async function createAdapterState<ConnectorState>({
 
     if (!shouldUpdateIDM) {
       console.log(
-        `Snap-in version in state matches the version in event context (${snapInVersionId}). Skipping initial domain mapping installation.`
+        `Snap-in version in state matches the version in event context "${snapInVersionId}". Skipping initial domain mapping installation.`
       );
     } else {
       try {
+        console.log(
+          `Snap-in version in state "${as.state.snapInVersionId}" does not match the version in event context "${snapInVersionId}". Installing initial domain mapping.`
+        );
+
         if (initialDomainMapping) {
           await installInitialDomainMapping(event, initialDomainMapping);
           as.state.snapInVersionId = snapInVersionId;
         } else {
-          console.warn(
+          throw new Error(
             'No initial domain mapping was passed to spawn function. Skipping initial domain mapping installation.'
           );
         }
@@ -51,6 +64,7 @@ export async function createAdapterState<ConnectorState>({
           'Error while installing initial domain mapping.',
           serializeError(error)
         );
+        process.exit(1);
       }
     }
 
@@ -69,41 +83,25 @@ export async function createAdapterState<ConnectorState>({
 
 export class State<ConnectorState> {
   private _state: AdapterState<ConnectorState>;
-
   private initialSdkState: SdkState;
-  private event: AirdropEvent;
   private workerUrl: string;
   private devrevToken: string;
+  private syncUnitId: string;
+  private requestId: string;
 
   constructor({ event, initialState }: StateInterface<ConnectorState>) {
     this.initialSdkState =
       getSyncDirection({ event }) === SyncMode.LOADING
-        ? {
-            snapInVersionId: '',
-            fromDevRev: {
-              filesToLoad: [],
-            },
-          }
-        : {
-            lastSyncStarted: '',
-            lastSuccessfulSyncStarted: '',
-            snapInVersionId: '',
-            toDevRev: {
-              attachmentsMetadata: {
-                artifactIds: [],
-                lastProcessed: 0,
-                lastProcessedAttachmentsIdsList: [],
-              },
-            },
-          };
+        ? loadingSdkState
+        : extractionSdkState;
     this._state = {
       ...initialState,
       ...this.initialSdkState,
     } as AdapterState<ConnectorState>;
-
-    this.event = event;
     this.workerUrl = event.payload.event_context.worker_data_url;
     this.devrevToken = event.context.secrets.service_account_token;
+    this.syncUnitId = event.payload.event_context.sync_unit_id;
+    this.requestId = event.payload.event_context.request_id_adaas;
   }
 
   get state(): AdapterState<ConnectorState> {
@@ -115,29 +113,79 @@ export class State<ConnectorState> {
   }
 
   /**
-   *  Updates the state of the adapter.
-   *
+   * Initializes the state for this adapter instance by fetching from API
+   * or creating an initial state if none exists (404).
+   * @param initialState The initial connector state provided by the spawn function
+   */
+  async init(initialState: ConnectorState): Promise<void> {
+    try {
+      const stringifiedState = await this.fetchState();
+      if (!stringifiedState) {
+        throw new Error('No state found in response.');
+      }
+
+      let parsedState: AdapterState<ConnectorState>;
+      try {
+        parsedState = JSON.parse(stringifiedState);
+      } catch (error) {
+        throw new Error('Failed to parse state.');
+      }
+
+      this.state = parsedState;
+      console.log(
+        'State fetched successfully. Current state',
+        getPrintableState(this.state)
+      );
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        console.log('State not found. Initializing state with initial state.');
+        const initialAdapterState: AdapterState<ConnectorState> = {
+          ...initialState,
+          ...this.initialSdkState,
+        };
+
+        this.state = initialAdapterState;
+        await this.postState(initialAdapterState);
+      } else {
+        console.error('Failed to init state.', serializeError(error));
+        process.exit(1);
+      }
+    }
+  }
+
+  /**
+   *  Updates the state of the adapter by posting to API.
    * @param {object} state - The state to be updated
    */
   async postState(state?: AdapterState<ConnectorState>) {
+    const url = this.workerUrl + '.update';
+    this.state = state || this.state;
+
+    let stringifiedState: string;
+    try {
+      stringifiedState = JSON.stringify(this.state);
+    } catch (error) {
+      console.error('Failed to stringify state.', serializeError(error));
+      process.exit(1);
+    }
+
     try {
       await axiosClient.post(
-        this.workerUrl + '.update',
+        url,
         {
-          state: JSON.stringify(state || this.state),
+          state: stringifiedState,
         },
         {
           headers: {
             Authorization: this.devrevToken,
           },
           params: {
-            sync_unit: this.event.payload.event_context.sync_unit_id,
-            request_id: this.event.payload.event_context.request_id_adaas,
+            sync_unit: this.syncUnitId,
+            request_id: this.requestId,
           },
         }
       );
 
-      this.state = state || this.state;
       console.log(
         'State updated successfully to',
         getPrintableState(this.state)
@@ -149,57 +197,25 @@ export class State<ConnectorState> {
   }
 
   /**
-   *  Fetches the state of the adapter.
-   *
-   * @return  The state of the adapter
+   *  Fetches the state of the adapter from API.
+   * @return  The raw state data from API
    */
-  async fetchState(
-    initialState: ConnectorState
-  ): Promise<AdapterState<ConnectorState> | ErrorRecord> {
+  async fetchState(): Promise<string> {
     console.log(
-      'Fetching state with sync unit id: ' +
-        this.event.payload.event_context.sync_unit_id +
-        '.'
+      `Fetching state with sync unit id ${this.syncUnitId} and request id ${this.requestId}.`
     );
 
-    try {
-      const response = await axiosClient.get(this.workerUrl + '.get', {
-        headers: {
-          Authorization: this.devrevToken,
-        },
-        params: {
-          sync_unit: this.event.payload.event_context.sync_unit_id,
-          request_id: this.event.payload.event_context.request_id_adaas,
-        },
-      });
+    const url = this.workerUrl + '.get';
+    const response = await axiosClient.get(url, {
+      headers: {
+        Authorization: this.devrevToken,
+      },
+      params: {
+        sync_unit: this.syncUnitId,
+        request_id: this.requestId,
+      },
+    });
 
-      this.state = JSON.parse(response.data.state);
-
-      console.log(
-        'State fetched successfully. Current state',
-        getPrintableState(this.state)
-      );
-
-      return this.state;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        const state: AdapterState<ConnectorState> = {
-          ...initialState,
-          ...this.initialSdkState,
-        };
-
-        this.state = state;
-
-        console.log(
-          'State not found, returning initial state. Current state',
-          getPrintableState(this.state)
-        );
-        await this.postState(this.state);
-        return this.state;
-      } else {
-        console.error('Failed to fetch state.', error);
-        process.exit(1);
-      }
-    }
+    return response.data?.state;
   }
 }

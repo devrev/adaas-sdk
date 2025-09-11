@@ -12,7 +12,7 @@ import {
   NormalizedItem,
   NormalizedAttachment,
 } from './repo.interfaces';
-import { WorkerAdapterOptions } from 'types/workers';
+import { WorkerAdapterOptions } from '../types/workers';
 
 export class Repo {
   readonly itemType: string;
