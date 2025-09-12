@@ -25,6 +25,11 @@
 
 ## Checklist
 - [ ] Tests added/updated and ran `npm run test`
+- [ ] Documentation updated (if needed)
+<!-- Add these once we have eslint and backwards compatibility tests prepared:
 - [ ] Code formatted and checked with `npm run lint`
 - [ ] Ran backwards compatibility tests for any breaking changes
-- [ ] Documentation updated (if needed)
+-->
+<!-- Additional suggestions?
+- [ ] Knowledge base articles written (if applicable)
+-->
