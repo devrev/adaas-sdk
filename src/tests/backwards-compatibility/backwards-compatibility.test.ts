@@ -56,10 +56,10 @@ describe('Backwards Compatibility', () => {
       const { newApiMembers, currentApiMembers } = loadApiData();
       const newFunctions: ApiFunction[] = getFunctions(newApiMembers);
       const currentFunctions: ApiFunction[] = getFunctions(currentApiMembers);
+      const newFunctionNames = newFunctions.map(f => f.name);
       for(const currentFunction of currentFunctions) {
         it(`should contain function: ${currentFunction.name}`, () => {
-          const foundFunction = newFunctions.find(f => f.name === currentFunction.name);
-          expect(foundFunction).toBeDefined();
+          expect(newFunctionNames).toContain(currentFunction.name);
         });
       }
     });
@@ -103,10 +103,10 @@ describe('Backwards Compatibility', () => {
         const currentClassProperties: ApiProperty[] = getProperties(currentClass.members);
 
         describe(`Class ${newClass.name} should have at least all public properties from the current class`, () => {
+          const newPropertyNames = newClassProperties.map(p => p.name);
           for(const currentProperty of currentClassProperties) {
             it(`should contain property: ${currentProperty.name}`, () => {
-              const foundProperty = newClassProperties.find(p => p.name === currentProperty.name);
-              expect(foundProperty).toBeDefined();
+              expect(newPropertyNames).toContain(currentProperty.name);
             });
           }
         });
@@ -114,7 +114,11 @@ describe('Backwards Compatibility', () => {
         describe(`Class ${newClass.name} should not have any optional properties that became required`, () => {
           for(const currentProperty of currentClassProperties) {
             it(`should not have optional property that became required: ${currentProperty.name}`, () => {
-              expect(newClassProperties).not.toContain(currentProperty);
+              const newProperty = newClassProperties.find(p => p.name === currentProperty.name);
+              if (newProperty && currentProperty.isOptional) {
+                // If the current property was optional, the new property should also be optional
+                expect(newProperty.isOptional).toBe(true);
+              }
             });
           }
         });
@@ -148,10 +152,10 @@ describe('Backwards Compatibility', () => {
         const currentClassMethods = getFunctions(currentClass.members);
         
         describe(`Class ${newClass.name} should export all public methods from the current class`, () => {
+          const newMethodNames = newClassMethods.map(m => m.name);
           for(const currentMethod of currentClassMethods) {
             it(`should contain method: ${currentMethod.name}`, () => {
-              const foundMethod = newClassMethods.find(m => m.name === currentMethod.name);
-              expect(foundMethod).toBeDefined();
+              expect(newMethodNames).toContain(currentMethod.name);
             });
           }
         });
