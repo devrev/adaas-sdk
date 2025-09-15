@@ -52,11 +52,16 @@ describe('Backwards Compatibility', () => {
   });
 
   describe('Functions', () => {
-    it('should have at least as many functions in new API as in current', () => {
+    describe('should have all current functions exported in new', () => {
       const { newApiMembers, currentApiMembers } = loadApiData();
       const newFunctions: ApiFunction[] = getFunctions(newApiMembers);
       const currentFunctions: ApiFunction[] = getFunctions(currentApiMembers);
-      expect(newFunctions.length).toBeGreaterThanOrEqual(currentFunctions.length);
+      for(const currentFunction of currentFunctions) {
+        it(`should contain function: ${currentFunction.name}`, () => {
+          const foundFunction = newFunctions.find(f => f.name === currentFunction.name);
+          expect(foundFunction).toBeDefined();
+        });
+      }
     });
 
     describe('should verify function compatibility for each function', () => {
@@ -97,13 +102,21 @@ describe('Backwards Compatibility', () => {
         const newClassProperties: ApiProperty[] = getProperties(newClass.members);
         const currentClassProperties: ApiProperty[] = getProperties(currentClass.members);
 
-        it(`Class ${newClass.name} should have at least as many public properties as the current class`, () => {
-          expect(newClassProperties.length).toBeGreaterThanOrEqual(currentClassProperties.length);
+        describe(`Class ${newClass.name} should have at least all public properties from the current class`, () => {
+          for(const currentProperty of currentClassProperties) {
+            it(`should contain property: ${currentProperty.name}`, () => {
+              const foundProperty = newClassProperties.find(p => p.name === currentProperty.name);
+              expect(foundProperty).toBeDefined();
+            });
+          }
         });
 
-        it(`Class ${newClass.name} should not have any optional properties that became required`, () => {
-          const requiredProperties = newClassProperties.filter((p: ApiProperty) => !p.isOptional);
-          expect(requiredProperties.length).toBeLessThanOrEqual(currentClassProperties.filter((p: ApiProperty) => !p.isOptional).length);
+        describe(`Class ${newClass.name} should not have any optional properties that became required`, () => {
+          for(const currentProperty of currentClassProperties) {
+            it(`should not have optional property that became required: ${currentProperty.name}`, () => {
+              expect(newClassProperties).not.toContain(currentProperty);
+            });
+          }
         });
 
         // Check property compatibility
@@ -134,8 +147,13 @@ describe('Backwards Compatibility', () => {
         const newClassMethods = getFunctions(newClass.members);
         const currentClassMethods = getFunctions(currentClass.members);
         
-        it(`Class ${newClass.name} should have at least as many public methods as the current class`, () => {
-          expect(newClassMethods.length).toBeGreaterThanOrEqual(currentClassMethods.length);
+        describe(`Class ${newClass.name} should export all public methods from the current class`, () => {
+          for(const currentMethod of currentClassMethods) {
+            it(`should contain method: ${currentMethod.name}`, () => {
+              const foundMethod = newClassMethods.find(m => m.name === currentMethod.name);
+              expect(foundMethod).toBeDefined();
+            });
+          }
         });
 
         // Check method compatibility (same rules as functions)
