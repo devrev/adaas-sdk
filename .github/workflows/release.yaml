@@ -88,26 +88,17 @@ jobs:
         env:
           RELEASE_TYPE: ${{ github.event.inputs.release-type }}
 
-      # Run tests and copy API version file
-      - name: Run tests and copy API version file
+      # Run tests
+      - name: Run tests
         run: |
           npm ci
           npm run build
           npm run test
-          # Copy latest.json to versions directory with version name
-          if [ -f "src/tests/backwards-compatibility/latest.json" ]; then
-            mkdir -p "src/tests/backwards-compatibility/versions"
-            cp "src/tests/backwards-compatibility/latest.json" "src/tests/backwards-compatibility/versions/v${{ env.NEW_VERSION }}.json"
-            echo "Copied latest.json to versions/v${{ env.NEW_VERSION }}.json"
-          else
-            echo "Warning: latest.json not found, skipping version file copy"
-          fi
 
       # Commit changes
       - name: Commit package.json changes and create tag
         run: |
           git add "package.json"
-          git add "src/tests/backwards-compatibility/versions/"
           git commit -m "chore: release ${{ env.NEW_VERSION }}"
           git tag ${{ env.NEW_VERSION }}
 
