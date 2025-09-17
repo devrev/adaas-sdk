@@ -12,6 +12,7 @@
     "strict": true,
     "skipLibCheck": true,
     "declaration": true,
+    "declarationMap": true,
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "noImplicitOverride": true,
