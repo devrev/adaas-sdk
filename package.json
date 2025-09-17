@@ -11,8 +11,8 @@
     "start": "ts-node src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
-    "test": "jest --forceExit --coverage --runInBand --selectProjects default",
-    "test:backward-compatibility": "jest --forceExit --runInBand --selectProjects backwards-compatibility"
+    "test": "jest --forceExit --coverage --runInBand --selectProjects default --",
+    "test:backwards-compatibility": "jest --forceExit --runInBand --selectProjects backwards-compatibility --"
   },
   "repository": {
     "type": "git",
