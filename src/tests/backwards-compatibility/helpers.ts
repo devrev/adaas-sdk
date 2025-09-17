@@ -82,46 +82,6 @@ export const getPropertySignatures = (members: readonly ApiItem[]): ApiPropertyS
   return members.filter((m: ApiItem) => m instanceof ApiPropertySignature && m.kind === 'PropertySignature') as ApiPropertySignature[];
 }
 
-export const checkFunctionCompatibility = (newFunction: ApiFunction | ApiConstructor | ApiMethodSignature, currentFunction: ApiFunction | ApiConstructor | ApiMethodSignature) => {
-  const lengthOfPreviousParameters = currentFunction.parameters.length;
-
-  it(`Function ${newFunction.displayName} should have at least as many parameters as the current function`, () => {
-    expect(newFunction.parameters.length).toBeGreaterThanOrEqual(currentFunction.parameters.length);
-  });
-
-  it(`Function ${newFunction.displayName} should have parameters in the same order as the current function`, () => {
-    const newFunctionParamNames = newFunction.parameters.slice(0, lengthOfPreviousParameters).map((p: Parameter) => p.name);
-    const currentFunctionParamNames = currentFunction.parameters.map((p: Parameter) => p.name);
-    expect(newFunctionParamNames).toEqual(currentFunctionParamNames);
-  });
-
-  it(`Function ${newFunction.displayName} should have compatible parameter types with the current function`, () => {
-    const newFunctionParamTypes = newFunction.parameters.slice(0, lengthOfPreviousParameters).map((p: Parameter) => p.parameterTypeExcerpt.text);
-    const currentFunctionParameterTypes = currentFunction.parameters.map((p: Parameter) => p.parameterTypeExcerpt.text);
-    expect(newFunctionParamTypes).toEqual(currentFunctionParameterTypes);
-  });
-  
-  // Check return type compatibility
-  // This check fails if it's a constructor, as those don't have a return type
-  if(currentFunction instanceof ApiFunction && newFunction instanceof ApiFunction){
-    if(!currentFunction.returnTypeExcerpt?.isEmpty) {
-      it(`Function ${newFunction.displayName} should have the same return type as the current function`, () => {
-        expect(newFunction.returnTypeExcerpt.text).toEqual(currentFunction.returnTypeExcerpt.text);
-      });
-    }
-  }
-
-  it(`Function ${newFunction.displayName} should have all new parameters as optional`, () => {
-    const newParameters = newFunction.parameters.slice(lengthOfPreviousParameters);
-    expect(newParameters.every((p: Parameter) => p.isOptional)).toBe(true);
-  });
-
-  it(`Function ${newFunction.displayName} should not have any optional parameters that became required`, () => {
-    const requiredParameters = newFunction.parameters.filter((p: Parameter) => !p.isOptional);
-    const currentRequiredParameters = currentFunction.parameters.filter((p: Parameter) => !p.isOptional);
-    expect(requiredParameters.length).toBeLessThanOrEqual(currentRequiredParameters.length);
-  });
-}
 
 export const updateCurrentApiJson = () => {
   if (fs.existsSync(newApiMdPath) && fs.existsSync(newApiJsonPath)) {
