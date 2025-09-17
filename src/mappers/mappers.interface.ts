@@ -94,3 +94,40 @@ export interface SyncMapperRecordExternalVersion {
   recipe_version: number;
   modified_date: string;
 }
+
+export interface MappersGetByExternalIdParams {
+  sync_unit: DonV2;
+  external_id: string;
+  target_type: SyncMapperRecordTargetType;
+}
+
+export enum SyncMapperRecordTargetType {
+  ACCESS_CONTROL_ENTRY = 'access_control_entry',
+  ACCOUNT = 'account',
+  AIRDROP_AUTHORIZATION_POLICY = 'airdrop_authorization_policy',
+  AIRDROP_FIELD_AUTHORIZATION_POLICY = 'airdrop_field_authorization_policy',
+  AIRDROP_PLATFORM_GROUP = 'airdrop_platform_group',
+  ARTICLE = 'article',
+  ARTIFACT = 'artifact',
+  CHAT = 'chat',
+  CONVERSATION = 'conversation',
+  CUSTOM_OBJECT = 'custom_object',
+  DIRECTORY = 'directory',
+  GROUP = 'group',
+  INCIDENT = 'incident',
+  LINK = 'link',
+  MEETING = 'meeting',
+  OBJECT_MEMBER = 'object_member',
+  PART = 'part',
+  REV_ORG = 'rev_org',
+  ROLE = 'role',
+  ROLE_SET = 'role_set',
+  TAG = 'tag',
+  TIMELINE_COMMENT = 'timeline_comment',
+  USER = 'user',
+  WORK = 'work',
+}
+
+export interface MappersGetByExternalIdResponse {
+  sync_mapper_record: SyncMapperRecord;
+}

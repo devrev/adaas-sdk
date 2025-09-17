@@ -9,6 +9,8 @@ import {
   MappersGetByTargetIdResponse,
   MappersUpdateParams,
   MappersUpdateResponse,
+  MappersGetByExternalIdParams,
+  MappersGetByExternalIdResponse,
 } from './mappers.interface';
 
 export class Mappers {
@@ -31,6 +33,21 @@ export class Mappers {
           Authorization: this.devrevApiToken,
         },
         params: { sync_unit, target },
+      }
+    );
+  }
+
+  async getByExternalId(
+    params: MappersGetByExternalIdParams
+  ): Promise<AxiosResponse<MappersGetByExternalIdResponse>> {
+    const { sync_unit, external_id, target_type } = params;
+    return axiosClient.get<MappersGetByExternalIdResponse>(
+      `${this.devrevApiEndpoint}/internal/airdrop.sync-mapper-record.get-by-external-id`,
+      {
+        headers: {
+          Authorization: this.devrevApiToken,
+        },
+        params: { sync_unit, external_id, target_type },
       }
     );
   }

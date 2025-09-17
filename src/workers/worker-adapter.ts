@@ -44,7 +44,6 @@ import { Mappers } from '../mappers/mappers';
 import { Uploader } from '../uploader/uploader';
 import { serializeError } from '../logger/logger';
 import { SyncMapperRecordStatus } from '../mappers/mappers.interface';
-import { sleep } from '../common/helpers';
 import { AttachmentsStreamingPool } from '../attachments-streaming/attachments-streaming-pool';
 
 export function createWorkerAdapter<ConnectorState>({
@@ -86,7 +85,7 @@ export class WorkerAdapter<ConnectorState> {
   // Loader
   private loaderReports: LoaderReport[];
   private _processedFiles: string[];
-  private mappers: Mappers;
+  private _mappers: Mappers;
   private uploader: Uploader;
 
   constructor({
@@ -104,7 +103,7 @@ export class WorkerAdapter<ConnectorState> {
     // Loader
     this.loaderReports = [];
     this._processedFiles = [];
-    this.mappers = new Mappers({
+    this._mappers = new Mappers({
       event,
       options,
     });
@@ -130,6 +129,10 @@ export class WorkerAdapter<ConnectorState> {
 
   get processedFiles(): string[] {
     return this._processedFiles;
+  }
+
+  get mappers(): Mappers {
+    return this._mappers;
   }
 
   initializeRepos(repos: RepoInterface[]) {
@@ -506,7 +509,7 @@ export class WorkerAdapter<ConnectorState> {
     const devrevId = item.id.devrev;
 
     try {
-      const syncMapperRecordResponse = await this.mappers.getByTargetId({
+      const syncMapperRecordResponse = await this._mappers.getByTargetId({
         sync_unit: this.event.payload.event_context.sync_unit,
         target: devrevId,
       });
@@ -524,14 +527,14 @@ export class WorkerAdapter<ConnectorState> {
       // Update item in external system
       const { id, modifiedDate, delay, error } = await itemTypeToLoad.update({
         item,
-        mappers: this.mappers,
+        mappers: this._mappers,
         event: this.event,
       });
 
       if (id) {
         if (modifiedDate) {
           try {
-            await this.mappers.update({
+            await this._mappers.update({
               id: syncMapperRecord.sync_mapper_record.id,
               sync_unit: this.event.payload.event_context.sync_unit,
               status: SyncMapperRecordStatus.OPERATIONAL,
@@ -597,14 +600,14 @@ export class WorkerAdapter<ConnectorState> {
           // Create item in external system if mapper record not found
           const { id, delay, error } = await itemTypeToLoad.create({
             item,
-            mappers: this.mappers,
+            mappers: this._mappers,
             event: this.event,
           });
 
           if (id) {
             // Create mapper
             try {
-              await this.mappers.create({
+              await this._mappers.create({
                 sync_unit: this.event.payload.event_context.sync_unit,
                 status: SyncMapperRecordStatus.OPERATIONAL,
                 external_ids: [id],
@@ -765,7 +768,7 @@ export class WorkerAdapter<ConnectorState> {
     // Create item
     const { id, delay, error } = await create({
       item,
-      mappers: this.mappers,
+      mappers: this._mappers,
       event: this.event,
     });
 
