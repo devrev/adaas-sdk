@@ -258,7 +258,7 @@ describe('Backwards Compatibility', () => {
 
           it(`Interface ${newInterface.name} property ${newProperty.name} should have not been made required if it was optional`, () => {
               // If the new property is required, it must have been required before.
-              // Otherwise we break backward-compatibility.
+              // Otherwise we break backwards-compatibility.
               expect(
                 // If it was required before, it can be either now.
                 !currentProperty.isOptional ||
