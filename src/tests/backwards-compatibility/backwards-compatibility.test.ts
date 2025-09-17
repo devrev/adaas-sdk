@@ -64,9 +64,16 @@ export function checkFunctionCompatibility(newFunction: ApiFunction | ApiConstru
   });
 
   it(`Function ${newFunction.displayName} should not have any optional parameters that became required`, () => {
-    const requiredParameters = newFunction.parameters.filter((p: Parameter) => !p.isOptional);
-    const currentRequiredParameters = currentFunction.parameters.filter((p: Parameter) => !p.isOptional);
-    expect(requiredParameters.length).toBeLessThanOrEqual(currentRequiredParameters.length);
+    const minLength = Math.min(newFunction.parameters.length, currentFunction.parameters.length);
+    for (let i = 0; i < minLength; i++) {
+      const newParam = newFunction.parameters[i];
+      const currentParam = currentFunction.parameters[i];
+      
+      // If current parameter was optional, new parameter should also be optional
+      if (currentParam.isOptional && !newParam.isOptional) {
+        throw new Error(`Parameter ${newParam.name} became required but was optional`);
+      }
+    }
   });
 }
 
@@ -124,6 +131,8 @@ describe('Backwards Compatibility', () => {
 
       // TODO: Check that optional promotion works only one way (no required parameters becoming optional, but optional parameters can become required)
       // TODO: Check that function overloads weren't removed
+      // TODO: Verify that function parameter destructuring patterns maintain compatibility
+      // TODO: Check that function parameter default values don't change in breaking ways
     });
   });
 
@@ -214,6 +223,8 @@ describe('Backwards Compatibility', () => {
         }
 
         // TODO: Verify class inheritance hierarchy hasn't changed in breaking ways
+        // TODO: Check that class mixins maintain their composition behavior
+        // TODO: Verify that abstract class methods remain abstract or are properly implemented
       }
     });
   });
@@ -290,6 +301,8 @@ describe('Backwards Compatibility', () => {
     });
 
     // TODO: Verify interface inheritance hierarchy hasn't changed
+    // TODO: Check that interface merging behavior is preserved
+    // TODO: Verify that interface index signatures maintain their key/value types
   });
 
   describe('Enums', () => {
@@ -346,8 +359,19 @@ describe('Backwards Compatibility', () => {
           continue;
         }
 
-        const newEnumNumeric = newEnum.members.every((m: ApiEnumMember) => typeof m === 'number');
-        const currentEnumNumeric = currentEnum.members.every((m: ApiEnumMember) => typeof m === 'number');
+        // Helper function to determine if an enum is numeric based on its members' initializer values
+        const isNumericEnum = (enumMembers: ApiEnumMember[]): boolean => {
+          return enumMembers.every((member: ApiEnumMember) => {
+            // Check if the member has an initializer and if it's a numeric value
+            const initializerText = member.excerptTokens
+              ?.find(token => token.kind === 'Content' && /^\d+$/.test(token.text.trim()))
+              ?.text?.trim();
+            return initializerText !== undefined && /^\d+$/.test(initializerText);
+          });
+        };
+        
+        const newEnumNumeric = isNumericEnum([...newEnum.members]);
+        const currentEnumNumeric = isNumericEnum([...currentEnum.members]);
 
         it(`Enum ${newEnum.name} should have the same numeric type as the current enum`, () => {
           expect(newEnumNumeric).toBe(currentEnumNumeric);
@@ -378,6 +402,8 @@ describe('Backwards Compatibility', () => {
       }
     });
     // TODO: Check that new enum values were only added at the end (best practice)
+    // TODO: Verify that const enums maintain their compile-time behavior
+    // TODO: Check that enum member values don't change in breaking ways
     describe('should verify enum value types have been added to the end', () => {
       const { newApiMembers, currentApiMembers } = loadApiData();
       newEnums = getEnums(newApiMembers);
