@@ -65,12 +65,13 @@ export function createWorkerAdapter<ConnectorState>({
  * and upload artifacts to the platform.
  * @class WorkerAdapter
  * @constructor
- * @param {WorkerAdapterInterface} options - The options to create a new instance of WorkerAdapter class
- * @param {AirdropEvent} event - The event object received from the platform
- * @param {object=} initialState - The initial state of the adapter
- * @param {boolean=} isLocalDevelopment - A flag to indicate if the adapter is being used in local development
- * @param {string} workerPath - The path to the worker file
+ * @param options - The options to create a new instance of WorkerAdapter class
+ * @param event - The event object received from the platform
+ * @param initialState - The initial state of the adapter
+ * @param isLocalDevelopment - A flag to indicate if the adapter is being used in local development
+ * @param workerPath - The path to the worker file
  *
+ * @public
  */
 export class WorkerAdapter<ConnectorState> {
   readonly event: AirdropEvent;
@@ -188,8 +189,8 @@ export class WorkerAdapter<ConnectorState> {
   /**
    *  Emits an event to the platform.
    *
-   * @param {ExtractorEventType} newEventType - The event type to be emitted
-   * @param {EventData=} data - The data to be sent with the event
+   * @param newEventType - The event type to be emitted
+   * @param data - The data to be sent with the event
    */
   async emit(
     newEventType: ExtractorEventType | LoaderEventType,
@@ -799,8 +800,8 @@ export class WorkerAdapter<ConnectorState> {
   /**
    * Streams the attachments to the DevRev platform.
    * The attachments are streamed to the platform and the artifact information is returned.
-   * @param {{ stream, processors }: { stream: ExternalSystemAttachmentStreamingFunction, processors?: ExternalSystemAttachmentProcessors  }} Params - The parameters to stream the attachments
-   * @returns {Promise<StreamAttachmentsReturnType>} - The response object containing the ssorAttachment artifact information
+   * @param params - The parameters to stream the attachments
+   * @returns The response object containing the ssorAttachment artifact information
    * or error information if there was an error
    */
   async streamAttachments<NewBatch>({

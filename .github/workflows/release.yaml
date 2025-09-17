@@ -88,6 +88,13 @@ jobs:
         env:
           RELEASE_TYPE: ${{ github.event.inputs.release-type }}
 
+      # Run tests
+      - name: Run tests
+        run: |
+          npm ci
+          npm run build
+          npm run test
+
       # Commit changes
       - name: Commit package.json changes and create tag
         run: |
@@ -118,9 +125,7 @@ jobs:
       # Publish version to public repository
       - name: Publish
         run: |
-          npm ci \
-          && npm run build \
-          && npm publish --verbose --access public --tag ${{ env.RELEASE_TAG }} ${{ env.DRY_RUN }}
+          npm publish --verbose --access public --tag ${{ env.RELEASE_TAG }} ${{ env.DRY_RUN }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPMJS_NPM_TOKEN }}
           DRY_RUN: ${{ github.event.inputs.dry-run != 'false' && '--dry-run' || ' '}}
