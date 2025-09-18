@@ -16,7 +16,7 @@ jest.mock('../http/axios-client-internal');
 const mockAxiosClient = axiosClient as jest.Mocked<typeof axiosClient>;
 
 describe(Mappers.name, () => {
-  const apiEndpoint = 'https://api.devrev.ai';
+  const apiEndpoint = 'test_devrev_endpoint';
   const apiToken = 'test_service_token';
   const syncUnit = 'test_sync_unit';
   const targetId = 'test_target_id';
@@ -24,6 +24,7 @@ describe(Mappers.name, () => {
   const id = 'test_id';
   const externalIds = ['test_external_id'];
   const targets = ['test_target_id'];
+
   const mockEvent = createEvent({
     eventType: EventType.ExtractionDataStart,
     executionMetadataOverrides: { devrev_endpoint: apiEndpoint },
