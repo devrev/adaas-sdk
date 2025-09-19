@@ -59,3 +59,16 @@ export {
   StreamAttachmentsResponse,
   SsorAttachment,
 } from '../uploader/uploader.interfaces';
+
+// Mappers
+export type {
+  MappersGetByTargetIdParams,
+  MappersGetByExternalIdParams,
+  MappersCreateParams,
+  MappersUpdateParams,
+} from '../mappers/mappers.interface';
+
+export {
+  SyncMapperRecordStatus,
+  SyncMapperRecordTargetType,
+} from '../mappers/mappers.interface';
