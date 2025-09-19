@@ -27,7 +27,7 @@ export const currentApiJsonPath = path.join(__dirname, 'latest.json');
 // Generate API report before all tests run
 export function generateApiReport(): void {
   // Before running the api extractor, make sure that the code compiles using `tsc` command
-  const tscCommand = 'tsc';
+  const tscCommand = 'npm run build';
   try {
     execSync(tscCommand) as any;
   } catch (error: any) {
