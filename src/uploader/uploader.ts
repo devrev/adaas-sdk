@@ -19,18 +19,8 @@ import {
 } from './uploader.interfaces';
 
 /**
- * Uploader class is used to upload files to the DevRev platform.
- * The class provides utilities to:
- * - upload artifacts to the platform
- * - get artifact upload URL
- * - upload artifact to the upload URL
- * - stream artifact to the upload URL
- * - confirm artifact upload
- * - get attachments from the artifact id
- * - get json object by artifact id
- * - download object or objects array to the local file system
- * - compress and decompress jsonl objects
- * - parse jsonl objects
+ * Uploader class is used to upload files to the DevRev platform. It simplifies
+ * work with artifacts and attachments.
  *
  * @class Uploader
  * @constructor
