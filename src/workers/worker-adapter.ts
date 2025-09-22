@@ -44,8 +44,8 @@ import { Mappers } from '../mappers/mappers';
 import { Uploader } from '../uploader/uploader';
 import { serializeError } from '../logger/logger';
 import { SyncMapperRecordStatus } from '../mappers/mappers.interface';
-import { sleep } from '../common/helpers';
 import { AttachmentsStreamingPool } from '../attachments-streaming/attachments-streaming-pool';
+import { sdkconsole as console } from 'sdkconsole';
 
 export function createWorkerAdapter<ConnectorState>({
   event,

@@ -9,6 +9,7 @@ import {
   serializeAxiosError,
 } from '../../index';
 import { axiosClient } from '../../http/axios-client-internal';
+import { sdkconsole as console } from 'sdkconsole';
 
 const getAttachmentStream = async ({
   item,
