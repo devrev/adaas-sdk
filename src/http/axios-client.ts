@@ -25,7 +25,7 @@
 import axios, { AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
 
-import { sdkconsole as console } from 'sdkconsole';
+import { sdkconsole as console } from '../sdkconsole';
 
 const axiosClient = axios.create();
 
