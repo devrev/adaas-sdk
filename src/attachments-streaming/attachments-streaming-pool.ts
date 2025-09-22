@@ -5,6 +5,7 @@ import {
 } from '../types';
 import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 import { WorkerAdapter } from '../workers/worker-adapter';
+import { sdkconsole as console } from 'sdkconsole';
 
 export class AttachmentsStreamingPool<ConnectorState> {
   private adapter: WorkerAdapter<ConnectorState>;
