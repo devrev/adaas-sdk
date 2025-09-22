@@ -24,7 +24,7 @@ import {
   DEFAULT_LAMBDA_TIMEOUT,
   HARD_TIMEOUT_MULTIPLIER,
 } from '../common/constants';
-import { sdkconsole as console } from '../sdkconsole';
+import { SdkConsole as console } from '../sdkconsole';
 
 function getWorkerPath({
   event,
