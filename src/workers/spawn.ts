@@ -25,6 +25,7 @@ import {
   HARD_TIMEOUT_MULTIPLIER,
   MEMORY_LOG_INTERVAL,
 } from '../common/constants';
+import { sdkconsole as console } from 'sdkconsole';
 
 function getWorkerPath({
   event,

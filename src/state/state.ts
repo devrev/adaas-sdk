@@ -15,6 +15,7 @@ import {
   SdkState,
   StateInterface,
 } from './state.interfaces';
+import { sdkconsole as console } from 'sdkconsole';
 
 export async function createAdapterState<ConnectorState>({
   event,

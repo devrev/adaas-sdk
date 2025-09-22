@@ -5,6 +5,7 @@ import {
   ExternalSystemAttachmentStreamingResponse,
 } from '../../types/extraction';
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../../common/constants';
+import { sdkconsole as console } from 'sdkconsole';
 
 const getAttachmentStream = async ({
   item,

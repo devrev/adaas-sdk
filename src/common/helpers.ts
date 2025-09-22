@@ -18,6 +18,10 @@ import {
   MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
   MAX_DEVREV_FILENAME_LENGTH,
 } from './constants';
+import { readFileSync } from 'fs';
+import * as path from 'path';
+import { MAX_DEVREV_FILENAME_EXTENSION_LENGTH, MAX_DEVREV_FILENAME_LENGTH } from './constants';
+import { sdkconsole as console } from 'sdkconsole';
 
 export function getTimeoutErrorEventType(eventType: EventType): {
   eventType: ExtractorEventType | LoaderEventType;
