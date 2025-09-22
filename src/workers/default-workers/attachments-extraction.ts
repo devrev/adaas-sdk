@@ -10,7 +10,7 @@ import {
 } from '../../index';
 import { axiosClient } from '../../http/axios-client-internal';
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../../common/constants';
-import { sdkconsole as console } from 'sdkconsole';
+import { SdkConsole as console } from 'sdkconsole';
 
 const getAttachmentStream = async ({
   item,

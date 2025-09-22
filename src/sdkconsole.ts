@@ -1,5 +1,4 @@
-
-export class sdkconsole {
+export class SdkConsole {
     static warn(...args: any[]) {
         console.warn("SDK: ", args);
     }
