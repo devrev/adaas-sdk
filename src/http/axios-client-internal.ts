@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
-import { sdkconsole as console } from '../sdkconsole';
+import { SdkConsole as console } from '../sdkconsole';
 
 const axiosClient = axios.create({
   timeout: 30 * 1000,
