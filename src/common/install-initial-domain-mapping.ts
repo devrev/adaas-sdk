@@ -4,7 +4,7 @@ import { AirdropEvent } from '../types/extraction';
 import { InitialDomainMapping } from '../types/common';
 import { serializeError } from '../logger/logger';
 
-import { sdkconsole as console } from 'sdkconsole';
+import { sdkconsole as console } from '../sdkconsole';
 
 export async function installInitialDomainMapping(
   event: AirdropEvent,
