@@ -13,7 +13,7 @@ import {
   NormalizedAttachment,
 } from './repo.interfaces';
 import { WorkerAdapterOptions } from '../types/workers';
-import { sdkconsole as console } from 'sdkconsole';
+import { sdkconsole as console } from '../sdkconsole';
 
 export class Repo {
   readonly itemType: string;
