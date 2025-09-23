@@ -1,4 +1,3 @@
-import MockAdapter from 'axios-mock-adapter';
 import { State, createAdapterState } from './state';
 import { EventType } from '../types/extraction';
 import { createEvent } from '../tests/test-helpers';

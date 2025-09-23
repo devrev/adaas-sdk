@@ -1,7 +1,7 @@
 import {
   NormalizedAttachment,
   ExternalSystemAttachmentStreamingFunction,
-  ProcessAttachmentReturnType
+  ProcessAttachmentReturnType,
 } from '../types';
 import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 import { WorkerAdapter } from '../workers/worker-adapter';
@@ -110,7 +110,6 @@ export class AttachmentsStreamingPool<ConnectorState> {
           this.adapter.state.toDevRev?.attachmentsMetadata.lastProcessedAttachmentsIdsList.push(
             attachment.id
           );
-          console.log(`Successfully processed attachment: ${attachment.id}`);
         }
       } catch (error) {
         console.warn(
