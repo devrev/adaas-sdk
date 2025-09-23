@@ -16,6 +16,7 @@ import {
 } from '@microsoft/api-extractor-model';
 
 import * as fs from 'fs';
+import { execSync } from 'node:child_process';
 import * as path from 'path';
 
 export const newApiMdPath = path.join(__dirname, 'temp', 'ts-adaas.md');
@@ -25,6 +26,18 @@ export const currentApiJsonPath = path.join(__dirname, 'latest.json');
 
 // Generate API report before all tests run
 export function generateApiReport(): void {
+  // Before running the api extractor, make sure that the code compiles using `tsc` command
+  const tscCommand = 'npm run build';
+  try {
+    execSync(tscCommand) as any;
+  } catch (error: any) {
+    // Jest has a nice feature: if any of the setup scripts throw an error, the test run will fail
+    // This Error is rethrown to get more information from the error.
+    throw new Error(
+      `Failed to compile code using tsc command:\n${error.stdout.toString()}`
+    );
+  }
+
   const apiExtractorJsonPath: string = path.join(
     __dirname,
     'api-extractor.json'
