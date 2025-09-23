@@ -18,22 +18,46 @@ export interface UpdateSyncMapperRecordParams {
   external_ids: {
     add: string[];
   };
-  /** TODO: Document secondary_ids usage */
+  /**
+   * Optional map that labels values in `external_ids` with their usage context.
+   * Use for example when an external system requires different identifiers for different API calls
+   * (for example, a UUID for one endpoint and a login username for another).
+   *
+   * Example:
+   *   external_ids: ["2a1c...-uuid", "john_doe"]
+   *   secondary_ids: { "username": "john_doe" }
+   *
+   * Note: Values in `secondary_ids` are not indexed. If you need to look up by a
+   * secondary value (e.g., username), you must also include that value in `external_ids`.
+   */
   secondary_ids?: Record<string, string>;
   /** DevRev entity IDs to add */
   targets: {
     add: DonV2[];
   };
   status: SyncMapperRecordStatus;
-  /** TODO: Document input_files usage */
+  /**
+   * Optionally populated with the file name of the input file that contains the
+   * object data. Can be populated on create and on update of the object to help
+   * in finding the object later if some debugging is needed.
+   */
   input_files?: {
     add: string[];
   };
-  /** TODO: Document external_versions usage */
+  /**
+   * Records external-system changes to prevent update loops.
+   * When you create/update the object in the external system during loading,
+   * add that object's modified_date here. Later, when the object is extracted
+   * and the DevRev Loader evaluates whether to apply it, if the modified_date
+   * is present in this list the update is skipped (because the change
+   * originated in DevRev).
+   */
   external_versions?: {
     add: SyncMapperRecordExternalVersion[];
   };
-  /** TODO: Document extra_data usage and format */
+  /**
+   * Free-form data storage for your use. Store any additional information here.
+   */
   extra_data?: string;
 }
 
@@ -42,18 +66,41 @@ export interface UpdateSyncMapperRecordParams {
  */
 export interface SyncMapperRecord {
   id: DonV2;
-  /** Array of external system IDs */
+  /** Array of external system IDs that map to the same DevRev object */
   external_ids: string[];
-  /** TODO: Document secondary_ids usage */
+  /**
+   * Optional map that labels values in `external_ids` with their usage context.
+   * Use when an external system requires different identifiers for different API calls
+   * (for example, a UUID for one endpoint and a login username for another).
+   *
+   * Example:
+   *   external_ids: ["2a1c...-uuid", "john_doe"]
+   *   secondary_ids: { "username": "john_doe" }
+   *
+   * Note: Values in `secondary_ids` are not indexed. If you need to look up by a
+   * secondary value (e.g., username), you must also include that value in `external_ids`.
+   */
   secondary_ids?: Record<string, string>;
   /** Array of DevRev entity IDs this mapping points to */
   targets: DonV2[];
   status: SyncMapperRecordStatus;
-  /** TODO: Document input_files usage */
+  /**
+   * Optional file name where the object data was found.
+   * Useful for debugging - helps locate the source of object data later.
+   */
   input_files?: string[];
-  /** TODO: Document external_versions usage */
+  /**
+   * Records external-system changes to prevent update loops.
+   * When the Loader writes to the external system, store the object's
+   * modified_date here. During the next sync back to DevRev, if the extracted
+   * object's modified_date exists in this list the update is skipped (avoids
+   * re-applying a DevRev-originated change).
+   */
   external_versions?: SyncMapperRecordExternalVersion[];
-  /** TODO: Document extra_data usage and format */
+  /**
+   * Free-form data storage for your use. Store any additional information here.
+   * Completely opaque to the platform - use however you need.
+   */
   extra_data?: string;
 }
 
@@ -82,16 +129,38 @@ export interface MappersCreateParams {
   sync_unit: DonV2;
   /** Array of external system identifiers */
   external_ids: string[];
-  /** TODO: Document secondary_ids usage */
+  /**
+   * Optional map that labels values in `external_ids` with their usage context.
+   * Use when an external system requires different identifiers for different API calls
+   * (for example, a UUID for one endpoint and a login username for another).
+   *
+   * Example:
+   *   external_ids: ["2a1c...-uuid", "john_doe"]
+   *   secondary_ids: { "username": "john_doe" }
+   *
+   * Note: Values in `secondary_ids` are not indexed. If you need to look up by a
+   * secondary value (e.g., username), you must also include that value in `external_ids`.
+   */
   secondary_ids?: Record<string, string>;
   /** Array of DevRev entity IDs this mapping points to */
   targets: DonV2[];
   status: SyncMapperRecordStatus;
-  /** TODO: Document input_files usage */
+  /**
+   * Input file names where the object was encountered.
+   * Used for observability and tracking.
+   */
   input_files?: string[];
-  /** TODO: Document external_versions usage */
+  /**
+   * External version markers used to avoid update loops.
+   * After creating or updating the object in the external system, add its
+   * modified_date here. On subsequent extraction, the Loader skips applying the
+   * update if the modified_date is present (change originated in DevRev).
+   */
   external_versions?: SyncMapperRecordExternalVersion[];
-  /** TODO: Document extra_data usage and format */
+  /**
+   * Opaque data for storing additional client-specific information.
+   * Fully managed by snapin authors.
+   */
   extra_data?: string;
 }
 
@@ -114,22 +183,44 @@ export interface MappersUpdateParams {
   external_ids: {
     add: string[];
   };
-  /** TODO: Document secondary_ids usage */
+  /**
+   * Optional map that labels values in `external_ids` with their usage context.
+   * Use when an external system requires different identifiers for different API calls
+   * (for example, a UUID for one endpoint and a login username for another).
+   *
+   * Example:
+   *   external_ids: ["2a1c...-uuid", "john_doe"]
+   *   secondary_ids: { "username": "john_doe" }
+   *
+   * Note: Values in `secondary_ids` are not indexed. If you need to look up by a
+   * secondary value (e.g., username), you must also include that value in `external_ids`.
+   */
   secondary_ids?: Record<string, string>;
   /** DevRev entity IDs to add to the existing mapping */
   targets: {
     add: DonV2[];
   };
   status: SyncMapperRecordStatus;
-  /** TODO: Document input_files usage */
+  /**
+   * Input file names where the object was encountered.
+   * Used for observability and tracking.
+   */
   input_files?: {
     add: string[];
   };
-  /** TODO: Document external_versions usage */
+  /**
+   * External version markers used to avoid update loops.
+   * After creating or updating the object in the external system, add its
+   * modified_date here. On subsequent extraction, the Loader skips applying the
+   * update if the modified_date is present (change originated in DevRev).
+   */
   external_versions?: {
     add: SyncMapperRecordExternalVersion[];
   };
-  /** TODO: Document extra_data usage and format */
+  /**
+   * Opaque data for storing additional client-specific information.
+   * Fully managed by snapin authors.
+   */
   extra_data?: string;
 }
 
@@ -144,20 +235,25 @@ export interface MappersUpdateResponse {
  * Status of a sync mapper record indicating its operational state.
  */
 export enum SyncMapperRecordStatus {
-  /** The mapping is active and operational */
+  /** The mapping is active and operational (default) */
   OPERATIONAL = 'operational',
-  /** TODO: Document when FILTERED status is used */
+  /** The mapping was filtered out by user filter settings */
   FILTERED = 'filtered',
-  /** TODO: Document when IGNORED status is used */
+  /**
+   * The external object should be ignored in sync operations.
+   * Use to prevent objects from being created or updated in DevRev.
+   */
   IGNORED = 'ignored',
 }
 
 /**
- * TODO: Document SyncMapperRecordExternalVersion - appears to track external system version information
+ * External version tracking to prevent update loops.
+ * Used to identify changes that originated from your system.
  */
 export interface SyncMapperRecordExternalVersion {
-  /** TODO: Document recipe_version meaning */
+  /** Sync recipe version at the time the external change was written */
   recipe_version: number;
+  /** External system modified timestamp (ISO 8601 string) used for loop detection */
   modified_date: string;
 }
 
@@ -169,6 +265,7 @@ export interface MappersGetByExternalIdParams {
   sync_unit: DonV2;
   /** The identifier from the external system */
   external_id: string;
+  /** The type of DevRev entity to look for */
   target_type: SyncMapperRecordTargetType;
 }
 
