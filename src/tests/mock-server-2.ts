@@ -10,10 +10,48 @@ export class MockServer {
   private server: Server | null = null;
 
   constructor() {
+    // GET methods
     this.app.get(`${this.workerDataUrl}.get`, (_req, res) => {
-      const stringifiedState = JSON.stringify({ test: 'test' });
+      const stringifiedState = JSON.stringify({ test_key: 'test_value' });
       res.status(200).json({
         state: stringifiedState,
+      });
+    });
+
+    this.app.get('/internal/snap-ins.get', (_req, res) => {
+      res.status(200).json({
+        snap_in: {
+          imports: [
+            {
+              name: 'test-imports-slug',
+            },
+          ],
+          snap_in_version: {
+            slug: 'test-snap-in-slug',
+          },
+        },
+      });
+    });
+
+    // POST methods
+    this.app.post(
+      '/internal/airdrop.recipe.initial-domain-mappings.install',
+      (_req, res) => {
+        res.status(200).json({
+          success: true,
+        });
+      }
+    );
+
+    this.app.post(`${this.workerDataUrl}.update`, (_req, res) => {
+      res.status(200).json({
+        success: true,
+      });
+    });
+
+    this.app.post(`${this.callbackUrl}`, (_req, res) => {
+      res.status(200).json({
+        success: true,
       });
     });
   }
