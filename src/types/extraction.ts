@@ -211,6 +211,10 @@ export interface ConnectionData {
  */
 export interface EventData {
   external_sync_units?: ExternalSyncUnit[];
+  /**
+   * @deprecated This field is deprecated and should not be used. Progress is
+   * now calculated on the backend.
+   */
   progress?: number;
   error?: ErrorRecord;
   delay?: number;
