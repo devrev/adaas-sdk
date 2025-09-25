@@ -5,7 +5,6 @@ import {
   normalizeIssue,
   normalizeUser,
 } from '../dummy-extractor/data-normalization';
-import { SdkConsole as console } from '../../sdkconsole';
  
 // Dummy data that originally would be fetched from an external source
 const issues = [
