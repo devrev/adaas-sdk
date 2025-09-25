@@ -14,7 +14,6 @@
 ## Checklist
 
 - [ ] Tests added/updated and ran with `npm run test` OR no tests needed.
-- [ ] Add this once we have backwards compatibility tests prepared:
 - [ ] Ran backwards compatibility tests with `npm run test:backwards-compatibility`.
 - [ ] Tested airdrop-template linked to this PR.
 - [ ] Documentation updated and provided a link to PR / new docs OR `no-docs` written:
