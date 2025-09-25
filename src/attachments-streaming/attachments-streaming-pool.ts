@@ -94,9 +94,6 @@ export class AttachmentsStreamingPool<ConnectorState> {
           attachment.id
         )
       ) {
-        console.log(
-          `Attachment with ID ${attachment.id} has already been processed. Skipping.`
-        );
         continue; // Skip if the attachment ID is already processed
       }
 
