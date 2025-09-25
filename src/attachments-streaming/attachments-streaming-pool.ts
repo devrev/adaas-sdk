@@ -1,7 +1,7 @@
 import {
   NormalizedAttachment,
   ExternalSystemAttachmentStreamingFunction,
-  ProcessAttachmentReturnType
+  ProcessAttachmentReturnType,
 } from '../types';
 import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 import { WorkerAdapter } from '../workers/worker-adapter';
@@ -68,9 +68,19 @@ export class AttachmentsStreamingPool<ConnectorState> {
   async startPoolStreaming() {
     // Process attachments until the attachments array is empty
     while (this.attachments.length > 0) {
+      // If delay is set, stop streaming
       if (this.delay) {
-        break; // Exit if we have a delay
+        break;
       }
+
+      // If timeout is set, stop streaming
+      if (this.adapter.isTimeout) {
+        console.log(
+          'Timeout deteceted while streaming attachments. Stopping streaming.'
+        );
+        break;
+      }
+
       // Check if we can process next attachment
       const attachment = this.attachments.shift();
 
@@ -110,7 +120,6 @@ export class AttachmentsStreamingPool<ConnectorState> {
           this.adapter.state.toDevRev?.attachmentsMetadata.lastProcessedAttachmentsIdsList.push(
             attachment.id
           );
-          console.log(`Successfully processed attachment: ${attachment.id}`);
         }
       } catch (error) {
         console.warn(
