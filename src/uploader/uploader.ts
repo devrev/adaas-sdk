@@ -17,7 +17,6 @@ import {
 } from './uploader.interfaces';
 import { serializeError } from '../logger/logger';
 import { AxiosResponse } from 'axios';
-import { SdkConsole as console } from '../sdkconsole';
 
 export class Uploader {
   private event: AirdropEvent;
