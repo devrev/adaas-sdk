@@ -33,8 +33,16 @@ export function processTask<ConnectorState>({
 
         parentPort.on(WorkerEvent.WorkerMessage, async (message) => {
           if (message.subject === WorkerMessageSubject.WorkerMessageExit) {
+            console.log(
+              'Worker received message to gracefully exit. Setting isTimeout flag and executing onTimeout function.'
+            );
+
             adapter.handleTimeout();
             await onTimeout({ adapter });
+
+            console.log(
+              'Finished executing onTimeout function. Exiting worker.'
+            );
             process.exit(0);
           }
         });

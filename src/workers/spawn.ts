@@ -195,7 +195,7 @@ export class Spawn {
 
     // If hard timeout is reached, that means the worker did not exit in time. Terminate the worker.
     this.hardTimeoutTimer = setTimeout(async () => {
-      this.logger.log(
+      this.logger.error(
         'HARD TIMEOUT: Worker did not exit in time. Terminating the worker.'
       );
       if (worker) {

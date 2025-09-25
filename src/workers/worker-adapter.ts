@@ -205,6 +205,10 @@ export class WorkerAdapter<ConnectorState> {
 
     // We want to upload all the repos before emitting the event, except for the external sync units done event
     if (newEventType !== ExtractorEventType.ExtractionExternalSyncUnitsDone) {
+      console.log(
+        `Uploading all repos before emitting event with event type: ${newEventType}.`
+      );
+
       try {
         await this.uploadAllRepos();
       } catch (error) {
@@ -220,6 +224,7 @@ export class WorkerAdapter<ConnectorState> {
       console.log(
         `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${this.state.lastSyncStarted}).`
       );
+
       this.state.lastSuccessfulSyncStarted = this.state.lastSyncStarted;
       this.state.lastSyncStarted = '';
     }
@@ -703,6 +708,13 @@ export class WorkerAdapter<ConnectorState> {
       if (!preparedArtifact) {
         console.warn(
           `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment.`
+        );
+        return;
+      }
+
+      if (this.isTimeout) {
+        console.log(
+          'Timeout detected while processing attachment. Stopping streaming.'
         );
         return;
       }
