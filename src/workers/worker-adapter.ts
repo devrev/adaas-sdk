@@ -147,8 +147,6 @@ export class WorkerAdapter<ConnectorState> {
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
-          this.artifacts.push(artifact);
-
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AIRDROP_DEFAULT_ITEM_TYPES.ATTACHMENTS) {
             this.state.toDevRev?.attachmentsMetadata.artifactIds.push(
@@ -279,6 +277,7 @@ export class WorkerAdapter<ConnectorState> {
   async uploadAllRepos(): Promise<void> {
     for (const repo of this.repos) {
       const error = await repo.upload();
+      this.artifacts.push(...repo.uploadedArtifacts);
       if (error) {
         throw error;
       }
