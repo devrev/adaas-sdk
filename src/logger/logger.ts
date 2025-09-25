@@ -12,10 +12,12 @@ import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import { AxiosError, RawAxiosResponseHeaders, isAxiosError } from 'axios';
 import { getCircularReplacer } from '../common/helpers';
 import { EventContext } from '../types/extraction';
+import { INTERNAL_CHANNEL, verificationToken } from './private_logger';
 
 export class Logger extends Console {
   private options?: WorkerAdapterOptions;
   private tags: EventContext & { dev_oid: string };
+  private isVerifiedChannel: boolean = false; // false = unverified (default), true = verified
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
@@ -26,6 +28,33 @@ export class Logger extends Console {
     };
   }
 
+  // Internal method to create a verified logger
+  private [INTERNAL_CHANNEL](token: string): Logger {
+    if (token === verificationToken) {
+      const verifiedLogger = Object.create(this);
+      verifiedLogger.isVerifiedChannel = true;
+      // Ensure the verified logger retains the internal channel method
+      verifiedLogger[INTERNAL_CHANNEL] = this[INTERNAL_CHANNEL].bind(this);
+      // Override the logFn method to use the verified logger's context
+      verifiedLogger.logFn = this.logFn.bind(verifiedLogger);
+      // Override the logging methods to use the custom logFn
+      verifiedLogger.log = (...args: unknown[]): void => {
+        verifiedLogger.logFn(args, LogLevel.INFO);
+      };
+      verifiedLogger.info = (...args: unknown[]): void => {
+        verifiedLogger.logFn(args, LogLevel.INFO);
+      };
+      verifiedLogger.warn = (...args: unknown[]): void => {
+        verifiedLogger.logFn(args, LogLevel.WARN);
+      };
+      verifiedLogger.error = (...args: unknown[]): void => {
+        verifiedLogger.logFn(args, LogLevel.ERROR);
+      };
+      return verifiedLogger;
+    }
+    throw new Error('Unauthorized access to internal channel');
+  }
+  
   private valueToString(value: unknown): string {
     if (typeof value === 'string') {
       return value;
@@ -39,20 +68,25 @@ export class Logger extends Console {
   }
 
   logFn(args: unknown[], level: LogLevel): void {
+    // Always add prefix based on verification status
+    // false = unverified ([USER] prefix), true = verified ([SDK] prefix)
+    const prefix = this.isVerifiedChannel ? '[SDK]' : '[USER]';
+    const processedArgs = [prefix, ...args];
+
     if (isMainThread) {
       if (this.options?.isLocalDevelopment) {
-        console[level](...args);
+        console[level](...processedArgs);
       } else {
         let message: string;
-        if (args.length === 1 && typeof args[0] === 'string') {
+        if (processedArgs.length === 1 && typeof processedArgs[0] === 'string') {
           // Single string argument - use directly
-          message = args[0];
-        } else if (args.length === 1) {
+          message = processedArgs[0];
+        } else if (processedArgs.length === 1) {
           // Single non-string argument - convert to string properly
-          message = this.valueToString(args[0]);
+          message = this.valueToString(processedArgs[0]);
         } else {
           // Multiple arguments - create a readable format
-          message = args.map((arg) => this.valueToString(arg)).join(' ');
+          message = processedArgs.map((arg) => this.valueToString(arg)).join(' ');
         }
 
         const logObject = {
@@ -66,7 +100,7 @@ export class Logger extends Console {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
         payload: {
-          args: args.map((arg) => this.valueToString(arg)),
+          args: processedArgs.map((arg) => this.valueToString(arg)),
           level,
         },
       });
