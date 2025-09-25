@@ -1,7 +1,9 @@
 import express, { Request, Response } from 'express';
 import type { Server } from 'http';
+import * as zlib from 'zlib';
 
 import { extractionSdkState } from '../state/state.interfaces';
+import { NormalizedAttachment } from 'types';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
@@ -137,6 +139,65 @@ export class MockServer {
       })
     );
 
+    this.app.get(
+      '/internal/airdrop.artifacts.download-url',
+      this.handleRequest(
+        'GET',
+        '/internal/airdrop.artifacts.download-url',
+        (_req, res) => {
+          const artifactId = _req.query.artifact_id;
+
+          res.status(200).json({
+            download_url: `${this.baseUrl}/download/${artifactId}`,
+          });
+        }
+      )
+    );
+
+    this.app.get(
+      '/download/:artifactId',
+      this.handleRequest('GET', '/download/:artifactId', (req, res) => {
+        // generate array of 100 attachments
+        const attachments: NormalizedAttachment[] = Array.from(
+          { length: 1 },
+          (_, index) => ({
+            id: `test-attachment-id-${index + 1}`,
+            url: `https://picsum.photos/1000/1000`,
+            file_name: `test-file-name-${index + 1}`,
+            parent_id: `test-parent-id-${index + 1}`,
+            author_id: `test-author-id-${index + 1}`,
+          })
+        );
+
+        const jsonlString = attachments
+          .map((obj) => JSON.stringify(obj))
+          .join('\n');
+
+        const gzippedData = zlib.gzipSync(jsonlString);
+
+        res.set({
+          'Content-Type': 'application/x-jsonlines',
+          'Content-Encoding': 'gzip',
+          'Content-Length': gzippedData.length.toString(),
+        });
+
+        res.status(200).send(gzippedData);
+      })
+    );
+
+    this.app.get(
+      '/internal/airdrop.artifacts.upload-url',
+      this.handleRequest(
+        'GET',
+        '/internal/airdrop.artifacts.upload-url',
+        (_req, res) => {
+          res.status(200).json({
+            upload_url: `${this.baseUrl}/upload`,
+          });
+        }
+      )
+    );
+
     // POST methods
     this.app.post(
       '/internal/airdrop.recipe.initial-domain-mappings.install',
@@ -167,6 +228,28 @@ export class MockServer {
     this.app.post(
       `${this.callbackUrl}`,
       this.handleRequest('POST', `${this.callbackUrl}`, (_req, res) => {
+        res.status(200).json({
+          success: true,
+        });
+      })
+    );
+
+    this.app.post(
+      '/internal/airdrop.artifacts.confirm-upload',
+      this.handleRequest(
+        'POST',
+        '/internal/airdrop.artifacts.confirm-upload',
+        (_req, res) => {
+          res.status(200).json({
+            success: true,
+          });
+        }
+      )
+    );
+
+    this.app.post(
+      `/upload`,
+      this.handleRequest('POST', '/upload', (_req, res) => {
         res.status(200).json({
           success: true,
         });

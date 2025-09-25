@@ -289,8 +289,7 @@ export class Uploader {
     try {
       const response = await axiosClient.get(artifactUrl, {
         responseType: 'arraybuffer',
-        // TODO: Maybe we will need this
-        // decompress: false,
+        decompress: false,
       });
 
       return response.data;

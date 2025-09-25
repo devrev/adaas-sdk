@@ -205,6 +205,10 @@ export class WorkerAdapter<ConnectorState> {
 
     // We want to upload all the repos before emitting the event, except for the external sync units done event
     if (newEventType !== ExtractorEventType.ExtractionExternalSyncUnitsDone) {
+      console.log(
+        `Uploading all repos before emitting event with event type: ${newEventType}.`
+      );
+
       try {
         await this.uploadAllRepos();
       } catch (error) {

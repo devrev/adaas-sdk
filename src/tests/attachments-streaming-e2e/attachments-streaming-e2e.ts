@@ -47,6 +47,7 @@ processTask({
     try {
       const response = await adapter.streamAttachments({
         stream: getFileStream,
+        batchSize: 1,
       });
 
       if (response?.delay) {
