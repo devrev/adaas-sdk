@@ -13,6 +13,9 @@ export class AttachmentsStreamingPool<ConnectorState> {
   private delay: number | undefined;
   private stream: ExternalSystemAttachmentStreamingFunction;
 
+  private totalProcessedCount: number = 0;
+  private readonly PROGRESS_REPORT_INTERVAL = 50;
+
   constructor({
     adapter,
     attachments,
@@ -24,6 +27,13 @@ export class AttachmentsStreamingPool<ConnectorState> {
     this.batchSize = batchSize;
     this.delay = undefined;
     this.stream = stream;
+  }
+
+  private updateProgress() {
+    this.totalProcessedCount++;
+    if (this.totalProcessedCount % this.PROGRESS_REPORT_INTERVAL === 0) {
+      console.info(`Processed ${this.totalProcessedCount} attachments so far.`);
+    }
   }
 
   async streamAll(): Promise<ProcessAttachmentReturnType> {
@@ -76,7 +86,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
       // If timeout is set, stop streaming
       if (this.adapter.isTimeout) {
         console.log(
-          'Timeout deteceted while streaming attachments. Stopping streaming.'
+          'Timeout detected while streaming attachments. Stopping streaming.'
         );
         break;
       }
@@ -94,6 +104,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
           attachment.id
         )
       ) {
+        this.updateProgress();
         continue; // Skip if the attachment ID is already processed
       }
 
@@ -118,10 +129,14 @@ export class AttachmentsStreamingPool<ConnectorState> {
             attachment.id
           );
         }
+
+        this.updateProgress();
       } catch (error) {
         console.warn(
           `Skipping attachment with ID ${attachment.id} due to error: ${error}`
         );
+
+        this.updateProgress();
       }
     }
   }
