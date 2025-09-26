@@ -713,9 +713,6 @@ export class WorkerAdapter<ConnectorState> {
       }
 
       if (this.isTimeout) {
-        console.log(
-          'Timeout detected while processing attachment. Stopping streaming.'
-        );
         return;
       }
 
