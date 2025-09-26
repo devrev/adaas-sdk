@@ -4,7 +4,7 @@ import { AirdropEvent, EventType } from '../../types';
 import run from './extraction';
 import { extractionSdkState } from '../../state/state.interfaces';
 
-jest.setTimeout(15000);
+jest.setTimeout(30000);
 
 describe('Attachments streaming E2E', () => {
   let event: AirdropEvent;

@@ -157,12 +157,12 @@ export class MockServer {
     this.app.get(
       '/download/:artifactId',
       this.handleRequest('GET', '/download/:artifactId', (req, res) => {
-        // generate array of 100 attachments
+        // generate array of 2000 large attachments
         const attachments: NormalizedAttachment[] = Array.from(
-          { length: 1 },
+          { length: 2000 },
           (_, index) => ({
             id: `test-attachment-id-${index + 1}`,
-            url: `https://picsum.photos/1000/1000`,
+            url: 'https://www.examplefile.com/document/pdf/200-mb-pdf',
             file_name: `test-file-name-${index + 1}`,
             parent_id: `test-parent-id-${index + 1}`,
             author_id: `test-author-id-${index + 1}`,

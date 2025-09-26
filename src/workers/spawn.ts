@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs';
+import * as os from 'node:os';
 
 import {
   AirdropEvent,
@@ -166,6 +167,7 @@ export class Spawn {
   private lambdaTimeout: number;
   private softTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
   private hardTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
+  private memoryLogTimer: ReturnType<typeof setInterval> | undefined;
   private logger: Logger;
   private resolve: (value: void | PromiseLike<void>) => void;
 
@@ -177,6 +179,9 @@ export class Spawn {
       ? Math.min(options.timeout, this.defaultLambdaTimeout)
       : this.defaultLambdaTimeout;
     this.resolve = resolve;
+
+    // Start memory usage logging every 10 seconds
+    this.startMemoryLogging();
 
     // If soft timeout is reached, send a message to the worker to gracefully exit.
     this.softTimeoutTimer = setTimeout(async () => {
@@ -230,12 +235,62 @@ export class Spawn {
     });
   }
 
+  private startMemoryLogging(): void {
+    this.logMemoryUsage();
+    this.memoryLogTimer = setInterval(() => {
+      this.logMemoryUsage();
+    }, 5000);
+  }
+
+  private logMemoryUsage(): void {
+    const memoryUsage = process.memoryUsage();
+    const totalHeapSize = memoryUsage.heapTotal;
+    const usedHeapSize = memoryUsage.heapUsed;
+    const externalMemory = memoryUsage.external;
+    const rss = memoryUsage.rss;
+
+    // System memory information
+    const totalSystemMemory = os.totalmem();
+    const freeSystemMemory = os.freemem();
+    const usedSystemMemory = totalSystemMemory - freeSystemMemory;
+
+    // Calculate percentages
+    const heapUsagePercentage = ((usedHeapSize / totalHeapSize) * 100).toFixed(
+      2
+    );
+    const systemMemoryUsagePercentage = (
+      (usedSystemMemory / totalSystemMemory) *
+      100
+    ).toFixed(2);
+    const rssSystemPercentage = ((rss / totalSystemMemory) * 100).toFixed(2);
+
+    // Convert to MB for readability
+    const totalHeapMB = (totalHeapSize / 1024 / 1024).toFixed(2);
+    const usedHeapMB = (usedHeapSize / 1024 / 1024).toFixed(2);
+    const externalMB = (externalMemory / 1024 / 1024).toFixed(2);
+    const rssMB = (rss / 1024 / 1024).toFixed(2);
+    const totalSystemMB = (totalSystemMemory / 1024 / 1024).toFixed(2);
+    const freeSystemMB = (freeSystemMemory / 1024 / 1024).toFixed(2);
+    const usedSystemMB = (usedSystemMemory / 1024 / 1024).toFixed(2);
+
+    this.logger.info(
+      `Memory Usage - Process RSS: ${rssMB}MB (${rssSystemPercentage}% of system), ` +
+        `Heap: ${usedHeapMB}MB/${totalHeapMB}MB (${heapUsagePercentage}%), ` +
+        `External: ${externalMB}MB, ` +
+        `System: ${usedSystemMB}MB/${totalSystemMB}MB (${systemMemoryUsagePercentage}%), ` +
+        `Available: ${freeSystemMB}MB`
+    );
+  }
+
   private clearTimeouts(): void {
     if (this.softTimeoutTimer) {
       clearTimeout(this.softTimeoutTimer);
     }
     if (this.hardTimeoutTimer) {
       clearTimeout(this.hardTimeoutTimer);
+    }
+    if (this.memoryLogTimer) {
+      clearInterval(this.memoryLogTimer);
     }
   }
 

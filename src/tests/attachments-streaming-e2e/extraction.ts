@@ -12,7 +12,7 @@ const run = async (events: AirdropEvent[], workerPath: string) => {
       workerPath,
       initialDomainMapping,
       options: {
-        timeout: 10 * 1000, // 10 seconds
+        timeout: 25 * 1000,
         isLocalDevelopment: true,
       },
     });

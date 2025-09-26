@@ -11,7 +11,7 @@
     "start": "ts-node src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
-    "test": "jest --forceExit --coverage --runInBand --selectProjects default --",
+    "test": "node --max-old-space-size=700 node_modules/.bin/jest --forceExit --coverage --runInBand --selectProjects default --",
     "test:backwards-compatibility": "jest --forceExit --runInBand --selectProjects backwards-compatibility --"
   },
   "repository": {
