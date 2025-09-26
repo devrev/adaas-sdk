@@ -224,6 +224,7 @@ export class WorkerAdapter<ConnectorState> {
       console.log(
         `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${this.state.lastSyncStarted}).`
       );
+
       this.state.lastSuccessfulSyncStarted = this.state.lastSyncStarted;
       this.state.lastSyncStarted = '';
     }
@@ -707,6 +708,13 @@ export class WorkerAdapter<ConnectorState> {
       if (!preparedArtifact) {
         console.warn(
           `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment.`
+        );
+        return;
+      }
+
+      if (this.isTimeout) {
+        console.log(
+          'Timeout detected while processing attachment. Stopping streaming.'
         );
         return;
       }

@@ -68,9 +68,19 @@ export class AttachmentsStreamingPool<ConnectorState> {
   async startPoolStreaming() {
     // Process attachments until the attachments array is empty
     while (this.attachments.length > 0) {
+      // If delay is set, stop streaming
       if (this.delay) {
-        break; // Exit if we have a delay
+        break;
       }
+
+      // If timeout is set, stop streaming
+      if (this.adapter.isTimeout) {
+        console.log(
+          'Timeout deteceted while streaming attachments. Stopping streaming.'
+        );
+        break;
+      }
+
       // Check if we can process next attachment
       const attachment = this.attachments.shift();
 
@@ -84,9 +94,6 @@ export class AttachmentsStreamingPool<ConnectorState> {
           attachment.id
         )
       ) {
-        console.log(
-          `Attachment with ID ${attachment.id} has already been processed. Skipping.`
-        );
         continue; // Skip if the attachment ID is already processed
       }
 
