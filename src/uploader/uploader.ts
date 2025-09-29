@@ -167,6 +167,7 @@ export class Uploader {
       console.warn(
         `File size exceeds the maximum limit of ${MAX_DEVREV_ARTIFACT_SIZE} bytes.`
       );
+      this.destroyStream(fileStream);
       return;
     }
 
@@ -186,6 +187,7 @@ export class Uploader {
       return response;
     } catch (error) {
       console.error('Error while streaming artifact.', serializeError(error));
+      this.destroyStream(fileStream);
       return;
     }
   }
@@ -213,6 +215,25 @@ export class Uploader {
         'Error while confirming artifact upload.',
         serializeError(error)
       );
+    }
+  }
+
+  /**
+   * Destroys a stream to prevent resource leaks.
+   * @param {any} fileStream - The axios response stream to destroy
+   */
+  private destroyStream(fileStream: any): void {
+    try {
+      if (fileStream && fileStream.data) {
+        // For axios response streams, the data property contains the actual stream
+        if (typeof fileStream.data.destroy === 'function') {
+          fileStream.data.destroy();
+        } else if (typeof fileStream.data.close === 'function') {
+          fileStream.data.close();
+        }
+      }
+    } catch (error) {
+      console.warn('Error while destroying stream:', serializeError(error));
     }
   }
 
