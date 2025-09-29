@@ -9,14 +9,36 @@ import {
   serializeAxiosError,
 } from '../../index';
 import { axiosClient } from '../../http/axios-client-internal';
+import { MAX_DEVREV_ARTIFACT_SIZE } from '../../common/constants';
 
 const getAttachmentStream = async ({
   item,
 }: ExternalSystemAttachmentStreamingParams): Promise<ExternalSystemAttachmentStreamingResponse> => {
   const { id, url } = item;
+  let fileStreamResponse: any = null;
 
   try {
-    const fileStreamResponse = await axiosClient.get(url, {
+    // First, check file size with HEAD request to avoid downloading large files
+    const headResponse = await axiosClient.head(url, {
+      headers: {
+        'Accept-Encoding': 'identity',
+      },
+    });
+
+    const contentLength = headResponse.headers['content-length'];
+    if (contentLength && parseInt(contentLength) > MAX_DEVREV_ARTIFACT_SIZE) {
+      console.warn(
+        `Attachment ${id} size (${contentLength} bytes) exceeds maximum limit of ${MAX_DEVREV_ARTIFACT_SIZE} bytes. Skipping download.`
+      );
+      return {
+        error: {
+          message: `File size exceeds maximum limit of ${MAX_DEVREV_ARTIFACT_SIZE} bytes.`,
+        },
+      };
+    }
+
+    // If size is acceptable, proceed with streaming
+    fileStreamResponse = await axiosClient.get(url, {
       responseType: 'stream',
       headers: {
         'Accept-Encoding': 'identity',
@@ -25,6 +47,11 @@ const getAttachmentStream = async ({
 
     return { httpStream: fileStreamResponse };
   } catch (error) {
+    // If we created a stream but failed afterwards, destroy it
+    if (fileStreamResponse) {
+      destroyHttpStream(fileStreamResponse);
+    }
+
     if (axios.isAxiosError(error)) {
       console.warn(
         `Error while fetching attachment ${id} from URL.`,
@@ -41,6 +68,24 @@ const getAttachmentStream = async ({
         message: 'Error while fetching attachment ' + id + ' from URL.',
       },
     };
+  }
+};
+
+/**
+ * Destroys a stream to prevent memory leaks.
+ * @param {any} httpStream - The axios response stream to destroy
+ */
+const destroyHttpStream = (httpStream: any): void => {
+  try {
+    if (httpStream && httpStream.data) {
+      if (typeof httpStream.data.destroy === 'function') {
+        httpStream.data.destroy();
+      } else if (typeof httpStream.data.close === 'function') {
+        httpStream.data.close();
+      }
+    }
+  } catch (error) {
+    console.warn('Error while destroying HTTP stream:', error);
   }
 };
 

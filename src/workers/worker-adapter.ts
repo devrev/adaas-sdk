@@ -709,10 +709,12 @@ export class WorkerAdapter<ConnectorState> {
         console.warn(
           `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment.`
         );
+        this.destroyHttpStream(httpStream);
         return;
       }
 
       if (this.isTimeout) {
+        this.destroyHttpStream(httpStream);
         return;
       }
 
@@ -766,6 +768,24 @@ export class WorkerAdapter<ConnectorState> {
       await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
     }
     return;
+  }
+
+  /**
+   * Destroys a stream to prevent memory leaks.
+   * @param {any} httpStream - The axios response stream to destroy
+   */
+  private destroyHttpStream(httpStream: any): void {
+    try {
+      if (httpStream && httpStream.data) {
+        if (typeof httpStream.data.destroy === 'function') {
+          httpStream.data.destroy();
+        } else if (typeof httpStream.data.close === 'function') {
+          httpStream.data.close();
+        }
+      }
+    } catch (error) {
+      console.warn('Error while destroying HTTP stream:', error);
+    }
   }
 
   async loadAttachment({
