@@ -1,3 +1,8 @@
+import { createEvent, createItems } from '../tests/test-helpers';
+import { WorkerAdapter } from "./worker-adapter";
+import { State } from "../state/state";
+import { EventType } from "../types";
+
 // 1. Create a mock function for the method you want to override.
 const mockUpload = (itemType: string, objects: object[]) => {
   return {
@@ -25,75 +30,148 @@ jest.mock('../uploader/uploader', () => {
   };
 });
 
-import { createEvent, createItems } from '../tests/test-helpers';
-import { WorkerAdapter } from "./worker-adapter";
-import { State, createAdapterState } from "../state/state";
-import { EventType } from "../types";
+function checkArtifactOrder(artifacts: any[], expectedOrder: {itemType: string}[]): boolean {
+  let outerIndex = 0;
+  for(const artifact of artifacts) {
+    try {
+      // Always increase outer index. If items are out of order, the array will overflow and exception will be thrown
+      while(artifact.item_type != expectedOrder[outerIndex].itemType){
+        outerIndex++;
+      }
+    } catch (e) {
+      console.error("Error finding artifact type in repos:", e);
+      return false;
+    }
+  }
+  return true;
+}
 
 describe("Batch ordering", () => {
+  interface TestState {
+    attachments: { completed: boolean };
+  }
+  let testAdapter: WorkerAdapter<TestState>;
 
-  describe('should take batch ordering into account', () => {
-    it('should maintain artifact ordering when repo A has items below batch size and repo B has items above batch size', async () => {
-      // Create a fresh adapter instance for this test to avoid mocking conflicts
-      interface TestState {
-        attachments: { completed: boolean };
-      }
-      let mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
-      let mockAdapterState = new State<TestState>({
-        event: mockEvent,
-        initialState: { attachments: { completed: false } },
-      });
+  beforeEach(() => {
+    // Create a fresh adapter instance for this test to avoid mocking conflicts
+    let mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+    let mockAdapterState = new State<TestState>({
+      event: mockEvent,
+      initialState: { attachments: { completed: false } },
+    });
 
-      const testAdapter = new WorkerAdapter({
-        event: mockEvent,
-        adapterState: mockAdapterState,
-        options: {
-          batchSize: 50
-        }
-      });
-
-      // Track the order of artifacts added to the adapter
-      const artifactOrder: string[] = [];
-      const originalArtifacts = testAdapter.artifacts;
-
-      // Override the artifacts setter to track order
-      Object.defineProperty(testAdapter, 'artifacts', {
-        get: () => originalArtifacts,
-        set: (artifacts) => {
-          // Track the order of artifacts being added
-          artifacts.forEach((artifact: any) => {
-            artifactOrder.push(artifact.item_type);
-          });
-          originalArtifacts.push(...artifacts);
-        }
-      });
-
-      // Initialize repos
-      testAdapter.initializeRepos([
-        { itemType: 'A' },
-        { itemType: 'B' }
-      ]);
-
-      await testAdapter.getRepo('A')?.push(createItems(5));
-      await testAdapter.getRepo('B')?.push(createItems(105));
-
-      await testAdapter.uploadAllRepos();
-
-      const artifacts = testAdapter.artifacts;
-      console.log(artifacts);
-      expect(artifacts.length).toBe(4);
-
-      // Check that all 'A' artifacts come before any 'B' artifacts
-      let firstBFound = false;
-      for (const artifact of artifacts) {
-        if (artifact.item_type === 'B') {
-          firstBFound = true;
-        } else if (artifact.item_type === 'A') {
-          // If we find an 'A' artifact after we've already found a 'B' artifact,
-          // the ordering is incorrect
-          expect(firstBFound).toBe(false);
-        }
+    testAdapter = new WorkerAdapter({
+      event: mockEvent,
+      adapterState: mockAdapterState,
+      options: {
+        batchSize: 50
       }
     });
+
+    // Track the order of artifacts added to the adapter
+    const artifactOrder: string[] = [];
+    const originalArtifacts = testAdapter.artifacts;
+
+    // Override the artifacts setter to track order
+    Object.defineProperty(testAdapter, 'artifacts', {
+      get: () => originalArtifacts,
+      set: (artifacts) => {
+        // Track the order of artifacts being added
+        artifacts.forEach((artifact: any) => {
+          artifactOrder.push(artifact.item_type);
+        });
+        originalArtifacts.push(...artifacts);
+      }
+    });
+  });
+
+  it('should maintain artifact ordering when repo ItemTypeA has items below batch size and repo ItemTypeB has items above batch size', async () => {
+    const repos = [
+      { itemType: 'ItemTypeA' },
+      { itemType: 'ItemTypeB' }
+    ];
+
+    // Initialize repos
+    testAdapter.initializeRepos(repos);
+
+    await testAdapter.getRepo('ItemTypeA')?.push(createItems(5));
+    await testAdapter.getRepo('ItemTypeB')?.push(createItems(105));
+
+    await testAdapter.uploadAllRepos();
+
+    const artifacts = testAdapter.artifacts;
+    expect(artifacts.length).toBe(4);
+
+    expect(checkArtifactOrder(artifacts, repos)).toBe(true);
+  });
+
+  it('should work with more than 2 repos', async () => {
+    const repos = [
+      { itemType: 'ItemTypeA' },
+      { itemType: 'ItemTypeB' },
+      { itemType: 'ItemTypeC' },
+      { itemType: 'ItemTypeD' },
+    ]
+
+    // Initialize repos
+    testAdapter.initializeRepos(repos);
+
+    await testAdapter.getRepo('ItemTypeA')?.push(createItems(101));
+    await testAdapter.getRepo('ItemTypeB')?.push(createItems(102));
+    await testAdapter.getRepo('ItemTypeC')?.push(createItems(103));
+    await testAdapter.getRepo('ItemTypeD')?.push(createItems(104));
+
+    await testAdapter.uploadAllRepos();
+
+    const artifacts = testAdapter.artifacts;
+    expect(artifacts.length).toBe(12);
+
+    expect(checkArtifactOrder(artifacts, repos)).toBe(true);
+  });
+
+  it('should maintain order with multiple pushes and uploads', async () => {
+    const repos = [
+      { itemType: 'ItemTypeA' },
+      { itemType: 'ItemTypeB' },
+    ]
+
+    // Initialize repos
+    testAdapter.initializeRepos(repos);
+
+    await testAdapter.getRepo('ItemTypeA')?.push(createItems(101));
+    await testAdapter.getRepo('ItemTypeB')?.push(createItems(102));
+    await testAdapter.getRepo('ItemTypeA')?.push(createItems(101));
+    await testAdapter.getRepo('ItemTypeB')?.push(createItems(102));
+    await testAdapter.getRepo('ItemTypeA')?.upload();
+    await testAdapter.getRepo('ItemTypeB')?.upload();
+    await testAdapter.getRepo('ItemTypeA')?.push(createItems(101));
+    await testAdapter.getRepo('ItemTypeB')?.push(createItems(102));
+    await testAdapter.getRepo('ItemTypeA')?.push(createItems(101));
+    await testAdapter.getRepo('ItemTypeB')?.push(createItems(102));
+
+    await testAdapter.uploadAllRepos();
+
+    const artifacts = testAdapter.artifacts;
+    expect(artifacts.length).toBe(20);
+
+    expect(checkArtifactOrder(artifacts, repos)).toBe(true);
+  });
+
+  it('should not count artifacts if 0 items are pushed to the repo', async () => {
+    const repos = [
+      { itemType: 'ItemTypeA' }
+    ];
+
+    // Initialize repos
+    testAdapter.initializeRepos(repos);
+
+    await testAdapter.getRepo('ItemTypeA')?.push([]);
+
+    await testAdapter.uploadAllRepos();
+
+    const artifacts = testAdapter.artifacts;
+    expect(artifacts.length).toBe(0);
+
+    expect(checkArtifactOrder(artifacts, repos)).toBe(true);
   });
 });
