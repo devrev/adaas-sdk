@@ -184,6 +184,7 @@ export class Uploader {
         maxRedirects: 0, // Prevents buffering
         validateStatus: () => true, // Prevents errors on redirects
       });
+      this.destroyStream(fileStream);
       return response;
     } catch (error) {
       console.error('Error while streaming artifact.', serializeError(error));

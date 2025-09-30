@@ -8,7 +8,7 @@ import {
   ExtractorEventType,
 } from '../types/extraction';
 import { emit } from '../common/control-protocol';
-import { getTimeoutErrorEventType } from '../common/helpers';
+import { getTimeoutErrorEventType, getMemoryUsage } from '../common/helpers';
 import { Logger, serializeError } from '../logger/logger';
 import {
   GetWorkerPathInterface,
@@ -23,6 +23,7 @@ import { LogLevel } from '../logger/logger.interfaces';
 import {
   DEFAULT_LAMBDA_TIMEOUT,
   HARD_TIMEOUT_MULTIPLIER,
+  MEMORY_LOG_INTERVAL,
 } from '../common/constants';
 
 function getWorkerPath({
@@ -166,6 +167,7 @@ export class Spawn {
   private lambdaTimeout: number;
   private softTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
   private hardTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
+  private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
   private logger: Logger;
   private resolve: (value: void | PromiseLike<void>) => void;
 
@@ -228,6 +230,14 @@ export class Spawn {
         this.alreadyEmitted = true;
       }
     });
+
+    // Log memory usage every 10 seconds
+    this.memoryMonitoringInterval = setInterval(() => {
+      const memoryInfo = getMemoryUsage();
+      if (memoryInfo) {
+        this.logger.info(memoryInfo.formattedMessage);
+      }
+    }, MEMORY_LOG_INTERVAL);
   }
 
   private clearTimeouts(): void {
@@ -236,6 +246,9 @@ export class Spawn {
     }
     if (this.hardTimeoutTimer) {
       clearTimeout(this.hardTimeoutTimer);
+    }
+    if (this.memoryMonitoringInterval) {
+      clearInterval(this.memoryMonitoringInterval);
     }
   }
 

@@ -1,3 +1,7 @@
+import * as path from 'path';
+import { readFileSync } from 'fs';
+import * as v8 from 'v8';
+
 import {
   AirdropEvent,
   EventType,
@@ -10,9 +14,10 @@ import {
   LoaderReport,
   StatsFileObject,
 } from '../types/loading';
-import { readFileSync } from 'fs';
-import * as path from 'path';
-import { MAX_DEVREV_FILENAME_EXTENSION_LENGTH, MAX_DEVREV_FILENAME_LENGTH } from './constants';
+import {
+  MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
+  MAX_DEVREV_FILENAME_LENGTH,
+} from './constants';
 
 export function getTimeoutErrorEventType(eventType: EventType): {
   eventType: ExtractorEventType | LoaderEventType;
@@ -210,13 +215,66 @@ export function truncateFilename(filename: string): string {
   console.warn(
     `Filename length exceeds the maximum limit of ${MAX_DEVREV_FILENAME_LENGTH} characters. Truncating filename.`
   );
-  
+
   let extension = filename.slice(-MAX_DEVREV_FILENAME_EXTENSION_LENGTH);
   // Calculate how many characters are available for the name part after accounting for the extension and "..."
-  const availableNameLength = MAX_DEVREV_FILENAME_LENGTH - MAX_DEVREV_FILENAME_EXTENSION_LENGTH - 3; // -3 for "..."
+  const availableNameLength =
+    MAX_DEVREV_FILENAME_LENGTH - MAX_DEVREV_FILENAME_EXTENSION_LENGTH - 3; // -3 for "..."
 
   // Truncate the name part and add an ellipsis
   const truncatedFilename = filename.slice(0, availableNameLength);
 
   return `${truncatedFilename}...${extension}`;
+}
+
+export interface MemoryInfo {
+  rssUsedMB: string;
+  rssUsedPercent: string; // Critical for OOM detection
+  heapUsedPercent: string; // GC pressure indicator
+  externalMB: string; // C++ objects and buffers (HTTP streams, etc.)
+  arrayBuffersMB: string; // Buffer data (unclosed streams show here)
+  formattedMessage: string;
+}
+
+export function getMemoryUsage(): MemoryInfo | null {
+  try {
+    const memUsage = process.memoryUsage();
+    const heapStats = v8.getHeapStatistics();
+
+    const rssUsedMB = memUsage.rss / 1024 / 1024;
+    const heapLimitMB = heapStats.heap_size_limit / 1024 / 1024;
+
+    const effectiveMemoryLimitMB = heapLimitMB;
+
+    // Calculate heap values for consistent format
+    const heapUsedMB = heapStats.used_heap_size / 1024 / 1024;
+    const heapTotalMB = heapStats.heap_size_limit / 1024 / 1024;
+
+    // Calculate external and buffer values (critical for detecting stream leaks)
+    const externalMB = memUsage.external / 1024 / 1024;
+    const arrayBuffersMB = memUsage.arrayBuffers / 1024 / 1024;
+
+    // Critical percentages for OOM detection
+    const rssUsedPercent =
+      ((rssUsedMB / effectiveMemoryLimitMB) * 100).toFixed(2) + '%';
+    const heapUsedPercent =
+      ((heapStats.used_heap_size / heapStats.heap_size_limit) * 100).toFixed(
+        2
+      ) + '%';
+
+    // Detailed message showing RSS breakdown for leak detection
+    const formattedMessage = `Memory: RSS ${rssUsedMB.toFixed(2)}/${effectiveMemoryLimitMB.toFixed(2)}MB (${rssUsedPercent}) [Heap ${heapUsedMB.toFixed(2)}/${heapTotalMB.toFixed(2)}MB (${heapUsedPercent}) + External ${externalMB.toFixed(2)}MB + Buffers ${arrayBuffersMB.toFixed(2)}MB].`;
+
+    return {
+      rssUsedMB: rssUsedMB.toFixed(2),
+      rssUsedPercent,
+      heapUsedPercent,
+      externalMB: externalMB.toFixed(2),
+      arrayBuffersMB: arrayBuffersMB.toFixed(2),
+      formattedMessage,
+    };
+  } catch (err) {
+    console.error('Error retrieving memory usage:', (err as Error).message);
+    return null;
+  }
 }

@@ -727,6 +727,7 @@ export class WorkerAdapter<ConnectorState> {
         console.warn(
           `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment.`
         );
+        this.destroyHttpStream(httpStream);
         return;
       }
 
