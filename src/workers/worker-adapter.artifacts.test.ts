@@ -67,22 +67,6 @@ describe("Artifact ordering when artifacts overflow batch sizes in repositories"
         batchSize: 50
       }
     });
-
-    // Track the order of artifacts added to the adapter
-    const artifactOrder: string[] = [];
-    const originalArtifacts = testAdapter.artifacts;
-
-    // Override the artifacts setter to track order
-    Object.defineProperty(testAdapter, 'artifacts', {
-      get: () => originalArtifacts,
-      set: (artifacts) => {
-        // Track the order of artifacts being added
-        artifacts.forEach((artifact: any) => {
-          artifactOrder.push(artifact.item_type);
-        });
-        originalArtifacts.push(...artifacts);
-      }
-    });
   });
 
   it('should maintain artifact ordering when repo ItemTypeA has items below batch size and repo ItemTypeB has items above batch size', async () => {
