@@ -46,7 +46,7 @@ function checkArtifactOrder(artifacts: any[], expectedOrder: {itemType: string}[
   return true;
 }
 
-describe("Batch ordering", () => {
+describe("Artifact ordering when artifacts overflow batch sizes in repositories", () => {
   interface TestState {
     attachments: { completed: boolean };
   }
