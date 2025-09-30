@@ -21,6 +21,7 @@ export class Repo {
   private uploader: Uploader;
   private onUpload: (artifact: Artifact) => void;
   private options?: WorkerAdapterOptions;
+  public uploadedArtifacts: Artifact[];
 
   constructor({
     event,
@@ -35,6 +36,7 @@ export class Repo {
     this.onUpload = onUpload;
     this.uploader = new Uploader({ event, options });
     this.options = options;
+    this.uploadedArtifacts = [];
   }
 
   getItems(): (NormalizedItem | NormalizedAttachment | Item)[] {
@@ -62,6 +64,8 @@ export class Repo {
       }
 
       this.onUpload(artifact);
+      
+      this.uploadedArtifacts.push(artifact);
 
       // Clear the uploaded items from the main items array if no batch was specified
       if (!batch) {
