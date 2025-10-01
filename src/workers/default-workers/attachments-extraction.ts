@@ -1,14 +1,9 @@
 import axios from 'axios';
+import { processTask, ExtractorEventType } from '../../index';
 import {
   ExternalSystemAttachmentStreamingParams,
   ExternalSystemAttachmentStreamingResponse,
-} from 'types/extraction';
-import {
-  processTask,
-  ExtractorEventType,
-  serializeAxiosError,
-} from '../../index';
-import { axiosClient } from '../../http/axios-client-internal';
+} from '../../types/extraction';
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../../common/constants';
 
 const getAttachmentStream = async ({
@@ -18,32 +13,30 @@ const getAttachmentStream = async ({
   let fileStreamResponse: any = null;
 
   try {
-    // First, check file size with HEAD request to avoid downloading large files
-    const headResponse = await axiosClient.head(url, {
+    // Get the stream response directly
+    fileStreamResponse = await axios.get(url, {
+      responseType: 'stream',
       headers: {
         'Accept-Encoding': 'identity',
       },
     });
 
-    const contentLength = headResponse.headers['content-length'];
+    // Check content-length from the stream response headers
+    const contentLength = fileStreamResponse.headers['content-length'];
     if (contentLength && parseInt(contentLength) > MAX_DEVREV_ARTIFACT_SIZE) {
       console.warn(
         `Attachment ${id} size (${contentLength} bytes) exceeds maximum limit of ${MAX_DEVREV_ARTIFACT_SIZE} bytes. Skipping download.`
       );
+
+      // Destroy the stream since we won't use it
+      destroyHttpStream(fileStreamResponse);
+
       return {
         error: {
           message: `File size exceeds maximum limit of ${MAX_DEVREV_ARTIFACT_SIZE} bytes.`,
         },
       };
     }
-
-    // If size is acceptable, proceed with streaming
-    fileStreamResponse = await axiosClient.get(url, {
-      responseType: 'stream',
-      headers: {
-        'Accept-Encoding': 'identity',
-      },
-    });
 
     return { httpStream: fileStreamResponse };
   } catch (error) {
@@ -52,20 +45,9 @@ const getAttachmentStream = async ({
       destroyHttpStream(fileStreamResponse);
     }
 
-    if (axios.isAxiosError(error)) {
-      console.warn(
-        `Error while fetching attachment ${id} from URL.`,
-        serializeAxiosError(error)
-      );
-      console.warn('Failed attachment metadata', item);
-    } else {
-      console.warn(`Error while fetching attachment ${id} from URL.`, error);
-      console.warn('Failed attachment metadata', item);
-    }
-
     return {
       error: {
-        message: 'Error while fetching attachment ' + id + ' from URL.',
+        message: `Error while getting attachment stream for attachment with id ${id}.`,
       },
     };
   }
@@ -94,6 +76,7 @@ processTask({
     try {
       const response = await adapter.streamAttachments({
         stream: getAttachmentStream,
+        batchSize: 10,
       });
 
       if (response?.delay) {
@@ -112,8 +95,6 @@ processTask({
     }
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionAttachmentsProgress, {
-      progress: 50,
-    });
+    await adapter.emit(ExtractorEventType.ExtractionAttachmentsProgress);
   },
 });
