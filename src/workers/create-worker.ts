@@ -2,16 +2,17 @@ import { isMainThread, Worker } from 'node:worker_threads';
 
 import { WorkerData, WorkerEvent } from '../types/workers';
 import { Logger } from '../logger/logger';
+import { getInternalLogger } from '../logger/private_logger';
 
 async function createWorker<ConnectorState>(
   workerData: WorkerData<ConnectorState>
 ): Promise<Worker> {
   return new Promise<Worker>((resolve, reject) => {
     if (isMainThread) {
-      const logger = new Logger({
+      const logger = getInternalLogger(new Logger({
         event: workerData.event,
         options: workerData.options,
-      });
+      }));
       const workerFile = __dirname + '/worker.js';
 
       const worker: Worker = new Worker(workerFile, {
