@@ -104,7 +104,6 @@ export class AttachmentsStreamingPool<ConnectorState> {
           attachment.id
         )
       ) {
-        this.updateProgress();
         continue; // Skip if the attachment ID is already processed
       }
 
