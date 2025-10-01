@@ -688,7 +688,6 @@ export class WorkerAdapter<ConnectorState> {
     });
 
     if (error) {
-      console.warn('Error while streaming attachment', error);
       return { error };
     } else if (delay) {
       return { delay };
