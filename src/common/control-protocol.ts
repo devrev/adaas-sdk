@@ -9,6 +9,7 @@ import {
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
 import { LIBRARY_VERSION } from './constants';
+import { PIIAware } from '../logger/logger';
 
 export interface EmitInterface {
   event: AirdropEvent;
@@ -32,7 +33,11 @@ export const emit = async ({
     },
   };
 
-  console.info('Emitting event', newEvent);
+  console.info('Emitting event', {
+    __piiAware: true,
+    piiFields: ["event_data"],
+    ...newEvent
+  } as PIIAware);
 
   return axiosClient.post(
     event.payload.event_context.callback_url,

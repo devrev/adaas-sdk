@@ -13,11 +13,18 @@ import { AxiosError, RawAxiosResponseHeaders, isAxiosError } from 'axios';
 import { getCircularReplacer } from '../common/helpers';
 import { EventContext } from '../types/extraction';
 import { INTERNAL_CHANNEL, verificationToken } from './private_logger';
+import { createHash } from 'node:crypto';
+
+export interface PIIAware {
+  readonly __piiAware: true;
+  piiFields: string[];
+}
 
 export class Logger extends Console {
   private options?: WorkerAdapterOptions;
   private tags: EventContext & { dev_oid: string };
   private isVerifiedChannel: boolean = false; // false = unverified (default), true = verified
+  private hashOutput: boolean = true; // Set to true to hash output (for PII)
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
@@ -54,7 +61,7 @@ export class Logger extends Console {
     }
     throw new Error('Unauthorized access to internal channel');
   }
-  
+
   private valueToString(value: unknown): string {
     if (typeof value === 'string') {
       return value;
@@ -65,6 +72,22 @@ export class Logger extends Console {
       compact: false,
       depth: Infinity,
     });
+  }
+
+  private isPIIAware(value: unknown): value is PIIAware {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      '__piiAware' in value &&
+      (value as any).__piiAware === true &&
+      'piiFields' in value &&
+      (value as any).piiFields.length > 0
+    );
+  }
+
+  private hashValue(value: unknown): string {
+       return this.valueToString(value);
+    // return createHash('sha256').update(this.valueToString(value)).digest('hex');
   }
 
   logFn(args: unknown[], level: LogLevel): void {
@@ -78,6 +101,14 @@ export class Logger extends Console {
       processedArgs.unshift(prefix);
     }
 
+    if (this.hashOutput && !this.isVerifiedChannel) {
+      // Remove the prefix temporarily
+      const prefix = processedArgs.shift();
+      // Hash each argument
+      processedArgs = processedArgs.map(a => this.hashValue(a));
+      // Add the prefix back
+      processedArgs.unshift(prefix);
+    }
 
     if (isMainThread) {
       if (this.options?.isLocalDevelopment) {
@@ -177,11 +208,11 @@ export const serializeError = (error: unknown) => {
 export function serializeAxiosError(error: AxiosError) {
   const response = error.response
     ? {
-        data: error.response.data,
-        headers: error.response.headers as RawAxiosResponseHeaders,
-        status: error.response.status,
-        statusText: error.response.statusText,
-      }
+      data: error.response.data,
+      headers: error.response.headers as RawAxiosResponseHeaders,
+      status: error.response.status,
+      statusText: error.response.statusText,
+    }
     : null;
   const config = {
     method: error.config?.method,
