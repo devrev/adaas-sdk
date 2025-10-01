@@ -71,7 +71,13 @@ export class Logger extends Console {
     // Always add prefix based on verification status
     // false = unverified ([USER] prefix), true = verified ([SDK] prefix)
     const prefix = this.isVerifiedChannel ? '[SDK]' : '[USER]';
-    const processedArgs = [prefix, ...args];
+
+    // Don't prepend prefix if the string already contains the same one
+    let processedArgs: unknown[] = args;
+    if (!(typeof args[0] === 'string' && args[0].startsWith(prefix)) || typeof args[0] !== 'string') {
+      processedArgs.unshift(prefix);
+    }
+
 
     if (isMainThread) {
       if (this.options?.isLocalDevelopment) {
