@@ -2,7 +2,7 @@ import { isMainThread, Worker } from 'node:worker_threads';
 
 import { WorkerData, WorkerEvent } from '../types/workers';
 import { Logger } from '../logger/logger';
-import { getInternalLogger } from '../logger/private_logger';
+import { createUserLogger, getInternalLogger } from '../logger/private_logger';
 
 async function createWorker<ConnectorState>(
   workerData: WorkerData<ConnectorState>
@@ -13,6 +13,10 @@ async function createWorker<ConnectorState>(
         event: workerData.event,
         options: workerData.options,
       }));
+      const unverified_logger = createUserLogger(new Logger({
+        event: workerData.event,
+        options: workerData.options,
+      }));
       const workerFile = __dirname + '/worker.js';
 
       const worker: Worker = new Worker(workerFile, {
@@ -20,7 +24,7 @@ async function createWorker<ConnectorState>(
       } as WorkerOptions);
 
       worker.on(WorkerEvent.WorkerError, (error) => {
-        logger.error('Worker error', error);
+        unverified_logger.error('Worker error', error);
         reject();
       });
       worker.on(WorkerEvent.WorkerOnline, () => {
