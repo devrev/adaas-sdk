@@ -25,6 +25,7 @@ import {
   HARD_TIMEOUT_MULTIPLIER,
   MEMORY_LOG_INTERVAL,
 } from '../common/constants';
+import { getInternalLogger } from '../logger/private_logger';
 
 function getWorkerPath({
   event,
@@ -94,7 +95,7 @@ export async function spawn<ConnectorState>({
   initialDomainMapping,
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
-  const logger = new Logger({ event, options });
+  const logger = getInternalLogger(new Logger({ event, options }));
   const script = getWorkerPath({
     event,
     connectorWorkerPath: workerPath,
@@ -174,7 +175,7 @@ export class Spawn {
   constructor({ event, worker, options, resolve }: SpawnInterface) {
     this.alreadyEmitted = false;
     this.event = event;
-    this.logger = new Logger({ event, options });
+    this.logger = getInternalLogger(new Logger({ event, options }));
     this.lambdaTimeout = options?.timeout
       ? Math.min(options.timeout, this.defaultLambdaTimeout)
       : this.defaultLambdaTimeout;
