@@ -202,7 +202,7 @@ export function getLibraryVersion() {
 }
 
 export function sleep(ms: number) {
-  console.log(`Sleeping for ${ms}ms.`);
+  console.log(`Sleeping for ${ms / 1000}s.`);
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
