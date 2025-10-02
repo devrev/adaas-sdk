@@ -30,8 +30,13 @@ axiosRetry(axiosClient, {
     const delay = axiosRetry.exponentialDelay(retryCount, error, 1000);
     const delayInSeconds = Math.round(delay / 1000);
 
+    // Handle network errors (no response) vs HTTP errors
+    const errorDescription = error.response?.status
+      ? `${error.response.status} error`
+      : 'network (no response) error';
+
     console.warn(
-      `Retrying ${error.config?.method} request to ${error.config?.url} in ${delayInSeconds}s due to ${error.response?.status} error.`
+      `Retrying ${error.config?.method} request to ${error.config?.url} in ${delayInSeconds}s due to ${errorDescription}.`
     );
 
     return delay;
@@ -53,6 +58,14 @@ axiosRetry(axiosClient, {
       retryAfter &&
       !isNaN(Number(retryAfter)) &&
       Number(retryAfter) >= 0
+    ) {
+      return true;
+    }
+
+    // Network errors for idempotent requests if not 429, because 429 is handled above
+    else if (
+      axiosRetry.isNetworkOrIdempotentRequestError(error) &&
+      error.response?.status !== 429
     ) {
       return true;
     }
