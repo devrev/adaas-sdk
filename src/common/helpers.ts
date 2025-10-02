@@ -236,7 +236,7 @@ export interface MemoryInfo {
   formattedMessage: string;
 }
 
-export function getMemoryUsage(): MemoryInfo | null {
+export function getMemoryUsage(): MemoryInfo {
   try {
     const memUsage = process.memoryUsage();
     const heapStats = v8.getHeapStatistics();
@@ -274,7 +274,7 @@ export function getMemoryUsage(): MemoryInfo | null {
       formattedMessage,
     };
   } catch (err) {
-    console.error('Error retrieving memory usage:', (err as Error).message);
-    return null;
+    console.warn('Error retrieving memory usage', err);
+    throw err;
   }
 }

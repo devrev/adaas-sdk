@@ -69,6 +69,6 @@ export const LIBRARY_VERSION = getLibraryVersion();
 
 export const DEFAULT_LAMBDA_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 export const HARD_TIMEOUT_MULTIPLIER = 1.3;
-export const MEMORY_LOG_INTERVAL = 10 * 1000; // 10 seconds
+export const MEMORY_LOG_INTERVAL = 30 * 1000; // 30 seconds
 
 export const DEFAULT_SLEEP_DELAY_MS = 3 * 60 * 1000; // 3 minutes
