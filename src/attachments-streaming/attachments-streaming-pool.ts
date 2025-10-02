@@ -123,7 +123,8 @@ export class AttachmentsStreamingPool<ConnectorState> {
 
         if (response?.error) {
           console.warn(
-            `Skipping attachment with ID ${attachment.id} due to error: ${response.error}`
+            `Skipping attachment with ID ${attachment.id} due to error returned by the stream function`,
+            response.error
           );
           await this.updateProgress();
           continue;
@@ -142,7 +143,8 @@ export class AttachmentsStreamingPool<ConnectorState> {
         await this.updateProgress();
       } catch (error) {
         console.warn(
-          `Skipping attachment with ID ${attachment.id} due to error: ${error}`
+          `Skipping attachment with ID ${attachment.id} due to error in processAttachment function`,
+          error
         );
 
         await this.updateProgress();

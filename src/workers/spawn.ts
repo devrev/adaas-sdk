@@ -231,11 +231,23 @@ export class Spawn {
       }
     });
 
-    // Log memory usage every 10 seconds
+    // Log memory usage every 30 seconds
     this.memoryMonitoringInterval = setInterval(() => {
-      const memoryInfo = getMemoryUsage();
-      if (memoryInfo) {
-        this.logger.info(memoryInfo.formattedMessage);
+      try {
+        const memoryInfo = getMemoryUsage();
+        if (memoryInfo) {
+          this.logger.info(memoryInfo.formattedMessage);
+        }
+      } catch (error) {
+        // If memory monitoring fails, log the warning and clear the interval to prevent further issues
+        this.logger.warn(
+          'Memory monitoring failed, stopping logging of memory usage interval',
+          error
+        );
+        if (this.memoryMonitoringInterval) {
+          clearInterval(this.memoryMonitoringInterval);
+          this.memoryMonitoringInterval = undefined;
+        }
       }
     }, MEMORY_LOG_INTERVAL);
   }
@@ -253,6 +265,8 @@ export class Spawn {
   }
 
   private async exitFromMainThread(): Promise<void> {
+    this.clearTimeouts();
+
     if (this.alreadyEmitted) {
       this.resolve();
       return;
