@@ -217,7 +217,8 @@ describe(AttachmentsStreamingPool.name, () => {
       await pool.streamAll();
 
       expect(console.warn).toHaveBeenCalledWith(
-        'Skipping attachment with ID attachment-2 due to error: Error: Processing failed'
+        'Skipping attachment with ID attachment-2 due to error in processAttachment function',
+        error
       );
       expect(mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList).toEqual([
         'attachment-1',
