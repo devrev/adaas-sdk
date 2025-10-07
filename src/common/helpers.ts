@@ -28,42 +28,23 @@ const EVENT_TYPE_TRANSLATION_TABLE = {
   "EXTRACTION_ATTACHMENTS_CONTINUE": EventType.ExtractionAttachmentsContinue,
   "EXTRACTION_DATA_DELETE": EventType.ExtractionDataDelete,
   "EXTRACTION_ATTACHMENTS_DELETE": EventType.ExtractionAttachmentsDelete,
-
-  "EXTRACTION_EXTERNAL_SYNC_UNITS_DONE": ExtractorEventType.ExtractionExternalSyncUnitsDone,
-  "EXTRACTION_EXTERNAL_SYNC_UNITS_ERROR": ExtractorEventType.ExtractionExternalSyncUnitsError,
-  "EXTRACTION_METADATA_DONE": ExtractorEventType.ExtractionMetadataDone,
-  "EXTRACTION_METADATA_ERROR": ExtractorEventType.ExtractionMetadataError,
-  "EXTRACTION_DATA_PROGRESS": ExtractorEventType.ExtractionDataProgress,
-  "EXTRACTION_DATA_DELAY": ExtractorEventType.ExtractionDataDelay,
-  "EXTRACTION_DATA_DONE": ExtractorEventType.ExtractionDataDone,
-  "EXTRACTION_DATA_ERROR": ExtractorEventType.ExtractionDataError,
-  "EXTRACTION_ATTACHMENTS_PROGRESS": ExtractorEventType.ExtractionAttachmentsProgress,
-  "EXTRACTION_ATTACHMENTS_DELAY": ExtractorEventType.ExtractionAttachmentsDelay,
-  "EXTRACTION_ATTACHMENTS_DONE": ExtractorEventType.ExtractionAttachmentsDone,
-  "EXTRACTION_ATTACHMENTS_ERROR": ExtractorEventType.ExtractionAttachmentsError,
-  "EXTRACTION_DATA_DELETE_DONE": ExtractorEventType.ExtractionDataDeleteDone,
-  "EXTRACTION_DATA_DELETE_ERROR": ExtractorEventType.ExtractionDataDeleteError,
-  "EXTRACTION_ATTACHMENTS_DELETE_DONE": ExtractorEventType.ExtractionAttachmentsDeleteDone,
-  "EXTRACTION_ATTACHMENTS_DELETE_ERROR": ExtractorEventType.ExtractionAttachmentsDeleteError
 };
 
 /**
  * Translates Event type from the old naming scheme to the new one
  */
-export function getEventType(eventType: string): EventType | ExtractorEventType {
+export function getEventType(eventType: string): EventType {
   // If we notice that the event has a newer translation, translate to that
   if(eventType in EVENT_TYPE_TRANSLATION_TABLE){
     return EVENT_TYPE_TRANSLATION_TABLE[eventType as keyof typeof EVENT_TYPE_TRANSLATION_TABLE];
   }
 
-  // Return the correct event type
-  if (eventType in ExtractorEventType) {
-    return eventType as ExtractorEventType;
-  }else if (eventType in EventType) {
+  // Event type doesn't need translation, return 
+  if (eventType in EventType) {
     return eventType as EventType;
   }
 
-  return ExtractorEventType.UnknownEventType;
+  return EventType.UnknownEventType;
 }
 
 export function getTimeoutErrorEventType(eventType: EventType): {
