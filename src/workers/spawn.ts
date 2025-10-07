@@ -8,7 +8,7 @@ import {
   ExtractorEventType,
 } from '../types/extraction';
 import { emit } from '../common/control-protocol';
-import { getTimeoutErrorEventType } from '../common/helpers';
+import { getEventType, getTimeoutErrorEventType } from '../common/helpers';
 import { Logger, serializeError } from '../logger/logger';
 import {
   GetWorkerPathInterface,
@@ -93,6 +93,7 @@ export async function spawn<ConnectorState>({
   initialDomainMapping,
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
+  event.payload.event_type = getEventType(event.payload.event_type);
   const logger = new Logger({ event, options });
   const script = getWorkerPath({
     event,
