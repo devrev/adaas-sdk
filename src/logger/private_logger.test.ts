@@ -1,5 +1,5 @@
 import { Logger } from './logger';
-import { getInternalLogger, createUserLogger, INTERNAL_CHANNEL, verificationToken } from './private_logger';
+import { getInternalLogger, createUserLogger, INTERNAL_CHANNEL, verificationToken } from './logger';
 import { createEvent } from '../tests/test-helpers';
 import { EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
