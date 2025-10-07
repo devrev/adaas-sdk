@@ -4,7 +4,7 @@ import { WorkerAdapter } from './worker-adapter';
 import { WorkerEvent, WorkerMessageSubject } from '../types/workers';
 import { ProcessTaskInterface } from '../types/workers';
 import { Logger } from '../logger/logger';
-import { createUserLogger } from '../logger/private_logger';
+import { createUserLogger } from '../logger/logger';
 
 export function processTask<ConnectorState>({
   task,

@@ -25,7 +25,7 @@ import {
   HARD_TIMEOUT_MULTIPLIER,
   MEMORY_LOG_INTERVAL,
 } from '../common/constants';
-import { createUserLogger, getInternalLogger } from '../logger/private_logger';
+import { createUserLogger, getInternalLogger } from '../logger/logger';
 
 function getWorkerPath({
   event,

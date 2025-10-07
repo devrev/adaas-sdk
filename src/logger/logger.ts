@@ -12,7 +12,12 @@ import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import { AxiosError, RawAxiosResponseHeaders, isAxiosError } from 'axios';
 import { getCircularReplacer } from '../common/helpers';
 import { EventContext } from '../types/extraction';
-import { INTERNAL_CHANNEL, verificationToken } from './private_logger';
+
+export const INTERNAL_CHANNEL = Symbol('internal-sdk-channel');
+export const verificationToken = Array.from(
+  crypto.getRandomValues(new Uint8Array(32)),
+  (byte, _) => byte.toString(16).padStart(2, '0')
+).join('');
 
 export class Logger extends Console {
   private options?: WorkerAdapterOptions;
@@ -54,7 +59,7 @@ export class Logger extends Console {
     }
     throw new Error('Unauthorized access to internal channel');
   }
-  
+
   private valueToString(value: unknown): string {
     if (typeof value === 'string') {
       return value;
@@ -177,11 +182,11 @@ export const serializeError = (error: unknown) => {
 export function serializeAxiosError(error: AxiosError) {
   const response = error.response
     ? {
-        data: error.response.data,
-        headers: error.response.headers as RawAxiosResponseHeaders,
-        status: error.response.status,
-        statusText: error.response.statusText,
-      }
+      data: error.response.data,
+      headers: error.response.headers as RawAxiosResponseHeaders,
+      status: error.response.status,
+      statusText: error.response.statusText,
+    }
     : null;
   const config = {
     method: error.config?.method,
@@ -195,3 +200,30 @@ export function serializeAxiosError(error: AxiosError) {
     response,
   };
 }
+
+// Private symbol and token
+export function getInternalLogger(logger: Logger): Logger {
+  return (logger as any)[INTERNAL_CHANNEL](verificationToken);
+}
+
+// Factory function to create a user-safe logger that can never access verified channel
+export function createUserLogger(logger: Logger): Logger {
+  // Create a new logger instance that is guaranteed to be unverified
+  // This ensures user code can never access the verified channel
+  const userLogger = Object.create(Logger.prototype);
+
+  // Copy all the necessary properties but ensure isVerifiedChannel is false
+  Object.assign(userLogger, logger);
+  userLogger.isVerifiedChannel = false;
+
+  // Remove the internal channel method to prevent access
+  delete userLogger[INTERNAL_CHANNEL];
+
+  // Override the internal channel method to throw an error if accessed
+  userLogger[INTERNAL_CHANNEL] = () => {
+    throw new Error('Unauthorized access to internal channel');
+  };
+
+  return userLogger;
+}
+

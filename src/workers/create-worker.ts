@@ -2,7 +2,7 @@ import { isMainThread, Worker } from 'node:worker_threads';
 
 import { WorkerData, WorkerEvent } from '../types/workers';
 import { Logger } from '../logger/logger';
-import { createUserLogger, getInternalLogger } from '../logger/private_logger';
+import { createUserLogger, getInternalLogger } from '../logger/logger';
 
 async function createWorker<ConnectorState>(
   workerData: WorkerData<ConnectorState>
