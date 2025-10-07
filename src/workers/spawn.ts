@@ -96,7 +96,7 @@ export async function spawn<ConnectorState>({
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
   const logger = getInternalLogger(new Logger({ event, options }));
-  const unverified_logger = createUserLogger(new Logger({ event, options }));
+  const unverifiedLogger = createUserLogger(new Logger({ event, options }));
   const script = getWorkerPath({
     event,
     connectorWorkerPath: workerPath,
@@ -136,7 +136,7 @@ export async function spawn<ConnectorState>({
         });
       });
     } catch (error) {
-      unverified_logger.error('Worker error while processing task', error);
+      unverifiedLogger.error('Worker error while processing task', error);
     }
   } else {
     console.error(
@@ -171,14 +171,14 @@ export class Spawn {
   private hardTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
   private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
   private logger: Logger;
-  private unverified_logger: Logger;
+  private unverifiedLogger: Logger;
   private resolve: (value: void | PromiseLike<void>) => void;
 
   constructor({ event, worker, options, resolve }: SpawnInterface) {
     this.alreadyEmitted = false;
     this.event = event;
     this.logger = getInternalLogger(new Logger({ event, options }));
-    this.unverified_logger = createUserLogger(new Logger({ event, options }));
+    this.unverifiedLogger = createUserLogger(new Logger({ event, options }));
     this.lambdaTimeout = options?.timeout
       ? Math.min(options.timeout, this.defaultLambdaTimeout)
       : this.defaultLambdaTimeout;
@@ -225,7 +225,7 @@ export class Spawn {
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
         const args = message.payload?.args;
         const level = message.payload?.level as LogLevel;
-        this.unverified_logger.logFn(args, level);
+        this.unverifiedLogger.logFn(args, level);
       }
 
       // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.

@@ -13,7 +13,7 @@ async function createWorker<ConnectorState>(
         event: workerData.event,
         options: workerData.options,
       }));
-      const unverified_logger = createUserLogger(new Logger({
+      const unverifiedLogger = createUserLogger(new Logger({
         event: workerData.event,
         options: workerData.options,
       }));
@@ -24,7 +24,7 @@ async function createWorker<ConnectorState>(
       } as WorkerOptions);
 
       worker.on(WorkerEvent.WorkerError, (error) => {
-        unverified_logger.error('Worker error', error);
+        unverifiedLogger.error('Worker error', error);
         reject();
       });
       worker.on(WorkerEvent.WorkerOnline, () => {
