@@ -135,6 +135,7 @@ export async function spawn<ConnectorState>({
       });
     } catch (error) {
       logger.error('Worker error while processing task', error);
+      return Promise.reject(error);
     }
   } else {
     console.error(
@@ -156,6 +157,7 @@ export async function spawn<ConnectorState>({
       });
     } catch (error) {
       console.error('Error while emitting event.', serializeError(error));
+      return Promise.reject(error);
     }
   }
 }
