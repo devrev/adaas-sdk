@@ -138,7 +138,7 @@ export async function spawn<ConnectorState>({
       return Promise.reject(error);
     }
   } else {
-    console.error(
+    logger.error(
       'Script was not found for event type: ' + event.payload.event_type + '.'
     );
 
@@ -156,7 +156,7 @@ export async function spawn<ConnectorState>({
         },
       });
     } catch (error) {
-      console.error('Error while emitting event.', serializeError(error));
+      logger.error('Error while emitting event.', serializeError(error));
       return Promise.reject(error);
     }
   }
