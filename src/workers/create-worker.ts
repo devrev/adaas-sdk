@@ -20,7 +20,7 @@ async function createWorker<ConnectorState>(
 
       worker.on(WorkerEvent.WorkerError, (error) => {
         logger.error('Worker error', error);
-        reject();
+        reject(error);
       });
       worker.on(WorkerEvent.WorkerOnline, () => {
         resolve(worker);
