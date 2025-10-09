@@ -9,14 +9,18 @@ async function createWorker<ConnectorState>(
 ): Promise<Worker> {
   return new Promise<Worker>((resolve, reject) => {
     if (isMainThread) {
-      const logger = getInternalLogger(new Logger({
-        event: workerData.event,
-        options: workerData.options,
-      }));
-      const unverifiedLogger = createUserLogger(new Logger({
-        event: workerData.event,
-        options: workerData.options,
-      }));
+      const logger = getInternalLogger(
+        new Logger({
+          event: workerData.event,
+          options: workerData.options,
+        })
+      );
+      const unverifiedLogger = createUserLogger(
+        new Logger({
+          event: workerData.event,
+          options: workerData.options,
+        })
+      );
       const workerFile = __dirname + '/worker.js';
 
       const worker: Worker = new Worker(workerFile, {

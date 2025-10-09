@@ -1,8 +1,10 @@
 import { AirdropEvent, spawn } from '../../index';
 
-const initialState = {};
+const initialState = { placeholder_field: 42 };
 const initialDomainMapping = {};
-interface ExtractorState {}
+interface ExtractorState {
+  placeholder_field: number;
+}
 
 const run = async (events: AirdropEvent[], workerPath: string) => {
   for (const event of events) {

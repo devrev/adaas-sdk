@@ -134,32 +134,32 @@ describe(getFilesToLoad.name, () => {
   });
 
   it('[edge] should return an empty array when statsFile is empty', () => {
-      statsFile = [];
-      const itemTypesToLoad: ItemTypeToLoad[] = [];
-      const result = getFilesToLoad({
-        supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
-        statsFile,
-      });
-      expect(result).toEqual([]);
+    statsFile = [];
+    const itemTypesToLoad: ItemTypeToLoad[] = [];
+    const result = getFilesToLoad({
+      supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
+      statsFile,
     });
+    expect(result).toEqual([]);
+  });
 
   it('[edge] should return an empty array when itemTypesToLoad is empty', () => {
-      const itemTypesToLoad: ItemTypeToLoad[] = [];
-      const result = getFilesToLoad({
-        supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
-        statsFile,
-      });
-      expect(result).toEqual([]);
+    const itemTypesToLoad: ItemTypeToLoad[] = [];
+    const result = getFilesToLoad({
+      supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
+      statsFile,
     });
+    expect(result).toEqual([]);
+  });
 
   it('[edge] should return an empty array when statsFile has no matching items', () => {
-      const itemTypesToLoad: ItemTypeToLoad[] = [
-        { itemType: 'users', create: jest.fn(), update: jest.fn() },
-      ];
-      const result = getFilesToLoad({
-        supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
-        statsFile,
-      });
-      expect(result).toEqual([]);
+    const itemTypesToLoad: ItemTypeToLoad[] = [
+      { itemType: 'users', create: jest.fn(), update: jest.fn() },
+    ];
+    const result = getFilesToLoad({
+      supportedItemTypes: itemTypesToLoad.map((it) => it.itemType),
+      statsFile,
     });
+    expect(result).toEqual([]);
+  });
 });

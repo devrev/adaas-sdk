@@ -31,7 +31,7 @@ export class HTTPClient {
   constructor() {
     // Add request interceptor to check for retryAfter before making a request
     this.axiosInstance.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
+      async (config: InternalAxiosRequestConfig) => {
         // Check if retryAfter is not 0 and return a LIMIT_EXCEEDED error
         if (this.retryAfter !== 0) {
           // check if the current time is greater than the retryAt time
@@ -50,7 +50,7 @@ export class HTTPClient {
         }
         return config;
       },
-      (error) => {
+      async (error) => {
         return Promise.reject(error);
       }
     );

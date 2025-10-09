@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import {
   AirdropEvent,
   ExtractorEventType,
@@ -443,7 +443,7 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     if (
-      !this.adapterState.state.fromDevRev ||
+      this.adapterState.state.fromDevRev == null ||
       this.adapterState.state.fromDevRev?.filesToLoad.length === 0
     ) {
       console.log('No files to load, returning.');
@@ -453,8 +453,9 @@ export class WorkerAdapter<ConnectorState> {
       };
     }
 
-    outerloop: for (const fileToLoad of this.adapterState.state.fromDevRev
-      ?.filesToLoad) {
+    const filesToLoad = this.adapterState.state.fromDevRev.filesToLoad;
+
+    outerloop: for (const fileToLoad of filesToLoad) {
       if (!fileToLoad.completed) {
         const transformerFile = (await this.uploader.getJsonObjectByArtifactId({
           artifactId: fileToLoad.id,
@@ -773,7 +774,7 @@ export class WorkerAdapter<ConnectorState> {
    * Destroys a stream to prevent memory leaks.
    * @param {any} httpStream - The axios response stream to destroy
    */
-  private destroyHttpStream(httpStream: any): void {
+  private destroyHttpStream(httpStream: AxiosResponse): void {
     try {
       if (httpStream && httpStream.data) {
         if (typeof httpStream.data.destroy === 'function') {

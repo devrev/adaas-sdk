@@ -166,21 +166,6 @@ export function addReportToLoaderReport({
   return loaderReports;
 }
 
-// https://stackoverflow.com/a/53731154
-export function getCircularReplacer() {
-  const seen = new WeakSet();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (key: any, value: any) => {
-    if (typeof value === 'object' && value !== null) {
-      if (seen.has(value)) {
-        return;
-      }
-      seen.add(value);
-    }
-    return value;
-  };
-}
-
 // read adaas library version from package.json
 export function getLibraryVersion() {
   try {
@@ -201,7 +186,7 @@ export function getLibraryVersion() {
   }
 }
 
-export function sleep(ms: number) {
+export async function sleep(ms: number) {
   console.log(`Sleeping for ${ms / 1000}s.`);
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

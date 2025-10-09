@@ -7,7 +7,6 @@ import FormData from 'form-data';
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
 import { truncateFilename } from '../common/helpers';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
-import { AirdropEvent } from '../types/extraction';
 
 import {
   Artifact,
@@ -19,7 +18,6 @@ import { serializeError } from '../logger/logger';
 import { AxiosResponse } from 'axios';
 
 export class Uploader {
-  private event: AirdropEvent;
   private isLocalDevelopment?: boolean;
   private devrevApiEndpoint: string;
   private devrevApiToken: string;
@@ -27,7 +25,6 @@ export class Uploader {
   private defaultHeaders: Record<string, string>;
 
   constructor({ event, options }: UploaderFactoryInterface) {
-    this.event = event;
     this.devrevApiEndpoint = event.execution_metadata.devrev_endpoint;
     this.devrevApiToken = event.context.secrets.service_account_token;
     this.requestId = event.payload.event_context.request_id;
@@ -40,7 +37,6 @@ export class Uploader {
   /**
    * Uploads the fetched objects to the DevRev platform.
    * The fetched objects are uploaded to the platform and the artifact information is returned.
-   * @param {string} filename - The name of the file to be uploaded
    * @param {string} itemType - The type of the item to be uploaded
    * @param {object[] | object} fetchedObjects - The fetched objects to be uploaded
    * @returns {Promise<UploadResponse>} - The response object containing the artifact information
@@ -155,7 +151,7 @@ export class Uploader {
 
   async streamArtifact(
     artifact: ArtifactToUpload,
-    fileStream: any
+    fileStream: AxiosResponse
   ): Promise<AxiosResponse | void> {
     const formData = new FormData();
     for (const field in artifact.form_data) {
@@ -223,7 +219,7 @@ export class Uploader {
    * Destroys a stream to prevent resource leaks.
    * @param {any} fileStream - The axios response stream to destroy
    */
-  private destroyStream(fileStream: any): void {
+  private destroyStream(fileStream: AxiosResponse): void {
     try {
       if (fileStream && fileStream.data) {
         // For axios response streams, the data property contains the actual stream

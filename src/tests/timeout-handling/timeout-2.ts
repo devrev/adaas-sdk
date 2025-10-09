@@ -1,7 +1,10 @@
 import { ExtractorEventType, processTask } from '../../index';
 
 // Simulate a network request with variable delays
-const simulateNetworkRequest = (url: string, delay: number): Promise<any> => {
+const simulateNetworkRequest = async (
+  url: string,
+  delay: number
+): Promise<{ status: number; data: string }> => {
   return new Promise((resolve) => {
     console.log(`Starting network request to ${url}...`);
     setTimeout(() => {

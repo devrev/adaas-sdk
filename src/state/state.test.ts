@@ -1,4 +1,3 @@
-import MockAdapter from 'axios-mock-adapter';
 import { State, createAdapterState } from './state';
 import { EventType } from '../types/extraction';
 import { createEvent } from '../tests/test-helpers';
@@ -7,6 +6,8 @@ import {
   STATEFUL_EVENT_TYPES,
 } from '../common/constants';
 import { extractionSdkState } from './state.interfaces';
+
+import * as installInitialDomainMapping from '../common/install-initial-domain-mapping';
 
 describe(State.name, () => {
   let initSpy: jest.SpyInstance;
@@ -23,7 +24,7 @@ describe(State.name, () => {
     postStateSpy = jest.spyOn(State.prototype, 'postState');
     fetchStateSpy = jest.spyOn(State.prototype, 'fetchState');
     installInitialDomainMappingSpy = jest.spyOn(
-      require('../common/install-initial-domain-mapping'),
+      installInitialDomainMapping,
       'installInitialDomainMapping'
     );
     processExitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {

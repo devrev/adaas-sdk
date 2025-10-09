@@ -1,36 +1,63 @@
-import { isMainThread, Worker } from 'worker_threads';
-
 import { createEvent } from '../tests/test-helpers';
 import { EventType } from '../types/extraction';
 import { createWorker } from './create-worker';
 
+// Mock worker_threads module
+jest.mock('node:worker_threads', () => ({
+  isMainThread: true,
+  Worker: jest.fn().mockImplementation(() => ({
+    terminate: jest.fn(),
+    on: jest.fn(),
+  })),
+}));
+
 describe(createWorker.name, () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Reset to main thread by default
+    const workerThreads = jest.requireMock('node:worker_threads');
+    workerThreads.isMainThread = true;
+  });
+
   it('should create a Worker instance when valid parameters are provided', async () => {
+    const workerThreads = jest.requireMock('node:worker_threads');
+    const mockOn = jest.fn();
+    const mockWorkerInstance = {
+      terminate: jest.fn(),
+      on: mockOn,
+    };
+    workerThreads.Worker.mockReturnValue(mockWorkerInstance);
+
     const workerPath = __dirname + '../tests/dummy-worker.ts';
-    
-    const worker = isMainThread
-      ? await createWorker<object>({
-          event: createEvent({
-            eventType: EventType.ExtractionExternalSyncUnitsStart,
-          }),
-          initialState: {},
-          workerPath,
-        })
-      : null;
+
+    const workerPromise = createWorker<object>({
+      event: createEvent({
+        eventType: EventType.ExtractionExternalSyncUnitsStart,
+      }),
+      initialState: {},
+      workerPath,
+    });
+
+    // Simulate the worker going online
+    const onlineCallback = mockOn.mock.calls.find(
+      (call) => call[0] === 'online'
+    )?.[1];
+    if (onlineCallback) {
+      onlineCallback();
+    }
+
+    const worker = await workerPromise;
 
     expect(worker).not.toBeNull();
-    expect(worker).toBeInstanceOf(Worker);
-
-    if (worker) {
-      await worker.terminate();
-    }
+    expect(workerThreads.Worker).toHaveBeenCalled();
+    await worker.terminate();
   });
 
   it('should throw error when not in main thread', async () => {
-    const originalIsMainThread = isMainThread;
-    (isMainThread as any) = false;
-    const workerPath = __dirname + '../tests/dummy-worker.ts';
+    const workerThreads = jest.requireMock('node:worker_threads');
+    workerThreads.isMainThread = false;
 
+    const workerPath = __dirname + '../tests/dummy-worker.ts';
     await expect(
       createWorker<object>({
         event: createEvent({
@@ -40,65 +67,110 @@ describe(createWorker.name, () => {
         workerPath,
       })
     ).rejects.toThrow('Worker threads can not start more worker threads.');
-
-    // Restore original value
-    (isMainThread as any) = originalIsMainThread;
   });
 
   it('[edge] should handle worker creation with minimal valid data', async () => {
-      const workerPath = __dirname + '../tests/dummy-worker.ts';
+    const workerThreads = jest.requireMock('node:worker_threads');
+    const mockOn = jest.fn();
+    const mockWorkerInstance = {
+      terminate: jest.fn(),
+      on: mockOn,
+    };
+    workerThreads.Worker.mockReturnValue(mockWorkerInstance);
 
-      if (isMainThread) {
-        const worker = await createWorker<object>({
-          event: createEvent({
-            eventType: EventType.ExtractionExternalSyncUnitsStart,
-          }),
-          initialState: {},
-          workerPath,
-        });
+    const workerPath = __dirname + '../tests/dummy-worker.ts';
 
-        expect(worker).toBeInstanceOf(Worker);
-        await worker.terminate();
-      }
+    const workerPromise = createWorker<object>({
+      event: createEvent({
+        eventType: EventType.ExtractionExternalSyncUnitsStart,
+      }),
+      initialState: {},
+      workerPath,
     });
+
+    // Simulate the worker going online
+    const onlineCallback = mockOn.mock.calls.find(
+      (call) => call[0] === 'online'
+    )?.[1];
+    if (onlineCallback) {
+      onlineCallback();
+    }
+
+    const worker = await workerPromise;
+
+    expect(workerThreads.Worker).toHaveBeenCalled();
+    await worker.terminate();
+  });
 
   it('[edge] should handle worker creation with complex initial state', async () => {
-      const workerPath = __dirname + '../tests/dummy-worker.ts';
-      const complexState = {
-        nested: {
-          data: [1, 2, 3],
-          config: { enabled: true }
-        }
-      };
+    const workerThreads = jest.requireMock('node:worker_threads');
+    const mockOn = jest.fn();
+    const mockWorkerInstance = {
+      terminate: jest.fn(),
+      on: mockOn,
+    };
+    workerThreads.Worker.mockReturnValue(mockWorkerInstance);
 
-      if (isMainThread) {
-        const worker = await createWorker<typeof complexState>({
-          event: createEvent({
-            eventType: EventType.ExtractionDataStart,
-          }),
-          initialState: complexState,
-          workerPath,
-        });
+    const workerPath = __dirname + '../tests/dummy-worker.ts';
+    const complexState = {
+      nested: {
+        data: [1, 2, 3],
+        config: { enabled: true },
+      },
+    };
 
-        expect(worker).toBeInstanceOf(Worker);
-        await worker.terminate();
-      }
+    const workerPromise = createWorker<typeof complexState>({
+      event: createEvent({
+        eventType: EventType.ExtractionDataStart,
+      }),
+      initialState: complexState,
+      workerPath,
     });
+
+    // Simulate the worker going online
+    const onlineCallback = mockOn.mock.calls.find(
+      (call) => call[0] === 'online'
+    )?.[1];
+    if (onlineCallback) {
+      onlineCallback();
+    }
+
+    const worker = await workerPromise;
+
+    expect(workerThreads.Worker).toHaveBeenCalled();
+    await worker.terminate();
+  });
 
   it('[edge] should handle different event types', async () => {
-      const workerPath = __dirname + '../tests/dummy-worker.ts';
+    const workerThreads = jest.requireMock('node:worker_threads');
+    const mockOn = jest.fn();
+    const mockWorkerInstance = {
+      terminate: jest.fn(),
+      on: mockOn,
+    };
+    workerThreads.Worker.mockReturnValue(mockWorkerInstance);
 
-      if (isMainThread) {
-        const worker = await createWorker<object>({
-          event: createEvent({
-            eventType: EventType.ExtractionMetadataStart,
-          }),
-          initialState: {},
-          workerPath,
-        });
+    const workerPath = __dirname + '../tests/dummy-worker.ts';
 
-        expect(worker).toBeInstanceOf(Worker);
-        await worker.terminate();
-      }
+    const workerPromise = createWorker<object>({
+      event: createEvent({
+        eventType: EventType.ExtractionMetadataStart,
+      }),
+      initialState: {},
+      workerPath,
     });
+
+    // Simulate the worker going online
+    const onlineCallback = mockOn.mock.calls.find(
+      (call) => call[0] === 'online'
+    )?.[1];
+    if (onlineCallback) {
+      onlineCallback();
+    }
+
+    const worker = await workerPromise;
+
+    expect(workerThreads.Worker).toHaveBeenCalled();
+    await worker.terminate();
+  });
 });

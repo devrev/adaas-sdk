@@ -1,16 +1,16 @@
 import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
 import { getPrintableState, serializeAxiosError, Logger } from './logger';
-import { LogLevel } from './logger.interfaces';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import { createEvent } from '../tests/test-helpers';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
 const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation();
 const mockConsoleError = jest.spyOn(console, 'error').mockImplementation();
-const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation();
 
 // Mock worker_threads
 jest.mock('node:worker_threads', () => ({
@@ -246,7 +246,7 @@ describe(Logger.name, () => {
       const logObject = JSON.parse(callArgs);
 
       // The logger uses inspect() with formatting, not JSON.stringify()
-      const expectedMessage = require('util').inspect(complexObject, {
+      const expectedMessage = inspect(complexObject, {
         compact: false,
         depth: Infinity,
       });

@@ -1,5 +1,3 @@
-import { AxiosHeaders, AxiosRequestHeaders, AxiosResponse } from 'axios';
-
 import {
   Item,
   NormalizedAttachment,

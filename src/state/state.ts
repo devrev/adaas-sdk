@@ -128,7 +128,7 @@ export class State<ConnectorState> {
       try {
         parsedState = JSON.parse(stringifiedState);
       } catch (error) {
-        throw new Error('Failed to parse state.');
+        throw new Error(`Failed to parse state: ${error}`);
       }
 
       this.state = parsedState;

@@ -1,6 +1,8 @@
 import * as http from 'http';
 import * as url from 'url';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export class MockServer {
   private server: http.Server | null = null;
   private port: number;

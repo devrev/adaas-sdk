@@ -5,7 +5,7 @@ import {
   normalizeIssue,
   normalizeUser,
 } from '../dummy-extractor/data-normalization';
- 
+
 // Dummy data that originally would be fetched from an external source
 const issues = [
   {

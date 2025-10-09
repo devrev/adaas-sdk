@@ -64,7 +64,7 @@ export class Repo {
       }
 
       this.onUpload(artifact);
-      
+
       this.uploadedArtifacts.push(artifact);
 
       // Clear the uploaded items from the main items array if no batch was specified

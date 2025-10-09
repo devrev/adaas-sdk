@@ -10,13 +10,12 @@ import {
 import { isMainThread, parentPort } from 'node:worker_threads';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import { AxiosError, RawAxiosResponseHeaders, isAxiosError } from 'axios';
-import { getCircularReplacer } from '../common/helpers';
 import { EventContext } from '../types/extraction';
 
 export const INTERNAL_CHANNEL = Symbol('internal-sdk-channel');
 export const verificationToken = Array.from(
   crypto.getRandomValues(new Uint8Array(32)),
-  (byte, _) => byte.toString(16).padStart(2, '0')
+  (byte) => byte.toString(16).padStart(2, '0')
 ).join('');
 
 export class Logger extends Console {
@@ -79,17 +78,22 @@ export class Logger extends Console {
 
     // Don't prepend prefix if the string already contains the same one
     let processedArgs: unknown[] = args;
-    if (!(typeof args[0] === 'string' && args[0].startsWith(prefix)) || typeof args[0] !== 'string') {
+    if (
+      !(typeof args[0] === 'string' && args[0].startsWith(prefix)) ||
+      typeof args[0] !== 'string'
+    ) {
       processedArgs.unshift(prefix);
     }
-
 
     if (isMainThread) {
       if (this.options?.isLocalDevelopment) {
         console[level](...processedArgs);
       } else {
         let message: string;
-        if (processedArgs.length === 1 && typeof processedArgs[0] === 'string') {
+        if (
+          processedArgs.length === 1 &&
+          typeof processedArgs[0] === 'string'
+        ) {
           // Single string argument - use directly
           message = processedArgs[0];
         } else if (processedArgs.length === 1) {
@@ -97,7 +101,9 @@ export class Logger extends Console {
           message = this.valueToString(processedArgs[0]);
         } else {
           // Multiple arguments - create a readable format
-          message = processedArgs.map((arg) => this.valueToString(arg)).join(' ');
+          message = processedArgs
+            .map((arg) => this.valueToString(arg))
+            .join(' ');
         }
 
         const logObject = {
@@ -152,7 +158,7 @@ export function getPrintableState(state: Record<string, any>): PrintableState {
       // If the value is an object, recursively process its properties
       const processedObject: PrintableState = {};
       for (const key in value) {
-        if (value.hasOwnProperty(key)) {
+        if (key in value) {
           processedObject[key] = processValue(value[key]);
         }
       }
@@ -165,6 +171,7 @@ export function getPrintableState(state: Record<string, any>): PrintableState {
   // Process the state object directly since it's guaranteed to be an object
   return processValue(state) as PrintableState;
 }
+
 /**
  * @deprecated
  */
@@ -182,11 +189,11 @@ export const serializeError = (error: unknown) => {
 export function serializeAxiosError(error: AxiosError) {
   const response = error.response
     ? {
-      data: error.response.data,
-      headers: error.response.headers as RawAxiosResponseHeaders,
-      status: error.response.status,
-      statusText: error.response.statusText,
-    }
+        data: error.response.data,
+        headers: error.response.headers as RawAxiosResponseHeaders,
+        status: error.response.status,
+        statusText: error.response.statusText,
+      }
     : null;
   const config = {
     method: error.config?.method,
@@ -203,6 +210,7 @@ export function serializeAxiosError(error: AxiosError) {
 
 // Private symbol and token
 export function getInternalLogger(logger: Logger): Logger {
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   return (logger as any)[INTERNAL_CHANNEL](verificationToken);
 }
 
@@ -226,4 +234,3 @@ export function createUserLogger(logger: Logger): Logger {
 
   return userLogger;
 }
-

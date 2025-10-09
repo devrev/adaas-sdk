@@ -46,17 +46,6 @@ export interface ExternalSystemItem {
   data: any;
 }
 
-export interface ExternalSystemItem {
-  id: {
-    devrev: DonV2;
-    external?: string;
-  };
-  created_date: string;
-  modified_date: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any;
-}
-
 export interface ExternalSystemItemLoadingParams<Type> {
   item: Type;
   mappers: Mappers;
