@@ -203,7 +203,7 @@ export class Spawn {
         'HARD TIMEOUT: Worker did not exit in time. Terminating the worker.'
       );
       if (worker) {
-        worker.terminate();
+        await worker.terminate();
       } else {
         console.log('Worker does not exist. Exiting from main thread.');
         await this.exitFromMainThread();
