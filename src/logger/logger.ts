@@ -134,7 +134,7 @@ export const serializeError = (error: unknown) => {
   return error;
 };
 
-class AxiosErrorResponse {
+export class AxiosErrorResponse {
   config: {
       method: string | undefined;
       params: any;
