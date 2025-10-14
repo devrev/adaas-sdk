@@ -134,7 +134,32 @@ export const serializeError = (error: unknown) => {
   return error;
 };
 
-export function serializeAxiosError(error: AxiosError) {
+class AxiosErrorResponse {
+  config: {
+      method: string | undefined;
+      params: any;
+      url: string | undefined;
+  };
+  isAxiosError: boolean;
+  isCorsOrNoNetworkError: boolean;
+  response: {
+      data: unknown;
+      headers: RawAxiosResponseHeaders;
+      status: number;
+      statusText: string;
+      code?: undefined;
+      message?: undefined;
+  } | {
+      code: string | undefined;
+      message: string;
+      data?: undefined;
+      headers?: undefined;
+      status?: undefined;
+      statusText?: undefined;
+  };
+};
+
+export function serializeAxiosError(error: AxiosError): AxiosErrorResponse {
   const response = error.response
     ? {
         data: error.response.data,
