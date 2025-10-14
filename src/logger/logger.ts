@@ -142,12 +142,17 @@ export function serializeAxiosError(error: AxiosError) {
         status: error.response.status,
         statusText: error.response.statusText,
       }
-    : null;
+    : {
+        code: error.code,
+        message: error.message,
+      };
+
   const config = {
     method: error.config?.method,
     params: error.config?.params,
     url: error.config?.url,
   };
+
   return {
     config,
     isAxiosError: true,
