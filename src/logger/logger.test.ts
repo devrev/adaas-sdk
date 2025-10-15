@@ -83,7 +83,8 @@ describe(Logger.name, () => {
 
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
-          message: '[USER] ' + message,
+          message: message,
+          verified: false,
           ...mockEvent.payload.event_context,
           dev_oid: mockEvent.payload.event_context.dev_oid,
         })
@@ -101,7 +102,8 @@ describe(Logger.name, () => {
       });
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
-          message: '[USER] ' + expectedMessage,
+          message: expectedMessage,
+          verified: false,
           ...mockEvent.payload.event_context,
           dev_oid: mockEvent.payload.event_context.dev_oid,
         })
@@ -120,7 +122,8 @@ describe(Logger.name, () => {
       });
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
-          message: `[USER] ${text} ${expectedDataMessage}`,
+          message: `${text} ${expectedDataMessage}`,
+          verified: false,
           ...mockEvent.payload.event_context,
           dev_oid: mockEvent.payload.event_context.dev_oid,
         })
@@ -140,7 +143,8 @@ describe(Logger.name, () => {
       });
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
-          message: `[USER] ${text1} ${expectedDataMessage} ${text2}`,
+          message: `${text1} ${expectedDataMessage} ${text2}`,
+          verified: false,
           ...mockEvent.payload.event_context,
           dev_oid: mockEvent.payload.event_context.dev_oid,
         })
@@ -162,7 +166,7 @@ describe(Logger.name, () => {
 
       logger.info(message, data);
 
-      expect(mockConsoleInfo).toHaveBeenCalledWith('[USER]', message, data);
+      expect(mockConsoleInfo).toHaveBeenCalledWith(message, data);
     });
   });
 
@@ -210,7 +214,7 @@ describe(Logger.name, () => {
       const callArgs = mockConsoleInfo.mock.calls[0][0];
       const logObject = JSON.parse(callArgs);
 
-      expect(logObject.message).toBe('[USER] ');
+      expect(logObject.message).toBe('');
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
       expect(logObject.request_id).toBe(
         mockEvent.payload.event_context.request_id
@@ -225,7 +229,7 @@ describe(Logger.name, () => {
       const logObject = JSON.parse(callArgs);
 
       // inspect shows 'null' and 'undefined' as strings
-      expect(logObject.message).toBe('[USER] test null undefined');
+      expect(logObject.message).toBe('test null undefined');
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
     });
 
@@ -250,7 +254,7 @@ describe(Logger.name, () => {
         compact: false,
         depth: Infinity,
       });
-      expect(logObject.message).toBe('[USER] ' + expectedMessage);
+      expect(logObject.message).toBe(expectedMessage);
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
       expect(typeof logObject.callback_url).toBe('string');
     });

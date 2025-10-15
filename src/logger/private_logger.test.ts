@@ -54,7 +54,7 @@ describe('Private Logger Security', () => {
       sdkLogger.info('SDK message');
       
       expect(mockConsoleInfo).toHaveBeenCalledWith(
-        expect.stringContaining('"message":"[SDK] SDK message"')
+        expect.stringContaining('"message":"SDK message"')
       );
     });
 
@@ -68,7 +68,7 @@ describe('Private Logger Security', () => {
       userLogger.info('User message');
       
       expect(mockConsoleInfo).toHaveBeenCalledWith(
-        expect.stringContaining('"message":"[USER] User message"')
+        expect.stringContaining('"message":"User message"')
       );
     });
 
@@ -109,10 +109,10 @@ describe('Private Logger Security', () => {
       
       expect(mockConsoleInfo).toHaveBeenCalledTimes(2);
       expect(mockConsoleInfo).toHaveBeenNthCalledWith(1,
-        expect.stringContaining('"message":"[SDK] SDK internal message"')
+        expect.stringContaining('"message":"SDK internal message"')
       );
       expect(mockConsoleInfo).toHaveBeenNthCalledWith(2,
-        expect.stringContaining('"message":"[USER] User application message"')
+        expect.stringContaining('"message":"User application message"')
       );
     });
 
@@ -134,8 +134,8 @@ describe('Private Logger Security', () => {
       expect(userCall).toContain('"dev_oid":"test-dev-oid"');
       
       // But different prefixes
-      expect(sdkCall).toContain('"[SDK] Warning from SDK"');
-      expect(userCall).toContain('"[USER] Warning from user"');
+      expect(sdkCall).toContain('"Warning from SDK"');
+      expect(userCall).toContain('"Warning from user"');
     });
   });
 

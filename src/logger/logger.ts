@@ -73,35 +73,25 @@ export class Logger extends Console {
   }
 
   logFn(args: unknown[], level: LogLevel): void {
-    // Always add prefix based on verification status
-    // false = unverified ([USER] prefix), true = verified ([SDK] prefix)
-    const prefix = this.isVerifiedChannel ? '[SDK]' : '[USER]';
-
-    // Don't prepend prefix if the string already contains the same one
-    let processedArgs: unknown[] = args;
-    if (!(typeof args[0] === 'string' && args[0].startsWith(prefix)) || typeof args[0] !== 'string') {
-      processedArgs.unshift(prefix);
-    }
-
-
     if (isMainThread) {
       if (this.options?.isLocalDevelopment) {
-        console[level](...processedArgs);
+        console[level](...args);
       } else {
         let message: string;
-        if (processedArgs.length === 1 && typeof processedArgs[0] === 'string') {
+        if (args.length === 1 && typeof args[0] === 'string') {
           // Single string argument - use directly
-          message = processedArgs[0];
-        } else if (processedArgs.length === 1) {
+          message = args[0];
+        } else if (args.length === 1) {
           // Single non-string argument - convert to string properly
-          message = this.valueToString(processedArgs[0]);
+          message = this.valueToString(args[0]);
         } else {
           // Multiple arguments - create a readable format
-          message = processedArgs.map((arg) => this.valueToString(arg)).join(' ');
+          message = args.map((arg) => this.valueToString(arg)).join(' ');
         }
 
         const logObject = {
           message,
+          verified: this.isVerifiedChannel,
           ...this.tags,
         };
 
@@ -111,7 +101,7 @@ export class Logger extends Console {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
         payload: {
-          args: processedArgs.map((arg) => this.valueToString(arg)),
+          args: args.map((arg) => this.valueToString(arg)),
           level,
         },
       });
