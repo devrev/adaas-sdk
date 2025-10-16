@@ -13,9 +13,16 @@ import { AxiosError, RawAxiosResponseHeaders, isAxiosError } from 'axios';
 import { getCircularReplacer } from '../common/helpers';
 import { EventContext } from '../types/extraction';
 
+export const INTERNAL_CHANNEL = Symbol('internal-sdk-channel');
+export const verificationToken = Array.from(
+  crypto.getRandomValues(new Uint8Array(32)),
+  (byte, _) => byte.toString(16).padStart(2, '0')
+).join('');
+
 export class Logger extends Console {
   private options?: WorkerAdapterOptions;
-  private tags: EventContext & { dev_oid: string };
+  private tags: EventContext & { dev_oid: string, sdk_log: boolean };
+  private isSdkChannel: boolean = false; // false = unverified (default), true = verified
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
@@ -23,7 +30,35 @@ export class Logger extends Console {
     this.tags = {
       ...event.payload.event_context,
       dev_oid: event.payload.event_context.dev_oid,
+      sdk_log: this.isSdkChannel
     };
+  }
+
+  // Internal method to create a verified logger
+  private [INTERNAL_CHANNEL](token: string): Logger {
+    if (token === verificationToken) {
+      const verifiedLogger = Object.create(this);
+      verifiedLogger.isVerifiedChannel = true;
+      // Ensure the verified logger retains the internal channel method
+      verifiedLogger[INTERNAL_CHANNEL] = this[INTERNAL_CHANNEL].bind(this);
+      // Override the logFn method to use the verified logger's context
+      verifiedLogger.logFn = this.logFn.bind(verifiedLogger);
+      // Override the logging methods to use the custom logFn
+      verifiedLogger.log = (...args: unknown[]): void => {
+        verifiedLogger.logFn(args, LogLevel.INFO);
+      };
+      verifiedLogger.info = (...args: unknown[]): void => {
+        verifiedLogger.logFn(args, LogLevel.INFO);
+      };
+      verifiedLogger.warn = (...args: unknown[]): void => {
+        verifiedLogger.logFn(args, LogLevel.WARN);
+      };
+      verifiedLogger.error = (...args: unknown[]): void => {
+        verifiedLogger.logFn(args, LogLevel.ERROR);
+      };
+      return verifiedLogger;
+    }
+    throw new Error('Unauthorized access to internal channel');
   }
 
   private valueToString(value: unknown): string {
@@ -54,6 +89,8 @@ export class Logger extends Console {
           // Multiple arguments - create a readable format
           message = args.map((arg) => this.valueToString(arg)).join(' ');
         }
+
+        this.tags.sdk_log = this.isSdkChannel;
 
         const logObject = {
           message,
@@ -137,11 +174,11 @@ export const serializeError = (error: unknown) => {
 export function serializeAxiosError(error: AxiosError) {
   const response = error.response
     ? {
-        data: error.response.data,
-        headers: error.response.headers as RawAxiosResponseHeaders,
-        status: error.response.status,
-        statusText: error.response.statusText,
-      }
+      data: error.response.data,
+      headers: error.response.headers as RawAxiosResponseHeaders,
+      status: error.response.status,
+      statusText: error.response.statusText,
+    }
     : null;
   const config = {
     method: error.config?.method,
@@ -155,3 +192,30 @@ export function serializeAxiosError(error: AxiosError) {
     response,
   };
 }
+
+// Private symbol and token
+export function getInternalLogger(logger: Logger): Logger {
+  return (logger as any)[INTERNAL_CHANNEL](verificationToken);
+}
+
+// Factory function to create a user-safe logger that can never access verified channel
+export function createUserLogger(logger: Logger): Logger {
+  // Create a new logger instance that is guaranteed to be unverified
+  // This ensures user code can never access the verified channel
+  const userLogger = Object.create(Logger.prototype);
+
+  // Copy all the necessary properties but ensure isVerifiedChannel is false
+  Object.assign(userLogger, logger);
+  userLogger.isVerifiedChannel = false;
+
+  // Remove the internal channel method to prevent access
+  delete userLogger[INTERNAL_CHANNEL];
+
+  // Override the internal channel method to throw an error if accessed
+  userLogger[INTERNAL_CHANNEL] = () => {
+    throw new Error('Unauthorized access to internal channel');
+  };
+
+  return userLogger;
+}
+

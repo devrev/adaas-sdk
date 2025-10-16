@@ -4,6 +4,7 @@ import { WorkerAdapter } from './worker-adapter';
 import { WorkerEvent, WorkerMessageSubject } from '../types/workers';
 import { ProcessTaskInterface } from '../types/workers';
 import { Logger, serializeError } from '../logger/logger';
+import { createUserLogger } from '../logger/logger';
 
 export function processTask<ConnectorState>({
   task,
@@ -16,7 +17,7 @@ export function processTask<ConnectorState>({
         const initialState = workerData.initialState as ConnectorState;
         const initialDomainMapping = workerData.initialDomainMapping;
         const options = workerData.options;
-        console = new Logger({ event, options });
+        console = createUserLogger(new Logger({ event, options }));
 
         const adapterState = await createAdapterState<ConnectorState>({
           event,

@@ -63,6 +63,7 @@ describe(Logger.name, () => {
 
       expect(tags).toEqual({
         ...mockEvent.payload.event_context,
+        sdk_log: false,
         dev_oid: mockEvent.payload.event_context.dev_oid,
       });
     });
@@ -83,9 +84,10 @@ describe(Logger.name, () => {
 
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
-          message,
+          message: message,
           ...mockEvent.payload.event_context,
           dev_oid: mockEvent.payload.event_context.dev_oid,
+          sdk_log: false,
         })
       );
     });
@@ -104,6 +106,7 @@ describe(Logger.name, () => {
           message: expectedMessage,
           ...mockEvent.payload.event_context,
           dev_oid: mockEvent.payload.event_context.dev_oid,
+          sdk_log: false,
         })
       );
     });
@@ -123,6 +126,7 @@ describe(Logger.name, () => {
           message: `${text} ${expectedDataMessage}`,
           ...mockEvent.payload.event_context,
           dev_oid: mockEvent.payload.event_context.dev_oid,
+          sdk_log: false,
         })
       );
     });
@@ -143,6 +147,7 @@ describe(Logger.name, () => {
           message: `${text1} ${expectedDataMessage} ${text2}`,
           ...mockEvent.payload.event_context,
           dev_oid: mockEvent.payload.event_context.dev_oid,
+          sdk_log: false,
         })
       );
     });
