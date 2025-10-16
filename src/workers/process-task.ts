@@ -1,9 +1,12 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
-import { createAdapterState } from '../state/state';
-import { WorkerAdapter } from './worker-adapter';
-import { WorkerEvent, WorkerMessageSubject } from '../types/workers';
-import { ProcessTaskInterface } from '../types/workers';
 import { Logger, serializeError } from '../logger/logger';
+import { createAdapterState } from '../state/state';
+import {
+  ProcessTaskInterface,
+  WorkerEvent,
+  WorkerMessageSubject,
+} from '../types/workers';
+import { WorkerAdapter } from './worker-adapter';
 
 export function processTask<ConnectorState>({
   task,

@@ -1,10 +1,10 @@
 import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
-import { getPrintableState, serializeAxiosError, Logger } from './logger';
-import { LogLevel } from './logger.interfaces';
+import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
-import { createEvent } from '../tests/test-helpers';
+import { getPrintableState, Logger, serializeAxiosError } from './logger';
+import { LogLevel } from './logger.interfaces';
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();

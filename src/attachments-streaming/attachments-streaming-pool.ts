@@ -1,11 +1,11 @@
+import { sleep } from '../common/helpers';
 import {
-  NormalizedAttachment,
   ExternalSystemAttachmentStreamingFunction,
+  NormalizedAttachment,
   ProcessAttachmentReturnType,
 } from '../types';
-import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 import { WorkerAdapter } from '../workers/worker-adapter';
-import { sleep } from '../common/helpers';
+import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 
 export class AttachmentsStreamingPool<ConnectorState> {
   private adapter: WorkerAdapter<ConnectorState>;

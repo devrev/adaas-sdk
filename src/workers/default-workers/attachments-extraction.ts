@@ -1,10 +1,10 @@
 import axios from 'axios';
-import { processTask, ExtractorEventType } from '../../index';
+import { MAX_DEVREV_ARTIFACT_SIZE } from '../../common/constants';
+import { ExtractorEventType, processTask } from '../../index';
 import {
   ExternalSystemAttachmentStreamingParams,
   ExternalSystemAttachmentStreamingResponse,
 } from '../../types/extraction';
-import { MAX_DEVREV_ARTIFACT_SIZE } from '../../common/constants';
 
 const getAttachmentStream = async ({
   item,

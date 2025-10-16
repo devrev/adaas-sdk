@@ -1,5 +1,5 @@
-import * as path from 'path';
 import { readFileSync } from 'fs';
+import * as path from 'path';
 import * as v8 from 'v8';
 
 import {
@@ -263,7 +263,17 @@ export function getMemoryUsage(): MemoryInfo {
       ) + '%';
 
     // Detailed message showing RSS breakdown for leak detection
-    const formattedMessage = `Memory: RSS ${rssUsedMB.toFixed(2)}/${effectiveMemoryLimitMB.toFixed(2)}MB (${rssUsedPercent}) [Heap ${heapUsedMB.toFixed(2)}/${heapTotalMB.toFixed(2)}MB (${heapUsedPercent}) + External ${externalMB.toFixed(2)}MB + Buffers ${arrayBuffersMB.toFixed(2)}MB].`;
+    const formattedMessage = `Memory: RSS ${rssUsedMB.toFixed(
+      2
+    )}/${effectiveMemoryLimitMB.toFixed(
+      2
+    )}MB (${rssUsedPercent}) [Heap ${heapUsedMB.toFixed(
+      2
+    )}/${heapTotalMB.toFixed(
+      2
+    )}MB (${heapUsedPercent}) + External ${externalMB.toFixed(
+      2
+    )}MB + Buffers ${arrayBuffersMB.toFixed(2)}MB].`;
 
     return {
       rssUsedMB: rssUsedMB.toFixed(2),

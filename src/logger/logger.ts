@@ -1,17 +1,17 @@
 import { Console } from 'node:console';
 import { inspect } from 'node:util';
 
+import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
+import { isMainThread, parentPort } from 'node:worker_threads';
+import { getCircularReplacer } from '../common/helpers';
+import { EventContext } from '../types/extraction';
+import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import {
   LoggerFactoryInterface,
   LogLevel,
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
-import { isMainThread, parentPort } from 'node:worker_threads';
-import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
-import { AxiosError, RawAxiosResponseHeaders, isAxiosError } from 'axios';
-import { getCircularReplacer } from '../common/helpers';
-import { EventContext } from '../types/extraction';
 
 export class Logger extends Console {
   private options?: WorkerAdapterOptions;

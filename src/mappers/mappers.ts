@@ -3,15 +3,15 @@ import { AxiosResponse } from 'axios';
 import { axiosClient } from '../http/axios-client-internal';
 
 import {
-  MappersFactoryInterface,
   MappersCreateParams,
   MappersCreateResponse,
+  MappersFactoryInterface,
+  MappersGetByExternalIdParams,
+  MappersGetByExternalIdResponse,
   MappersGetByTargetIdParams,
   MappersGetByTargetIdResponse,
   MappersUpdateParams,
   MappersUpdateResponse,
-  MappersGetByExternalIdParams,
-  MappersGetByExternalIdResponse,
 } from './mappers.interface';
 
 /**

@@ -1,8 +1,8 @@
 import { axiosClient } from '../http/axios-client-internal';
 import { AirdropEvent } from '../types/extraction';
 
-import { InitialDomainMapping } from '../types/common';
 import { serializeError } from '../logger/logger';
+import { InitialDomainMapping } from '../types/common';
 
 export async function installInitialDomainMapping(
   event: AirdropEvent,
@@ -94,6 +94,8 @@ export async function installInitialDomainMapping(
   );
 
   console.log(
-    `Successfully installed initial domain mapping ${JSON.stringify(initialDomainMappingInstallResponse.data)}`
+    `Successfully installed initial domain mapping ${JSON.stringify(
+      initialDomainMappingInstallResponse.data
+    )}`
   );
 }

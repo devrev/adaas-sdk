@@ -34,7 +34,11 @@ axiosRetry(axiosClient, {
     const delay = axiosRetry.exponentialDelay(retryCount, error, 1000);
 
     console.warn(
-      `Request to ${error.config?.url} failed with response status code ${error.response?.status}. Method ${error.config?.method}. Retry count: ${retryCount}. Retrying in ${Math.round(delay / 1000)}s.`
+      `Request to ${error.config?.url} failed with response status code ${
+        error.response?.status
+      }. Method ${
+        error.config?.method
+      }. Retry count: ${retryCount}. Retrying in ${Math.round(delay / 1000)}s.`
     );
 
     return delay;

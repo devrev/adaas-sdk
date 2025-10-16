@@ -1,18 +1,18 @@
 import {
-  ARTIFACT_BATCH_SIZE,
   AIRDROP_DEFAULT_ITEM_TYPES,
+  ARTIFACT_BATCH_SIZE,
 } from '../common/constants';
-import { ErrorRecord } from '../types/common';
 import { Item } from '../repo/repo.interfaces';
+import { ErrorRecord } from '../types/common';
 import { Uploader } from '../uploader/uploader';
 import { Artifact } from '../uploader/uploader.interfaces';
 
-import {
-  RepoFactoryInterface,
-  NormalizedItem,
-  NormalizedAttachment,
-} from './repo.interfaces';
 import { WorkerAdapterOptions } from '../types/workers';
+import {
+  NormalizedAttachment,
+  NormalizedItem,
+  RepoFactoryInterface,
+} from './repo.interfaces';
 
 export class Repo {
   readonly itemType: string;
@@ -64,7 +64,7 @@ export class Repo {
       }
 
       this.onUpload(artifact);
-      
+
       this.uploadedArtifacts.push(artifact);
 
       // Clear the uploaded items from the main items array if no batch was specified

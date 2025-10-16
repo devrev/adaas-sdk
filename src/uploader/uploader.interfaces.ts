@@ -1,7 +1,7 @@
-import { AirdropEvent } from '../types/extraction';
-import { WorkerAdapterOptions } from '../types/workers';
 import { ErrorRecord } from '../types/common';
+import { AirdropEvent } from '../types/extraction';
 import { ExternalSystemItem, StatsFileObject } from '../types/loading';
+import { WorkerAdapterOptions } from '../types/workers';
 
 export interface UploaderFactoryInterface {
   event: AirdropEvent;

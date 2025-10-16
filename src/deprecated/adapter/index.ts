@@ -1,12 +1,12 @@
 import axios from 'axios';
 
-import { Artifact } from '../../uploader/uploader.interfaces';
 import {
   AirdropEvent,
-  ExtractorEventType,
-  ExtractorEvent,
   EventData,
+  ExtractorEvent,
+  ExtractorEventType,
 } from '../../types/extraction';
+import { Artifact } from '../../uploader/uploader.interfaces';
 
 import { AdapterState } from '../../state/state.interfaces';
 

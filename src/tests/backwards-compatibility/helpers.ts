@@ -1,4 +1,8 @@
-import { Extractor, ExtractorConfig, ExtractorResult } from '@microsoft/api-extractor';
+import {
+  Extractor,
+  ExtractorConfig,
+  ExtractorResult,
+} from '@microsoft/api-extractor';
 import {
   ApiClass,
   ApiConstructor,
@@ -12,7 +16,7 @@ import {
   ApiProperty,
   ApiPropertySignature,
   ApiTypeAlias,
-  Parameter
+  Parameter,
 } from '@microsoft/api-extractor-model';
 
 import * as fs from 'fs';
@@ -42,16 +46,16 @@ export function generateApiReport(): void {
     __dirname,
     'api-extractor.json'
   );
-  
+
   // Ensure the temp and report directories exist
   const tempDir = path.join(__dirname, 'temp');
   const reportDir = path.join(__dirname, 'report');
-  
+
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
     console.log(`Created temp directory: ${tempDir}`);
   }
-  
+
   if (!fs.existsSync(reportDir)) {
     fs.mkdirSync(reportDir, { recursive: true });
     console.log(`Created report directory: ${reportDir}`);
@@ -78,7 +82,10 @@ export function generateApiReport(): void {
 }
 
 // Helper function to load API data
-export const loadApiData = (): { newApiMembers: readonly ApiItem[], currentApiMembers: readonly ApiItem[] } => {
+export const loadApiData = (): {
+  newApiMembers: readonly ApiItem[];
+  currentApiMembers: readonly ApiItem[];
+} => {
   if (!fs.existsSync(newApiJsonPath)) {
     throw new Error(
       'New API reports not found. Run the generate-api-report test first.'
@@ -102,46 +109,71 @@ export const loadApiData = (): { newApiMembers: readonly ApiItem[], currentApiMe
 
 // Helper functions for getting different kinds of items from the API members
 export const getFunctions = (members: readonly ApiItem[]): ApiFunction[] => {
-  return members.filter((m: ApiItem) => m instanceof ApiFunction && m.kind === 'Function') as ApiFunction[];
-}
+  return members.filter(
+    (m: ApiItem) => m instanceof ApiFunction && m.kind === 'Function'
+  ) as ApiFunction[];
+};
 
 export const getConstructor = (members: readonly ApiItem[]): ApiConstructor => {
-  return (members.filter((m: ApiItem) => m instanceof ApiConstructor && m.kind === 'Constructor') as ApiConstructor[])[0];
-}
+  return (
+    members.filter(
+      (m: ApiItem) => m instanceof ApiConstructor && m.kind === 'Constructor'
+    ) as ApiConstructor[]
+  )[0];
+};
 
 export const getEnums = (members: readonly ApiItem[]): ApiEnum[] => {
-  return members.filter((m: ApiItem) => m instanceof ApiEnum && m.kind === 'Enum') as ApiEnum[];
-}
+  return members.filter(
+    (m: ApiItem) => m instanceof ApiEnum && m.kind === 'Enum'
+  ) as ApiEnum[];
+};
 
 export const getClasses = (members: readonly ApiItem[]): ApiClass[] => {
-  return members.filter((m: ApiItem) => m instanceof ApiClass && m.kind === 'Class') as ApiClass[];
-}
+  return members.filter(
+    (m: ApiItem) => m instanceof ApiClass && m.kind === 'Class'
+  ) as ApiClass[];
+};
 
 export const getProperties = (members: readonly ApiItem[]): ApiProperty[] => {
-  return members.filter((m: ApiItem) => m instanceof ApiProperty && m.kind === 'Property') as ApiProperty[];
-}
+  return members.filter(
+    (m: ApiItem) => m instanceof ApiProperty && m.kind === 'Property'
+  ) as ApiProperty[];
+};
 
 export const getTypes = (members: readonly ApiItem[]): ApiTypeAlias[] => {
-  return members.filter((m: ApiItem) => m instanceof ApiTypeAlias && m.kind === 'TypeAlias') as ApiTypeAlias[];
-}
+  return members.filter(
+    (m: ApiItem) => m instanceof ApiTypeAlias && m.kind === 'TypeAlias'
+  ) as ApiTypeAlias[];
+};
 
 export const getInterfaces = (members: readonly ApiItem[]): ApiInterface[] => {
-  return members.filter((m: ApiItem) => m instanceof ApiInterface && m.kind === 'Interface') as ApiInterface[];
-}
+  return members.filter(
+    (m: ApiItem) => m instanceof ApiInterface && m.kind === 'Interface'
+  ) as ApiInterface[];
+};
 
-export const getMethodSignatures = (members: readonly ApiItem[]): ApiMethodSignature[] => {
-  return members.filter((m: ApiItem) => m instanceof ApiMethodSignature && m.kind === 'MethodSignature') as ApiMethodSignature[];
-}
+export const getMethodSignatures = (
+  members: readonly ApiItem[]
+): ApiMethodSignature[] => {
+  return members.filter(
+    (m: ApiItem) =>
+      m instanceof ApiMethodSignature && m.kind === 'MethodSignature'
+  ) as ApiMethodSignature[];
+};
 
-export const getPropertySignatures = (members: readonly ApiItem[]): ApiPropertySignature[] => {
-  return members.filter((m: ApiItem) => m instanceof ApiPropertySignature && m.kind === 'PropertySignature') as ApiPropertySignature[];
-}
-
+export const getPropertySignatures = (
+  members: readonly ApiItem[]
+): ApiPropertySignature[] => {
+  return members.filter(
+    (m: ApiItem) =>
+      m instanceof ApiPropertySignature && m.kind === 'PropertySignature'
+  ) as ApiPropertySignature[];
+};
 
 export const updateCurrentApiJson = () => {
   if (fs.existsSync(newApiMdPath) && fs.existsSync(newApiJsonPath)) {
     fs.copyFileSync(newApiMdPath, currentApiMdPath);
-    
+
     // Copy new API JSON into latest.json after all tests pass
     const latestJsonPath = path.join(__dirname, 'latest.json');
     fs.copyFileSync(newApiJsonPath, latestJsonPath);
@@ -150,4 +182,4 @@ export const updateCurrentApiJson = () => {
   } else {
     console.warn('No new API reports found.');
   }
-}
+};

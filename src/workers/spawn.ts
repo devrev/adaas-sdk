@@ -1,30 +1,30 @@
 import axios from 'axios';
-import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
+import { emit } from '../common/control-protocol';
+import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
+import { Logger, serializeError } from '../logger/logger';
 import {
   AirdropEvent,
   EventType,
   ExtractorEventType,
 } from '../types/extraction';
-import { emit } from '../common/control-protocol';
-import { getTimeoutErrorEventType, getMemoryUsage } from '../common/helpers';
-import { Logger, serializeError } from '../logger/logger';
 import {
   GetWorkerPathInterface,
-  WorkerEvent,
-  WorkerMessageSubject,
   SpawnFactoryInterface,
   SpawnInterface,
+  WorkerEvent,
+  WorkerMessageSubject,
 } from '../types/workers';
 
-import { createWorker } from './create-worker';
-import { LogLevel } from '../logger/logger.interfaces';
 import {
   DEFAULT_LAMBDA_TIMEOUT,
   HARD_TIMEOUT_MULTIPLIER,
   MEMORY_LOG_INTERVAL,
 } from '../common/constants';
+import { LogLevel } from '../logger/logger.interfaces';
+import { createWorker } from './create-worker';
 
 function getWorkerPath({
   event,

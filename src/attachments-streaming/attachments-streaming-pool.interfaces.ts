@@ -1,6 +1,6 @@
 import {
-  NormalizedAttachment,
   ExternalSystemAttachmentStreamingFunction,
+  NormalizedAttachment,
 } from '../types';
 import { WorkerAdapter } from '../workers/worker-adapter';
 

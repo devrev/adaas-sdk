@@ -1,15 +1,15 @@
 import { axiosClient } from '../http/axios-client-internal';
-import { Mappers } from './mappers';
-import {
-  SyncMapperRecordStatus,
-  SyncMapperRecordTargetType,
-  MappersGetByTargetIdParams,
-  MappersGetByExternalIdParams,
-  MappersCreateParams,
-  MappersUpdateParams,
-} from './mappers.interface';
 import { createEvent } from '../tests/test-helpers';
 import { EventType } from '../types/extraction';
+import { Mappers } from './mappers';
+import {
+  MappersCreateParams,
+  MappersGetByExternalIdParams,
+  MappersGetByTargetIdParams,
+  MappersUpdateParams,
+  SyncMapperRecordStatus,
+  SyncMapperRecordTargetType,
+} from './mappers.interface';
 
 // Mock the axios client
 jest.mock('../http/axios-client-internal');

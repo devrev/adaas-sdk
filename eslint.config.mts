@@ -1,62 +1,62 @@
-import js from "@eslint/js";
-import globals from "globals";
-import tseslint from "typescript-eslint";
-import { defineConfig } from "eslint/config";
-import prettierPlugin from "eslint-plugin-prettier";
-import prettierConfig from "eslint-config-prettier";
+import js from '@eslint/js';
+import prettierConfig from 'eslint-config-prettier';
+import prettierPlugin from 'eslint-plugin-prettier';
+import { defineConfig } from 'eslint/config';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 export default defineConfig([
-  { ignores: ["dist/**", "test/**", "src/deprecated/**"] },
+  { ignores: ['dist/**', 'test/**', 'src/deprecated/**'] },
 
   // JavaScript files (CommonJS) - for worker.js and config files
   {
-    files: ["**/*.{js,cjs}", "**/*.config.{js,cjs,mjs}"],
+    files: ['**/*.{js,cjs}', '**/*.config.{js,cjs,mjs}'],
     languageOptions: {
       globals: {
-        ...globals.node
+        ...globals.node,
       },
-      sourceType: "commonjs"
+      sourceType: 'commonjs',
     },
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
-      '@typescript-eslint/no-var-requires': 'off'
-    }
+      '@typescript-eslint/no-var-requires': 'off',
+    },
   },
 
   // ES Module JavaScript files
   {
-    files: ["**/*.mjs"],
+    files: ['**/*.mjs'],
     languageOptions: {
       globals: {
         ...globals.browser,
-        ...globals.node
+        ...globals.node,
       },
-      sourceType: "module"
-    }
+      sourceType: 'module',
+    },
   },
 
   // TypeScript files (without type checking)
   {
-    files: ["**/*.{ts,mts,cts}"],
+    files: ['**/*.{ts,mts,cts}'],
     plugins: { js },
-    extends: ["js/recommended"],
+    extends: ['js/recommended'],
     languageOptions: {
       globals: {
         ...globals.browser,
-        ...globals.node
-      }
-    }
+        ...globals.node,
+      },
+    },
   },
 
-  ...tseslint.configs.recommended.map(config => ({
+  ...tseslint.configs.recommended.map((config) => ({
     ...config,
-    files: ["**/*.{ts,mts,cts}"]
+    files: ['**/*.{ts,mts,cts}'],
   })),
   prettierConfig,
 
   {
-    files: ["**/*.{ts,mts,cts}"],
-    ignores: ["**/*.config.*", "**/*.d.ts"],
+    files: ['**/*.{ts,mts,cts}'],
+    ignores: ['**/*.config.*', '**/*.d.ts'],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -65,7 +65,7 @@ export default defineConfig([
       },
     },
     plugins: {
-      prettier: prettierPlugin
+      prettier: prettierPlugin,
     },
     rules: {
       'prettier/prettier': 'error',
@@ -80,4 +80,3 @@ export default defineConfig([
     },
   },
 ]);
-
