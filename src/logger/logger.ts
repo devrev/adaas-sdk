@@ -21,8 +21,8 @@ export const verificationToken = Array.from(
 
 export class Logger extends Console {
   private options?: WorkerAdapterOptions;
-  private tags: EventContext & { dev_oid: string };
-  private isVerifiedChannel: boolean = false; // false = unverified (default), true = verified
+  private tags: EventContext & { dev_oid: string, sdk_log: boolean };
+  private isSdkChannel: boolean = false; // false = unverified (default), true = verified
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
@@ -30,6 +30,7 @@ export class Logger extends Console {
     this.tags = {
       ...event.payload.event_context,
       dev_oid: event.payload.event_context.dev_oid,
+      sdk_log: this.isSdkChannel
     };
   }
 
@@ -89,9 +90,10 @@ export class Logger extends Console {
           message = args.map((arg) => this.valueToString(arg)).join(' ');
         }
 
+        this.tags.sdk_log = this.isSdkChannel;
+
         const logObject = {
           message,
-          verified: this.isVerifiedChannel,
           ...this.tags,
         };
 
