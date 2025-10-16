@@ -134,54 +134,46 @@ export const serializeError = (error: unknown) => {
   return error;
 };
 
-export class AxiosErrorResponse {
+export interface AxiosErrorResponse {
   config: {
-      method: string | undefined;
-      params: any;
-      url: string | undefined;
+    method: string | undefined;
+    params: any;
+    url: string | undefined;
   };
   isAxiosError: boolean;
   isCorsOrNoNetworkError: boolean;
-  response: {
-      data: unknown;
-      headers: RawAxiosResponseHeaders;
-      status: number;
-      statusText: string;
-      code?: undefined;
-      message?: undefined;
-  } | {
-      code: string | undefined;
-      message: string;
-      data?: undefined;
-      headers?: undefined;
-      status?: undefined;
-      statusText?: undefined;
+  response?: {
+    data: unknown;
+    headers: RawAxiosResponseHeaders;
+    status: number;
+    statusText: string;
   };
-};
+  code?: string;
+  message?: string;
+}
 
 export function serializeAxiosError(error: AxiosError): AxiosErrorResponse {
-  const response = error.response
-    ? {
-        data: error.response.data,
-        headers: error.response.headers as RawAxiosResponseHeaders,
-        status: error.response.status,
-        statusText: error.response.statusText,
-      }
-    : {
-        code: error.code,
-        message: error.message,
-      };
-
-  const config = {
-    method: error.config?.method,
-    params: error.config?.params,
-    url: error.config?.url,
-  };
-
-  return {
-    config,
+  const serializedAxiosError: AxiosErrorResponse = {
+    config: {
+      method: error.config?.method,
+      params: error.config?.params,
+      url: error.config?.url,
+    },
     isAxiosError: true,
     isCorsOrNoNetworkError: !error.response,
-    response,
   };
+
+  if (error.response) {
+    serializedAxiosError.response = {
+      data: error.response.data,
+      headers: error.response.headers as RawAxiosResponseHeaders,
+      status: error.response.status,
+      statusText: error.response.statusText,
+    };
+  } else {
+    serializedAxiosError.code = error.code;
+    serializedAxiosError.message = error.message;
+  }
+
+  return serializedAxiosError;
 }
