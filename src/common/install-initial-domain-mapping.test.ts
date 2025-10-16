@@ -182,6 +182,7 @@ describe(installInitialDomainMapping.name, () => {
   });
 
   it('[edge] should return early with warning when initial domain mapping is null', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await installInitialDomainMapping(mockEvent, null as any);
 
     expect(mockAxiosClient.get).not.toHaveBeenCalled();
@@ -189,6 +190,7 @@ describe(installInitialDomainMapping.name, () => {
   });
 
   it('[edge] should return early with warning when initial domain mapping is undefined', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await installInitialDomainMapping(mockEvent, undefined as any);
 
     expect(mockAxiosClient.get).not.toHaveBeenCalled();

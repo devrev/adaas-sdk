@@ -11,6 +11,8 @@ interface TestState {
   attachments: { completed: boolean };
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 describe(AttachmentsStreamingPool.name, () => {
   let mockAdapter: jest.Mocked<WorkerAdapter<TestState>>;
   let mockStream: jest.MockedFunction<ExternalSystemAttachmentStreamingFunction>;
@@ -323,7 +325,7 @@ describe(AttachmentsStreamingPool.name, () => {
       let processCallCount = 0;
       const processPromises: Promise<ProcessAttachmentReturnType>[] = [];
 
-      mockAdapter.processAttachment.mockImplementation(() => {
+      mockAdapter.processAttachment.mockImplementation(async () => {
         const promise = new Promise<ProcessAttachmentReturnType>((resolve) => {
           setTimeout(() => {
             processCallCount++;

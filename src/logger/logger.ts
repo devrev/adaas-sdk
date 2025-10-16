@@ -3,7 +3,6 @@ import { inspect } from 'node:util';
 
 import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
 import { isMainThread, parentPort } from 'node:worker_threads';
-import { getCircularReplacer } from '../common/helpers';
 import { EventContext } from '../types/extraction';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import {
@@ -107,9 +106,7 @@ export function getPrintableState(state: Record<string, any>): PrintableState {
       // If the value is an object, recursively process its properties
       const processedObject: PrintableState = {};
       for (const key in value) {
-        if (value.hasOwnProperty(key)) {
-          processedObject[key] = processValue(value[key]);
-        }
+        processedObject[key] = processValue(value[key]);
       }
       return processedObject;
     }

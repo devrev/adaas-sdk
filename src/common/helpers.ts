@@ -201,7 +201,7 @@ export function getLibraryVersion() {
   }
 }
 
-export function sleep(ms: number) {
+export async function sleep(ms: number) {
   console.log(`Sleeping for ${ms / 1000}s.`);
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -216,7 +216,7 @@ export function truncateFilename(filename: string): string {
     `Filename length exceeds the maximum limit of ${MAX_DEVREV_FILENAME_LENGTH} characters. Truncating filename.`
   );
 
-  let extension = filename.slice(-MAX_DEVREV_FILENAME_EXTENSION_LENGTH);
+  const extension = filename.slice(-MAX_DEVREV_FILENAME_EXTENSION_LENGTH);
   // Calculate how many characters are available for the name part after accounting for the extension and "..."
   const availableNameLength =
     MAX_DEVREV_FILENAME_LENGTH - MAX_DEVREV_FILENAME_EXTENSION_LENGTH - 3; // -3 for "..."

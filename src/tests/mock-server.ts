@@ -5,6 +5,7 @@ export class MockServer {
   private server: http.Server | null = null;
   private port: number;
   private consoleLogs: string[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private requests: Array<{ method: string; url: string; body?: any }> = [];
 
   constructor(port?: number) {
@@ -32,6 +33,7 @@ export class MockServer {
     const method = req.method || 'GET';
 
     // Track this request
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const requestInfo: { method: string; url: string; body?: any } = {
       method,
       url: req.url || '',

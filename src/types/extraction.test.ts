@@ -63,6 +63,7 @@ describe('ExtractionTypes', () => {
   it('[edge] should handle null event context gracefully', () => {
     const event = { ...baseEvent };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     event.payload.event_context = null as any;
 
     expect(event.payload.event_context).toBeNull();

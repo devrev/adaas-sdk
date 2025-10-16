@@ -1,6 +1,6 @@
 import { State } from '../state/state';
 import { createEvent, createItems } from '../tests/test-helpers';
-import { EventType } from '../types';
+import { Artifact, EventType } from '../types';
 import { WorkerAdapter } from './worker-adapter';
 
 // 1. Create a mock function for the method you want to override.
@@ -31,7 +31,7 @@ jest.mock('../uploader/uploader', () => {
 });
 
 function checkArtifactOrder(
-  artifacts: any[],
+  artifacts: Artifact[],
   expectedOrder: { itemType: string }[]
 ): boolean {
   let outerIndex = 0;
@@ -57,8 +57,8 @@ describe('Artifact ordering when artifacts overflow batch sizes in repositories'
 
   beforeEach(() => {
     // Create a fresh adapter instance for this test to avoid mocking conflicts
-    let mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
-    let mockAdapterState = new State<TestState>({
+    const mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+    const mockAdapterState = new State<TestState>({
       event: mockEvent,
       initialState: { attachments: { completed: false } },
     });

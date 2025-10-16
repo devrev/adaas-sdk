@@ -155,7 +155,7 @@ export class Uploader {
 
   async streamArtifact(
     artifact: ArtifactToUpload,
-    fileStream: any
+    fileStream: AxiosResponse
   ): Promise<AxiosResponse | void> {
     const formData = new FormData();
     for (const field in artifact.form_data) {
@@ -223,7 +223,7 @@ export class Uploader {
    * Destroys a stream to prevent resource leaks.
    * @param {any} fileStream - The axios response stream to destroy
    */
-  private destroyStream(fileStream: any): void {
+  private destroyStream(fileStream: AxiosResponse): void {
     try {
       if (fileStream && fileStream.data) {
         // For axios response streams, the data property contains the actual stream

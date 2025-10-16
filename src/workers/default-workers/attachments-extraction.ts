@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../../common/constants';
 import { ExtractorEventType, processTask } from '../../index';
 import {
@@ -10,7 +10,7 @@ const getAttachmentStream = async ({
   item,
 }: ExternalSystemAttachmentStreamingParams): Promise<ExternalSystemAttachmentStreamingResponse> => {
   const { id, url } = item;
-  let fileStreamResponse: any = null;
+  let fileStreamResponse: AxiosResponse | undefined;
 
   try {
     // Get the stream response directly
@@ -22,14 +22,16 @@ const getAttachmentStream = async ({
     });
 
     // Check content-length from the stream response headers
-    const contentLength = fileStreamResponse.headers['content-length'];
+    const contentLength = fileStreamResponse?.headers['content-length'];
     if (contentLength && parseInt(contentLength) > MAX_DEVREV_ARTIFACT_SIZE) {
       console.warn(
         `Attachment ${id} size (${contentLength} bytes) exceeds maximum limit of ${MAX_DEVREV_ARTIFACT_SIZE} bytes. Skipping download.`
       );
 
       // Destroy the stream since we won't use it
-      destroyHttpStream(fileStreamResponse);
+      if (fileStreamResponse != null) {
+        destroyHttpStream(fileStreamResponse);
+      }
 
       return {
         error: {
@@ -41,13 +43,13 @@ const getAttachmentStream = async ({
     return { httpStream: fileStreamResponse };
   } catch (error) {
     // If we created a stream but failed afterwards, destroy it
-    if (fileStreamResponse) {
+    if (fileStreamResponse != null) {
       destroyHttpStream(fileStreamResponse);
     }
 
     return {
       error: {
-        message: `Error while getting attachment stream for attachment with id ${id}.`,
+        message: `Error while getting attachment stream for attachment with id ${id}. ${error}`,
       },
     };
   }
@@ -57,7 +59,7 @@ const getAttachmentStream = async ({
  * Destroys a stream to prevent memory leaks.
  * @param {any} httpStream - The axios response stream to destroy
  */
-const destroyHttpStream = (httpStream: any): void => {
+const destroyHttpStream = (httpStream: AxiosResponse): void => {
   try {
     if (httpStream && httpStream.data) {
       if (typeof httpStream.data.destroy === 'function') {

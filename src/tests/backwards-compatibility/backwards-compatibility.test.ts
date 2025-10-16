@@ -1,6 +1,3 @@
-import * as fs from 'fs';
-import * as path from 'path';
-
 import {
   ApiClass,
   ApiConstructor,
@@ -8,6 +5,7 @@ import {
   ApiEnumMember,
   ApiFunction,
   ApiInterface,
+  ApiItem,
   ApiMethodSignature,
   ApiProperty,
   ApiPropertySignature,
@@ -124,7 +122,9 @@ describe('Backwards Compatibility', () => {
     describe('should verify that all exports in current are still in new', () => {
       const { newApiMembers, currentApiMembers } = loadApiData();
       const newExports = newApiMembers.map((m) => m.displayName);
-      const currentExports = currentApiMembers.map((m: any) => m.displayName);
+      const currentExports = currentApiMembers.map(
+        (m: ApiItem) => m.displayName
+      );
 
       it.each(currentExports)('should contain export: %s', (exportName) => {
         expect(newExports).toContain(exportName);
@@ -152,7 +152,7 @@ describe('Backwards Compatibility', () => {
 
       for (const newFunction of newFunctions) {
         const currentFunction = currentFunctions.find(
-          (f: any) => f.name === newFunction.name
+          (f: ApiFunction) => f.name === newFunction.name
         );
 
         // Skip if function doesn't exist in current API

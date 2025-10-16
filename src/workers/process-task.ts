@@ -19,6 +19,7 @@ export function processTask<ConnectorState>({
         const initialState = workerData.initialState as ConnectorState;
         const initialDomainMapping = workerData.initialDomainMapping;
         const options = workerData.options;
+        // eslint-disable-next-line no-global-assign
         console = new Logger({ event, options });
 
         const adapterState = await createAdapterState<ConnectorState>({
@@ -35,21 +36,27 @@ export function processTask<ConnectorState>({
             options,
           });
 
-          parentPort.on(WorkerEvent.WorkerMessage, async (message) => {
-            if (message.subject === WorkerMessageSubject.WorkerMessageExit) {
-              console.log(
-                'Worker received message to gracefully exit. Setting isTimeout flag and executing onTimeout function.'
-              );
+          parentPort.on(
+            WorkerEvent.WorkerMessage,
+            (message) =>
+              void (async () => {
+                if (
+                  message.subject === WorkerMessageSubject.WorkerMessageExit
+                ) {
+                  console.log(
+                    'Worker received message to gracefully exit. Setting isTimeout flag and executing onTimeout function.'
+                  );
 
-              adapter.handleTimeout();
-              await onTimeout({ adapter });
+                  adapter.handleTimeout();
+                  await onTimeout({ adapter });
 
-              console.log(
-                'Finished executing onTimeout function. Exiting worker.'
-              );
-              process.exit(0);
-            }
-          });
+                  console.log(
+                    'Finished executing onTimeout function. Exiting worker.'
+                  );
+                  process.exit(0);
+                }
+              })()
+          );
           await task({ adapter });
           process.exit(0);
         }

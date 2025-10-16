@@ -1,7 +1,13 @@
 import { ExtractorEventType, processTask } from '../../index';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // Simulate a network request with variable delays
-const simulateNetworkRequest = (url: string, delay: number): Promise<any> => {
+// eslint-disable @typescript-eslint/no-explicit-any
+const simulateNetworkRequest = async (
+  url: string,
+  delay: number
+): Promise<any> => {
   return new Promise((resolve) => {
     console.log(`Starting network request to ${url}...`);
     setTimeout(() => {

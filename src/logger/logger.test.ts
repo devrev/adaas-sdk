@@ -4,13 +4,13 @@ import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import { getPrintableState, Logger, serializeAxiosError } from './logger';
-import { LogLevel } from './logger.interfaces';
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
 const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation();
 const mockConsoleError = jest.spyOn(console, 'error').mockImplementation();
-const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation();
+
+/* eslint-disable @typescript-eslint/no-require-imports */
 
 // Mock worker_threads
 jest.mock('node:worker_threads', () => ({
@@ -59,6 +59,7 @@ describe(Logger.name, () => {
       const logger = new Logger({ event: mockEvent, options: mockOptions });
 
       // Access private property for testing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tags = (logger as any).tags;
 
       expect(tags).toEqual({

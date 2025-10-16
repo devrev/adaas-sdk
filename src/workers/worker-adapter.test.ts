@@ -1,13 +1,10 @@
 import { AttachmentsStreamingPool } from '../attachments-streaming/attachments-streaming-pool';
 import { State } from '../state/state';
 import { createEvent } from '../tests/test-helpers';
-import {
-  AdapterState,
-  EventType,
-  ExtractorEventType,
-  NormalizedAttachment,
-} from '../types';
+import { AdapterState, EventType, ExtractorEventType } from '../types';
 import { WorkerAdapter } from './worker-adapter';
+
+/* eslint-disable @typescript-eslint/no-require-imports */
 
 // Mock dependencies
 jest.mock('../common/control-protocol', () => ({
@@ -486,7 +483,7 @@ describe(WorkerAdapter.name, () => {
 
       // Import the worker_threads module and spy on parentPort.postMessage
       const workerThreads = require('node:worker_threads');
-      mockPostMessage = jest.fn().mockImplementation((a: any) => {
+      mockPostMessage = jest.fn().mockImplementation(() => {
         counter.counter += 1;
       });
 

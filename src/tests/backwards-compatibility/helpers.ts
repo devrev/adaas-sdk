@@ -7,7 +7,6 @@ import {
   ApiClass,
   ApiConstructor,
   ApiEnum,
-  ApiEnumMember,
   ApiFunction,
   ApiInterface,
   ApiItem,
@@ -16,7 +15,6 @@ import {
   ApiProperty,
   ApiPropertySignature,
   ApiTypeAlias,
-  Parameter,
 } from '@microsoft/api-extractor-model';
 
 import * as fs from 'fs';
@@ -27,6 +25,8 @@ export const newApiMdPath = path.join(__dirname, 'temp', 'ts-adaas.md');
 export const currentApiMdPath = path.join(__dirname, 'ts-adaas.md');
 export const newApiJsonPath = path.join(__dirname, 'temp', 'ts-adaas.api.json');
 export const currentApiJsonPath = path.join(__dirname, 'latest.json');
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 // Generate API report before all tests run
 export function generateApiReport(): void {

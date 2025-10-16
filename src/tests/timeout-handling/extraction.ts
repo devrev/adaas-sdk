@@ -2,6 +2,7 @@ import { AirdropEvent, spawn } from '../../index';
 
 const initialState = {};
 const initialDomainMapping = {};
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface ExtractorState {}
 
 const run = async (events: AirdropEvent[], workerPath: string) => {

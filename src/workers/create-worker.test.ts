@@ -28,6 +28,7 @@ describe(createWorker.name, () => {
 
   it('should throw error when not in main thread', async () => {
     const originalIsMainThread = isMainThread;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (isMainThread as any) = false;
     const workerPath = __dirname + '../tests/dummy-worker.ts';
 
@@ -42,6 +43,7 @@ describe(createWorker.name, () => {
     ).rejects.toThrow('Worker threads can not start more worker threads.');
 
     // Restore original value
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (isMainThread as any) = originalIsMainThread;
   });
 
