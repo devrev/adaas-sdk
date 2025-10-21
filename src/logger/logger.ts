@@ -7,8 +7,7 @@ import {
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
-import { isMainThread, parentPort } from 'node:worker_threads';
-import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
+import { WorkerAdapterOptions } from '../types/workers';
 import { AxiosError, RawAxiosResponseHeaders, isAxiosError } from 'axios';
 import { getCircularReplacer } from '../common/helpers';
 import { EventContext } from '../types/extraction';
@@ -16,9 +15,11 @@ import { EventContext } from '../types/extraction';
 export class Logger extends Console {
   private options?: WorkerAdapterOptions;
   private tags: EventContext & { dev_oid: string };
+  private originalConsole: Console;
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
+    this.originalConsole = console; // Store original console before replacement
     this.options = options;
     this.tags = {
       ...event.payload.event_context,
@@ -39,37 +40,29 @@ export class Logger extends Console {
   }
 
   logFn(args: unknown[], level: LogLevel): void {
-    if (isMainThread) {
-      if (this.options?.isLocalDevelopment) {
-        console[level](...args);
-      } else {
-        let message: string;
-        if (args.length === 1 && typeof args[0] === 'string') {
-          // Single string argument - use directly
-          message = args[0];
-        } else if (args.length === 1) {
-          // Single non-string argument - convert to string properly
-          message = this.valueToString(args[0]);
-        } else {
-          // Multiple arguments - create a readable format
-          message = args.map((arg) => this.valueToString(arg)).join(' ');
-        }
-
-        const logObject = {
-          message,
-          ...this.tags,
-        };
-
-        console[level](JSON.stringify(logObject));
-      }
+    if (this.options?.isLocalDevelopment) {
+      // Use original console methods to avoid circular reference
+      this.originalConsole[level](...args);
     } else {
-      parentPort?.postMessage({
-        subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: {
-          args: args.map((arg) => this.valueToString(arg)),
-          level,
-        },
-      });
+      let message: string;
+      if (args.length === 1 && typeof args[0] === 'string') {
+        // Single string argument - use directly
+        message = args[0];
+      } else if (args.length === 1) {
+        // Single non-string argument - convert to string properly
+        message = this.valueToString(args[0]);
+      } else {
+        // Multiple arguments - create a readable format
+        message = args.map((arg) => this.valueToString(arg)).join(' ');
+      }
+
+      const logObject = {
+        message,
+        ...this.tags,
+      };
+
+      // Use original console methods to avoid circular reference
+      this.originalConsole[level](JSON.stringify(logObject));
     }
   }
 
