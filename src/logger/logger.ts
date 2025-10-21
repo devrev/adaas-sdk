@@ -39,25 +39,30 @@ export class Logger extends Console {
   }
 
   logFn(args: unknown[], level: LogLevel): void {
-    let message: string;
-    if (args.length === 1 && typeof args[0] === 'string') {
-      // Single string argument - use directly
-      message = args[0];
-    } else if (args.length === 1) {
-      // Single non-string argument - convert to string properly
-      message = this.valueToString(args[0]);
+    if (this.options?.isLocalDevelopment) {
+      // Use original console methods to avoid circular reference
+      this.originalConsole[level](...args);
     } else {
-      // Multiple arguments - create a readable format
-      message = args.map((arg) => this.valueToString(arg)).join(' ');
+      let message: string;
+      if (args.length === 1 && typeof args[0] === 'string') {
+        // Single string argument - use directly
+        message = args[0];
+      } else if (args.length === 1) {
+        // Single non-string argument - convert to string properly
+        message = this.valueToString(args[0]);
+      } else {
+        // Multiple arguments - create a readable format
+        message = args.map((arg) => this.valueToString(arg)).join(' ');
+      }
+
+      const logObject = {
+        message,
+        ...this.tags,
+      };
+
+      // Use original console methods to avoid circular reference
+      this.originalConsole[level](JSON.stringify(logObject));
     }
-
-    const logObject = {
-      message,
-      ...(!this.options?.isLocalDevelopment ? { ...this.tags } : {}),
-    };
-
-    // Use original console methods to avoid circular reference
-    this.originalConsole[level](JSON.stringify(logObject));
   }
 
   override log(...args: unknown[]): void {
