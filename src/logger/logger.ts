@@ -39,37 +39,27 @@ export class Logger extends Console {
   }
 
   logFn(args: unknown[], level: LogLevel): void {
-    if (isMainThread) {
-      if (this.options?.isLocalDevelopment) {
-        console[level](...args);
-      } else {
-        let message: string;
-        if (args.length === 1 && typeof args[0] === 'string') {
-          // Single string argument - use directly
-          message = args[0];
-        } else if (args.length === 1) {
-          // Single non-string argument - convert to string properly
-          message = this.valueToString(args[0]);
-        } else {
-          // Multiple arguments - create a readable format
-          message = args.map((arg) => this.valueToString(arg)).join(' ');
-        }
-
-        const logObject = {
-          message,
-          ...this.tags,
-        };
-
-        console[level](JSON.stringify(logObject));
-      }
+    if (this.options?.isLocalDevelopment) {
+      console[level](...args);
     } else {
-      parentPort?.postMessage({
-        subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: {
-          args: args.map((arg) => this.valueToString(arg)),
-          level,
-        },
-      });
+      let message: string;
+      if (args.length === 1 && typeof args[0] === 'string') {
+        // Single string argument - use directly
+        message = args[0];
+      } else if (args.length === 1) {
+        // Single non-string argument - convert to string properly
+        message = this.valueToString(args[0]);
+      } else {
+        // Multiple arguments - create a readable format
+        message = args.map((arg) => this.valueToString(arg)).join(' ');
+      }
+
+      const logObject = {
+        message,
+        ...this.tags,
+      };
+
+      console[level](JSON.stringify(logObject));
     }
   }
 
