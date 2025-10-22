@@ -46,6 +46,8 @@ import { serializeError } from '../logger/logger';
 import { SyncMapperRecordStatus } from '../mappers/mappers.interface';
 import { AttachmentsStreamingPool } from '../attachments-streaming/attachments-streaming-pool';
 
+const MAX_MESSAGE_LENGTH: number = 200_000;
+
 export function createWorkerAdapter<ConnectorState>({
   event,
   adapterState,
@@ -88,6 +90,9 @@ export class WorkerAdapter<ConnectorState> {
   private _processedFiles: string[];
   private _mappers: Mappers;
   private uploader: Uploader;
+
+  // Length of the resulting artifact JSON object string.
+  private currentLength: number = 0;
 
   constructor({
     event,
@@ -147,11 +152,19 @@ export class WorkerAdapter<ConnectorState> {
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
+          let newLength = JSON.stringify(artifact).length;
+
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AIRDROP_DEFAULT_ITEM_TYPES.ATTACHMENTS) {
             this.state.toDevRev?.attachmentsMetadata.artifactIds.push(
               artifact.id
             );
+          }
+
+          if(this.currentLength + newLength > MAX_MESSAGE_LENGTH) {
+            // TODO: We need to call the adapter's `onTimeout` here and `emit` the Progress event.
+            // We might have to run the `uploadAllRepos` as well.
+            this.handleTimeout();
           }
         },
         options: this.options,
