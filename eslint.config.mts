@@ -10,7 +10,7 @@ export default defineConfig([
 
   // JavaScript files (CommonJS) - for worker.js and config files
   {
-    files: ['**/*.{js,cjs}', '**/*.config.{js,cjs,mjs}'],
+    files: ['**/*.{js,cjs}', '**/*.config.{js,cjs}'],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -23,21 +23,9 @@ export default defineConfig([
     },
   },
 
-  // ES Module JavaScript files
-  {
-    files: ['**/*.mjs'],
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
-      sourceType: 'module',
-    },
-  },
-
   // TypeScript files (without type checking)
   {
-    files: ['**/*.{ts,mts,cts}'],
+    files: ['**/*.{ts,mts}'],
     plugins: { js },
     extends: ['js/recommended'],
     languageOptions: {
@@ -50,12 +38,12 @@ export default defineConfig([
 
   ...tseslint.configs.recommended.map((config) => ({
     ...config,
-    files: ['**/*.{ts,mts,cts}'],
+    files: ['**/*.{ts,mts}'],
   })),
   prettierConfig,
 
   {
-    files: ['**/*.{ts,mts,cts}'],
+    files: ['**/*.{ts,mts}'],
     ignores: ['**/*.config.*', '**/*.d.ts'],
     languageOptions: {
       parser: tseslint.parser,
