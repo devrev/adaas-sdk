@@ -1,7 +1,7 @@
 import { EventType } from '../../types/extraction';
+import { MockServer } from '../mock-server';
 import { createEvent } from '../test-helpers';
 import run from './extraction';
-import { MockServer } from '../mock-server';
 
 jest.setTimeout(15000);
 

@@ -3,7 +3,7 @@ import { Worker } from 'worker_threads';
 import { State } from '../state/state';
 import { WorkerAdapter } from '../workers/worker-adapter';
 
-import { ExtractorEventType, AirdropEvent } from './extraction';
+import { AirdropEvent, ExtractorEventType } from './extraction';
 
 import { LoaderEventType } from './loading';
 

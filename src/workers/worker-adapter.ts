@@ -1,50 +1,52 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
+import { parentPort } from 'node:worker_threads';
+import { AttachmentsStreamingPool } from '../attachments-streaming/attachments-streaming-pool';
+import {
+  AIRDROP_DEFAULT_ITEM_TYPES,
+  ALLOWED_EXTRACTION_EVENT_TYPES,
+  STATELESS_EVENT_TYPES,
+} from '../common/constants';
+import { emit } from '../common/control-protocol';
+import { addReportToLoaderReport, getFilesToLoad } from '../common/helpers';
+import { serializeError } from '../logger/logger';
+import { Mappers } from '../mappers/mappers';
+import { SyncMapperRecordStatus } from '../mappers/mappers.interface';
+import { Repo } from '../repo/repo';
+import { NormalizedAttachment, RepoInterface } from '../repo/repo.interfaces';
+import { State } from '../state/state';
+import { AdapterState } from '../state/state.interfaces';
 import {
   AirdropEvent,
-  ExtractorEventType,
   EventData,
   EventType,
-  ExternalSystemAttachmentStreamingFunction,
   ExternalSystemAttachmentProcessors,
+  ExternalSystemAttachmentStreamingFunction,
+  ExtractorEventType,
   ProcessAttachmentReturnType,
   StreamAttachmentsReturnType,
 } from '../types/extraction';
 import {
   ActionType,
   ExternalSystemAttachment,
+  ExternalSystemItem,
   ExternalSystemLoadingFunction,
   FileToLoad,
-  LoaderEventType,
-  StatsFileObject,
-} from '../types/loading';
-import { AdapterState } from '../state/state.interfaces';
-import { Artifact, SsorAttachment } from '../uploader/uploader.interfaces';
-import {
-  AIRDROP_DEFAULT_ITEM_TYPES,
-  ALLOWED_EXTRACTION_EVENT_TYPES,
-  STATELESS_EVENT_TYPES,
-} from '../common/constants';
-import { State } from '../state/state';
-import { WorkerAdapterInterface, WorkerAdapterOptions } from '../types/workers';
-import { parentPort } from 'node:worker_threads';
-import { emit } from '../common/control-protocol';
-import { WorkerMessageEmitted, WorkerMessageSubject } from '../types/workers';
-import { Repo } from '../repo/repo';
-import { NormalizedAttachment, RepoInterface } from '../repo/repo.interfaces';
-import {
-  ExternalSystemItem,
   ItemTypesToLoadParams,
   ItemTypeToLoad,
+  LoaderEventType,
   LoaderReport,
   LoadItemResponse,
   LoadItemTypesResponse,
+  StatsFileObject,
 } from '../types/loading';
-import { addReportToLoaderReport, getFilesToLoad } from '../common/helpers';
-import { Mappers } from '../mappers/mappers';
+import {
+  WorkerAdapterInterface,
+  WorkerAdapterOptions,
+  WorkerMessageEmitted,
+  WorkerMessageSubject,
+} from '../types/workers';
 import { Uploader } from '../uploader/uploader';
-import { serializeError } from '../logger/logger';
-import { SyncMapperRecordStatus } from '../mappers/mappers.interface';
-import { AttachmentsStreamingPool } from '../attachments-streaming/attachments-streaming-pool';
+import { Artifact, SsorAttachment } from '../uploader/uploader.interfaces';
 
 export function createWorkerAdapter<ConnectorState>({
   event,
@@ -453,8 +455,9 @@ export class WorkerAdapter<ConnectorState> {
       };
     }
 
-    outerloop: for (const fileToLoad of this.adapterState.state.fromDevRev
-      ?.filesToLoad) {
+    const filesToLoad = this.adapterState.state.fromDevRev?.filesToLoad;
+
+    outerloop: for (const fileToLoad of filesToLoad) {
       if (!fileToLoad.completed) {
         const transformerFile = (await this.uploader.getJsonObjectByArtifactId({
           artifactId: fileToLoad.id,
@@ -771,9 +774,9 @@ export class WorkerAdapter<ConnectorState> {
 
   /**
    * Destroys a stream to prevent memory leaks.
-   * @param {any} httpStream - The axios response stream to destroy
+   * @param httpStream - The axios response stream to destroy
    */
-  private destroyHttpStream(httpStream: any): void {
+  private destroyHttpStream(httpStream: AxiosResponse): void {
     try {
       if (httpStream && httpStream.data) {
         if (typeof httpStream.data.destroy === 'function') {

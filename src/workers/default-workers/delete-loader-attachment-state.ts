@@ -1,4 +1,4 @@
-import { processTask, LoaderEventType } from '../../index';
+import { LoaderEventType, processTask } from '../../index';
 
 processTask({
   task: async ({ adapter }) => {

@@ -67,11 +67,13 @@ describe(MyClass.name, () => {
 ### Testing Scope and Focus
 
 **Primary Focus: Public Interfaces**
+
 - Tests should primarily focus on testing public-facing (exported) interfaces and APIs
 - Test the behavior that external consumers of your code will experience
 - This ensures that breaking changes to public contracts are caught by tests
 
 **Internal Logic Testing**
+
 - Be pragmatic about testing internal logic when it provides significant value
 - Internal APIs used globally across the application may warrant dedicated test files
 - Example: `metrics.spec.ts` tests the public endpoint controller, while `metrics.interceptor.spec.ts` tests internal API used globally

@@ -1,8 +1,8 @@
-import { axiosClient } from '../../http/axios-client-internal';
 import { betaSDK, client } from '@devrev/typescript-sdk';
 import fs, { promises as fsPromises } from 'fs';
-import { createFormData } from '../common/helpers';
+import { axiosClient } from '../../http/axios-client-internal';
 import { Artifact, UploadResponse } from '../../uploader/uploader.interfaces';
+import { createFormData } from '../common/helpers';
 
 /**
  * Uploader class is used to upload files to the DevRev platform.

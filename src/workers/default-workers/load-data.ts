@@ -1,5 +1,5 @@
-import { processTask } from '../process-task';
 import { LoaderEventType } from '../../types/loading';
+import { processTask } from '../process-task';
 
 processTask({
   task: async ({ adapter }) => {

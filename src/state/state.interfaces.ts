@@ -1,7 +1,7 @@
+import { InitialDomainMapping } from '../types/common';
 import { AirdropEvent } from '../types/extraction';
 import { FileToLoad } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
-import { InitialDomainMapping } from '../types/common';
 
 export interface SdkState {
   lastSyncStarted?: string;

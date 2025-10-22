@@ -4,10 +4,10 @@ import { Artifact } from '../uploader/uploader.interfaces';
 
 import { ErrorRecord } from './common';
 
-import { DonV2, LoaderReport, RateLimited } from './loading';
-import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { AxiosResponse } from 'axios';
+import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { WorkerAdapter } from '../workers/worker-adapter';
+import { DonV2, LoaderReport, RateLimited } from './loading';
 
 /**
  * EventType is an enum that defines the different types of events that can be sent to the external extractor from ADaaS.
@@ -341,7 +341,7 @@ export type StreamAttachmentsReturnType =
 export type ExternalSystemAttachmentReducerFunction<
   Batch,
   NewBatch,
-  ConnectorState,
+  ConnectorState
 > = ({
   attachments,
   adapter,
@@ -374,7 +374,7 @@ export type ExternalSystemAttachmentIteratorFunction<NewBatch, ConnectorState> =
 export interface ExternalSystemAttachmentProcessors<
   ConnectorState,
   Batch,
-  NewBatch,
+  NewBatch
 > {
   reducer: ExternalSystemAttachmentReducerFunction<
     Batch,

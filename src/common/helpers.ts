@@ -1,5 +1,5 @@
-import * as path from 'path';
 import { readFileSync } from 'fs';
+import * as path from 'path';
 import * as v8 from 'v8';
 
 import {
@@ -166,21 +166,6 @@ export function addReportToLoaderReport({
   return loaderReports;
 }
 
-// https://stackoverflow.com/a/53731154
-export function getCircularReplacer() {
-  const seen = new WeakSet();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (key: any, value: any) => {
-    if (typeof value === 'object' && value !== null) {
-      if (seen.has(value)) {
-        return;
-      }
-      seen.add(value);
-    }
-    return value;
-  };
-}
-
 // read adaas library version from package.json
 export function getLibraryVersion() {
   try {
@@ -201,7 +186,7 @@ export function getLibraryVersion() {
   }
 }
 
-export function sleep(ms: number) {
+export async function sleep(ms: number) {
   console.log(`Sleeping for ${ms / 1000}s.`);
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -216,7 +201,7 @@ export function truncateFilename(filename: string): string {
     `Filename length exceeds the maximum limit of ${MAX_DEVREV_FILENAME_LENGTH} characters. Truncating filename.`
   );
 
-  let extension = filename.slice(-MAX_DEVREV_FILENAME_EXTENSION_LENGTH);
+  const extension = filename.slice(-MAX_DEVREV_FILENAME_EXTENSION_LENGTH);
   // Calculate how many characters are available for the name part after accounting for the extension and "..."
   const availableNameLength =
     MAX_DEVREV_FILENAME_LENGTH - MAX_DEVREV_FILENAME_EXTENSION_LENGTH - 3; // -3 for "..."
@@ -263,7 +248,17 @@ export function getMemoryUsage(): MemoryInfo {
       ) + '%';
 
     // Detailed message showing RSS breakdown for leak detection
-    const formattedMessage = `Memory: RSS ${rssUsedMB.toFixed(2)}/${effectiveMemoryLimitMB.toFixed(2)}MB (${rssUsedPercent}) [Heap ${heapUsedMB.toFixed(2)}/${heapTotalMB.toFixed(2)}MB (${heapUsedPercent}) + External ${externalMB.toFixed(2)}MB + Buffers ${arrayBuffersMB.toFixed(2)}MB].`;
+    const formattedMessage = `Memory: RSS ${rssUsedMB.toFixed(
+      2
+    )}/${effectiveMemoryLimitMB.toFixed(
+      2
+    )}MB (${rssUsedPercent}) [Heap ${heapUsedMB.toFixed(
+      2
+    )}/${heapTotalMB.toFixed(
+      2
+    )}MB (${heapUsedPercent}) + External ${externalMB.toFixed(
+      2
+    )}MB + Buffers ${arrayBuffersMB.toFixed(2)}MB].`;
 
     return {
       rssUsedMB: rssUsedMB.toFixed(2),
