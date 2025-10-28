@@ -33,6 +33,12 @@ const EVENT_TYPE_TRANSLATION_TABLE = {
 
 /**
  * Translates Event type from the old naming scheme to the new one
+ * 
+ * @param eventType - The event type string to translate
+ * @returns EventType - The translated event type with the following behavior:
+ *   1) Old E2DR names are translated to new DR2E format
+ *   2) Valid DR2E names are returned as-is
+ *   3) Unknown values return `UnknownEventType`
  */
 export function getEventType(eventType: string): EventType {
   // If we notice that the event has a newer translation, translate to that
