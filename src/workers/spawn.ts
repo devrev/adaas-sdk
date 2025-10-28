@@ -217,11 +217,12 @@ export class Spawn {
       this.lambdaTimeout * HARD_TIMEOUT_MULTIPLIER
     );
 
-    // If worker exits with process.exit(code), clear the timeouts and exit from main thread.
+    // If worker exits with process.exit(code), clear the timeouts and exit from
+    // main thread.
     worker.on(
       WorkerEvent.WorkerExit,
-      () =>
-        void (async (code) => {
+      (code: number) =>
+        void (async () => {
           this.logger.info('Worker exited with exit code: ' + code + '.');
           this.clearTimeouts();
           await this.exitFromMainThread();
@@ -296,7 +297,8 @@ export class Spawn {
         event: this.event,
         data: {
           error: {
-            message: 'Worker has not emitted anything. Exited.',
+            message:
+              'Worker exited the process without emitting an event. Check other logs for more information.',
           },
         },
       });

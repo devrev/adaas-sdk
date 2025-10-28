@@ -65,10 +65,18 @@ export function checkFunctionCompatibility(
     currentFunction instanceof ApiFunction &&
     newFunction instanceof ApiFunction
   ) {
-    if(!currentFunction.returnTypeExcerpt?.isEmpty) {
-      if(newFunction.returnTypeExcerpt.text != currentFunction.returnTypeExcerpt.text) {
+    if (!currentFunction.returnTypeExcerpt?.isEmpty) {
+      if (
+        newFunction.returnTypeExcerpt.text !=
+        currentFunction.returnTypeExcerpt.text
+      ) {
         // This will pass, if the new implementation is an object and the current one is not specified or a hard-coded type.
-        if(!(currentFunction.returnTypeExcerpt.text.split(" ").length != 1 && newFunction.returnTypeExcerpt.text.split(" ").length == 1)) {
+        if (
+          !(
+            currentFunction.returnTypeExcerpt.text.split(' ').length != 1 &&
+            newFunction.returnTypeExcerpt.text.split(' ').length == 1
+          )
+        ) {
           it(`Function ${newFunction.displayName} should have the same return type as the current function`, () => {
             expect(newFunction.returnTypeExcerpt.text).toEqual(
               currentFunction.returnTypeExcerpt.text
