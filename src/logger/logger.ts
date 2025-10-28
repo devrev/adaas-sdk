@@ -2,10 +2,10 @@ import { Console } from 'node:console';
 import { inspect } from 'node:util';
 
 import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
-import { isMainThread, parentPort } from 'node:worker_threads';
 import { EventContext } from '../types/extraction';
-import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
+import { WorkerAdapterOptions } from '../types/workers';
 import {
+  AxiosErrorResponse,
   LoggerFactoryInterface,
   LogLevel,
   PrintableArray,
@@ -13,11 +13,13 @@ import {
 } from './logger.interfaces';
 
 export class Logger extends Console {
+  private originalConsole: Console;
   private options?: WorkerAdapterOptions;
   private tags: EventContext & { dev_oid: string };
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
+    this.originalConsole = console;
     this.options = options;
     this.tags = {
       ...event.payload.event_context,
@@ -38,37 +40,17 @@ export class Logger extends Console {
   }
 
   logFn(args: unknown[], level: LogLevel): void {
-    if (isMainThread) {
-      if (this.options?.isLocalDevelopment) {
-        console[level](...args);
-      } else {
-        let message: string;
-        if (args.length === 1 && typeof args[0] === 'string') {
-          // Single string argument - use directly
-          message = args[0];
-        } else if (args.length === 1) {
-          // Single non-string argument - convert to string properly
-          message = this.valueToString(args[0]);
-        } else {
-          // Multiple arguments - create a readable format
-          message = args.map((arg) => this.valueToString(arg)).join(' ');
-        }
-
-        const logObject = {
-          message,
-          ...this.tags,
-        };
-
-        console[level](JSON.stringify(logObject));
-      }
+    if (this.options?.isLocalDevelopment) {
+      this.originalConsole[level](...args);
     } else {
-      parentPort?.postMessage({
-        subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: {
-          args: args.map((arg) => this.valueToString(arg)),
-          level,
-        },
-      });
+      const message = args.map((arg) => this.valueToString(arg)).join(' ');
+
+      const logObject = {
+        message,
+        ...this.tags,
+      };
+
+      this.originalConsole[level](JSON.stringify(logObject));
     }
   }
 
@@ -130,24 +112,6 @@ export const serializeError = (error: unknown) => {
   }
   return error;
 };
-
-export interface AxiosErrorResponse {
-  config: {
-    method: string | undefined;
-    params: any;
-    url: string | undefined;
-  };
-  isAxiosError: boolean;
-  isCorsOrNoNetworkError: boolean;
-  response?: {
-    data: unknown;
-    headers: RawAxiosResponseHeaders;
-    status: number;
-    statusText: string;
-  };
-  code?: string;
-  message?: string;
-}
 
 export function serializeAxiosError(error: AxiosError): AxiosErrorResponse {
   const serializedAxiosError: AxiosErrorResponse = {

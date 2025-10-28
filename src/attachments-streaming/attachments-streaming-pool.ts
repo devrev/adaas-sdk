@@ -34,7 +34,8 @@ export class AttachmentsStreamingPool<ConnectorState> {
     this.totalProcessedCount++;
     if (this.totalProcessedCount % this.PROGRESS_REPORT_INTERVAL === 0) {
       console.info(`Processed ${this.totalProcessedCount} attachments so far.`);
-      await sleep(2000);
+      // Sleep for 100ms to avoid blocking the event loop
+      await sleep(100);
     }
   }
 
