@@ -40,7 +40,7 @@ export function getEventType(eventType: string): EventType {
   }
 
   // Event type doesn't need translation, return 
-  if (eventType in EventType) {
+  if (Object.values(EventType).includes(eventType as EventType)) {
     return eventType as EventType;
   }
 
