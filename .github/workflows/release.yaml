@@ -71,12 +71,23 @@ jobs:
       # Get latest published version and show target release
       - name: Get latest published version and show target release
         run: |
-          LATEST_VERSION=$(npm view @devrev/ts-adaas version 2>/dev/null || echo "0.0.0")
+          # Get the latest version including prereleases
+          LATEST_VERSION=$(npm view @devrev/ts-adaas versions --json 2>/dev/null | jq -r '.[-1]' || echo "0.0.0")
           echo "Latest published version: $LATEST_VERSION"
           echo "LATEST_PUBLISHED_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
 
-          # Update package.json to match latest published version
-          npm --no-git-tag-version version $LATEST_VERSION
+          # Get current package.json version
+          CURRENT_VERSION=$(cat package.json | jq -r '.version')
+          echo "Current package.json version: $CURRENT_VERSION"
+
+          # Only update package.json if versions don't match
+          if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+            echo "Syncing package.json version to latest published version"
+            npm --no-git-tag-version version $LATEST_VERSION
+          else
+            echo "Package.json version already matches latest published version"
+          fi
+
 
           # Calculate and apply the new version
           if [ "${{ github.event.inputs.release-type }}" = "prerelease" ]; then
@@ -105,7 +116,7 @@ jobs:
           npm run test
 
       # Commit changes
-      - name: Commit package.json changes and create tag
+      - name: Commit package.json and package-lock.json changes and create tag
         run: |
           git add "package.json" "package-lock.json"
           git commit -m "chore: release ${{ env.NEW_VERSION }}"

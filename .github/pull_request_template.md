@@ -17,4 +17,4 @@
 - [ ] Ran backwards compatibility tests with `npm run test:backwards-compatibility`.
 - [ ] Code formatted and checked with `npm run lint`.
 - [ ] Tested airdrop-template linked to this PR.
-- [ ] Documentation updated and provided a link to PR / new docs OR `no-docs` written:
+- [ ] Documentation updated and provided a link to PR / new docs OR no docs needed.
