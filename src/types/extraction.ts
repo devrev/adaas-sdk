@@ -15,14 +15,14 @@ import { DonV2, LoaderReport, RateLimited } from './loading';
  */
 export enum EventType {
   // Extraction
-  ExtractionExternalSyncUnitsStart = 'EXTRACTION_EXTERNAL_SYNC_UNITS_START',
-  ExtractionMetadataStart = 'EXTRACTION_METADATA_START',
-  ExtractionDataStart = 'EXTRACTION_DATA_START',
-  ExtractionDataContinue = 'EXTRACTION_DATA_CONTINUE',
-  ExtractionDataDelete = 'EXTRACTION_DATA_DELETE',
-  ExtractionAttachmentsStart = 'EXTRACTION_ATTACHMENTS_START',
-  ExtractionAttachmentsContinue = 'EXTRACTION_ATTACHMENTS_CONTINUE',
-  ExtractionAttachmentsDelete = 'EXTRACTION_ATTACHMENTS_DELETE',
+  ExtractionExternalSyncUnitsStart = 'START_EXTRACTING_EXTERNAL_SYNC_UNITS',
+  ExtractionMetadataStart = 'START_EXTRACTING_METADATA',
+  ExtractionDataStart = 'START_EXTRACTING_DATA',
+  ExtractionDataContinue = 'CONTINUE_EXTRACTING_DATA',
+  ExtractionDataDelete = 'START_DELETING_EXTRACTOR_STATE',
+  ExtractionAttachmentsStart = 'START_EXTRACTING_ATTACHMENTS',
+  ExtractionAttachmentsContinue = 'CONTINUE_EXTRACTING_ATTACHMENTS',
+  ExtractionAttachmentsDelete = 'START_DELETING_EXTRACTOR_ATTACHMENTS_STATE',
 
   // Loading
   StartLoadingData = 'START_LOADING_DATA',
@@ -31,6 +31,9 @@ export enum EventType {
   ContinueLoadingAttachments = 'CONTINUE_LOADING_ATTACHMENTS',
   StartDeletingLoaderState = 'START_DELETING_LOADER_STATE',
   StartDeletingLoaderAttachmentState = 'START_DELETING_LOADER_ATTACHMENT_STATE',
+
+  // Unknown
+  UnknownEventType = 'UNKNOWN_EVENT_TYPE',
 }
 
 /**
@@ -39,22 +42,22 @@ export enum EventType {
  */
 export enum ExtractorEventType {
   // Extraction
-  ExtractionExternalSyncUnitsDone = 'EXTRACTION_EXTERNAL_SYNC_UNITS_DONE',
-  ExtractionExternalSyncUnitsError = 'EXTRACTION_EXTERNAL_SYNC_UNITS_ERROR',
-  ExtractionMetadataDone = 'EXTRACTION_METADATA_DONE',
-  ExtractionMetadataError = 'EXTRACTION_METADATA_ERROR',
-  ExtractionDataProgress = 'EXTRACTION_DATA_PROGRESS',
-  ExtractionDataDelay = 'EXTRACTION_DATA_DELAY',
-  ExtractionDataDone = 'EXTRACTION_DATA_DONE',
-  ExtractionDataError = 'EXTRACTION_DATA_ERROR',
-  ExtractionDataDeleteDone = 'EXTRACTION_DATA_DELETE_DONE',
-  ExtractionDataDeleteError = 'EXTRACTION_DATA_DELETE_ERROR',
-  ExtractionAttachmentsProgress = 'EXTRACTION_ATTACHMENTS_PROGRESS',
-  ExtractionAttachmentsDelay = 'EXTRACTION_ATTACHMENTS_DELAY',
-  ExtractionAttachmentsDone = 'EXTRACTION_ATTACHMENTS_DONE',
-  ExtractionAttachmentsError = 'EXTRACTION_ATTACHMENTS_ERROR',
-  ExtractionAttachmentsDeleteDone = 'EXTRACTION_ATTACHMENTS_DELETE_DONE',
-  ExtractionAttachmentsDeleteError = 'EXTRACTION_ATTACHMENTS_DELETE_ERROR',
+  ExtractionExternalSyncUnitsDone = 'EXTERNAL_SYNC_UNIT_EXTRACTION_DONE',
+  ExtractionExternalSyncUnitsError = 'EXTERNAL_SYNC_UNIT_EXTRACTION_ERROR',
+  ExtractionMetadataDone = 'METADATA_EXTRACTION_DONE',
+  ExtractionMetadataError = 'METADATA_EXTRACTION_ERROR',
+  ExtractionDataProgress = 'DATA_EXTRACTION_PROGRESS',
+  ExtractionDataDelay = 'DATA_EXTRACTION_DELAYED',
+  ExtractionDataDone = 'DATA_EXTRACTION_DONE',
+  ExtractionDataError = 'DATA_EXTRACTION_ERROR',
+  ExtractionDataDeleteDone = 'EXTRACTOR_STATE_DELETION_DONE',
+  ExtractionDataDeleteError = 'EXTRACTOR_STATE_DELETION_ERROR',
+  ExtractionAttachmentsProgress = 'ATTACHMENT_EXTRACTION_PROGRESS',
+  ExtractionAttachmentsDelay = 'ATTACHMENT_EXTRACTION_DELAYED',
+  ExtractionAttachmentsDone = 'ATTACHMENT_EXTRACTION_DONE',
+  ExtractionAttachmentsError = 'ATTACHMENT_EXTRACTION_ERROR',
+  ExtractionAttachmentsDeleteDone = 'EXTRACTOR_ATTACHMENTS_STATE_DELETION_DONE',
+  ExtractionAttachmentsDeleteError = 'EXTRACTOR_ATTACHMENTS_STATE_DELETION_ERROR',
 
   // Unknown
   UnknownEventType = 'UNKNOWN_EVENT_TYPE',
