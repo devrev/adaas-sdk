@@ -20,14 +20,15 @@ import {
 } from './constants';
 
 const EVENT_TYPE_TRANSLATION_TABLE = {
-  "EXTRACTION_EXTERNAL_SYNC_UNITS_START": EventType.ExtractionExternalSyncUnitsStart,
-  "EXTRACTION_METADATA_START": EventType.ExtractionMetadataStart,
-  "EXTRACTION_DATA_START": EventType.ExtractionDataStart,
-  "EXTRACTION_DATA_CONTINUE": EventType.ExtractionDataContinue,
-  "EXTRACTION_ATTACHMENTS_START": EventType.ExtractionAttachmentsStart,
-  "EXTRACTION_ATTACHMENTS_CONTINUE": EventType.ExtractionAttachmentsContinue,
-  "EXTRACTION_DATA_DELETE": EventType.ExtractionDataDelete,
-  "EXTRACTION_ATTACHMENTS_DELETE": EventType.ExtractionAttachmentsDelete,
+  EXTRACTION_EXTERNAL_SYNC_UNITS_START:
+    EventType.ExtractionExternalSyncUnitsStart,
+  EXTRACTION_METADATA_START: EventType.ExtractionMetadataStart,
+  EXTRACTION_DATA_START: EventType.ExtractionDataStart,
+  EXTRACTION_DATA_CONTINUE: EventType.ExtractionDataContinue,
+  EXTRACTION_ATTACHMENTS_START: EventType.ExtractionAttachmentsStart,
+  EXTRACTION_ATTACHMENTS_CONTINUE: EventType.ExtractionAttachmentsContinue,
+  EXTRACTION_DATA_DELETE: EventType.ExtractionDataDelete,
+  EXTRACTION_ATTACHMENTS_DELETE: EventType.ExtractionAttachmentsDelete,
 };
 
 /**
@@ -35,11 +36,13 @@ const EVENT_TYPE_TRANSLATION_TABLE = {
  */
 export function getEventType(eventType: string): EventType {
   // If we notice that the event has a newer translation, translate to that
-  if(eventType in EVENT_TYPE_TRANSLATION_TABLE){
-    return EVENT_TYPE_TRANSLATION_TABLE[eventType as keyof typeof EVENT_TYPE_TRANSLATION_TABLE];
+  if (eventType in EVENT_TYPE_TRANSLATION_TABLE) {
+    return EVENT_TYPE_TRANSLATION_TABLE[
+      eventType as keyof typeof EVENT_TYPE_TRANSLATION_TABLE
+    ];
   }
 
-  // Event type doesn't need translation, return 
+  // Event type doesn't need translation, return
   if (Object.values(EventType).includes(eventType as EventType)) {
     return eventType as EventType;
   }

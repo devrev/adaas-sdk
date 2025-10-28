@@ -13,7 +13,7 @@ import { DonV2, LoaderReport, RateLimited } from './loading';
  * EventType is an enum that defines the different types of events that can be sent to the external extractor from ADaaS.
  * The external extractor can use these events to know what to do next in the extraction process.
  */
-export enum EventType { 
+export enum EventType {
   // Extraction
   ExtractionExternalSyncUnitsStart = 'START_EXTRACTING_EXTERNAL_SYNC_UNITS',
   ExtractionMetadataStart = 'START_EXTRACTING_METADATA',

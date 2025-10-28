@@ -43,6 +43,8 @@ describe('timeout-1 extraction', () => {
     // Expect last request to be emission of done event
     expect(lastRequest.url).toContain('airdrop.external-extractor.message');
     expect(lastRequest.method).toBe('POST');
-    expect(lastRequest.body.event_type).toBe(ExtractorEventType.ExtractionDataDone);
+    expect(lastRequest.body.event_type).toBe(
+      ExtractorEventType.ExtractionDataDone
+    );
   });
 });
