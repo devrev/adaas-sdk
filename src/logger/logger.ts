@@ -2,12 +2,13 @@ import { Console } from 'node:console';
 import { inspect } from 'node:util';
 
 import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
-import { EventContext } from '../types/extraction';
+import { getLibraryVersion } from '../common/helpers';
 import { WorkerAdapterOptions } from '../types/workers';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
   LogLevel,
+  LogTags,
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
@@ -15,15 +16,17 @@ import {
 export class Logger extends Console {
   private originalConsole: Console;
   private options?: WorkerAdapterOptions;
-  private tags: EventContext & { dev_oid: string };
+  private tags: LogTags;
+  private sdkVersion: string;
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
     this.originalConsole = console;
     this.options = options;
+    this.sdkVersion = getLibraryVersion();
     this.tags = {
       ...event.payload.event_context,
-      dev_oid: event.payload.event_context.dev_oid,
+      sdk_version: this.sdkVersion,
     };
   }
 
@@ -50,7 +53,7 @@ export class Logger extends Console {
         ...this.tags,
       };
 
-      this.originalConsole[level](JSON.stringify(logObject));
+      this.originalConsole[level](logObject);
     }
   }
 
