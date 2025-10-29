@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
+import { getLibraryVersion } from '../common/helpers';
 import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
@@ -55,7 +56,7 @@ describe(Logger.name, () => {
   });
 
   describe('constructor', () => {
-    it('should initialize logger with event context and dev_oid', () => {
+    it('should initialize logger with event context and sdk_version', () => {
       const logger = new Logger({ event: mockEvent, options: mockOptions });
 
       // Access private property for testing
@@ -64,7 +65,7 @@ describe(Logger.name, () => {
 
       expect(tags).toEqual({
         ...mockEvent.payload.event_context,
-        dev_oid: mockEvent.payload.event_context.dev_oid,
+        sdk_version: getLibraryVersion(),
       });
     });
   });
@@ -82,13 +83,15 @@ describe(Logger.name, () => {
 
       logger.info(message);
 
-      expect(mockConsoleInfo).toHaveBeenCalledWith(
-        JSON.stringify({
-          message,
-          ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_oid,
-        })
-      );
+      const callArgs = mockConsoleInfo.mock.calls[0][0];
+      const logObject =
+        typeof callArgs === 'string' ? JSON.parse(callArgs) : callArgs;
+
+      expect(logObject).toEqual({
+        message,
+        ...mockEvent.payload.event_context,
+        sdk_version: getLibraryVersion(),
+      });
     });
 
     it('should log single object message with JSON stringify', () => {
@@ -100,13 +103,15 @@ describe(Logger.name, () => {
         compact: false,
         depth: Infinity,
       });
-      expect(mockConsoleInfo).toHaveBeenCalledWith(
-        JSON.stringify({
-          message: expectedMessage,
-          ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_oid,
-        })
-      );
+      const callArgs = mockConsoleInfo.mock.calls[0][0];
+      const logObject =
+        typeof callArgs === 'string' ? JSON.parse(callArgs) : callArgs;
+
+      expect(logObject).toEqual({
+        message: expectedMessage,
+        ...mockEvent.payload.event_context,
+        sdk_version: getLibraryVersion(),
+      });
     });
 
     it('should log multiple arguments joined with space', () => {
@@ -119,13 +124,15 @@ describe(Logger.name, () => {
         compact: false,
         depth: Infinity,
       });
-      expect(mockConsoleInfo).toHaveBeenCalledWith(
-        JSON.stringify({
-          message: `${text} ${expectedDataMessage}`,
-          ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_oid,
-        })
-      );
+      const callArgs = mockConsoleInfo.mock.calls[0][0];
+      const logObject =
+        typeof callArgs === 'string' ? JSON.parse(callArgs) : callArgs;
+
+      expect(logObject).toEqual({
+        message: `${text} ${expectedDataMessage}`,
+        ...mockEvent.payload.event_context,
+        sdk_version: getLibraryVersion(),
+      });
     });
 
     it('should handle mixed string and object arguments', () => {
@@ -139,13 +146,15 @@ describe(Logger.name, () => {
         compact: false,
         depth: Infinity,
       });
-      expect(mockConsoleInfo).toHaveBeenCalledWith(
-        JSON.stringify({
-          message: `${text1} ${expectedDataMessage} ${text2}`,
-          ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_oid,
-        })
-      );
+      const callArgs = mockConsoleInfo.mock.calls[0][0];
+      const logObject =
+        typeof callArgs === 'string' ? JSON.parse(callArgs) : callArgs;
+
+      expect(logObject).toEqual({
+        message: `${text1} ${expectedDataMessage} ${text2}`,
+        ...mockEvent.payload.event_context,
+        sdk_version: getLibraryVersion(),
+      });
     });
   });
 
@@ -209,13 +218,15 @@ describe(Logger.name, () => {
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
       const callArgs = mockConsoleInfo.mock.calls[0][0];
-      const logObject = JSON.parse(callArgs);
+      const logObject =
+        typeof callArgs === 'string' ? JSON.parse(callArgs) : callArgs;
 
       expect(logObject.message).toBe('');
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
       expect(logObject.request_id).toBe(
         mockEvent.payload.event_context.request_id
       );
+      expect(logObject.sdk_version).toBe(getLibraryVersion());
     });
 
     it('[edge] should handle null and undefined values', () => {
@@ -223,11 +234,13 @@ describe(Logger.name, () => {
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
       const callArgs = mockConsoleInfo.mock.calls[0][0];
-      const logObject = JSON.parse(callArgs);
+      const logObject =
+        typeof callArgs === 'string' ? JSON.parse(callArgs) : callArgs;
 
       // inspect shows 'null' and 'undefined' as strings
       expect(logObject.message).toBe('test null undefined');
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
+      expect(logObject.sdk_version).toBe(getLibraryVersion());
     });
 
     it('[edge] should handle complex nested objects', () => {
@@ -244,7 +257,8 @@ describe(Logger.name, () => {
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
       const callArgs = mockConsoleInfo.mock.calls[0][0];
-      const logObject = JSON.parse(callArgs);
+      const logObject =
+        typeof callArgs === 'string' ? JSON.parse(callArgs) : callArgs;
 
       // The logger uses inspect() with formatting, not JSON.stringify()
       const expectedMessage = require('util').inspect(complexObject, {
@@ -254,6 +268,7 @@ describe(Logger.name, () => {
       expect(logObject.message).toBe(expectedMessage);
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
       expect(typeof logObject.callback_url).toBe('string');
+      expect(logObject.sdk_version).toBe(getLibraryVersion());
     });
   });
 });
