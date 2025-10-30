@@ -31,15 +31,21 @@ export class Logger extends Console {
   }
 
   logFn(args: unknown[], level: LogLevel): void {
+    const message = args
+      .map((arg) =>
+        inspect(arg, {
+          compact: false,
+          depth: Infinity,
+        })
+      )
+      .join(' ');
+
     const logObject = {
-      message: inspect(args, {
-        compact: false,
-        depth: Infinity,
-      }),
-      ...(this.options?.isLocalDevelopment ? this.tags : {}),
+      message,
+      ...(!this.options?.isLocalDevelopment ? this.tags : {}),
     };
 
-    this.originalConsole[level](JSON.stringify(logObject));
+    this.originalConsole[level](logObject);
   }
 
   override log(...args: unknown[]): void {

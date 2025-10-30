@@ -88,7 +88,7 @@ describe(Logger.name, () => {
         typeof callArgs === 'string' ? JSON.parse(callArgs) : callArgs;
 
       expect(logObject).toEqual({
-        message,
+        message: `'${message}'`, // inspect wraps strings in quotes
         ...mockEvent.payload.event_context,
         sdk_version: getLibraryVersion(),
       });
@@ -129,7 +129,7 @@ describe(Logger.name, () => {
         typeof callArgs === 'string' ? JSON.parse(callArgs) : callArgs;
 
       expect(logObject).toEqual({
-        message: `${text} ${expectedDataMessage}`,
+        message: `'${text}' ${expectedDataMessage}`, // inspect wraps strings in quotes
         ...mockEvent.payload.event_context,
         sdk_version: getLibraryVersion(),
       });
@@ -151,7 +151,7 @@ describe(Logger.name, () => {
         typeof callArgs === 'string' ? JSON.parse(callArgs) : callArgs;
 
       expect(logObject).toEqual({
-        message: `${text1} ${expectedDataMessage} ${text2}`,
+        message: `'${text1}' ${expectedDataMessage} '${text2}'`, // inspect wraps strings in quotes
         ...mockEvent.payload.event_context,
         sdk_version: getLibraryVersion(),
       });
@@ -172,7 +172,14 @@ describe(Logger.name, () => {
 
       logger.info(message, data);
 
-      expect(mockConsoleInfo).toHaveBeenCalledWith(message, data);
+      // In local development, the logger still uses logFn but without tags
+      const expectedMessage = `'${message}' ${inspect(data, {
+        compact: false,
+        depth: Infinity,
+      })}`;
+      expect(mockConsoleInfo).toHaveBeenCalledWith({
+        message: expectedMessage,
+      });
     });
   });
 
@@ -221,7 +228,7 @@ describe(Logger.name, () => {
       const logObject =
         typeof callArgs === 'string' ? JSON.parse(callArgs) : callArgs;
 
-      expect(logObject.message).toBe('');
+      expect(logObject.message).toBe("''"); // inspect wraps empty string in quotes
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
       expect(logObject.request_id).toBe(
         mockEvent.payload.event_context.request_id
@@ -237,8 +244,8 @@ describe(Logger.name, () => {
       const logObject =
         typeof callArgs === 'string' ? JSON.parse(callArgs) : callArgs;
 
-      // inspect shows 'null' and 'undefined' as strings
-      expect(logObject.message).toBe('test null undefined');
+      // inspect shows 'null' and 'undefined' as strings, and wraps strings in quotes
+      expect(logObject.message).toBe("'test' null undefined");
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
       expect(logObject.sdk_version).toBe(getLibraryVersion());
     });
