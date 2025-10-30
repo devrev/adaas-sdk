@@ -30,31 +30,16 @@ export class Logger extends Console {
     };
   }
 
-  private valueToString(value: unknown): string {
-    if (typeof value === 'string') {
-      return value;
-    }
-
-    // Use Node.js built-in inspect for everything including errors
-    return inspect(value, {
-      compact: false,
-      depth: Infinity,
-    });
-  }
-
   logFn(args: unknown[], level: LogLevel): void {
-    if (this.options?.isLocalDevelopment) {
-      this.originalConsole[level](...args);
-    } else {
-      const message = args.map((arg) => this.valueToString(arg)).join(' ');
+    const logObject = {
+      message: inspect(args, {
+        compact: false,
+        depth: Infinity,
+      }),
+      ...(this.options?.isLocalDevelopment ? this.tags : {}),
+    };
 
-      const logObject = {
-        message,
-        ...this.tags,
-      };
-
-      this.originalConsole[level](logObject);
-    }
+    this.originalConsole[level](JSON.stringify(logObject));
   }
 
   override log(...args: unknown[]): void {
