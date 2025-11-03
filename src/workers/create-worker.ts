@@ -1,6 +1,6 @@
 import { isMainThread, Worker } from 'node:worker_threads';
 
-import { getInternalLogger } from '../logger/logger';
+import { createUserLogger } from '../logger/logger';
 import { WorkerData, WorkerEvent } from '../types/workers';
 
 async function createWorker<ConnectorState>(
@@ -8,7 +8,8 @@ async function createWorker<ConnectorState>(
 ): Promise<Worker> {
   return new Promise<Worker>((resolve, reject) => {
     if (isMainThread) {
-      const logger = getInternalLogger(workerData.event, workerData.options);
+      // This logger is for user emitted errors and could contain PII. So use User Logger.
+      const logger = createUserLogger(workerData.event, workerData.options);
       const workerFile = __dirname + '/worker.js';
 
       const worker: Worker = new Worker(workerFile, {

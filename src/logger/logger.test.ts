@@ -3,7 +3,7 @@ import { inspect } from 'node:util';
 import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
-import { createUserLogger, getInternalLogger, getPrintableState, serializeAxiosError, UserLogger } from './logger';
+import { getInternalLogger, createUserLogger, getPrintableState, serializeAxiosError, UserLogger } from './logger';
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
@@ -431,12 +431,12 @@ describe('Logger Factory Pattern', () => {
 
     it('should reject invalid tokens when trying to create VerifiedLogger', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const VerifiedLoggerClass = (getInternalLogger as any).constructor;
+      const InternalLoggerFunction = getInternalLogger;
 
       // Try to directly construct with invalid token
       // We need to get access to VerifiedLogger somehow - but it's not exported
       // Instead, we test that the token verification exists by testing the behavior
-      const logger = getInternalLogger(mockEvent);
+      const logger = InternalLoggerFunction(mockEvent);
       expect(logger).toBeDefined();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((logger as any).tags.sdk_log).toBe(true);
