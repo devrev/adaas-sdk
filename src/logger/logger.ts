@@ -132,11 +132,6 @@ export class UserLogger extends BaseLogger {
 
 /**
  * Factory function to create a verified SDK logger.
- * For internal SDK use only. Do not use in user code.
- *
- * Security note: This function requires the internal token to create a verified logger.
- * Even though this function is exported, external callers cannot forge verified loggers
- * because they don't have access to the internal token (stored in module closure).
  * @internal
  */
 export function getInternalLogger(
@@ -148,7 +143,6 @@ export function getInternalLogger(
 
 /**
  * Factory function to create a user logger (unverified).
- * This should only be used internally by the SDK.
  * @internal
  */
 export function createUserLogger(
