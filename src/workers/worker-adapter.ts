@@ -7,6 +7,11 @@ import {
   STATELESS_EVENT_TYPES,
 } from '../common/constants';
 import { emit } from '../common/control-protocol';
+import {
+  logSizeLimitWarning,
+  pruneEventData,
+  SIZE_LIMIT_THRESHOLD,
+} from '../common/event-size-monitor';
 import { addReportToLoaderReport, getFilesToLoad } from '../common/helpers';
 import { serializeError } from '../logger/logger';
 import { Mappers } from '../mappers/mappers';
@@ -47,13 +52,6 @@ import {
 } from '../types/workers';
 import { Uploader } from '../uploader/uploader';
 import { Artifact, SsorAttachment } from '../uploader/uploader.interfaces';
-import {
-  pruneEventData,
-  logSizeLimitWarning,
-  SIZE_LIMIT_THRESHOLD,
-} from '../common/event-size-monitor';
-
-const MAX_MESSAGE_LENGTH: number = 200_000;
 
 export function createWorkerAdapter<ConnectorState>({
   event,
@@ -159,7 +157,7 @@ export class WorkerAdapter<ConnectorState> {
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
-          let newLength = JSON.stringify(artifact).length;
+          const newLength = JSON.stringify(artifact).length;
 
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AIRDROP_DEFAULT_ITEM_TYPES.ATTACHMENTS) {
@@ -171,7 +169,10 @@ export class WorkerAdapter<ConnectorState> {
           this.currentLength += newLength;
 
           // Check for size limit (80% of 200KB = 160KB threshold)
-          if (this.currentLength > SIZE_LIMIT_THRESHOLD && !this.hasWorkerEmitted) {
+          if (
+            this.currentLength > SIZE_LIMIT_THRESHOLD &&
+            !this.hasWorkerEmitted
+          ) {
             logSizeLimitWarning(this.currentLength, 'onUpload');
 
             // Set timeout flag to trigger onTimeout cleanup after task completes
