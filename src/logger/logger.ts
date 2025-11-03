@@ -1,5 +1,6 @@
 import { Console } from 'node:console';
 import { inspect } from 'node:util';
+import crypto from 'node:crypto';
 
 import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
 import { EventContext } from '../types/extraction';
@@ -8,22 +9,52 @@ import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
   LogLevel,
+  LoggerTags,
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
 
-export class Logger extends Console {
-  private originalConsole: Console;
-  private options?: WorkerAdapterOptions;
-  private tags: EventContext & { dev_oid: string };
+/**
+ * Runtime-generated token for internal SDK logger access.
+ * Stored in module closure - not accessible from outside.
+ * @internal
+ */
+const INTERNAL_TOKEN = crypto.getRandomValues(new Uint8Array(32));
 
-  constructor({ event, options }: LoggerFactoryInterface) {
+/**
+ * Verify that a token matches the internal token.
+ * @internal
+ */
+function verifyToken(token: Uint8Array): boolean {
+  if (token.length !== INTERNAL_TOKEN.length) {
+    return false;
+  }
+  // Constant-time comparison to prevent timing attacks
+  let result = 0;
+  for (let i = 0; i < token.length; i++) {
+    // eslint-disable-next-line no-bitwise
+    result |= token[i] ^ INTERNAL_TOKEN[i];
+  }
+  return result === 0;
+}
+
+/**
+ * Abstract base logger class. Not exported - use factory functions instead.
+ * @internal
+ */
+abstract class BaseLogger extends Console {
+  protected originalConsole: Console;
+  protected options?: WorkerAdapterOptions;
+  protected tags: LoggerTags;
+
+  protected constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
     this.originalConsole = console;
     this.options = options;
     this.tags = {
       ...event.payload.event_context,
       dev_oid: event.payload.event_context.dev_oid,
+      sdk_log: false, // Set by subclass
     };
   }
 
@@ -39,7 +70,7 @@ export class Logger extends Console {
     });
   }
 
-  logFn(args: unknown[], level: LogLevel): void {
+  protected logFn(args: unknown[], level: LogLevel): void {
     if (this.options?.isLocalDevelopment) {
       this.originalConsole[level](...args);
     } else {
@@ -69,6 +100,58 @@ export class Logger extends Console {
   override error(...args: unknown[]): void {
     this.logFn(args, LogLevel.ERROR);
   }
+}
+
+/**
+ * Verified SDK logger - marked with sdk_log: true
+ * Only accessible through getInternalLogger() factory with valid token.
+ * @internal
+ */
+class VerifiedLogger extends BaseLogger {
+  constructor({ event, options }: LoggerFactoryInterface, token: Uint8Array) {
+    if (!verifyToken(token)) {
+      throw new Error('Unauthorized: Invalid token for VerifiedLogger');
+    }
+    super({ event, options });
+    this.tags.sdk_log = true;
+    Object.freeze(this.tags); // Immutable after construction
+  }
+}
+
+/**
+ * User logger - marked with sdk_log: false
+ * Exported for public use via createUserLogger() factory.
+ */
+export class UserLogger extends BaseLogger {
+  constructor({ event, options }: LoggerFactoryInterface) {
+    super({ event, options });
+    // sdk_log already false from BaseLogger
+    Object.freeze(this.tags); // Immutable after construction
+  }
+}
+
+/**
+ * Factory function to create a verified SDK logger.
+ * Only call this from internal SDK code. Requires valid token.
+ * @internal
+ */
+export function getInternalLogger(
+  event: LoggerFactoryInterface['event'],
+  options?: LoggerFactoryInterface['options']
+): BaseLogger {
+  return new VerifiedLogger({ event, options }, INTERNAL_TOKEN);
+}
+
+/**
+ * Factory function to create a user logger (unverified).
+ * This should only be used internally by the SDK.
+ * @internal
+ */
+export function createUserLogger(
+  event: LoggerFactoryInterface['event'],
+  options?: LoggerFactoryInterface['options']
+): UserLogger {
+  return new UserLogger({ event, options });
 }
 
 // Helper function to process each value in the state

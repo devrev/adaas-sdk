@@ -3,7 +3,7 @@ import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../common/control-protocol';
 import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
-import { Logger, serializeError } from '../logger/logger';
+import { getInternalLogger, serializeError } from '../logger/logger';
 import {
   AirdropEvent,
   EventType,
@@ -93,7 +93,7 @@ export async function spawn<ConnectorState>({
   initialDomainMapping,
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
-  const logger = new Logger({ event, options });
+  const logger = getInternalLogger(event, options);
   const script = getWorkerPath({
     event,
     connectorWorkerPath: workerPath,
@@ -169,13 +169,14 @@ export class Spawn {
   private softTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
   private hardTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
   private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
-  private logger: Logger;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private logger: any;
   private resolve: (value: void | PromiseLike<void>) => void;
 
   constructor({ event, worker, options, resolve }: SpawnInterface) {
     this.alreadyEmitted = false;
     this.event = event;
-    this.logger = new Logger({ event, options });
+    this.logger = getInternalLogger(event, options);
     this.lambdaTimeout = options?.timeout
       ? Math.min(options.timeout, this.defaultLambdaTimeout)
       : this.defaultLambdaTimeout;
