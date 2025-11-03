@@ -47,6 +47,11 @@ import {
 } from '../types/workers';
 import { Uploader } from '../uploader/uploader';
 import { Artifact, SsorAttachment } from '../uploader/uploader.interfaces';
+import {
+  pruneEventData,
+  logSizeLimitWarning,
+  SIZE_LIMIT_THRESHOLD,
+} from '../common/event-size-monitor';
 
 const MAX_MESSAGE_LENGTH: number = 200_000;
 
@@ -163,10 +168,17 @@ export class WorkerAdapter<ConnectorState> {
             );
           }
 
-          if(this.currentLength + newLength > MAX_MESSAGE_LENGTH) {
-            // TODO: We need to call the adapter's `onTimeout` here and `emit` the Progress event.
-            // We might have to run the `uploadAllRepos` as well.
+          this.currentLength += newLength;
+
+          // Check for size limit (80% of 200KB = 160KB threshold)
+          if (this.currentLength > SIZE_LIMIT_THRESHOLD && !this.hasWorkerEmitted) {
+            logSizeLimitWarning(this.currentLength, 'onUpload');
+
+            // Set timeout flag to trigger onTimeout cleanup after task completes
             this.handleTimeout();
+
+            // Emit progress event to save state and continue on next iteration
+            void this.emit(ExtractorEventType.ExtractionDataProgress);
           }
         },
         options: this.options,
@@ -259,11 +271,14 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     try {
+      // Always prune error messages to 1000 chars before emit
+      const prunedData = pruneEventData(data);
+
       await emit({
         eventType: newEventType,
         event: this.event,
         data: {
-          ...data,
+          ...prunedData,
           ...(ALLOWED_EXTRACTION_EVENT_TYPES.includes(
             this.event.payload.event_type
           )
