@@ -65,6 +65,15 @@ export function processTask<ConnectorState>({
               })()
           );
           await task({ adapter });
+
+          // If size limit was triggered during task, call onTimeout for cleanup
+          if (adapter.isTimeout) {
+            console.log(
+              '[SIZE_LIMIT] Size limit detected during data collection. Executing onTimeout function for cleanup.'
+            );
+            await onTimeout({ adapter });
+          }
+
           process.exit(0);
         }
       } catch (error) {
