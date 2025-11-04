@@ -181,6 +181,8 @@ export class Spawn {
       : this.defaultLambdaTimeout;
     this.resolve = resolve;
 
+    console.log('Event in main thread', event);
+
     // If soft timeout is reached, send a message to the worker to gracefully exit.
     this.softTimeoutTimer = setTimeout(
       () =>
