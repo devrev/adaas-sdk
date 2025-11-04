@@ -34,8 +34,11 @@ export class Logger extends Console {
 
     // Use Node.js built-in inspect for everything including errors
     return inspect(value, {
-      compact: false,
+      compact: true,
       depth: Infinity,
+      maxArrayLength: Infinity,
+      maxStringLength: Infinity,
+      breakLength: Infinity,
     });
   }
 
@@ -50,7 +53,7 @@ export class Logger extends Console {
         ...this.tags,
       };
 
-      this.originalConsole[level](JSON.stringify(logObject));
+      this.originalConsole[level](logObject);
     }
   }
 
