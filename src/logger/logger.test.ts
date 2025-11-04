@@ -98,11 +98,11 @@ describe(Logger.name, () => {
       logger.info(data);
 
       const expectedMessage = inspect(data, {
-        compact: false,
+        compact: true,
         depth: Infinity,
         maxArrayLength: Infinity,
         maxStringLength: Infinity,
-        breakLength: 80,
+        breakLength: Infinity,
       });
       const expectedLogObject = {
         message: expectedMessage,
@@ -121,11 +121,11 @@ describe(Logger.name, () => {
       logger.info(text, data);
 
       const expectedDataMessage = inspect(data, {
-        compact: false,
+        compact: true,
         depth: Infinity,
         maxArrayLength: Infinity,
         maxStringLength: Infinity,
-        breakLength: 80,
+        breakLength: Infinity,
       });
       const expectedLogObject = {
         message: `${text} ${expectedDataMessage}`,
@@ -145,11 +145,11 @@ describe(Logger.name, () => {
       logger.info(text1, data, text2);
 
       const expectedDataMessage = inspect(data, {
-        compact: false,
+        compact: true,
         depth: Infinity,
         maxArrayLength: Infinity,
         maxStringLength: Infinity,
-        breakLength: 80,
+        breakLength: Infinity,
       });
       const expectedLogObject = {
         message: `${text1} ${expectedDataMessage} ${text2}`,
@@ -259,13 +259,13 @@ describe(Logger.name, () => {
       const logString = mockConsoleInfo.mock.calls[0][0];
       const logObject = JSON.parse(logString);
 
-      // The logger uses inspect() with compact: false formatting
+      // The logger uses inspect() with compact: true formatting
       const expectedMessage = require('util').inspect(complexObject, {
-        compact: false,
+        compact: true,
         depth: Infinity,
         maxArrayLength: Infinity,
         maxStringLength: Infinity,
-        breakLength: 80,
+        breakLength: Infinity,
       });
       expect(logObject.message).toBe(expectedMessage);
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
