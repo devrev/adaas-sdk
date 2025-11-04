@@ -35,39 +35,35 @@ export class Logger extends Console {
 
     // Use Node.js built-in inspect for everything including errors
     return inspect(value, {
-      compact: true,
+      compact: false,
       depth: Infinity,
       maxArrayLength: Infinity,
       maxStringLength: Infinity,
-      breakLength: Infinity,
     });
   }
 
-  logWithTags(message: string, level: LogLevel): void {
-    const logObject = {
-      message,
-      ...this.tags,
-    };
-    this.originalConsole[level](JSON.stringify(logObject));
+  logWithTags(argsString: string, level: LogLevel): void {
+    if (this.options?.isLocalDevelopment) {
+      this.originalConsole[level](argsString);
+    } else {
+      const logObject = {
+        message: argsString,
+        ...this.tags,
+      };
+      this.originalConsole[level](logObject);
+    }
   }
 
   logFn(args: unknown[], level: LogLevel): void {
-    if (this.options?.isLocalDevelopment) {
-      this.originalConsole[level](...args);
-    } else {
-      const message = args.map((arg) => this.valueToString(arg)).join(' ');
+    const argsString = args.map((arg) => this.valueToString(arg)).join(' ');
 
-      if (!isMainThread) {
-        parentPort?.postMessage?.({
-          subject: WorkerMessageSubject.WorkerMessageLog,
-          payload: {
-            message,
-            level,
-          },
-        });
-      } else {
-        this.logWithTags(message, level);
-      }
+    if (isMainThread) {
+      this.logWithTags(argsString, level);
+    } else {
+      parentPort?.postMessage?.({
+        subject: WorkerMessageSubject.WorkerMessageLog,
+        payload: { argsString, level },
+      });
     }
   }
 

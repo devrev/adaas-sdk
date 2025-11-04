@@ -93,6 +93,14 @@ export async function spawn<ConnectorState>({
   initialDomainMapping,
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
+  const argv = await yargs(hideBin(process.argv)).argv;
+  if (argv._.includes('local')) {
+    options = {
+      ...(options || {}),
+      isLocalDevelopment: true,
+    };
+  }
+
   // eslint-disable-next-line no-global-assign
   console = new Logger({ event, options });
   const script = getWorkerPath({
@@ -101,18 +109,7 @@ export async function spawn<ConnectorState>({
   });
 
   if (options?.isLocalDevelopment) {
-    console.warn(
-      'WARN: isLocalDevelopment is deprecated. Please use the -- local flag instead.'
-    );
-  }
-
-  // read the command line arguments to check if the local flag is passed
-  const argv = await yargs(hideBin(process.argv)).argv;
-  if (argv._.includes('local')) {
-    options = {
-      ...(options || {}),
-      isLocalDevelopment: true,
-    };
+    console.warn('Snap-in is running in local development mode.');
   }
 
   if (script) {
@@ -171,7 +168,6 @@ export class Spawn {
   private hardTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
   private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
   private resolve: (value: void | PromiseLike<void>) => void;
-  private logger: Logger;
 
   constructor({ event, worker, options, resolve }: SpawnInterface) {
     this.alreadyEmitted = false;
@@ -180,7 +176,6 @@ export class Spawn {
       ? Math.min(options.timeout, this.defaultLambdaTimeout)
       : this.defaultLambdaTimeout;
     this.resolve = resolve;
-    this.logger = new Logger({ event, options });
 
     // If soft timeout is reached, send a message to the worker to gracefully exit.
     this.softTimeoutTimer = setTimeout(
@@ -231,12 +226,10 @@ export class Spawn {
     );
 
     worker.on(WorkerEvent.WorkerMessage, (message) => {
-      // Since it is not possible to log from the worker thread, we need to log
-      // from the main thread.
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
-        const messageString = message.payload?.message;
+        const argsString = message.payload?.argsString;
         const level = message.payload?.level as LogLevel;
-        this.logger.logWithTags(messageString, level);
+        (console as Logger).logWithTags(argsString, level);
       }
 
       // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.

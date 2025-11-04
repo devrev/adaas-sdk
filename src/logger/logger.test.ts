@@ -87,9 +87,7 @@ describe(Logger.name, () => {
         ...mockEvent.payload.event_context,
         dev_oid: mockEvent.payload.event_context.dev_oid,
       };
-      expect(mockConsoleInfo).toHaveBeenCalledWith(
-        JSON.stringify(expectedLogObject)
-      );
+      expect(mockConsoleInfo).toHaveBeenCalledWith(expectedLogObject);
     });
 
     it('should log single object message with JSON stringify', () => {
@@ -98,20 +96,17 @@ describe(Logger.name, () => {
       logger.info(data);
 
       const expectedMessage = inspect(data, {
-        compact: true,
+        compact: false,
         depth: Infinity,
         maxArrayLength: Infinity,
         maxStringLength: Infinity,
-        breakLength: Infinity,
       });
       const expectedLogObject = {
         message: expectedMessage,
         ...mockEvent.payload.event_context,
         dev_oid: mockEvent.payload.event_context.dev_oid,
       };
-      expect(mockConsoleInfo).toHaveBeenCalledWith(
-        JSON.stringify(expectedLogObject)
-      );
+      expect(mockConsoleInfo).toHaveBeenCalledWith(expectedLogObject);
     });
 
     it('should log multiple arguments joined with space', () => {
@@ -121,20 +116,17 @@ describe(Logger.name, () => {
       logger.info(text, data);
 
       const expectedDataMessage = inspect(data, {
-        compact: true,
+        compact: false,
         depth: Infinity,
         maxArrayLength: Infinity,
         maxStringLength: Infinity,
-        breakLength: Infinity,
       });
       const expectedLogObject = {
         message: `${text} ${expectedDataMessage}`,
         ...mockEvent.payload.event_context,
         dev_oid: mockEvent.payload.event_context.dev_oid,
       };
-      expect(mockConsoleInfo).toHaveBeenCalledWith(
-        JSON.stringify(expectedLogObject)
-      );
+      expect(mockConsoleInfo).toHaveBeenCalledWith(expectedLogObject);
     });
 
     it('should handle mixed string and object arguments', () => {
@@ -145,20 +137,17 @@ describe(Logger.name, () => {
       logger.info(text1, data, text2);
 
       const expectedDataMessage = inspect(data, {
-        compact: true,
+        compact: false,
         depth: Infinity,
         maxArrayLength: Infinity,
         maxStringLength: Infinity,
-        breakLength: Infinity,
       });
       const expectedLogObject = {
         message: `${text1} ${expectedDataMessage} ${text2}`,
         ...mockEvent.payload.event_context,
         dev_oid: mockEvent.payload.event_context.dev_oid,
       };
-      expect(mockConsoleInfo).toHaveBeenCalledWith(
-        JSON.stringify(expectedLogObject)
-      );
+      expect(mockConsoleInfo).toHaveBeenCalledWith(expectedLogObject);
     });
   });
 
@@ -176,7 +165,14 @@ describe(Logger.name, () => {
 
       logger.info(message, data);
 
-      expect(mockConsoleInfo).toHaveBeenCalledWith(message, data);
+      // In local development, logFn converts args to string first, then logWithTags passes it as string
+      const expectedMessage = `${message} ${inspect(data, {
+        compact: false,
+        depth: Infinity,
+        maxArrayLength: Infinity,
+        maxStringLength: Infinity,
+      })}`;
+      expect(mockConsoleInfo).toHaveBeenCalledWith(expectedMessage);
     });
   });
 
@@ -221,8 +217,7 @@ describe(Logger.name, () => {
       logger.info('');
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
-      const logString = mockConsoleInfo.mock.calls[0][0];
-      const logObject = JSON.parse(logString);
+      const logObject = mockConsoleInfo.mock.calls[0][0];
 
       expect(logObject.message).toBe('');
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
@@ -235,8 +230,7 @@ describe(Logger.name, () => {
       logger.info('test', null, undefined);
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
-      const logString = mockConsoleInfo.mock.calls[0][0];
-      const logObject = JSON.parse(logString);
+      const logObject = mockConsoleInfo.mock.calls[0][0];
 
       // inspect shows 'null' and 'undefined' as strings
       expect(logObject.message).toBe('test null undefined');
@@ -256,16 +250,14 @@ describe(Logger.name, () => {
       logger.info(complexObject);
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
-      const logString = mockConsoleInfo.mock.calls[0][0];
-      const logObject = JSON.parse(logString);
+      const logObject = mockConsoleInfo.mock.calls[0][0];
 
-      // The logger uses inspect() with compact: true formatting
+      // The logger uses inspect() with compact: false formatting
       const expectedMessage = require('util').inspect(complexObject, {
-        compact: true,
+        compact: false,
         depth: Infinity,
         maxArrayLength: Infinity,
         maxStringLength: Infinity,
-        breakLength: Infinity,
       });
       expect(logObject.message).toBe(expectedMessage);
       expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
