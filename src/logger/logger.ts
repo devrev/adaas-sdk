@@ -101,11 +101,11 @@ abstract class BaseLogger extends Console {
 }
 
 /**
- * Verified SDK logger - marked with sdk_log: true
+ * Internal SDK logger - marked with sdk_log: true
  * Only accessible through getInternalLogger() factory with valid token.
  * @internal
  */
-class VerifiedLogger extends BaseLogger {
+class InternalLogger extends BaseLogger {
   constructor({ event, options }: LoggerFactoryInterface, token: Uint8Array) {
     if (!verifyToken(token)) {
       throw new Error('Unauthorized: Invalid token for VerifiedLogger');
@@ -136,7 +136,7 @@ export function getInternalLogger(
   event: LoggerFactoryInterface['event'],
   options?: LoggerFactoryInterface['options']
 ): BaseLogger {
-  return new VerifiedLogger({ event, options }, INTERNAL_LOGGER_TOKEN);
+  return new InternalLogger({ event, options }, INTERNAL_LOGGER_TOKEN);
 }
 
 /**
