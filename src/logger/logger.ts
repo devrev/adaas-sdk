@@ -53,7 +53,7 @@ export class Logger extends Console {
         ...this.tags,
       };
 
-      this.originalConsole[level](logObject);
+      this.originalConsole[level](JSON.stringify(logObject));
     }
   }
 
