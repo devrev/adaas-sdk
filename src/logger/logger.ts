@@ -108,7 +108,8 @@ abstract class BaseLogger extends Console {
 class InternalLogger extends BaseLogger {
   constructor({ event, options }: LoggerFactoryInterface, token: Uint8Array) {
     if (!verifyToken(token)) {
-      throw new Error('Unauthorized: Invalid token for VerifiedLogger');
+      let base64Token = Buffer.from(token).toString('base64');
+      throw new Error(`Unauthorized: Invalid token for InternalLogger. Token provided: '${base64Token}'.`);
     }
     super({ event, options });
     this.tags.sdk_log = true;
