@@ -1,15 +1,14 @@
 import { Console } from 'node:console';
-import { inspect } from 'node:util';
 import crypto from 'node:crypto';
+import { inspect } from 'node:util';
 
 import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
-import { EventContext } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
-  LogLevel,
   LoggerTags,
+  LogLevel,
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
@@ -19,21 +18,20 @@ import {
  * Stored in module closure - not accessible from outside.
  * @internal
  */
-const INTERNAL_TOKEN = crypto.getRandomValues(new Uint8Array(32));
+const INTERNAL_LOGGER_TOKEN = crypto.getRandomValues(new Uint8Array(32));
 
 /**
  * Verify that a token matches the internal token.
  * @internal
  */
 function verifyToken(token: Uint8Array): boolean {
-  if (token.length !== INTERNAL_TOKEN.length) {
+  if (token.length !== INTERNAL_LOGGER_TOKEN.length) {
     return false;
   }
   // Constant-time comparison to prevent timing attacks
   let result = 0;
   for (let i = 0; i < token.length; i++) {
-    // eslint-disable-next-line no-bitwise
-    result |= token[i] ^ INTERNAL_TOKEN[i];
+    result |= token[i] ^ INTERNAL_LOGGER_TOKEN[i];
   }
   return result === 0;
 }
@@ -138,7 +136,7 @@ export function getInternalLogger(
   event: LoggerFactoryInterface['event'],
   options?: LoggerFactoryInterface['options']
 ): BaseLogger {
-  return new VerifiedLogger({ event, options }, INTERNAL_TOKEN);
+  return new VerifiedLogger({ event, options }, INTERNAL_LOGGER_TOKEN);
 }
 
 /**

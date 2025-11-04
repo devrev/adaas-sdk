@@ -3,7 +3,13 @@ import { inspect } from 'node:util';
 import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
-import { getInternalLogger, createUserLogger, getPrintableState, serializeAxiosError, UserLogger } from './logger';
+import {
+  createUserLogger,
+  getInternalLogger,
+  getPrintableState,
+  serializeAxiosError,
+  UserLogger,
+} from './logger';
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
@@ -338,7 +344,6 @@ it('serializeAxiosError should return formatted error', () => {
 
 describe('Logger Factory Pattern', () => {
   let mockEvent: AirdropEvent;
-  let mockOptions: WorkerAdapterOptions;
 
   beforeEach(() => {
     mockConsoleInfo.mockClear();
@@ -350,9 +355,6 @@ describe('Logger Factory Pattern', () => {
         request_id: 'test-request-id',
       },
     });
-    mockOptions = {
-      isLocalDevelopment: false,
-    };
   });
 
   describe('getInternalLogger', () => {
@@ -430,7 +432,6 @@ describe('Logger Factory Pattern', () => {
     });
 
     it('should reject invalid tokens when trying to create VerifiedLogger', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const InternalLoggerFunction = getInternalLogger;
 
       // Try to directly construct with invalid token
