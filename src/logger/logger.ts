@@ -1,9 +1,10 @@
 import { Console } from 'node:console';
 import { inspect } from 'node:util';
+import { isMainThread, parentPort } from 'node:worker_threads';
 
 import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
 import { EventContext } from '../types/extraction';
-import { WorkerAdapterOptions } from '../types/workers';
+import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
@@ -42,18 +43,31 @@ export class Logger extends Console {
     });
   }
 
+  logWithTags(message: string, level: LogLevel): void {
+    const logObject = {
+      message,
+      ...this.tags,
+    };
+    this.originalConsole[level](JSON.stringify(logObject));
+  }
+
   logFn(args: unknown[], level: LogLevel): void {
     if (this.options?.isLocalDevelopment) {
       this.originalConsole[level](...args);
     } else {
       const message = args.map((arg) => this.valueToString(arg)).join(' ');
 
-      const logObject = {
-        message,
-        ...this.tags,
-      };
-
-      this.originalConsole[level](JSON.stringify(logObject));
+      if (!isMainThread) {
+        parentPort?.postMessage?.({
+          subject: WorkerMessageSubject.WorkerMessageLog,
+          payload: {
+            message,
+            level,
+          },
+        });
+      } else {
+        this.logWithTags(message, level);
+      }
     }
   }
 
