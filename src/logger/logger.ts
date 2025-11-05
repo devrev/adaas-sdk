@@ -50,7 +50,7 @@ export class Logger extends Console {
         message: argsString,
         ...this.tags,
       };
-      this.originalConsole[level](logObject);
+      this.originalConsole[level](JSON.stringify(logObject));
     }
   }
 
