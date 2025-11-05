@@ -14,6 +14,9 @@ import {
   PrintableState,
 } from './logger.interfaces';
 
+// Save the original console object at module load time
+const originalConsole = console;
+
 export class Logger extends Console {
   private originalConsole: Console;
   private options?: WorkerAdapterOptions;
@@ -21,7 +24,6 @@ export class Logger extends Console {
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
-    this.originalConsole = console;
     this.options = options;
     this.tags = {
       ...event.payload.event_context,
@@ -46,13 +48,13 @@ export class Logger extends Console {
 
   logWithTags(stringifiedArgs: string, level: LogLevel): void {
     if (this.options?.isLocalDevelopment) {
-      this.originalConsole[level](stringifiedArgs);
+      originalConsole[level](stringifiedArgs);
     } else {
       const logObject = {
         message: stringifiedArgs,
         ...this.tags,
       };
-      this.originalConsole[level](JSON.stringify(logObject));
+      originalConsole[level](JSON.stringify(logObject));
     }
   }
 
