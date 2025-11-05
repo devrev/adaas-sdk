@@ -19,6 +19,43 @@ import {
   MAX_DEVREV_FILENAME_LENGTH,
 } from './constants';
 
+const EVENT_TYPE_TRANSLATION_TABLE = {
+  EXTRACTION_EXTERNAL_SYNC_UNITS_START:
+    EventType.ExtractionExternalSyncUnitsStart,
+  EXTRACTION_METADATA_START: EventType.ExtractionMetadataStart,
+  EXTRACTION_DATA_START: EventType.ExtractionDataStart,
+  EXTRACTION_DATA_CONTINUE: EventType.ExtractionDataContinue,
+  EXTRACTION_ATTACHMENTS_START: EventType.ExtractionAttachmentsStart,
+  EXTRACTION_ATTACHMENTS_CONTINUE: EventType.ExtractionAttachmentsContinue,
+  EXTRACTION_DATA_DELETE: EventType.ExtractionDataDelete,
+  EXTRACTION_ATTACHMENTS_DELETE: EventType.ExtractionAttachmentsDelete,
+};
+
+/**
+ * Translates Event type from the old naming scheme to the new one
+ * 
+ * @param eventType - The event type string to translate
+ * @returns EventType - The translated event type with the following behavior:
+ *   1) Old E2DR names are translated to new DR2E format
+ *   2) Valid DR2E names are returned as-is
+ *   3) Unknown values return `UnknownEventType`
+ */
+export function getEventType(eventType: string): EventType {
+  // If we notice that the event has a newer translation, translate to that
+  if (eventType in EVENT_TYPE_TRANSLATION_TABLE) {
+    return EVENT_TYPE_TRANSLATION_TABLE[
+      eventType as keyof typeof EVENT_TYPE_TRANSLATION_TABLE
+    ];
+  }
+
+  // Event type doesn't need translation, return
+  if (Object.values(EventType).includes(eventType as EventType)) {
+    return eventType as EventType;
+  }
+
+  return EventType.UnknownEventType;
+}
+
 export function getTimeoutErrorEventType(eventType: EventType): {
   eventType: ExtractorEventType | LoaderEventType;
 } {

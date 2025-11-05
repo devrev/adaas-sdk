@@ -2,7 +2,11 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../common/control-protocol';
-import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
+import {
+  getEventType,
+  getMemoryUsage,
+  getTimeoutErrorEventType,
+} from '../common/helpers';
 import { Logger, serializeError } from '../logger/logger';
 import {
   AirdropEvent,
@@ -93,6 +97,7 @@ export async function spawn<ConnectorState>({
   initialDomainMapping,
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
+  event.payload.event_type = getEventType(event.payload.event_type);
   const logger = new Logger({ event, options });
   const script = getWorkerPath({
     event,
