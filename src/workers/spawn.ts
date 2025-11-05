@@ -227,9 +227,9 @@ export class Spawn {
 
     worker.on(WorkerEvent.WorkerMessage, (message) => {
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
-        const argsString = message.payload?.argsString;
+        const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
-        (console as Logger).logWithTags(argsString, level);
+        (console as Logger).logWithTags(stringifiedArgs, level);
       }
 
       // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.

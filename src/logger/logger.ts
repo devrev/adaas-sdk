@@ -44,12 +44,12 @@ export class Logger extends Console {
     });
   }
 
-  logWithTags(argsString: string, level: LogLevel): void {
+  logWithTags(stringifiedArgs: string, level: LogLevel): void {
     if (this.options?.isLocalDevelopment) {
-      this.originalConsole[level](argsString);
+      this.originalConsole[level](stringifiedArgs);
     } else {
       const logObject = {
-        message: argsString,
+        message: stringifiedArgs,
         ...this.tags,
       };
       this.originalConsole[level](JSON.stringify(logObject));
@@ -57,14 +57,16 @@ export class Logger extends Console {
   }
 
   logFn(args: unknown[], level: LogLevel): void {
-    const argsString = args.map((arg) => this.valueToString(arg)).join(' ');
+    const stringifiedArgs = args
+      .map((arg) => this.valueToString(arg))
+      .join(' ');
 
     if (isMainThread) {
-      this.logWithTags(argsString, level);
+      this.logWithTags(stringifiedArgs, level);
     } else {
       parentPort?.postMessage?.({
         subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: { argsString, level },
+        payload: { stringifiedArgs, level },
       });
     }
   }
