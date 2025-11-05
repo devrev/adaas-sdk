@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
+import { LIBRARY_VERSION } from '../common/constants';
 import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
@@ -55,7 +56,7 @@ describe(Logger.name, () => {
   });
 
   describe('constructor', () => {
-    it('should initialize logger with event context and dev_oid', () => {
+    it('should initialize logger with event context, dev_oid, and base tags', () => {
       const logger = new Logger({ event: mockEvent, options: mockOptions });
 
       // Access private property for testing
@@ -65,6 +66,7 @@ describe(Logger.name, () => {
       expect(tags).toEqual({
         ...mockEvent.payload.event_context,
         dev_oid: mockEvent.payload.event_context.dev_oid,
+        sdk_version: LIBRARY_VERSION,
       });
     });
   });
@@ -86,6 +88,7 @@ describe(Logger.name, () => {
         message,
         ...mockEvent.payload.event_context,
         dev_oid: mockEvent.payload.event_context.dev_oid,
+        sdk_version: LIBRARY_VERSION,
       };
       const actualCall = mockConsoleInfo.mock.calls[0][0];
       const actualLogObject = JSON.parse(actualCall);
@@ -107,6 +110,7 @@ describe(Logger.name, () => {
         message: expectedMessage,
         ...mockEvent.payload.event_context,
         dev_oid: mockEvent.payload.event_context.dev_oid,
+        sdk_version: LIBRARY_VERSION,
       };
       const actualCall = mockConsoleInfo.mock.calls[0][0];
       const actualLogObject = JSON.parse(actualCall);
@@ -129,6 +133,7 @@ describe(Logger.name, () => {
         message: `${text} ${expectedDataMessage}`,
         ...mockEvent.payload.event_context,
         dev_oid: mockEvent.payload.event_context.dev_oid,
+        sdk_version: LIBRARY_VERSION,
       };
       const actualCall = mockConsoleInfo.mock.calls[0][0];
       const actualLogObject = JSON.parse(actualCall);
@@ -152,6 +157,7 @@ describe(Logger.name, () => {
         message: `${text1} ${expectedDataMessage} ${text2}`,
         ...mockEvent.payload.event_context,
         dev_oid: mockEvent.payload.event_context.dev_oid,
+        sdk_version: LIBRARY_VERSION,
       };
       const actualCall = mockConsoleInfo.mock.calls[0][0];
       const actualLogObject = JSON.parse(actualCall);

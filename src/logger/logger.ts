@@ -3,11 +3,12 @@ import { inspect } from 'node:util';
 import { isMainThread, parentPort } from 'node:worker_threads';
 
 import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
-import { EventContext } from '../types/extraction';
+import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
+  LoggerTags,
   LogLevel,
   PrintableArray,
   PrintableState,
@@ -16,7 +17,7 @@ import {
 export class Logger extends Console {
   private originalConsole: Console;
   private options?: WorkerAdapterOptions;
-  private tags: EventContext & { dev_oid: string };
+  private tags: LoggerTags;
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
@@ -25,6 +26,7 @@ export class Logger extends Console {
     this.tags = {
       ...event.payload.event_context,
       dev_oid: event.payload.event_context.dev_oid,
+      sdk_version: LIBRARY_VERSION,
     };
   }
 
