@@ -1,10 +1,13 @@
 import axios from 'axios';
 
 import { STATELESS_EVENT_TYPES } from '../common/constants';
-import { getSyncDirection } from '../common/helpers';
+import {
+  getPrintableState,
+  getSyncDirection,
+  serializeError,
+} from '../common/helpers';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
 import { axiosClient } from '../http/axios-client-internal';
-import { getPrintableState, serializeError } from '../logger/logger';
 import { SyncMode } from '../types/common';
 import { EventType } from '../types/extraction';
 

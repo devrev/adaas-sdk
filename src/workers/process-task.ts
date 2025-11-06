@@ -1,5 +1,6 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
-import { Logger, serializeError } from '../logger/logger';
+import { serializeError } from '../common/helpers';
+import { Logger } from '../logger/logger';
 import { createAdapterState } from '../state/state';
 import {
   ProcessTaskInterface,

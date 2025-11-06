@@ -14,4 +14,4 @@ export { WorkerAdapter } from './workers/worker-adapter';
 
 export * from './types/workers';
 
-export { formatAxiosError, serializeAxiosError } from './logger/logger';
+export { formatAxiosError, serializeAxiosError } from './common/helpers';

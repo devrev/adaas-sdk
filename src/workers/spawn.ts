@@ -2,8 +2,12 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../common/control-protocol';
-import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
-import { Logger, serializeError } from '../logger/logger';
+import {
+  getMemoryUsage,
+  getTimeoutErrorEventType,
+  serializeError,
+} from '../common/helpers';
+import { Logger } from '../logger/logger';
 import {
   AirdropEvent,
   EventType,

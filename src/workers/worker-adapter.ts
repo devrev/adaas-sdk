@@ -7,8 +7,11 @@ import {
   STATELESS_EVENT_TYPES,
 } from '../common/constants';
 import { emit } from '../common/control-protocol';
-import { addReportToLoaderReport, getFilesToLoad } from '../common/helpers';
-import { serializeError } from '../logger/logger';
+import {
+  addReportToLoaderReport,
+  getFilesToLoad,
+  serializeError,
+} from '../common/helpers';
 import { Mappers } from '../mappers/mappers';
 import { SyncMapperRecordStatus } from '../mappers/mappers.interface';
 import { Repo } from '../repo/repo';

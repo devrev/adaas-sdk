@@ -10,7 +10,7 @@ import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { AirdropEvent } from '../types/extraction';
 
 import { AxiosResponse } from 'axios';
-import { serializeError } from '../logger/logger';
+import { serializeError } from '../common/helpers';
 import {
   Artifact,
   ArtifactToUpload,
