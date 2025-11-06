@@ -137,7 +137,7 @@ jobs:
         with:
           tag_name: ${{ env.NEW_VERSION }}
           name: ${{ env.NEW_VERSION }}
-          generate_release_notes: true
+          generate_release_notes: ${{ !startsWith(github.event.inputs.release-type, 'pre') }}
           prerelease: ${{ startsWith(github.event.inputs.release-type, 'pre') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_SVC_TOKEN }}
