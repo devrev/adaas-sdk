@@ -1,5 +1,5 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
-import { Logger, serializeError } from '../logger/logger';
+import { createUserLogger, serializeError } from '../logger/logger';
 import { createAdapterState } from '../state/state';
 import {
   ProcessTaskInterface,
@@ -20,7 +20,7 @@ export function processTask<ConnectorState>({
         const initialDomainMapping = workerData.initialDomainMapping;
         const options = workerData.options;
         // eslint-disable-next-line no-global-assign
-        console = new Logger({ event, options });
+        console = createUserLogger(event, options);
 
         const adapterState = await createAdapterState<ConnectorState>({
           event,

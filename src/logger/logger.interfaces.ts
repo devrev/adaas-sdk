@@ -1,5 +1,5 @@
 import { RawAxiosResponseHeaders } from 'axios';
-import { AirdropEvent } from '../types/extraction';
+import { AirdropEvent, EventContext } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 
 export interface LoggerFactoryInterface {
@@ -25,6 +25,11 @@ export interface PrintableArray {
 export interface PrintableState {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any | PrintableArray | PrintableState;
+}
+
+export interface LoggerTags extends EventContext {
+  dev_oid: string;
+  sdk_log: boolean;
 }
 
 export interface AxiosErrorResponse {
