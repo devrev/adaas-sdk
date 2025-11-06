@@ -1,4 +1,5 @@
 import { AxiosError } from 'axios';
+import { Console } from 'node:console';
 import { inspect } from 'node:util';
 import { LIBRARY_VERSION } from '../common/constants';
 import { createEvent } from '../tests/test-helpers';
@@ -6,10 +7,16 @@ import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import { getPrintableState, Logger, serializeAxiosError } from './logger';
 
-// Mock console methods
-const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
-const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation();
-const mockConsoleError = jest.spyOn(console, 'error').mockImplementation();
+// Mock Console.prototype methods to track calls from any Console instance
+const mockConsoleInfo = jest
+  .spyOn(Console.prototype, 'info')
+  .mockImplementation();
+const mockConsoleWarn = jest
+  .spyOn(Console.prototype, 'warn')
+  .mockImplementation();
+const mockConsoleError = jest
+  .spyOn(Console.prototype, 'error')
+  .mockImplementation();
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 

@@ -14,9 +14,6 @@ import {
   PrintableState,
 } from './logger.interfaces';
 
-// Save the original console object at module load time
-const originalConsole = console;
-
 export class Logger extends Console {
   private originalConsole: Console;
   private options?: WorkerAdapterOptions;
@@ -24,6 +21,7 @@ export class Logger extends Console {
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
+    this.originalConsole = new Console(process.stdout, process.stderr);
     this.options = options;
     this.tags = {
       ...event.payload.event_context,
@@ -40,21 +38,21 @@ export class Logger extends Console {
     // Use Node.js built-in inspect for everything including errors
     return inspect(value, {
       compact: false,
-      depth: Infinity,
-      maxArrayLength: Infinity,
-      maxStringLength: Infinity,
+      depth: 10,
+      maxArrayLength: 100,
+      maxStringLength: 10000,
     });
   }
 
   logWithTags(stringifiedArgs: string, level: LogLevel): void {
     if (this.options?.isLocalDevelopment) {
-      originalConsole[level](stringifiedArgs);
+      this.originalConsole[level](stringifiedArgs);
     } else {
       const logObject = {
         message: stringifiedArgs,
         ...this.tags,
       };
-      originalConsole[level](JSON.stringify(logObject));
+      this.originalConsole[level](JSON.stringify(logObject));
     }
   }
 
@@ -66,7 +64,7 @@ export class Logger extends Console {
     if (isMainThread) {
       this.logWithTags(stringifiedArgs, level);
     } else {
-      parentPort?.postMessage?.({
+      parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
         payload: { stringifiedArgs, level },
       });
