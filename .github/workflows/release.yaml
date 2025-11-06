@@ -132,13 +132,13 @@ jobs:
 
       # Documentation on config options https://github.com/softprops/action-gh-release
       - name: Update GitHub release documentation
-        if: ${{ github.event.inputs.dry-run == 'false' }}
+        if: ${{ github.event.inputs.dry-run == 'false' && !startsWith(github.event.inputs.release-type, 'pre') }}
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.NEW_VERSION }}
           name: ${{ env.NEW_VERSION }}
-          generate_release_notes: ${{ !startsWith(github.event.inputs.release-type, 'pre') }}
-          prerelease: ${{ startsWith(github.event.inputs.release-type, 'pre') }}
+          generate_release_notes: true
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GH_SVC_TOKEN }}
 
