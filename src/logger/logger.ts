@@ -1,9 +1,10 @@
 import { Console } from 'node:console';
 import { inspect } from 'node:util';
+import { isMainThread, parentPort } from 'node:worker_threads';
 
 import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
 import { LIBRARY_VERSION } from '../common/constants';
-import { WorkerAdapterOptions } from '../types/workers';
+import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
@@ -33,7 +34,7 @@ export class Logger extends Console {
       return value;
     }
 
-    // Use Node.js built-in inspect for everything including errors
+    // Use Node.js built-in inspect for everything including errors, functions, symbols, circular refs
     return inspect(value, {
       compact: false,
       depth: Infinity,
@@ -41,6 +42,17 @@ export class Logger extends Console {
   }
 
   logFn(args: unknown[], level: LogLevel): void {
+    // Worker thread sends the log to the main thread to log it
+    if (!isMainThread && parentPort) {
+      const sanitizedArgs = args.map((arg) => this.valueToString(arg));
+      parentPort.postMessage({
+        subject: WorkerMessageSubject.WorkerMessageLog,
+        payload: { args: sanitizedArgs, level },
+      });
+      return;
+    }
+
+    // Main thread logs the log normally
     if (this.options?.isLocalDevelopment) {
       this.originalConsole[level](...args);
     } else {
