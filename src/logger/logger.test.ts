@@ -83,11 +83,13 @@ describe(Logger.name, () => {
 
       logger.info(message);
 
-      expect(mockConsoleInfo).toHaveBeenCalledWith({
-        message,
-        ...mockEvent.payload.event_context,
-        sdk_version: LIBRARY_VERSION,
-      });
+      expect(mockConsoleInfo).toHaveBeenCalledWith(
+        JSON.stringify({
+          message,
+          ...mockEvent.payload.event_context,
+          sdk_version: LIBRARY_VERSION,
+        })
+      );
     });
 
     it('should log single object message with JSON stringify', () => {
@@ -99,11 +101,13 @@ describe(Logger.name, () => {
         compact: false,
         depth: Infinity,
       });
-      expect(mockConsoleInfo).toHaveBeenCalledWith({
-        message: expectedMessage,
-        ...mockEvent.payload.event_context,
-        sdk_version: LIBRARY_VERSION,
-      });
+      expect(mockConsoleInfo).toHaveBeenCalledWith(
+        JSON.stringify({
+          message: expectedMessage,
+          ...mockEvent.payload.event_context,
+          sdk_version: LIBRARY_VERSION,
+        })
+      );
     });
 
     it('should log multiple arguments joined with space', () => {
@@ -116,11 +120,13 @@ describe(Logger.name, () => {
         compact: false,
         depth: Infinity,
       });
-      expect(mockConsoleInfo).toHaveBeenCalledWith({
-        message: `${text} ${expectedDataMessage}`,
-        ...mockEvent.payload.event_context,
-        sdk_version: LIBRARY_VERSION,
-      });
+      expect(mockConsoleInfo).toHaveBeenCalledWith(
+        JSON.stringify({
+          message: `${text} ${expectedDataMessage}`,
+          ...mockEvent.payload.event_context,
+          sdk_version: LIBRARY_VERSION,
+        })
+      );
     });
 
     it('should handle mixed string and object arguments', () => {
@@ -134,11 +140,13 @@ describe(Logger.name, () => {
         compact: false,
         depth: Infinity,
       });
-      expect(mockConsoleInfo).toHaveBeenCalledWith({
-        message: `${text1} ${expectedDataMessage} ${text2}`,
-        ...mockEvent.payload.event_context,
-        sdk_version: LIBRARY_VERSION,
-      });
+      expect(mockConsoleInfo).toHaveBeenCalledWith(
+        JSON.stringify({
+          message: `${text1} ${expectedDataMessage} ${text2}`,
+          ...mockEvent.payload.event_context,
+          sdk_version: LIBRARY_VERSION,
+        })
+      );
     });
   });
 
@@ -201,7 +209,8 @@ describe(Logger.name, () => {
       logger.info('');
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
-      const logObject = mockConsoleInfo.mock.calls[0][0];
+      const callArgs = mockConsoleInfo.mock.calls[0][0];
+      const logObject = JSON.parse(callArgs);
 
       expect(logObject.message).toBe('');
       expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
@@ -214,7 +223,8 @@ describe(Logger.name, () => {
       logger.info('test', null, undefined);
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
-      const logObject = mockConsoleInfo.mock.calls[0][0];
+      const callArgs = mockConsoleInfo.mock.calls[0][0];
+      const logObject = JSON.parse(callArgs);
 
       // inspect shows 'null' and 'undefined' as strings
       expect(logObject.message).toBe('test null undefined');
@@ -234,7 +244,8 @@ describe(Logger.name, () => {
       logger.info(complexObject);
 
       expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
-      const logObject = mockConsoleInfo.mock.calls[0][0];
+      const callArgs = mockConsoleInfo.mock.calls[0][0];
+      const logObject = JSON.parse(callArgs);
 
       // The logger uses inspect() with formatting, not JSON.stringify()
       const expectedMessage = require('util').inspect(complexObject, {

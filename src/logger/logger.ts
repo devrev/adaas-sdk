@@ -38,6 +38,8 @@ export class Logger extends Console {
     return inspect(value, {
       compact: false,
       depth: Infinity,
+      maxArrayLength: 100,
+      maxStringLength: 1000,
     });
   }
 
@@ -63,7 +65,7 @@ export class Logger extends Console {
         ...this.tags,
       };
 
-      this.originalConsole[level](logObject);
+      this.originalConsole[level](JSON.stringify(logObject));
     }
   }
 
