@@ -30,16 +30,12 @@ export class Logger extends Console {
   }
 
   private valueToString(value: unknown): string {
-    if (typeof value === 'string') {
-      return value;
-    }
-
-    // Use Node.js built-in inspect for everything including errors, functions, symbols, circular refs
     return inspect(value, {
-      compact: false,
-      depth: Infinity,
+      compact: true,
+      breakLength: 80,
+      depth: 10,
       maxArrayLength: 100,
-      maxStringLength: 1000,
+      maxStringLength: 10000,
     });
   }
 

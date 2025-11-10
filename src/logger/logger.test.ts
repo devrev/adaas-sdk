@@ -83,9 +83,11 @@ describe(Logger.name, () => {
 
       logger.info(message);
 
+      // Strings are inspected and shown with quotes
+      const expectedMessage = `'${message}'`;
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
-          message,
+          message: expectedMessage,
           ...mockEvent.payload.event_context,
           sdk_version: LIBRARY_VERSION,
         })
@@ -98,8 +100,11 @@ describe(Logger.name, () => {
       logger.info(data);
 
       const expectedMessage = inspect(data, {
-        compact: false,
-        depth: Infinity,
+        compact: true,
+        breakLength: 80,
+        depth: 10,
+        maxArrayLength: 100,
+        maxStringLength: 10000,
       });
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
@@ -116,13 +121,17 @@ describe(Logger.name, () => {
 
       logger.info(text, data);
 
+      const expectedTextMessage = `'${text}'`;
       const expectedDataMessage = inspect(data, {
-        compact: false,
-        depth: Infinity,
+        compact: true,
+        breakLength: 80,
+        depth: 10,
+        maxArrayLength: 100,
+        maxStringLength: 10000,
       });
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
-          message: `${text} ${expectedDataMessage}`,
+          message: `${expectedTextMessage} ${expectedDataMessage}`,
           ...mockEvent.payload.event_context,
           sdk_version: LIBRARY_VERSION,
         })
@@ -136,13 +145,18 @@ describe(Logger.name, () => {
 
       logger.info(text1, data, text2);
 
+      const expectedText1Message = `'${text1}'`;
       const expectedDataMessage = inspect(data, {
-        compact: false,
-        depth: Infinity,
+        compact: true,
+        breakLength: 80,
+        depth: 10,
+        maxArrayLength: 100,
+        maxStringLength: 10000,
       });
+      const expectedText2Message = `'${text2}'`;
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
-          message: `${text1} ${expectedDataMessage} ${text2}`,
+          message: `${expectedText1Message} ${expectedDataMessage} ${expectedText2Message}`,
           ...mockEvent.payload.event_context,
           sdk_version: LIBRARY_VERSION,
         })
@@ -212,7 +226,8 @@ describe(Logger.name, () => {
       const callArgs = mockConsoleInfo.mock.calls[0][0];
       const logObject = JSON.parse(callArgs);
 
-      expect(logObject.message).toBe('');
+      // Empty string is inspected and shown as ''
+      expect(logObject.message).toBe("''");
       expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
       expect(logObject.request_id).toBe(
         mockEvent.payload.event_context.request_id
@@ -226,8 +241,8 @@ describe(Logger.name, () => {
       const callArgs = mockConsoleInfo.mock.calls[0][0];
       const logObject = JSON.parse(callArgs);
 
-      // inspect shows 'null' and 'undefined' as strings
-      expect(logObject.message).toBe('test null undefined');
+      // inspect shows strings with quotes and null/undefined without quotes
+      expect(logObject.message).toBe("'test' null undefined");
       expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
     });
 
@@ -247,10 +262,13 @@ describe(Logger.name, () => {
       const callArgs = mockConsoleInfo.mock.calls[0][0];
       const logObject = JSON.parse(callArgs);
 
-      // The logger uses inspect() with formatting, not JSON.stringify()
+      // The logger uses inspect() with compact: true settings
       const expectedMessage = require('util').inspect(complexObject, {
-        compact: false,
-        depth: Infinity,
+        compact: true,
+        breakLength: 80,
+        depth: 10,
+        maxArrayLength: 100,
+        maxStringLength: 10000,
       });
       expect(logObject.message).toBe(expectedMessage);
       expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
