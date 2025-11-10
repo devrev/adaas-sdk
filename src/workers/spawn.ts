@@ -184,7 +184,7 @@ export class Spawn {
     resolve,
     originalConsole,
   }: SpawnInterface) {
-    this.originalConsole = originalConsole;
+    this.originalConsole = originalConsole || console;
     this.alreadyEmitted = false;
     this.event = event;
     this.lambdaTimeout = options?.timeout

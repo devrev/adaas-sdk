@@ -49,7 +49,7 @@ export interface SpawnInterface {
   worker: Worker;
   options?: WorkerAdapterOptions;
   resolve: (value: void | PromiseLike<void>) => void;
-  originalConsole: Console;
+  originalConsole?: Console;
 }
 
 /**
