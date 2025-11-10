@@ -246,7 +246,8 @@ export class Spawn {
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
         const args = message.payload?.args;
         const level = message.payload?.level as LogLevel;
-        (console as Logger).logFn(args, level);
+        // Args are already sanitized in the worker thread, skip double sanitization
+        (console as Logger).logFn(args, level, true);
       }
 
       // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.

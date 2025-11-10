@@ -73,4 +73,6 @@ export const MEMORY_LOG_INTERVAL = 30 * 1000; // 30 seconds
 
 export const DEFAULT_SLEEP_DELAY_MS = 3 * 60 * 1000; // 3 minutes
 
-export const MAX_STRING_LENGTH = 10000;
+export const MAX_LOG_DEPTH = 10;
+export const MAX_LOG_ARRAY_LENGTH = 100;
+export const MAX_LOG_STRING_LENGTH = 10000;

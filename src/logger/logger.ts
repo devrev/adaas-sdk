@@ -3,7 +3,12 @@ import { inspect } from 'node:util';
 import { isMainThread, parentPort } from 'node:worker_threads';
 
 import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
-import { LIBRARY_VERSION } from '../common/constants';
+import {
+  LIBRARY_VERSION,
+  MAX_LOG_ARRAY_LENGTH,
+  MAX_LOG_DEPTH,
+  MAX_LOG_STRING_LENGTH,
+} from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import {
   AxiosErrorResponse,
@@ -30,43 +35,52 @@ export class Logger extends Console {
   }
 
   private valueToString(value: unknown): string {
-    // If the value is a string, return it as-is
+    // If the value is a string, return the first MAX_LOG_STRING_LENGTH characters
     if (typeof value === 'string') {
-      return value;
+      if (value.length > MAX_LOG_STRING_LENGTH) {
+        return `${value.substring(0, MAX_LOG_STRING_LENGTH)}... ${
+          value.length - MAX_LOG_STRING_LENGTH
+        } more characters`;
+      } else {
+        return value;
+      }
     }
 
     // Use inspect for everything else
     return inspect(value, {
       compact: true,
-      depth: 10,
-      maxArrayLength: 100,
-      maxStringLength: 10000,
+      breakLength: 80,
+      depth: MAX_LOG_DEPTH,
+      maxArrayLength: MAX_LOG_ARRAY_LENGTH,
+      maxStringLength: MAX_LOG_STRING_LENGTH,
     });
   }
 
-  logFn(args: unknown[], level: LogLevel): void {
-    // Worker thread sends the log to the main thread to log it
-    if (!isMainThread && parentPort) {
-      const sanitizedArgs = args.map((arg) => this.valueToString(arg));
-      parentPort.postMessage({
-        subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: { args: sanitizedArgs, level },
-      });
+  logFn(args: unknown[], level: LogLevel, skipSanitization = false): void {
+    const message = skipSanitization
+      ? (args as string[]).join(' ')
+      : args.map((arg) => this.valueToString(arg)).join(' ');
+
+    // If local development, log the message to the console and don't add the tags
+    if (this.options?.isLocalDevelopment) {
+      this.originalConsole[level](message);
       return;
     }
 
-    // Main thread logs the log normally
-    if (this.options?.isLocalDevelopment) {
-      this.originalConsole[level](...args);
-    } else {
-      const message = args.map((arg) => this.valueToString(arg)).join(' ');
-
+    if (isMainThread) {
+      // If main thread, log the message to the console and add the tags
       const logObject = {
         message,
         ...this.tags,
       };
-
       this.originalConsole[level](JSON.stringify(logObject));
+    } else {
+      // If worker thread, send the message to the main thread to log it
+      const sanitizedArgs = args.map((arg) => this.valueToString(arg));
+      parentPort?.postMessage({
+        subject: WorkerMessageSubject.WorkerMessageLog,
+        payload: { args: sanitizedArgs, level },
+      });
     }
   }
 
