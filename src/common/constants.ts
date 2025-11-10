@@ -72,3 +72,5 @@ export const HARD_TIMEOUT_MULTIPLIER = 1.3;
 export const MEMORY_LOG_INTERVAL = 30 * 1000; // 30 seconds
 
 export const DEFAULT_SLEEP_DELAY_MS = 3 * 60 * 1000; // 3 minutes
+
+export const MAX_STRING_LENGTH = 10000;

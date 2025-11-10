@@ -83,11 +83,9 @@ describe(Logger.name, () => {
 
       logger.info(message);
 
-      // Strings are inspected and shown with quotes
-      const expectedMessage = `'${message}'`;
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
-          message: expectedMessage,
+          message,
           ...mockEvent.payload.event_context,
           sdk_version: LIBRARY_VERSION,
         })
@@ -101,7 +99,7 @@ describe(Logger.name, () => {
 
       const expectedMessage = inspect(data, {
         compact: true,
-        breakLength: 80,
+        breakLength: Infinity,
         depth: 10,
         maxArrayLength: 100,
         maxStringLength: 10000,
@@ -121,17 +119,16 @@ describe(Logger.name, () => {
 
       logger.info(text, data);
 
-      const expectedTextMessage = `'${text}'`;
       const expectedDataMessage = inspect(data, {
         compact: true,
-        breakLength: 80,
+        breakLength: Infinity,
         depth: 10,
         maxArrayLength: 100,
         maxStringLength: 10000,
       });
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
-          message: `${expectedTextMessage} ${expectedDataMessage}`,
+          message: `${text} ${expectedDataMessage}`,
           ...mockEvent.payload.event_context,
           sdk_version: LIBRARY_VERSION,
         })
@@ -145,18 +142,16 @@ describe(Logger.name, () => {
 
       logger.info(text1, data, text2);
 
-      const expectedText1Message = `'${text1}'`;
       const expectedDataMessage = inspect(data, {
         compact: true,
-        breakLength: 80,
+        breakLength: Infinity,
         depth: 10,
         maxArrayLength: 100,
         maxStringLength: 10000,
       });
-      const expectedText2Message = `'${text2}'`;
       expect(mockConsoleInfo).toHaveBeenCalledWith(
         JSON.stringify({
-          message: `${expectedText1Message} ${expectedDataMessage} ${expectedText2Message}`,
+          message: `${text1} ${expectedDataMessage} ${text2}`,
           ...mockEvent.payload.event_context,
           sdk_version: LIBRARY_VERSION,
         })
@@ -226,8 +221,8 @@ describe(Logger.name, () => {
       const callArgs = mockConsoleInfo.mock.calls[0][0];
       const logObject = JSON.parse(callArgs);
 
-      // Empty string is inspected and shown as ''
-      expect(logObject.message).toBe("''");
+      // Empty string is returned as-is
+      expect(logObject.message).toBe('');
       expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
       expect(logObject.request_id).toBe(
         mockEvent.payload.event_context.request_id
@@ -241,8 +236,8 @@ describe(Logger.name, () => {
       const callArgs = mockConsoleInfo.mock.calls[0][0];
       const logObject = JSON.parse(callArgs);
 
-      // inspect shows strings with quotes and null/undefined without quotes
-      expect(logObject.message).toBe("'test' null undefined");
+      // Strings returned as-is, null/undefined shown via inspect
+      expect(logObject.message).toBe('test null undefined');
       expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
     });
 
@@ -265,7 +260,7 @@ describe(Logger.name, () => {
       // The logger uses inspect() with compact: true settings
       const expectedMessage = require('util').inspect(complexObject, {
         compact: true,
-        breakLength: 80,
+        breakLength: Infinity,
         depth: 10,
         maxArrayLength: 100,
         maxStringLength: 10000,
