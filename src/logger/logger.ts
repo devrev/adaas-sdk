@@ -39,7 +39,6 @@ export class Logger extends Console {
     // Use inspect for everything else
     return inspect(value, {
       compact: true,
-      breakLength: Infinity,
       depth: 10,
       maxArrayLength: 100,
       maxStringLength: MAX_STRING_LENGTH,

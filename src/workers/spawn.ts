@@ -93,19 +93,8 @@ export async function spawn<ConnectorState>({
   initialDomainMapping,
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
-  const originalConsole = console;
-
-  // eslint-disable-next-line no-global-assign
-  console = new Logger({ event, options });
-  const script = getWorkerPath({
-    event,
-    connectorWorkerPath: workerPath,
-  });
-
   if (options?.isLocalDevelopment) {
-    console.warn(
-      'WARN: isLocalDevelopment is deprecated. Please use the -- local flag instead.'
-    );
+    console.log('Snap-in is running in local development mode.');
   }
 
   // read the command line arguments to check if the local flag is passed
@@ -116,6 +105,14 @@ export async function spawn<ConnectorState>({
       isLocalDevelopment: true,
     };
   }
+
+  const originalConsole = console;
+  // eslint-disable-next-line no-global-assign
+  console = new Logger({ event, options });
+  const script = getWorkerPath({
+    event,
+    connectorWorkerPath: workerPath,
+  });
 
   if (script) {
     try {
@@ -180,7 +177,6 @@ export class Spawn {
   private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
   private resolve: (value: void | PromiseLike<void>) => void;
   private originalConsole: Console;
-
   constructor({
     event,
     worker,
@@ -188,13 +184,13 @@ export class Spawn {
     resolve,
     originalConsole,
   }: SpawnInterface) {
+    this.originalConsole = originalConsole;
     this.alreadyEmitted = false;
     this.event = event;
     this.lambdaTimeout = options?.timeout
       ? Math.min(options.timeout, this.defaultLambdaTimeout)
       : this.defaultLambdaTimeout;
     this.resolve = resolve;
-    this.originalConsole = originalConsole;
 
     // If soft timeout is reached, send a message to the worker to gracefully exit.
     this.softTimeoutTimer = setTimeout(
@@ -295,6 +291,7 @@ export class Spawn {
 
   private async exitFromMainThread(): Promise<void> {
     this.clearTimeouts();
+
     // eslint-disable-next-line no-global-assign
     console = this.originalConsole;
 
