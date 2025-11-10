@@ -3,8 +3,7 @@ import { inspect } from 'node:util';
 import { isMainThread, parentPort } from 'node:worker_threads';
 
 import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
-import { LIBRARY_VERSION, MAX_STRING_LENGTH } from '../common/constants';
-import { truncateString } from '../common/helpers';
+import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import {
   AxiosErrorResponse,
@@ -31,9 +30,9 @@ export class Logger extends Console {
   }
 
   private valueToString(value: unknown): string {
-    // If the value is a string, truncate it to the maximum length
+    // If the value is a string, return it as-is
     if (typeof value === 'string') {
-      return truncateString(value, MAX_STRING_LENGTH);
+      return value;
     }
 
     // Use inspect for everything else
@@ -41,7 +40,7 @@ export class Logger extends Console {
       compact: true,
       depth: 10,
       maxArrayLength: 100,
-      maxStringLength: MAX_STRING_LENGTH,
+      maxStringLength: 10000,
     });
   }
 

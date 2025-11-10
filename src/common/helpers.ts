@@ -273,14 +273,3 @@ export function getMemoryUsage(): MemoryInfo {
     throw err;
   }
 }
-
-export function truncateString(value: string, maxLength: number): string {
-  if (value.length > maxLength) {
-    const remainingChars = value.length - maxLength;
-    return `${value.substring(
-      0,
-      maxLength
-    )}... ${remainingChars} more characters`;
-  }
-  return value;
-}
