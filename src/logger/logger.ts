@@ -1,15 +1,13 @@
+import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
+
 import { Console } from 'node:console';
 import { inspect } from 'node:util';
 import { isMainThread, parentPort } from 'node:worker_threads';
 
-import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
-import {
-  LIBRARY_VERSION,
-  MAX_LOG_ARRAY_LENGTH,
-  MAX_LOG_DEPTH,
-  MAX_LOG_STRING_LENGTH,
-} from '../common/constants';
+import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
+
+import { INSPECT_OPTIONS, MAX_LOG_STRING_LENGTH } from './logger.constants';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
@@ -19,6 +17,10 @@ import {
   PrintableState,
 } from './logger.interfaces';
 
+/**
+ * Custom logger that extends Node.js Console with context-aware logging.
+ * Handles local development, main thread, and worker thread logging differently.
+ */
 export class Logger extends Console {
   private originalConsole: Console;
   private options?: WorkerAdapterOptions;
@@ -34,48 +36,62 @@ export class Logger extends Console {
     };
   }
 
+  /**
+   * Converts any value to a string using `util.inspect()` for complex types.
+   *
+   * @param value - The value to convert
+   * @returns String representation of the value
+   */
   private valueToString(value: unknown): string {
-    // If the value is a string, return the first MAX_LOG_STRING_LENGTH characters
     if (typeof value === 'string') {
-      if (value.length > MAX_LOG_STRING_LENGTH) {
-        return `${value.substring(0, MAX_LOG_STRING_LENGTH)}... ${
-          value.length - MAX_LOG_STRING_LENGTH
-        } more characters`;
-      } else {
-        return value;
-      }
+      return value;
     }
-
-    // Use inspect for everything else
-    return inspect(value, {
-      compact: true,
-      breakLength: 80,
-      depth: MAX_LOG_DEPTH,
-      maxArrayLength: MAX_LOG_ARRAY_LENGTH,
-      maxStringLength: MAX_LOG_STRING_LENGTH,
-    });
+    return inspect(value, INSPECT_OPTIONS);
   }
 
+  /**
+   * Truncates a message if it exceeds the maximum allowed length.
+   * Adds a suffix indicating how many characters were omitted.
+   *
+   * @param message - The message to truncate
+   * @returns Truncated message or original if within limits
+   */
+  private truncateMessage(message: string): string {
+    if (message.length > MAX_LOG_STRING_LENGTH) {
+      return `${message.substring(0, MAX_LOG_STRING_LENGTH)}... ${
+        message.length - MAX_LOG_STRING_LENGTH
+      } more characters`;
+    }
+    return message;
+  }
+
+  /**
+   * Core logging method that handles different execution contexts.
+   * In local development logs directly to console, in production adds JSON formatting with tags,
+   * and in worker threads forwards messages to the main thread.
+   *
+   * @param args - Values to log (converted to strings unless skipSanitization is true)
+   * @param level - Log level (info, warn, error)
+   * @param skipSanitization - Skip string conversion if args are already strings
+   */
   logFn(args: unknown[], level: LogLevel, skipSanitization = false): void {
-    const message = skipSanitization
+    let message = skipSanitization
       ? (args as string[]).join(' ')
       : args.map((arg) => this.valueToString(arg)).join(' ');
+    message = this.truncateMessage(message);
 
-    // If local development, log the message to the console and don't add the tags
     if (this.options?.isLocalDevelopment) {
       this.originalConsole[level](message);
       return;
     }
 
     if (isMainThread) {
-      // If main thread, log the message to the console and add the tags
       const logObject = {
         message,
         ...this.tags,
       };
       this.originalConsole[level](JSON.stringify(logObject));
     } else {
-      // If worker thread, send the message to the main thread to log it
       const sanitizedArgs = args.map((arg) => this.valueToString(arg));
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
@@ -101,13 +117,19 @@ export class Logger extends Console {
   }
 }
 
-// Helper function to process each value in the state
+/**
+ * Converts a state object into a printable format where arrays are summarized.
+ * Arrays show their length, first item, and last item instead of all elements.
+ * Objects are recursively processed and primitives are returned as-is.
+ *
+ * @param state - State object to convert
+ * @returns Printable representation with summarized arrays
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getPrintableState(state: Record<string, any>): PrintableState {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function processValue(value: any): any {
     if (Array.isArray(value)) {
-      // If the value is an array, summarize it
       return {
         type: 'array',
         length: value.length,
@@ -115,34 +137,41 @@ export function getPrintableState(state: Record<string, any>): PrintableState {
         lastItem: value.length > 1 ? value[value.length - 1] : undefined,
       } as PrintableArray;
     } else if (typeof value === 'object' && value !== null) {
-      // If the value is an object, recursively process its properties
       const processedObject: PrintableState = {};
       for (const key in value) {
         processedObject[key] = processValue(value[key]);
       }
       return processedObject;
     }
-    // For primitive types, return the value as is
     return value;
   }
 
-  // Process the state object directly since it's guaranteed to be an object
   return processValue(state) as PrintableState;
 }
-/**
- * @deprecated
- */
-export function formatAxiosError(error: AxiosError): object {
-  return serializeAxiosError(error);
-}
 
-export const serializeError = (error: unknown) => {
+/**
+ * Serializes an error into a structured format.
+ * Automatically detects and formats Axios errors with HTTP details.
+ * Returns other error types as-is.
+ *
+ * @param error - Error to serialize
+ * @returns Serialized error or original if not an Axios error
+ */
+export function serializeError(error: unknown): unknown {
   if (isAxiosError(error)) {
     return serializeAxiosError(error);
   }
   return error;
-};
+}
 
+/**
+ * Serializes an Axios error into a structured format with HTTP request/response details.
+ * Extracts method, URL, parameters, status code, headers, and data.
+ * Includes CORS/network failure indicator when no response is available.
+ *
+ * @param error - Axios error to serialize
+ * @returns Structured object with error details
+ */
 export function serializeAxiosError(error: AxiosError): AxiosErrorResponse {
   const serializedAxiosError: AxiosErrorResponse = {
     config: {
@@ -167,4 +196,15 @@ export function serializeAxiosError(error: AxiosError): AxiosErrorResponse {
   }
 
   return serializedAxiosError;
+}
+
+/**
+ * Formats an Axios error to a printable format.
+ *
+ * @param error - Axios error to format
+ * @returns Formatted error object
+ * @deprecated Use {@link serializeAxiosError} instead
+ */
+export function formatAxiosError(error: AxiosError): object {
+  return serializeAxiosError(error);
 }

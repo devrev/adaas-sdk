@@ -1,10 +1,14 @@
 import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
-import { LIBRARY_VERSION, MAX_LOG_STRING_LENGTH } from '../common/constants';
+import { LIBRARY_VERSION } from '../common/constants';
 import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import { getPrintableState, Logger, serializeAxiosError } from './logger';
+import {
+  INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
+  MAX_LOG_STRING_LENGTH,
+} from './logger.constants';
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
@@ -88,12 +92,7 @@ describe(Logger.name, () => {
     // Arrange
     const data = { id: 123, name: 'test' };
     const logger = new Logger({ event: mockEvent, options: mockOptions });
-    const expectedMessage = inspect(data, {
-      compact: true,
-      depth: 10,
-      maxArrayLength: 100,
-      maxStringLength: 10000,
-    });
+    const expectedMessage = inspect(data, EXPECTED_INSPECT_OPTIONS);
 
     // Act
     logger.info(data);
@@ -113,12 +112,7 @@ describe(Logger.name, () => {
     const text = 'Successfully fetched';
     const data = { count: 42 };
     const logger = new Logger({ event: mockEvent, options: mockOptions });
-    const expectedDataMessage = inspect(data, {
-      compact: true,
-      depth: 10,
-      maxArrayLength: 100,
-      maxStringLength: 10000,
-    });
+    const expectedDataMessage = inspect(data, EXPECTED_INSPECT_OPTIONS);
 
     // Act
     logger.info(text, data);
@@ -139,12 +133,7 @@ describe(Logger.name, () => {
     const data = { id: 123 };
     const text2 = 'completed';
     const logger = new Logger({ event: mockEvent, options: mockOptions });
-    const expectedDataMessage = inspect(data, {
-      compact: true,
-      depth: 10,
-      maxArrayLength: 100,
-      maxStringLength: 10000,
-    });
+    const expectedDataMessage = inspect(data, EXPECTED_INSPECT_OPTIONS);
 
     // Act
     logger.info(text1, data, text2);
@@ -165,12 +154,7 @@ describe(Logger.name, () => {
     const data = { test: true };
     mockOptions.isLocalDevelopment = true;
     const logger = new Logger({ event: mockEvent, options: mockOptions });
-    const expectedDataMessage = inspect(data, {
-      compact: true,
-      depth: 10,
-      maxArrayLength: 100,
-      maxStringLength: 10000,
-    });
+    const expectedDataMessage = inspect(data, EXPECTED_INSPECT_OPTIONS);
 
     // Act
     logger.info(message, data);
@@ -232,12 +216,7 @@ describe(Logger.name, () => {
     // Arrange
     const data = { id: 123 };
     const logger = new Logger({ event: mockEvent, options: mockOptions });
-    const expectedMessage = inspect(data, {
-      compact: true,
-      depth: 10,
-      maxArrayLength: 100,
-      maxStringLength: 10000,
-    });
+    const expectedMessage = inspect(data, EXPECTED_INSPECT_OPTIONS);
 
     // Act
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -332,12 +311,7 @@ describe(Logger.name, () => {
       },
     };
     const logger = new Logger({ event: mockEvent, options: mockOptions });
-    const expectedMessage = inspect(complexObject, {
-      compact: true,
-      depth: 10,
-      maxArrayLength: 100,
-      maxStringLength: 10000,
-    });
+    const expectedMessage = inspect(complexObject, EXPECTED_INSPECT_OPTIONS);
 
     // Act
     logger.info(complexObject);
