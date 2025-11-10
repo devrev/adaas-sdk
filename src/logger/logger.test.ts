@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
+import { LIBRARY_VERSION } from '../common/constants';
 import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
@@ -65,6 +66,7 @@ describe(Logger.name, () => {
       expect(tags).toEqual({
         ...mockEvent.payload.event_context,
         dev_oid: mockEvent.payload.event_context.dev_oid,
+        sdk_version: LIBRARY_VERSION,
       });
     });
   });
@@ -87,6 +89,7 @@ describe(Logger.name, () => {
           message,
           ...mockEvent.payload.event_context,
           dev_oid: mockEvent.payload.event_context.dev_oid,
+          sdk_version: LIBRARY_VERSION,
         })
       );
     });
@@ -105,6 +108,7 @@ describe(Logger.name, () => {
           message: expectedMessage,
           ...mockEvent.payload.event_context,
           dev_oid: mockEvent.payload.event_context.dev_oid,
+          sdk_version: LIBRARY_VERSION,
         })
       );
     });
@@ -124,6 +128,7 @@ describe(Logger.name, () => {
           message: `${text} ${expectedDataMessage}`,
           ...mockEvent.payload.event_context,
           dev_oid: mockEvent.payload.event_context.dev_oid,
+          sdk_version: LIBRARY_VERSION,
         })
       );
     });
@@ -144,6 +149,7 @@ describe(Logger.name, () => {
           message: `${text1} ${expectedDataMessage} ${text2}`,
           ...mockEvent.payload.event_context,
           dev_oid: mockEvent.payload.event_context.dev_oid,
+          sdk_version: LIBRARY_VERSION,
         })
       );
     });
