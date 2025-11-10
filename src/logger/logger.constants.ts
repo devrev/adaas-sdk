@@ -5,7 +5,7 @@ export const MAX_LOG_DEPTH = 10;
 export const MAX_LOG_ARRAY_LENGTH = 100;
 
 export const INSPECT_OPTIONS: InspectOptions = {
-  compact: true,
+  compact: false,
   breakLength: Infinity,
   depth: MAX_LOG_DEPTH,
   maxArrayLength: MAX_LOG_ARRAY_LENGTH,

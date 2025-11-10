@@ -67,8 +67,8 @@ export class Logger extends Console {
 
   /**
    * Core logging method that handles different execution contexts.
-   * In local development logs directly to console, in production adds JSON formatting with tags,
-   * and in worker threads forwards messages to the main thread.
+   * On main thread logs with JSON formatting and tags in production, or plain in local development.
+   * In worker threads forwards messages to the main thread for processing.
    *
    * @param args - Values to log (converted to strings unless skipSanitization is true)
    * @param level - Log level (info, warn, error)
@@ -80,17 +80,17 @@ export class Logger extends Console {
       : args.map((arg) => this.valueToString(arg)).join(' ');
     message = this.truncateMessage(message);
 
-    if (this.options?.isLocalDevelopment) {
-      this.originalConsole[level](message);
-      return;
-    }
-
     if (isMainThread) {
-      const logObject = {
-        message,
-        ...this.tags,
-      };
-      this.originalConsole[level](JSON.stringify(logObject));
+      if (this.options?.isLocalDevelopment) {
+        this.originalConsole[level](message);
+        return;
+      } else {
+        const logObject = {
+          message,
+          ...this.tags,
+        };
+        this.originalConsole[level](JSON.stringify(logObject));
+      }
     } else {
       const sanitizedArgs = args.map((arg) => this.valueToString(arg));
       parentPort?.postMessage({
