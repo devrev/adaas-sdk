@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
+import { LIBRARY_VERSION } from '../common/constants';
 import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
@@ -55,7 +56,7 @@ describe(Logger.name, () => {
   });
 
   describe('constructor', () => {
-    it('should initialize logger with event context and dev_oid', () => {
+    it('should initialize logger with event context and sdk_version', () => {
       const logger = new Logger({ event: mockEvent, options: mockOptions });
 
       // Access private property for testing
@@ -64,7 +65,7 @@ describe(Logger.name, () => {
 
       expect(tags).toEqual({
         ...mockEvent.payload.event_context,
-        dev_oid: mockEvent.payload.event_context.dev_oid,
+        sdk_version: LIBRARY_VERSION,
       });
     });
   });
@@ -86,7 +87,7 @@ describe(Logger.name, () => {
         JSON.stringify({
           message,
           ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_oid,
+          sdk_version: LIBRARY_VERSION,
         })
       );
     });
@@ -104,7 +105,7 @@ describe(Logger.name, () => {
         JSON.stringify({
           message: expectedMessage,
           ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_oid,
+          sdk_version: LIBRARY_VERSION,
         })
       );
     });
@@ -123,7 +124,7 @@ describe(Logger.name, () => {
         JSON.stringify({
           message: `${text} ${expectedDataMessage}`,
           ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_oid,
+          sdk_version: LIBRARY_VERSION,
         })
       );
     });
@@ -143,7 +144,7 @@ describe(Logger.name, () => {
         JSON.stringify({
           message: `${text1} ${expectedDataMessage} ${text2}`,
           ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_oid,
+          sdk_version: LIBRARY_VERSION,
         })
       );
     });
@@ -212,7 +213,7 @@ describe(Logger.name, () => {
       const logObject = JSON.parse(callArgs);
 
       expect(logObject.message).toBe('');
-      expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
+      expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
       expect(logObject.request_id).toBe(
         mockEvent.payload.event_context.request_id
       );
@@ -227,7 +228,7 @@ describe(Logger.name, () => {
 
       // inspect shows 'null' and 'undefined' as strings
       expect(logObject.message).toBe('test null undefined');
-      expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
+      expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
     });
 
     it('[edge] should handle complex nested objects', () => {
@@ -252,7 +253,7 @@ describe(Logger.name, () => {
         depth: Infinity,
       });
       expect(logObject.message).toBe(expectedMessage);
-      expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
+      expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
       expect(typeof logObject.callback_url).toBe('string');
     });
   });

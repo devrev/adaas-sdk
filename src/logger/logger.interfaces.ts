@@ -1,5 +1,5 @@
 import { RawAxiosResponseHeaders } from 'axios';
-import { AirdropEvent } from '../types/extraction';
+import { AirdropEvent, EventContext } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 
 export interface LoggerFactoryInterface {
@@ -44,4 +44,8 @@ export interface AxiosErrorResponse {
   };
   code?: string;
   message?: string;
+}
+
+export interface LoggerTags extends EventContext {
+  sdk_version: string;
 }
