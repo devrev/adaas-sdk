@@ -2,13 +2,15 @@ import { ExtractorEventType, processTask } from '../../index';
 
 /**
  * OOM Test Worker: Slow Heap Growth
- * 
+ *
  * This worker simulates slow, gradual memory growth by allocating
  * memory in small chunks with delays between allocations.
- * 
+ *
  * This tests that the memory monitor can detect and handle
  * gradual memory increases before hitting hard OOM.
  */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 processTask({
   task: async ({ adapter }) => {
@@ -37,10 +39,12 @@ processTask({
         const heapUsedMB = (memUsage.heapUsed / 1024 / 1024).toFixed(0);
         const heapTotalMB = (memUsage.heapTotal / 1024 / 1024).toFixed(0);
 
-        console.log(`   Iteration ${i + 1}: Allocated ${heapUsedMB}MB / ${heapTotalMB}MB`);
+        console.log(
+          `   Iteration ${i + 1}: Allocated ${heapUsedMB}MB / ${heapTotalMB}MB`
+        );
 
         // Small delay to allow memory monitor to check
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
 
       // If we get here, we didn't hit the memory threshold
@@ -56,4 +60,3 @@ processTask({
     await adapter.emit(ExtractorEventType.ExtractionDataProgress);
   },
 });
-
