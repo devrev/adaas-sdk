@@ -132,6 +132,9 @@ dist
 .npmrc
 .idea
 
-
 src/tests/backwards-compatibility/temp/
 src/tests/backwards-compatibility/report/
+
+# OOM test artifacts
+oom-test-logs/
+tmp/localstack/

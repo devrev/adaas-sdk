@@ -30,11 +30,13 @@ export interface WorkerAdapterInterface<ConnectorState> {
  * @param {boolean=} isLocalDevelopment - A flag to indicate if the adapter is being used in local development
  * @param {number=} timeout - The timeout for the worker thread
  * @param {number=} batchSize - Maximum number of extracted items in a batch
+ * @param {number=} workerHeapSizeMb - Maximum heap size for worker threads in MB (default: 512)
  */
 export interface WorkerAdapterOptions {
   isLocalDevelopment?: boolean;
   timeout?: number;
   batchSize?: number;
+  workerHeapSizeMb?: number;
 }
 
 /**
