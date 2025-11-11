@@ -2,15 +2,17 @@ import { ExtractorEventType, processTask } from '../../index';
 
 /**
  * OOM Test Worker: Fast Heap Growth
- * 
+ *
  * This worker simulates rapid memory growth by allocating
  * large amounts of memory quickly without delays.
- * 
+ *
  * This tests the edge case where memory grows so fast that
  * the worker may hit the resource limit before the memory
  * monitor can detect it. This is expected behavior - the
  * resource limit acts as a safety net.
  */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 processTask({
   task: async ({ adapter }) => {
@@ -37,7 +39,9 @@ processTask({
         const heapUsedMB = (memUsage.heapUsed / 1024 / 1024).toFixed(0);
         const heapTotalMB = (memUsage.heapTotal / 1024 / 1024).toFixed(0);
 
-        console.log(`   Iteration ${i + 1}: Allocated ${heapUsedMB}MB / ${heapTotalMB}MB`);
+        console.log(
+          `   Iteration ${i + 1}: Allocated ${heapUsedMB}MB / ${heapTotalMB}MB`
+        );
       }
 
       // If we get here, we didn't hit the memory threshold
@@ -53,4 +57,3 @@ processTask({
     await adapter.emit(ExtractorEventType.ExtractionDataProgress);
   },
 });
-

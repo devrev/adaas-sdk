@@ -1,4 +1,4 @@
-import { isMainThread, Worker, WorkerOptions } from 'node:worker_threads';
+import { isMainThread, Worker } from 'node:worker_threads';
 
 import { WorkerData, WorkerEvent } from '../types/workers';
 

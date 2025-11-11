@@ -7,7 +7,7 @@ interface ExtractorState {}
 
 /**
  * Helper function to run OOM test workers
- * 
+ *
  * @param events - Array of events to process
  * @param workerPath - Path to the worker file
  * @param customOptions - Custom worker options (e.g., memory limits, monitoring config)
@@ -35,4 +35,3 @@ const run = async (
 
 export { run };
 export default run;
-

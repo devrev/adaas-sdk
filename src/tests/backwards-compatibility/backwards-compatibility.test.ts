@@ -31,11 +31,11 @@ function parseDestructuredParameter(paramName: string): string[] {
   // Extract properties from "{ prop1, prop2, prop3 }" format
   const match = paramName.match(/^\{\s*([^}]+)\s*\}$/);
   if (!match) return [paramName]; // Not destructured, return as-is
-  
+
   return match[1]
     .split(',')
-    .map(prop => prop.trim())
-    .filter(prop => prop.length > 0);
+    .map((prop) => prop.trim())
+    .filter((prop) => prop.length > 0);
 }
 
 export function checkFunctionCompatibility(
@@ -59,10 +59,15 @@ export function checkFunctionCompatibility(
     );
 
     // Handle destructured parameters specially
-    if (newFunctionParamNames.length === 1 && currentFunctionParamNames.length === 1) {
+    if (
+      newFunctionParamNames.length === 1 &&
+      currentFunctionParamNames.length === 1
+    ) {
       const newProps = parseDestructuredParameter(newFunctionParamNames[0]);
-      const currentProps = parseDestructuredParameter(currentFunctionParamNames[0]);
-      
+      const currentProps = parseDestructuredParameter(
+        currentFunctionParamNames[0]
+      );
+
       if (newProps.length > 1 || currentProps.length > 1) {
         // Check that all current properties exist in new parameter in same order
         const newPropsStart = newProps.slice(0, currentProps.length);
@@ -70,7 +75,7 @@ export function checkFunctionCompatibility(
         return;
       }
     }
-    
+
     expect(newFunctionParamNames).toEqual(currentFunctionParamNames);
   });
 
