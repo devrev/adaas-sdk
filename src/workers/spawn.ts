@@ -29,9 +29,7 @@ import {
 import { LogLevel } from '../logger/logger.interfaces';
 import { createWorker } from './create-worker';
 
-function getWorkerPath({
-  event,
-}: GetWorkerPathInterface): string | null {
+function getWorkerPath({ event }: GetWorkerPathInterface): string | null {
   let path = null;
 
   const eventType = getEventType(event.payload.event_type);
