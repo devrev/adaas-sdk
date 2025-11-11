@@ -5,6 +5,13 @@ const initialDomainMapping = {};
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface ExtractorState {}
 
+/**
+ * Helper function to run OOM test workers
+ * 
+ * @param events - Array of events to process
+ * @param workerPath - Path to the worker file
+ * @param customOptions - Custom worker options (e.g., memory limits, monitoring config)
+ */
 const run = async (
   events: AirdropEvent[],
   workerPath: string,
@@ -18,7 +25,7 @@ const run = async (
       initialDomainMapping,
       options: {
         batchSize: 1000,
-        timeout: 5 * 1000, // 5 seconds
+        timeout: 30 * 1000, // 30 seconds
         isLocalDevelopment: true,
         ...customOptions,
       },
@@ -26,5 +33,6 @@ const run = async (
   }
 };
 
-export default run;
 export { run };
+export default run;
+

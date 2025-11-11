@@ -1,4 +1,4 @@
-import { isMainThread, Worker } from 'node:worker_threads';
+import { isMainThread, Worker, WorkerOptions } from 'node:worker_threads';
 
 import { WorkerData, WorkerEvent } from '../types/workers';
 
@@ -9,9 +9,16 @@ async function createWorker<ConnectorState>(
     if (isMainThread) {
       const workerFile = __dirname + '/worker.js';
 
+      const workerHeapSizeMb = workerData.options?.workerHeapSizeMb || 512;
+      const maxOldGenerationSizeMb = Math.floor(workerHeapSizeMb / 1.2);
+      const resourceLimits = {
+        maxOldGenerationSizeMb,
+      };
+
       const worker: Worker = new Worker(workerFile, {
         workerData,
-      } as WorkerOptions);
+        resourceLimits,
+      });
 
       worker.on(WorkerEvent.WorkerError, (error) => {
         console.error('Worker error', error);
