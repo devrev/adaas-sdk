@@ -6,7 +6,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig([
-  { ignores: ['dist/**', 'test/**', 'src/deprecated/**'] },
+  { ignores: ['node_modules/**', 'dist/**', 'test/**', 'src/deprecated/**', 'oom-tests/**'] },
 
   // JavaScript files (CommonJS) - for worker.js and config files
   {

@@ -238,8 +238,7 @@ export function getMemoryUsage(heapStats: v8.HeapInfo): MemoryInfo {
     const externalMB = memUsage.external / 1024 / 1024;
     const arrayBuffersMB = memUsage.arrayBuffers / 1024 / 1024;
 
-    const rssUsedPercent =
-      ((rssUsedMB / heapLimitMB) * 100).toFixed(2) + '%';
+    const rssUsedPercent = ((rssUsedMB / heapLimitMB) * 100).toFixed(2) + '%';
     const heapUsedPercent =
       ((heapStats.used_heap_size / heapStats.heap_size_limit) * 100).toFixed(
         2
