@@ -1,6 +1,6 @@
 import { State } from '../state/state';
 import { createEvent, createItems } from '../tests/test-helpers';
-import { Artifact, EventType } from '../types';
+import { Artifact, EventTypeV2 } from '../types';
 import { WorkerAdapter } from './worker-adapter';
 
 // 1. Create a mock function for the method you want to override.
@@ -57,7 +57,9 @@ describe('Artifact ordering when artifacts overflow batch sizes in repositories'
 
   beforeEach(() => {
     // Create a fresh adapter instance for this test to avoid mocking conflicts
-    const mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+    const mockEvent = createEvent({
+      eventType: EventTypeV2.ExtractionDataStart,
+    });
     const mockAdapterState = new State<TestState>({
       event: mockEvent,
       initialState: { attachments: { completed: false } },

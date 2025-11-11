@@ -3,8 +3,8 @@ import { parentPort } from 'node:worker_threads';
 import { AttachmentsStreamingPool } from '../attachments-streaming/attachments-streaming-pool';
 import {
   AIRDROP_DEFAULT_ITEM_TYPES,
-  ALLOWED_EXTRACTION_EVENT_TYPES,
-  STATELESS_EVENT_TYPES,
+  ALLOWED_EXTRACTION_EVENT_TYPES_V2,
+  STATELESS_EVENT_TYPES_V2,
 } from '../common/constants';
 import { emit } from '../common/control-protocol';
 import { addReportToLoaderReport, getFilesToLoad } from '../common/helpers';
@@ -18,10 +18,10 @@ import { AdapterState } from '../state/state.interfaces';
 import {
   AirdropEvent,
   EventData,
-  EventType,
+  EventTypeV2,
   ExternalSystemAttachmentProcessors,
   ExternalSystemAttachmentStreamingFunction,
-  ExtractorEventType,
+  ExtractorEventTypeV2,
   ProcessAttachmentReturnType,
   StreamAttachmentsReturnType,
 } from '../types/extraction';
@@ -193,7 +193,7 @@ export class WorkerAdapter<ConnectorState> {
    * @param data - The data to be sent with the event
    */
   async emit(
-    newEventType: ExtractorEventType | LoaderEventType,
+    newEventType: ExtractorEventTypeV2 | LoaderEventType,
     data?: EventData
   ): Promise<void> {
     if (this.hasWorkerEmitted) {
@@ -204,7 +204,7 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     // We want to upload all the repos before emitting the event, except for the external sync units done event
-    if (newEventType !== ExtractorEventType.ExtractionExternalSyncUnitsDone) {
+    if (newEventType !== ExtractorEventTypeV2.ExtractionExternalSyncUnitsDone) {
       console.log(
         `Uploading all repos before emitting event with event type: ${newEventType}.`
       );
@@ -220,7 +220,7 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     // If the extraction is done, we want to save the timestamp of the last successful sync
-    if (newEventType === ExtractorEventType.ExtractionAttachmentsDone) {
+    if (newEventType === ExtractorEventTypeV2.ExtractionAttachmentsDone) {
       console.log(
         `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${this.state.lastSyncStarted}).`
       );
@@ -230,7 +230,11 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     // We want to save the state every time we emit an event, except for the start and delete events
-    if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
+    const isStateless = STATELESS_EVENT_TYPES_V2.includes(
+      this.event.payload.event_type
+    );
+
+    if (!isStateless) {
       console.log(
         `Saving state before emitting event with event type: ${newEventType}.`
       );
@@ -246,16 +250,17 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     try {
+      // After translation in spawn, event_type is always EventTypeV2
+      const isExtractionEvent = ALLOWED_EXTRACTION_EVENT_TYPES_V2.includes(
+        this.event.payload.event_type
+      );
+
       await emit({
         eventType: newEventType,
         event: this.event,
         data: {
           ...data,
-          ...(ALLOWED_EXTRACTION_EVENT_TYPES.includes(
-            this.event.payload.event_type
-          )
-            ? { artifacts: this.artifacts }
-            : {}),
+          ...(isExtractionEvent ? { artifacts: this.artifacts } : {}),
         },
       });
 
@@ -293,7 +298,7 @@ export class WorkerAdapter<ConnectorState> {
   async loadItemTypes({
     itemTypesToLoad,
   }: ItemTypesToLoadParams): Promise<LoadItemTypesResponse> {
-    if (this.event.payload.event_type === EventType.StartLoadingData) {
+    if (this.event.payload.event_type === EventTypeV2.StartLoadingData) {
       const itemTypes = itemTypesToLoad.map(
         (itemTypeToLoad) => itemTypeToLoad.itemType
       );
@@ -436,7 +441,7 @@ export class WorkerAdapter<ConnectorState> {
   }: {
     create: ExternalSystemLoadingFunction<ExternalSystemAttachment>;
   }): Promise<LoadItemTypesResponse> {
-    if (this.event.payload.event_type === EventType.StartLoadingAttachments) {
+    if (this.event.payload.event_type === EventTypeV2.StartLoadingAttachments) {
       this.adapterState.state.fromDevRev = {
         filesToLoad: await this.getLoaderBatches({
           supportedItemTypes: ['attachment'],

@@ -5,7 +5,8 @@ import * as v8 from 'v8';
 import {
   AirdropEvent,
   EventType,
-  ExtractorEventType,
+  EventTypeV2,
+  ExtractorEventTypeV2,
 } from '../types/extraction';
 import {
   ActionType,
@@ -19,97 +20,128 @@ import {
   MAX_DEVREV_FILENAME_LENGTH,
 } from './constants';
 
-const EVENT_TYPE_TRANSLATION_TABLE = {
-  EXTRACTION_EXTERNAL_SYNC_UNITS_START:
-    EventType.ExtractionExternalSyncUnitsStart,
-  EXTRACTION_METADATA_START: EventType.ExtractionMetadataStart,
-  EXTRACTION_DATA_START: EventType.ExtractionDataStart,
-  EXTRACTION_DATA_CONTINUE: EventType.ExtractionDataContinue,
-  EXTRACTION_ATTACHMENTS_START: EventType.ExtractionAttachmentsStart,
-  EXTRACTION_ATTACHMENTS_CONTINUE: EventType.ExtractionAttachmentsContinue,
-  EXTRACTION_DATA_DELETE: EventType.ExtractionDataDelete,
-  EXTRACTION_ATTACHMENTS_DELETE: EventType.ExtractionAttachmentsDelete,
+/**
+ * Translation table from old EventType (V1) string values to new EventTypeV2 values.
+ * This is exported so users can use it to translate event types when using the SDK.
+ * The keys are the old EventType enum values, and the values are the new EventTypeV2 enum values.
+ */
+export const EVENT_TYPE_V1_TO_V2_TRANSLATION_TABLE: Record<
+  string,
+  EventTypeV2
+> = {
+  // Old EventType values (V1) to new EventTypeV2 values
+  [EventType.ExtractionExternalSyncUnitsStart]:
+    EventTypeV2.ExtractionExternalSyncUnitsStart,
+  [EventType.ExtractionMetadataStart]: EventTypeV2.ExtractionMetadataStart,
+  [EventType.ExtractionDataStart]: EventTypeV2.ExtractionDataStart,
+  [EventType.ExtractionDataContinue]: EventTypeV2.ExtractionDataContinue,
+  [EventType.ExtractionDataDelete]: EventTypeV2.ExtractionDataDelete,
+  [EventType.ExtractionAttachmentsStart]:
+    EventTypeV2.ExtractionAttachmentsStart,
+  [EventType.ExtractionAttachmentsContinue]:
+    EventTypeV2.ExtractionAttachmentsContinue,
+  [EventType.ExtractionAttachmentsDelete]:
+    EventTypeV2.ExtractionAttachmentsDelete,
+
+  // Loading events (same in both versions)
+  [EventType.StartLoadingData]: EventTypeV2.StartLoadingData,
+  [EventType.ContinueLoadingData]: EventTypeV2.ContinueLoadingData,
+  [EventType.StartLoadingAttachments]: EventTypeV2.StartLoadingAttachments,
+  [EventType.ContinueLoadingAttachments]:
+    EventTypeV2.ContinueLoadingAttachments,
+  [EventType.StartDeletingLoaderState]: EventTypeV2.StartDeletingLoaderState,
+  [EventType.StartDeletingLoaderAttachmentState]:
+    EventTypeV2.StartDeletingLoaderAttachmentState,
 };
 
 /**
- * Translates Event type from the old naming scheme to the new one
- * 
+ * Translates Event type from old enum values to new EventTypeV2 values
+ *
  * @param eventType - The event type string to translate
- * @returns EventType - The translated event type with the following behavior:
- *   1) Old E2DR names are translated to new DR2E format
- *   2) Valid DR2E names are returned as-is
+ * @returns EventTypeV2 - The translated event type with the following behavior:
+ *   1) Old EventType (V1) values are translated to new EventTypeV2 format
+ *   2) EventTypeV2 values are returned as-is
  *   3) Unknown values return `UnknownEventType`
  */
-export function getEventType(eventType: string): EventType {
-  // If we notice that the event has a newer translation, translate to that
-  if (eventType in EVENT_TYPE_TRANSLATION_TABLE) {
-    return EVENT_TYPE_TRANSLATION_TABLE[
-      eventType as keyof typeof EVENT_TYPE_TRANSLATION_TABLE
-    ];
+export function getEventType(eventType: string): EventTypeV2 {
+  // If we have a translation for this event type, use it
+  if (eventType in EVENT_TYPE_V1_TO_V2_TRANSLATION_TABLE) {
+    return EVENT_TYPE_V1_TO_V2_TRANSLATION_TABLE[eventType];
   }
 
-  // Event type doesn't need translation, return
-  if (Object.values(EventType).includes(eventType as EventType)) {
-    return eventType as EventType;
+  // Check if it's already a valid EventTypeV2 value
+  if (Object.values(EventTypeV2).includes(eventType as EventTypeV2)) {
+    return eventType as EventTypeV2;
   }
 
-  return EventType.UnknownEventType;
+  // Unknown event type
+  return EventTypeV2.UnknownEventType;
 }
 
-export function getTimeoutErrorEventType(eventType: EventType): {
-  eventType: ExtractorEventType | LoaderEventType;
+export function getTimeoutErrorEventType(eventType: EventTypeV2): {
+  eventType: ExtractorEventTypeV2 | LoaderEventType;
 } {
   switch (eventType) {
-    case EventType.ExtractionMetadataStart:
+    // Extraction metadata
+    case EventTypeV2.ExtractionMetadataStart:
       return {
-        eventType: ExtractorEventType.ExtractionMetadataError,
+        eventType: ExtractorEventTypeV2.ExtractionMetadataError,
       };
 
-    case EventType.ExtractionDataStart:
-    case EventType.ExtractionDataContinue:
+    // Extraction data
+    case EventTypeV2.ExtractionDataStart:
+    case EventTypeV2.ExtractionDataContinue:
       return {
-        eventType: ExtractorEventType.ExtractionDataError,
+        eventType: ExtractorEventTypeV2.ExtractionDataError,
       };
 
-    case EventType.ExtractionDataDelete:
+    // Extraction data delete
+    case EventTypeV2.ExtractionDataDelete:
       return {
-        eventType: ExtractorEventType.ExtractionDataDeleteError,
+        eventType: ExtractorEventTypeV2.ExtractionDataDeleteError,
       };
 
-    case EventType.ExtractionAttachmentsStart:
-    case EventType.ExtractionAttachmentsContinue:
+    // Extraction attachments
+    case EventTypeV2.ExtractionAttachmentsStart:
+    case EventTypeV2.ExtractionAttachmentsContinue:
       return {
-        eventType: ExtractorEventType.ExtractionAttachmentsError,
+        eventType: ExtractorEventTypeV2.ExtractionAttachmentsError,
       };
 
-    case EventType.ExtractionAttachmentsDelete:
+    // Extraction attachments delete
+    case EventTypeV2.ExtractionAttachmentsDelete:
       return {
-        eventType: ExtractorEventType.ExtractionAttachmentsDeleteError,
+        eventType: ExtractorEventTypeV2.ExtractionAttachmentsDeleteError,
       };
 
-    case EventType.ExtractionExternalSyncUnitsStart:
+    // Extraction external sync units
+    case EventTypeV2.ExtractionExternalSyncUnitsStart:
       return {
-        eventType: ExtractorEventType.ExtractionExternalSyncUnitsError,
+        eventType: ExtractorEventTypeV2.ExtractionExternalSyncUnitsError,
       };
 
-    case EventType.StartLoadingData:
-    case EventType.ContinueLoadingData:
+    // Loading data
+    case EventTypeV2.StartLoadingData:
+    case EventTypeV2.ContinueLoadingData:
       return {
         eventType: LoaderEventType.DataLoadingError,
       };
 
-    case EventType.StartDeletingLoaderState:
+    // Loading state deletion
+    case EventTypeV2.StartDeletingLoaderState:
       return {
         eventType: LoaderEventType.LoaderStateDeletionError,
       };
 
-    case EventType.StartLoadingAttachments:
-    case EventType.ContinueLoadingAttachments:
+    // Loading attachments
+    case EventTypeV2.StartLoadingAttachments:
+    case EventTypeV2.ContinueLoadingAttachments:
       return {
         eventType: LoaderEventType.AttachmentLoadingError,
       };
 
-    case EventType.StartDeletingLoaderAttachmentState:
+    // Loading attachment state deletion
+    case EventTypeV2.StartDeletingLoaderAttachmentState:
       return {
         eventType: LoaderEventType.LoaderAttachmentStateDeletionError,
       };

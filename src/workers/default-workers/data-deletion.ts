@@ -1,11 +1,11 @@
-import { ExtractorEventType, processTask } from '../../index';
+import { ExtractorEventTypeV2, processTask } from '../../index';
 
 processTask({
   task: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionDataDeleteDone);
+    await adapter.emit(ExtractorEventTypeV2.ExtractionDataDeleteDone);
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionDataDeleteError, {
+    await adapter.emit(ExtractorEventTypeV2.ExtractionDataDeleteError, {
       error: {
         message: 'Failed to delete data. Lambda timeout.',
       },

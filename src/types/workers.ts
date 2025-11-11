@@ -3,7 +3,7 @@ import { Worker } from 'worker_threads';
 import { State } from '../state/state';
 import { WorkerAdapter } from '../workers/worker-adapter';
 
-import { AirdropEvent, ExtractorEventType } from './extraction';
+import { AirdropEvent, ExtractorEventTypeV2 } from './extraction';
 
 import { LoaderEventType } from './loading';
 
@@ -119,7 +119,7 @@ export enum WorkerMessageSubject {
 export interface WorkerMessageEmitted {
   subject: WorkerMessageSubject.WorkerMessageEmitted;
   payload: {
-    eventType: ExtractorEventType | LoaderEventType;
+    eventType: ExtractorEventTypeV2 | LoaderEventType;
   };
 }
 

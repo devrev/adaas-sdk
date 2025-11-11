@@ -1,9 +1,9 @@
 import { createEvent } from '../tests/test-helpers';
-import { EventContext, EventType, InitialSyncScope } from './extraction';
+import { EventContext, EventTypeV2, InitialSyncScope } from './extraction';
 
 // Test the EventContext interface and related extraction types
 describe('ExtractionTypes', () => {
-  const baseEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+  const baseEvent = createEvent({ eventType: EventTypeV2.ExtractionDataStart });
 
   it('should create event context without optional fields', () => {
     const event = { ...baseEvent };
@@ -100,14 +100,14 @@ describe('ExtractionTypes', () => {
 
   it('[edge] should handle explicit boolean values for reset_extract_from', () => {
     const eventWithTrue = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventTypeV2.ExtractionDataStart,
       eventContextOverrides: {
         reset_extract_from: true,
       },
     });
 
     const eventWithFalse = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventTypeV2.ExtractionDataStart,
       eventContextOverrides: {
         reset_extract_from: false,
       },

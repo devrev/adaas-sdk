@@ -16,7 +16,7 @@ export class MockServer {
     return {
       lastSyncStarted: '',
       lastSuccessfulSyncStarted: '',
-      snapInVersionId: 'test-snap-in-version-id',
+      snapInVersionId: 'test_snap_in_version_id',
       toDevRev: {
         attachmentsMetadata: {
           artifactIds: [],

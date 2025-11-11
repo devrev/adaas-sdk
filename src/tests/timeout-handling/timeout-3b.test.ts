@@ -1,4 +1,4 @@
-import { EventType, ExtractorEventType } from '../../types/extraction';
+import { EventTypeV2, ExtractorEventTypeV2 } from '../../types/extraction';
 import { MockServer } from '../mock-server';
 import { createEvent } from '../test-helpers';
 import run from './extraction';
@@ -27,7 +27,7 @@ describe('timeout-3b extraction', () => {
   it('should emit progress event when soft timeout is reached', async () => {
     const baseUrl = mockServer.getBaseUrl();
     const event = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventTypeV2.ExtractionDataStart,
       eventContextOverrides: {
         callback_url: `${baseUrl}/internal/airdrop.external-extractor.message`,
         worker_data_url: `${baseUrl}/internal/airdrop.external-worker`,
@@ -46,7 +46,7 @@ describe('timeout-3b extraction', () => {
     expect(lastRequest.url).toContain('airdrop.external-extractor.message');
     expect(lastRequest.method).toBe('POST');
     expect(lastRequest.body.event_type).toBe(
-      ExtractorEventType.ExtractionDataProgress
+      ExtractorEventTypeV2.ExtractionDataProgress
     );
   });
 });

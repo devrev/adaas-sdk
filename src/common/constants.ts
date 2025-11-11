@@ -1,4 +1,4 @@
-import { EventType } from '../types/extraction';
+import { EventType, EventTypeV2 } from '../types/extraction';
 import { getLibraryVersion } from './helpers';
 
 export const ALLOWED_EXTRACTION_EVENT_TYPES = [
@@ -12,6 +12,17 @@ export const ALLOWED_EXTRACTION_EVENT_TYPES = [
   EventType.ExtractionAttachmentsDelete,
 ];
 
+export const ALLOWED_EXTRACTION_EVENT_TYPES_V2 = [
+  EventTypeV2.ExtractionExternalSyncUnitsStart,
+  EventTypeV2.ExtractionMetadataStart,
+  EventTypeV2.ExtractionDataStart,
+  EventTypeV2.ExtractionDataContinue,
+  EventTypeV2.ExtractionDataDelete,
+  EventTypeV2.ExtractionAttachmentsStart,
+  EventTypeV2.ExtractionAttachmentsContinue,
+  EventTypeV2.ExtractionAttachmentsDelete,
+];
+
 export const ALLOWED_LOADING_EVENT_TYPES = [
   EventType.StartLoadingData,
   EventType.ContinueLoadingData,
@@ -19,9 +30,21 @@ export const ALLOWED_LOADING_EVENT_TYPES = [
   EventType.StartDeletingLoaderAttachmentState,
 ];
 
+export const ALLOWED_LOADING_EVENT_TYPES_V2 = [
+  EventTypeV2.StartLoadingData,
+  EventTypeV2.ContinueLoadingData,
+  EventTypeV2.StartDeletingLoaderState,
+  EventTypeV2.StartDeletingLoaderAttachmentState,
+];
+
 export const ALLOWED_EVENT_TYPES = [
   ...ALLOWED_EXTRACTION_EVENT_TYPES,
   ...ALLOWED_LOADING_EVENT_TYPES,
+];
+
+export const ALLOWED_EVENT_TYPES_V2 = [
+  ...ALLOWED_EXTRACTION_EVENT_TYPES_V2,
+  ...ALLOWED_LOADING_EVENT_TYPES_V2,
 ];
 
 export const STATELESS_EXTRACTION_EVENT_TYPES = [
@@ -30,9 +53,20 @@ export const STATELESS_EXTRACTION_EVENT_TYPES = [
   EventType.ExtractionAttachmentsDelete,
 ];
 
+export const STATELESS_EXTRACTION_EVENT_TYPES_V2 = [
+  EventTypeV2.ExtractionExternalSyncUnitsStart,
+  EventTypeV2.ExtractionDataDelete,
+  EventTypeV2.ExtractionAttachmentsDelete,
+];
+
 export const STATELESS_LOADING_EVENT_TYPES = [
   EventType.StartDeletingLoaderState,
   EventType.StartDeletingLoaderAttachmentState,
+];
+
+export const STATELESS_LOADING_EVENT_TYPES_V2 = [
+  EventTypeV2.StartDeletingLoaderState,
+  EventTypeV2.StartDeletingLoaderAttachmentState,
 ];
 
 export const STATELESS_EVENT_TYPES = [
@@ -40,18 +74,38 @@ export const STATELESS_EVENT_TYPES = [
   ...STATELESS_LOADING_EVENT_TYPES,
 ];
 
+export const STATELESS_EVENT_TYPES_V2 = [
+  ...STATELESS_EXTRACTION_EVENT_TYPES_V2,
+  ...STATELESS_LOADING_EVENT_TYPES_V2,
+];
+
 export const STATEFUL_EXTRACTION_EVENT_TYPES =
   ALLOWED_EXTRACTION_EVENT_TYPES.filter(
     (eventType) => !STATELESS_EXTRACTION_EVENT_TYPES.includes(eventType)
+  );
+
+export const STATEFUL_EXTRACTION_EVENT_TYPES_V2 =
+  ALLOWED_EXTRACTION_EVENT_TYPES_V2.filter(
+    (eventType) => !STATELESS_EXTRACTION_EVENT_TYPES_V2.includes(eventType)
   );
 
 export const STATEFUL_LOADING_EVENT_TYPES = ALLOWED_LOADING_EVENT_TYPES.filter(
   (eventType) => !STATELESS_LOADING_EVENT_TYPES.includes(eventType)
 );
 
+export const STATEFUL_LOADING_EVENT_TYPES_V2 =
+  ALLOWED_LOADING_EVENT_TYPES_V2.filter(
+    (eventType) => !STATELESS_LOADING_EVENT_TYPES_V2.includes(eventType)
+  );
+
 export const STATEFUL_EVENT_TYPES = [
   ...STATEFUL_EXTRACTION_EVENT_TYPES,
   ...STATEFUL_LOADING_EVENT_TYPES,
+];
+
+export const STATEFUL_EVENT_TYPES_V2 = [
+  ...STATEFUL_EXTRACTION_EVENT_TYPES_V2,
+  ...STATEFUL_LOADING_EVENT_TYPES_V2,
 ];
 
 export const ARTIFACT_BATCH_SIZE = 2000;

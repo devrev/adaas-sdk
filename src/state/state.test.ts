@@ -1,9 +1,9 @@
 import {
-  STATEFUL_EVENT_TYPES,
-  STATELESS_EVENT_TYPES,
+  STATEFUL_EVENT_TYPES_V2,
+  STATELESS_EVENT_TYPES_V2,
 } from '../common/constants';
 import { createEvent } from '../tests/test-helpers';
-import { EventType } from '../types/extraction';
+import { EventTypeV2 } from '../types/extraction';
 import { State, createAdapterState } from './state';
 import { extractionSdkState } from './state.interfaces';
 
@@ -32,7 +32,7 @@ describe(State.name, () => {
     });
   });
 
-  it.each(STATELESS_EVENT_TYPES)(
+  it.each(STATELESS_EVENT_TYPES_V2)(
     'should not init, fetch, post or install IDM for stateless event type %s',
     async (eventType) => {
       // Arrange
@@ -55,7 +55,7 @@ describe(State.name, () => {
     }
   );
 
-  it.each(STATEFUL_EVENT_TYPES)(
+  it.each(STATEFUL_EVENT_TYPES_V2)(
     'should exit the process if fetching the state fails',
     async (eventType) => {
       // Arrange
@@ -80,7 +80,7 @@ describe(State.name, () => {
     }
   );
 
-  it.each(STATEFUL_EVENT_TYPES)(
+  it.each(STATEFUL_EVENT_TYPES_V2)(
     'should exit the process if parsing the state fails',
     async (eventType) => {
       // Arrange
@@ -102,7 +102,7 @@ describe(State.name, () => {
     }
   );
 
-  it.each(STATEFUL_EVENT_TYPES)(
+  it.each(STATEFUL_EVENT_TYPES_V2)(
     'should exit the process if fetching is successful but there is no state in the response',
     async (eventType) => {
       // Arrange
@@ -125,8 +125,8 @@ describe(State.name, () => {
   );
 
   it.each(
-    STATEFUL_EVENT_TYPES.filter(
-      (eventType) => eventType !== EventType.ExtractionDataStart
+    STATEFUL_EVENT_TYPES_V2.filter(
+      (eventType) => eventType !== EventTypeV2.ExtractionDataStart
     )
   )(
     'should call post state with full adapter state if fetching returns 404 for event type %s',
@@ -168,13 +168,13 @@ describe(State.name, () => {
     }
   );
 
-  it(EventType.ExtractionDataStart, async () => {
+  it(EventTypeV2.ExtractionDataStart, async () => {
     // Arrange
     const initialState = {
       test: 'test',
     };
     const event = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventTypeV2.ExtractionDataStart,
       contextOverrides: {
         snap_in_version_id: '',
       },
@@ -208,7 +208,7 @@ describe(State.name, () => {
     );
   });
 
-  it.each(STATEFUL_EVENT_TYPES)(
+  it.each(STATEFUL_EVENT_TYPES_V2)(
     'should exit the process if initialDomainMapping is not provided for event type %s',
     async (eventType) => {
       // Arrange
@@ -236,7 +236,7 @@ describe(State.name, () => {
     }
   );
 
-  it.each(STATEFUL_EVENT_TYPES)(
+  it.each(STATEFUL_EVENT_TYPES_V2)(
     'should not install IDM if version matches for event type %s',
     async (eventType) => {
       // Arrange
@@ -266,7 +266,7 @@ describe(State.name, () => {
     }
   );
 
-  it.each(STATEFUL_EVENT_TYPES)(
+  it.each(STATEFUL_EVENT_TYPES_V2)(
     'should install IDM if version does not match for event type %s',
     async (eventType) => {
       // Arrange

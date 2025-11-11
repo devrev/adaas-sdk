@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../../common/constants';
-import { ExtractorEventType, processTask } from '../../index';
+import { ExtractorEventTypeV2, processTask } from '../../index';
 import {
   ExternalSystemAttachmentStreamingParams,
   ExternalSystemAttachmentStreamingResponse,
@@ -82,21 +82,21 @@ processTask({
       });
 
       if (response?.delay) {
-        await adapter.emit(ExtractorEventType.ExtractionAttachmentsDelay, {
+        await adapter.emit(ExtractorEventTypeV2.ExtractionAttachmentsDelay, {
           delay: response.delay,
         });
       } else if (response?.error) {
-        await adapter.emit(ExtractorEventType.ExtractionAttachmentsError, {
+        await adapter.emit(ExtractorEventTypeV2.ExtractionAttachmentsError, {
           error: response.error,
         });
       } else {
-        await adapter.emit(ExtractorEventType.ExtractionAttachmentsDone);
+        await adapter.emit(ExtractorEventTypeV2.ExtractionAttachmentsDone);
       }
     } catch (error) {
       console.error('An error occured while processing a task.', error);
     }
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionAttachmentsProgress);
+    await adapter.emit(ExtractorEventTypeV2.ExtractionAttachmentsProgress);
   },
 });

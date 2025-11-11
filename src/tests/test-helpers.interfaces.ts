@@ -2,12 +2,12 @@ import { ErrorRecord } from '../types/common';
 import {
   AirdropEvent,
   EventContext,
-  EventType,
+  EventTypeV2,
   ExternalSyncUnit,
 } from '../types/extraction';
 
 export interface CreateEventInterface {
-  eventType: EventType;
+  eventType: EventTypeV2;
   externalSyncUnits?: ExternalSyncUnit[];
   progress?: number;
   error?: ErrorRecord;

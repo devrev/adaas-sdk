@@ -1,12 +1,12 @@
 import axios from 'axios';
 
-import { STATELESS_EVENT_TYPES } from '../common/constants';
+import { STATELESS_EVENT_TYPES_V2 } from '../common/constants';
 import { getSyncDirection } from '../common/helpers';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
 import { axiosClient } from '../http/axios-client-internal';
 import { getPrintableState, serializeError } from '../logger/logger';
 import { SyncMode } from '../types/common';
-import { EventType } from '../types/extraction';
+import { EventTypeV2 } from '../types/extraction';
 
 import {
   AdapterState,
@@ -32,7 +32,8 @@ export async function createAdapterState<ConnectorState>({
     options,
   });
 
-  if (!STATELESS_EVENT_TYPES.includes(event.payload.event_type)) {
+  // After translation in spawn, event_type is always EventTypeV2
+  if (!STATELESS_EVENT_TYPES_V2.includes(event.payload.event_type)) {
     await as.init(deepCloneInitialState);
 
     // Check if IDM needs to be updated
@@ -70,7 +71,7 @@ export async function createAdapterState<ConnectorState>({
 
     // Set lastSyncStarted if the event type is ExtractionDataStart
     if (
-      event.payload.event_type === EventType.ExtractionDataStart &&
+      event.payload.event_type === EventTypeV2.ExtractionDataStart &&
       !as.state.lastSyncStarted
     ) {
       as.state.lastSyncStarted = new Date().toISOString();

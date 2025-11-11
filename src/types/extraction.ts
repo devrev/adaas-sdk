@@ -12,8 +12,36 @@ import { DonV2, LoaderReport, RateLimited } from './loading';
 /**
  * EventType is an enum that defines the different types of events that can be sent to the external extractor from ADaaS.
  * The external extractor can use these events to know what to do next in the extraction process.
+ * @deprecated Use EventTypeV2 instead. This enum will be removed in a future version.
  */
 export enum EventType {
+  // Extraction
+  ExtractionExternalSyncUnitsStart = 'EXTRACTION_EXTERNAL_SYNC_UNITS_START',
+  ExtractionMetadataStart = 'EXTRACTION_METADATA_START',
+  ExtractionDataStart = 'EXTRACTION_DATA_START',
+  ExtractionDataContinue = 'EXTRACTION_DATA_CONTINUE',
+  ExtractionDataDelete = 'EXTRACTION_DATA_DELETE',
+  ExtractionAttachmentsStart = 'EXTRACTION_ATTACHMENTS_START',
+  ExtractionAttachmentsContinue = 'EXTRACTION_ATTACHMENTS_CONTINUE',
+  ExtractionAttachmentsDelete = 'EXTRACTION_ATTACHMENTS_DELETE',
+
+  // Loading
+  StartLoadingData = 'START_LOADING_DATA',
+  ContinueLoadingData = 'CONTINUE_LOADING_DATA',
+  StartLoadingAttachments = 'START_LOADING_ATTACHMENTS',
+  ContinueLoadingAttachments = 'CONTINUE_LOADING_ATTACHMENTS',
+  StartDeletingLoaderState = 'START_DELETING_LOADER_STATE',
+  StartDeletingLoaderAttachmentState = 'START_DELETING_LOADER_ATTACHMENT_STATE',
+
+  // Unknown
+  UnknownEventType = 'UNKNOWN_EVENT_TYPE',
+}
+
+/**
+ * EventTypeV2 is an enum that defines the different types of events that can be sent to the external extractor from ADaaS.
+ * The external extractor can use these events to know what to do next in the extraction process.
+ */
+export enum EventTypeV2 {
   // Extraction
   ExtractionExternalSyncUnitsStart = 'START_EXTRACTING_EXTERNAL_SYNC_UNITS',
   ExtractionMetadataStart = 'START_EXTRACTING_METADATA',
@@ -39,8 +67,36 @@ export enum EventType {
 /**
  * ExtractorEventType is an enum that defines the different types of events that can be sent from the external extractor to ADaaS.
  * The external extractor can use these events to inform ADaaS about the progress of the extraction process.
+ * @deprecated Use ExtractorEventTypeV2 instead. This enum will be removed in a future version.
  */
 export enum ExtractorEventType {
+  // Extraction
+  ExtractionExternalSyncUnitsDone = 'EXTRACTION_EXTERNAL_SYNC_UNITS_DONE',
+  ExtractionExternalSyncUnitsError = 'EXTRACTION_EXTERNAL_SYNC_UNITS_ERROR',
+  ExtractionMetadataDone = 'EXTRACTION_METADATA_DONE',
+  ExtractionMetadataError = 'EXTRACTION_METADATA_ERROR',
+  ExtractionDataProgress = 'EXTRACTION_DATA_PROGRESS',
+  ExtractionDataDelay = 'EXTRACTION_DATA_DELAY',
+  ExtractionDataDone = 'EXTRACTION_DATA_DONE',
+  ExtractionDataError = 'EXTRACTION_DATA_ERROR',
+  ExtractionDataDeleteDone = 'EXTRACTION_DATA_DELETE_DONE',
+  ExtractionDataDeleteError = 'EXTRACTION_DATA_DELETE_ERROR',
+  ExtractionAttachmentsProgress = 'EXTRACTION_ATTACHMENTS_PROGRESS',
+  ExtractionAttachmentsDelay = 'EXTRACTION_ATTACHMENTS_DELAY',
+  ExtractionAttachmentsDone = 'EXTRACTION_ATTACHMENTS_DONE',
+  ExtractionAttachmentsError = 'EXTRACTION_ATTACHMENTS_ERROR',
+  ExtractionAttachmentsDeleteDone = 'EXTRACTION_ATTACHMENTS_DELETE_DONE',
+  ExtractionAttachmentsDeleteError = 'EXTRACTION_ATTACHMENTS_DELETE_ERROR',
+
+  // Unknown
+  UnknownEventType = 'UNKNOWN_EVENT_TYPE',
+}
+
+/**
+ * ExtractorEventTypeV2 is an enum that defines the different types of events that can be sent from the external extractor to ADaaS.
+ * The external extractor can use these events to inform ADaaS about the progress of the extraction process.
+ */
+export enum ExtractorEventTypeV2 {
   // Extraction
   ExtractionExternalSyncUnitsDone = 'EXTERNAL_SYNC_UNIT_EXTRACTION_DONE',
   ExtractionExternalSyncUnitsError = 'EXTERNAL_SYNC_UNIT_EXTRACTION_ERROR',
@@ -280,7 +336,7 @@ export interface AirdropEvent {
 export interface AirdropMessage {
   connection_data: ConnectionData;
   event_context: EventContext;
-  event_type: EventType;
+  event_type: EventTypeV2;
   event_data?: EventData;
 }
 

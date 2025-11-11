@@ -1,6 +1,6 @@
 import { AIRDROP_DEFAULT_ITEM_TYPES } from '../common/constants';
 import { createEvent, createItems, normalizeItem } from '../tests/test-helpers';
-import { EventType } from '../types';
+import { EventTypeV2 } from '../types';
 import { Repo } from './repo';
 
 jest.mock('../tests/test-helpers', () => ({
@@ -15,7 +15,7 @@ describe(Repo.name, () => {
   beforeEach(() => {
     normalize = jest.fn();
     repo = new Repo({
-      event: createEvent({ eventType: EventType.ExtractionDataStart }),
+      event: createEvent({ eventType: EventTypeV2.ExtractionDataStart }),
       itemType: 'test_item_type',
       normalize,
       onUpload: jest.fn(),
@@ -37,7 +37,7 @@ describe(Repo.name, () => {
 
   it('should not normalize items when normalize function is not provided', async () => {
     repo = new Repo({
-      event: createEvent({ eventType: EventType.ExtractionDataStart }),
+      event: createEvent({ eventType: EventTypeV2.ExtractionDataStart }),
       itemType: 'test_item_type',
       onUpload: jest.fn(),
       options: {},
@@ -55,7 +55,7 @@ describe(Repo.name, () => {
 
   it('should not normalize items when item type is external_domain_metadata', async () => {
     repo = new Repo({
-      event: createEvent({ eventType: EventType.ExtractionDataStart }),
+      event: createEvent({ eventType: EventTypeV2.ExtractionDataStart }),
       itemType: AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_DOMAIN_METADATA,
       normalize,
       onUpload: jest.fn(),
@@ -70,7 +70,7 @@ describe(Repo.name, () => {
 
   it('should not normalize items when item type is ssor_attachment', async () => {
     repo = new Repo({
-      event: createEvent({ eventType: EventType.ExtractionDataStart }),
+      event: createEvent({ eventType: EventTypeV2.ExtractionDataStart }),
       itemType: AIRDROP_DEFAULT_ITEM_TYPES.SSOR_ATTACHMENT,
       normalize,
       onUpload: jest.fn(),
@@ -117,7 +117,7 @@ describe(Repo.name, () => {
   describe('should take batch size into account', () => {
     beforeEach(() => {
       repo = new Repo({
-        event: createEvent({ eventType: EventType.ExtractionDataStart }),
+        event: createEvent({ eventType: EventTypeV2.ExtractionDataStart }),
         itemType: 'test_item_type',
         normalize,
         onUpload: jest.fn(),

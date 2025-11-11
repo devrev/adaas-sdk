@@ -18,6 +18,7 @@ export {
   EventContextOut,
   EventData,
   EventType,
+  EventTypeV2,
   ExternalProcessAttachmentFunction,
   ExternalSyncUnit,
   ExternalSystemAttachmentIteratorFunction,
@@ -28,6 +29,7 @@ export {
   ExtractionMode,
   ExtractorEvent,
   ExtractorEventType,
+  ExtractorEventTypeV2,
   ProcessAttachmentReturnType,
 } from './extraction';
 

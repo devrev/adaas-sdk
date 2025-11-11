@@ -1,6 +1,6 @@
 import { axiosClient } from '../http/axios-client-internal';
 import { createEvent } from '../tests/test-helpers';
-import { EventType } from '../types/extraction';
+import { EventTypeV2 } from '../types/extraction';
 import { Mappers } from './mappers';
 import {
   MappersCreateParams,
@@ -26,7 +26,7 @@ describe(Mappers.name, () => {
   const targets = ['test_target_id'];
 
   const mockEvent = createEvent({
-    eventType: EventType.ExtractionDataStart,
+    eventType: EventTypeV2.ExtractionDataStart,
     executionMetadataOverrides: { devrev_endpoint: apiEndpoint },
     contextOverrides: {
       secrets: { service_account_token: apiToken },

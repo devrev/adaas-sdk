@@ -1,7 +1,7 @@
 import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
 import { createEvent } from '../tests/test-helpers';
-import { AirdropEvent, EventType } from '../types/extraction';
+import { AirdropEvent, EventTypeV2 } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import { getPrintableState, Logger, serializeAxiosError } from './logger';
 
@@ -26,7 +26,7 @@ describe(Logger.name, () => {
     jest.clearAllMocks();
 
     mockEvent = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventTypeV2.ExtractionDataStart,
       eventContextOverrides: {
         dev_org: 'DEV-test',
         dev_org_id: 'DEV-test-id',

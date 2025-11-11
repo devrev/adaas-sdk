@@ -4,7 +4,7 @@ import {
   AirdropEvent,
   EventData,
   ExtractorEvent,
-  ExtractorEventType,
+  ExtractorEventTypeV2,
   LoaderEvent,
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
@@ -12,7 +12,7 @@ import { LIBRARY_VERSION } from './constants';
 
 export interface EmitInterface {
   event: AirdropEvent;
-  eventType: ExtractorEventType | LoaderEventType;
+  eventType: ExtractorEventTypeV2 | LoaderEventType;
   data?: EventData;
 }
 

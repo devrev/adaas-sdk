@@ -1,5 +1,6 @@
+import { EventTypeV2 } from '../types/extraction';
 import { ItemTypeToLoad, StatsFileObject } from '../types/loading';
-import { getFilesToLoad } from './helpers';
+import { getEventType, getFilesToLoad } from './helpers';
 
 describe(getFilesToLoad.name, () => {
   let statsFile: StatsFileObject[];
@@ -161,5 +162,91 @@ describe(getFilesToLoad.name, () => {
       statsFile,
     });
     expect(result).toEqual([]);
+  });
+});
+
+describe(getEventType.name, () => {
+  it('should translate old EventType (V1) values to EventTypeV2', () => {
+    // Old EventType values should be translated to EventTypeV2
+    expect(getEventType('EXTRACTION_EXTERNAL_SYNC_UNITS_START')).toBe(
+      EventTypeV2.ExtractionExternalSyncUnitsStart
+    );
+    expect(getEventType('EXTRACTION_METADATA_START')).toBe(
+      EventTypeV2.ExtractionMetadataStart
+    );
+    expect(getEventType('EXTRACTION_DATA_START')).toBe(
+      EventTypeV2.ExtractionDataStart
+    );
+    expect(getEventType('EXTRACTION_DATA_CONTINUE')).toBe(
+      EventTypeV2.ExtractionDataContinue
+    );
+    expect(getEventType('EXTRACTION_DATA_DELETE')).toBe(
+      EventTypeV2.ExtractionDataDelete
+    );
+    expect(getEventType('EXTRACTION_ATTACHMENTS_START')).toBe(
+      EventTypeV2.ExtractionAttachmentsStart
+    );
+    expect(getEventType('EXTRACTION_ATTACHMENTS_CONTINUE')).toBe(
+      EventTypeV2.ExtractionAttachmentsContinue
+    );
+    expect(getEventType('EXTRACTION_ATTACHMENTS_DELETE')).toBe(
+      EventTypeV2.ExtractionAttachmentsDelete
+    );
+  });
+
+  it('should return EventTypeV2 values as-is', () => {
+    // EventTypeV2 values should be returned as-is
+    expect(getEventType('START_EXTRACTING_EXTERNAL_SYNC_UNITS')).toBe(
+      EventTypeV2.ExtractionExternalSyncUnitsStart
+    );
+    expect(getEventType('START_EXTRACTING_METADATA')).toBe(
+      EventTypeV2.ExtractionMetadataStart
+    );
+    expect(getEventType('START_EXTRACTING_DATA')).toBe(
+      EventTypeV2.ExtractionDataStart
+    );
+    expect(getEventType('CONTINUE_EXTRACTING_DATA')).toBe(
+      EventTypeV2.ExtractionDataContinue
+    );
+    expect(getEventType('START_DELETING_EXTRACTOR_STATE')).toBe(
+      EventTypeV2.ExtractionDataDelete
+    );
+    expect(getEventType('START_EXTRACTING_ATTACHMENTS')).toBe(
+      EventTypeV2.ExtractionAttachmentsStart
+    );
+    expect(getEventType('CONTINUE_EXTRACTING_ATTACHMENTS')).toBe(
+      EventTypeV2.ExtractionAttachmentsContinue
+    );
+    expect(getEventType('START_DELETING_EXTRACTOR_ATTACHMENTS_STATE')).toBe(
+      EventTypeV2.ExtractionAttachmentsDelete
+    );
+  });
+
+  it('should handle loading event types', () => {
+    expect(getEventType('START_LOADING_DATA')).toBe(
+      EventTypeV2.StartLoadingData
+    );
+    expect(getEventType('CONTINUE_LOADING_DATA')).toBe(
+      EventTypeV2.ContinueLoadingData
+    );
+    expect(getEventType('START_LOADING_ATTACHMENTS')).toBe(
+      EventTypeV2.StartLoadingAttachments
+    );
+    expect(getEventType('CONTINUE_LOADING_ATTACHMENTS')).toBe(
+      EventTypeV2.ContinueLoadingAttachments
+    );
+    expect(getEventType('START_DELETING_LOADER_STATE')).toBe(
+      EventTypeV2.StartDeletingLoaderState
+    );
+    expect(getEventType('START_DELETING_LOADER_ATTACHMENT_STATE')).toBe(
+      EventTypeV2.StartDeletingLoaderAttachmentState
+    );
+  });
+
+  it('should return UnknownEventType for unknown values', () => {
+    expect(getEventType('UNKNOWN_VALUE')).toBe(EventTypeV2.UnknownEventType);
+    expect(getEventType('INVALID_EVENT_TYPE')).toBe(
+      EventTypeV2.UnknownEventType
+    );
   });
 });

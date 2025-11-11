@@ -1,4 +1,4 @@
-import { EventType, ExtractorEventType, processTask } from '../../index';
+import { EventTypeV2, ExtractorEventTypeV2, processTask } from '../../index';
 
 import {
   normalizeAttachment,
@@ -86,21 +86,21 @@ processTask({
     console.log('Logging something from worker thread', {});
 
     adapter.initializeRepos(repos);
-    if (adapter.event.payload.event_type === EventType.ExtractionDataStart) {
+    if (adapter.event.payload.event_type === EventTypeV2.ExtractionDataStart) {
       await adapter.getRepo('issues')?.push(issues);
-      await adapter.emit(ExtractorEventType.ExtractionDataProgress, {
+      await adapter.emit(ExtractorEventTypeV2.ExtractionDataProgress, {
         progress: 50,
       });
     } else {
       await adapter.getRepo('users')?.push(users);
       await adapter.getRepo('attachments')?.push(attachments);
-      await adapter.emit(ExtractorEventType.ExtractionDataDone, {
+      await adapter.emit(ExtractorEventTypeV2.ExtractionDataDone, {
         progress: 100,
       });
     }
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionDataProgress, {
+    await adapter.emit(ExtractorEventTypeV2.ExtractionDataProgress, {
       progress: 50,
     });
   },

@@ -15,3 +15,8 @@ export { WorkerAdapter } from './workers/worker-adapter';
 export * from './types/workers';
 
 export { formatAxiosError, serializeAxiosError } from './logger/logger';
+
+export {
+  EVENT_TYPE_V1_TO_V2_TRANSLATION_TABLE,
+  getEventType,
+} from './common/helpers';

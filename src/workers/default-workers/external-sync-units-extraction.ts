@@ -1,4 +1,8 @@
-import { ExternalSyncUnit, ExtractorEventType, processTask } from '../../index';
+import {
+  ExternalSyncUnit,
+  ExtractorEventTypeV2,
+  processTask,
+} from '../../index';
 
 // Dummy data that originally would be fetched from an external source
 const externalSyncUnits: ExternalSyncUnit[] = [
@@ -13,12 +17,12 @@ const externalSyncUnits: ExternalSyncUnit[] = [
 
 processTask({
   task: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionExternalSyncUnitsDone, {
+    await adapter.emit(ExtractorEventTypeV2.ExtractionExternalSyncUnitsDone, {
       external_sync_units: externalSyncUnits,
     });
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionExternalSyncUnitsError, {
+    await adapter.emit(ExtractorEventTypeV2.ExtractionExternalSyncUnitsError, {
       error: {
         message: 'Failed to extract external sync units. Lambda timeout.',
       },

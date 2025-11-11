@@ -1,7 +1,7 @@
 import { AxiosResponse } from 'axios';
 import { axiosClient } from '../http/axios-client-internal';
 import { createEvent } from '../tests/test-helpers';
-import { EventType } from '../types';
+import { EventTypeV2 } from '../types';
 import { Uploader } from './uploader';
 
 jest.mock('../http/axios-client-internal', () => {
@@ -35,7 +35,7 @@ const getArtifactUploadUrlMockResponse = {
 };
 
 describe(Uploader.name, () => {
-  const mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+  const mockEvent = createEvent({ eventType: EventTypeV2.ExtractionDataStart });
 
   let uploader: Uploader;
 

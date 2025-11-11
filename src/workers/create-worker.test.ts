@@ -1,7 +1,7 @@
 import { isMainThread, Worker } from 'worker_threads';
 
 import { createEvent } from '../tests/test-helpers';
-import { EventType } from '../types/extraction';
+import { EventTypeV2 } from '../types/extraction';
 import { createWorker } from './create-worker';
 
 describe(createWorker.name, () => {
@@ -11,7 +11,7 @@ describe(createWorker.name, () => {
     const worker = isMainThread
       ? await createWorker<object>({
           event: createEvent({
-            eventType: EventType.ExtractionExternalSyncUnitsStart,
+            eventType: EventTypeV2.ExtractionExternalSyncUnitsStart,
           }),
           initialState: {},
           workerPath,
@@ -35,7 +35,7 @@ describe(createWorker.name, () => {
     await expect(
       createWorker<object>({
         event: createEvent({
-          eventType: EventType.ExtractionExternalSyncUnitsStart,
+          eventType: EventTypeV2.ExtractionExternalSyncUnitsStart,
         }),
         initialState: {},
         workerPath,
@@ -53,7 +53,7 @@ describe(createWorker.name, () => {
     if (isMainThread) {
       const worker = await createWorker<object>({
         event: createEvent({
-          eventType: EventType.ExtractionExternalSyncUnitsStart,
+          eventType: EventTypeV2.ExtractionExternalSyncUnitsStart,
         }),
         initialState: {},
         workerPath,
@@ -76,7 +76,7 @@ describe(createWorker.name, () => {
     if (isMainThread) {
       const worker = await createWorker<typeof complexState>({
         event: createEvent({
-          eventType: EventType.ExtractionDataStart,
+          eventType: EventTypeV2.ExtractionDataStart,
         }),
         initialState: complexState,
         workerPath,
@@ -93,7 +93,7 @@ describe(createWorker.name, () => {
     if (isMainThread) {
       const worker = await createWorker<object>({
         event: createEvent({
-          eventType: EventType.ExtractionMetadataStart,
+          eventType: EventTypeV2.ExtractionMetadataStart,
         }),
         initialState: {},
         workerPath,

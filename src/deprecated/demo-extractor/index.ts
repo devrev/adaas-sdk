@@ -1,12 +1,29 @@
 import {
   AirdropEvent,
   EventType,
+  EventTypeV2,
   ExternalSyncUnit,
   ExtractorEventType,
 } from '../../types/extraction';
 import { Adapter } from '../adapter';
 import { Uploader } from '../uploader';
 import externalDomainMetadata from './external_domain_metadata.json';
+
+// Helper to convert V2 event types to V1 for deprecated code
+const getV1EventType = (eventType: EventTypeV2): EventType => {
+  // Map V2 values back to V1 values
+  const v2ToV1Map: Record<string, EventType> = {
+    [EventTypeV2.ExtractionExternalSyncUnitsStart]: EventType.ExtractionExternalSyncUnitsStart,
+    [EventTypeV2.ExtractionMetadataStart]: EventType.ExtractionMetadataStart,
+    [EventTypeV2.ExtractionDataStart]: EventType.ExtractionDataStart,
+    [EventTypeV2.ExtractionDataContinue]: EventType.ExtractionDataContinue,
+    [EventTypeV2.ExtractionDataDelete]: EventType.ExtractionDataDelete,
+    [EventTypeV2.ExtractionAttachmentsStart]: EventType.ExtractionAttachmentsStart,
+    [EventTypeV2.ExtractionAttachmentsContinue]: EventType.ExtractionAttachmentsContinue,
+    [EventTypeV2.ExtractionAttachmentsDelete]: EventType.ExtractionAttachmentsDelete,
+  };
+  return v2ToV1Map[eventType] || EventType.ExtractionExternalSyncUnitsStart;
+};
 
 type ConnectorState = object;
 
@@ -31,7 +48,8 @@ export class DemoExtractor {
   }
 
   async run() {
-    switch (this.event.payload.event_type) {
+    const v1EventType = getV1EventType(this.event.payload.event_type);
+    switch (v1EventType) {
       case EventType.ExtractionExternalSyncUnitsStart: {
         const externalSyncUnits: ExternalSyncUnit[] = [
           {

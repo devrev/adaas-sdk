@@ -1,6 +1,6 @@
 import { jsonl } from 'js-jsonl';
 
-import { EventType, ExtractorEventType } from '../../types/extraction';
+import { EventType, EventTypeV2, ExtractorEventType } from '../../types/extraction';
 
 export function createFormData(
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,29 +18,38 @@ export function createFormData(
   return formData;
 }
 
-export function getTimeoutExtractorEventType(eventType: EventType): {
+export function getTimeoutExtractorEventType(eventType: EventType | EventTypeV2): {
   eventType: ExtractorEventType;
   isError: boolean;
 } | null {
-  switch (eventType) {
+  // Convert to string to handle both EventType and EventTypeV2
+  const eventTypeStr = eventType as string;
+
+  switch (eventTypeStr) {
     case EventType.ExtractionMetadataStart:
+    case EventTypeV2.ExtractionMetadataStart:
       return {
         eventType: ExtractorEventType.ExtractionMetadataError,
         isError: true,
       };
     case EventType.ExtractionDataStart:
     case EventType.ExtractionDataContinue:
+    case EventTypeV2.ExtractionDataStart:
+    case EventTypeV2.ExtractionDataContinue:
       return {
         eventType: ExtractorEventType.ExtractionDataProgress,
         isError: false,
       };
     case EventType.ExtractionAttachmentsStart:
     case EventType.ExtractionAttachmentsContinue:
+    case EventTypeV2.ExtractionAttachmentsStart:
+    case EventTypeV2.ExtractionAttachmentsContinue:
       return {
         eventType: ExtractorEventType.ExtractionAttachmentsProgress,
         isError: false,
       };
     case EventType.ExtractionExternalSyncUnitsStart:
+    case EventTypeV2.ExtractionExternalSyncUnitsStart:
       return {
         eventType: ExtractorEventType.ExtractionExternalSyncUnitsError,
         isError: true,

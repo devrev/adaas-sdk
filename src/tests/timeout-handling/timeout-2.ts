@@ -1,4 +1,4 @@
-import { ExtractorEventType, processTask } from '../../index';
+import { ExtractorEventTypeV2, processTask } from '../../index';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -38,13 +38,13 @@ processTask({
       }
 
       console.log('All network requests completed successfully');
-      await adapter.emit(ExtractorEventType.ExtractionDataDone);
+      await adapter.emit(ExtractorEventTypeV2.ExtractionDataDone);
     } catch (error) {
       console.error('Network request failed:', error);
-      await adapter.emit(ExtractorEventType.ExtractionDataDone);
+      await adapter.emit(ExtractorEventTypeV2.ExtractionDataDone);
     }
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionDataProgress);
+    await adapter.emit(ExtractorEventTypeV2.ExtractionDataProgress);
   },
 });

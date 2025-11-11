@@ -10,8 +10,8 @@ import {
 import { Logger, serializeError } from '../logger/logger';
 import {
   AirdropEvent,
-  EventType,
-  ExtractorEventType,
+  EventTypeV2,
+  ExtractorEventTypeV2,
 } from '../types/extraction';
 import {
   GetWorkerPathInterface,
@@ -35,44 +35,64 @@ function getWorkerPath({
 }: GetWorkerPathInterface): string | null {
   if (connectorWorkerPath) return connectorWorkerPath;
   let path = null;
-  switch (event.payload.event_type) {
-    // Extraction
-    case EventType.ExtractionExternalSyncUnitsStart:
+  // After translation in spawn, event_type is always EventTypeV2
+  const eventType = event.payload.event_type;
+
+  switch (eventType) {
+    // Extraction - External Sync Units
+    case EventTypeV2.ExtractionExternalSyncUnitsStart:
       path = __dirname + '/default-workers/external-sync-units-extraction';
       break;
-    case EventType.ExtractionMetadataStart:
+
+    // Extraction - Metadata
+    case EventTypeV2.ExtractionMetadataStart:
       path = __dirname + '/default-workers/metadata-extraction';
       break;
-    case EventType.ExtractionDataStart:
-    case EventType.ExtractionDataContinue:
+
+    // Extraction - Data
+    case EventTypeV2.ExtractionDataStart:
+    case EventTypeV2.ExtractionDataContinue:
       path = __dirname + '/default-workers/data-extraction';
       break;
-    case EventType.ExtractionAttachmentsStart:
-    case EventType.ExtractionAttachmentsContinue:
+
+    // Extraction - Attachments
+    case EventTypeV2.ExtractionAttachmentsStart:
+    case EventTypeV2.ExtractionAttachmentsContinue:
       path = __dirname + '/default-workers/attachments-extraction';
       break;
-    case EventType.ExtractionDataDelete:
+
+    // Extraction - Data Delete
+    case EventTypeV2.ExtractionDataDelete:
       path = __dirname + '/default-workers/data-deletion';
       break;
-    case EventType.ExtractionAttachmentsDelete:
+
+    // Extraction - Attachments Delete
+    case EventTypeV2.ExtractionAttachmentsDelete:
       path = __dirname + '/default-workers/attachments-deletion';
       break;
 
-    // Loading
-    case EventType.StartLoadingData:
-    case EventType.ContinueLoadingData:
+    // Loading - Data
+    case EventTypeV2.StartLoadingData:
+    case EventTypeV2.ContinueLoadingData:
       path = __dirname + '/default-workers/load-data';
       break;
-    case EventType.StartLoadingAttachments:
-    case EventType.ContinueLoadingAttachments:
+
+    // Loading - Attachments
+    case EventTypeV2.StartLoadingAttachments:
+    case EventTypeV2.ContinueLoadingAttachments:
       path = __dirname + '/default-workers/load-attachments';
       break;
-    case EventType.StartDeletingLoaderState:
+
+    // Loading - Delete Loader State
+    case EventTypeV2.StartDeletingLoaderState:
       path = __dirname + '/default-workers/delete-loader-state';
       break;
-    case EventType.StartDeletingLoaderAttachmentState:
+
+    // Loading - Delete Loader Attachment State
+    case EventTypeV2.StartDeletingLoaderAttachmentState:
       path = __dirname + '/default-workers/delete-loader-attachment-state';
       break;
+
     default:
       path = null;
   }
@@ -149,7 +169,7 @@ export async function spawn<ConnectorState>({
     try {
       await emit({
         event,
-        eventType: ExtractorEventType.UnknownEventType,
+        eventType: ExtractorEventTypeV2.UnknownEventType,
         data: {
           error: {
             message:

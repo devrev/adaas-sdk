@@ -3,6 +3,8 @@ import axios from 'axios';
 import {
   AirdropEvent,
   EventData,
+  EventType,
+  EventTypeV2,
   ExtractorEvent,
   ExtractorEventType,
 } from '../../types/extraction';
@@ -10,7 +12,7 @@ import { Artifact } from '../../uploader/uploader.interfaces';
 
 import { AdapterState } from '../../state/state.interfaces';
 
-import { STATELESS_EVENT_TYPES } from '../../common/constants';
+import { STATELESS_EVENT_TYPES, STATELESS_EVENT_TYPES_V2 } from '../../common/constants';
 import { getTimeoutExtractorEventType } from '../common/helpers';
 // import { Logger } from '../../logger/logger';
 import { State, createAdapterState } from '../../state/state';
@@ -130,7 +132,10 @@ export class Adapter<ConnectorState> {
     }
 
     // We want to save the state every time we emit an event, except for the start and delete events
-    if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
+    const isStateless =
+      STATELESS_EVENT_TYPES.includes(this.event.payload.event_type as unknown as EventType) ||
+      STATELESS_EVENT_TYPES_V2.includes(this.event.payload.event_type);
+    if (!isStateless) {
       console.log(`Saving state before emitting event`);
       await this.adapterState.postState(this.state);
     }

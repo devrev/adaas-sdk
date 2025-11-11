@@ -1,4 +1,4 @@
-import { ExtractorEventType, processTask } from '../../index';
+import { ExtractorEventTypeV2, processTask } from '../../index';
 
 processTask({
   task: async ({ adapter }) => {
@@ -33,9 +33,9 @@ processTask({
     }
 
     console.log(`Final computation result: ${result}`);
-    await adapter.emit(ExtractorEventType.ExtractionDataDone);
+    await adapter.emit(ExtractorEventTypeV2.ExtractionDataDone);
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionDataProgress);
+    await adapter.emit(ExtractorEventTypeV2.ExtractionDataProgress);
   },
 });
