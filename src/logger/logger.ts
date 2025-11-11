@@ -66,54 +66,64 @@ export class Logger extends Console {
   }
 
   /**
-   * Core logging method that handles different execution contexts.
-   * On main thread logs with JSON formatting and tags in production, or plain in local development.
-   * In worker threads forwards messages to the main thread for processing.
+   * Logs a pre-formatted message string to the console.
+   * In production mode, wraps the message with JSON formatting and event context tags.
+   * In local development mode, logs the message directly without JSON wrapping.
+   * This is useful when you need to log already-stringified content.
    *
-   * @param args - Values to log (converted to strings unless skipSanitization is true)
+   * @param message - The pre-formatted message string to log
    * @param level - Log level (info, warn, error)
-   * @param skipSanitization - Skip string conversion if args are already strings
    */
-  logFn(args: unknown[], level: LogLevel, skipSanitization = false): void {
-    let message = skipSanitization
-      ? (args as string[]).join(' ')
-      : args.map((arg) => this.valueToString(arg)).join(' ');
-    message = this.truncateMessage(message);
+  logFn(message: string, level: LogLevel): void {
+    if (this.options?.isLocalDevelopment) {
+      this.originalConsole[level](message);
+      return;
+    }
+
+    const logObject = {
+      message,
+      ...this.tags,
+    };
+    this.originalConsole[level](JSON.stringify(logObject));
+  }
+
+  /**
+   * Stringifies and logs arguments to the appropriate destination.
+   * On main thread, converts arguments to strings and calls logFn.
+   * In worker threads, forwards stringified arguments to the main thread for processing.
+   * All arguments are converted to strings using util.inspect and joined with spaces.
+   *
+   * @param args - Values to log (will be stringified and truncated if needed)
+   * @param level - Log level (info, warn, error)
+   */
+  private stringifyAndLog(args: unknown[], level: LogLevel): void {
+    let stringifiedArgs = args.map((arg) => this.valueToString(arg)).join(' ');
+    stringifiedArgs = this.truncateMessage(stringifiedArgs);
 
     if (isMainThread) {
-      if (this.options?.isLocalDevelopment) {
-        this.originalConsole[level](message);
-        return;
-      } else {
-        const logObject = {
-          message,
-          ...this.tags,
-        };
-        this.originalConsole[level](JSON.stringify(logObject));
-      }
+      this.logFn(stringifiedArgs, level);
     } else {
-      const sanitizedArgs = args.map((arg) => this.valueToString(arg));
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: { args: sanitizedArgs, level },
+        payload: { stringifiedArgs, level },
       });
     }
   }
 
   override log(...args: unknown[]): void {
-    this.logFn(args, LogLevel.INFO);
+    this.stringifyAndLog(args, LogLevel.INFO);
   }
 
   override info(...args: unknown[]): void {
-    this.logFn(args, LogLevel.INFO);
+    this.stringifyAndLog(args, LogLevel.INFO);
   }
 
   override warn(...args: unknown[]): void {
-    this.logFn(args, LogLevel.WARN);
+    this.stringifyAndLog(args, LogLevel.WARN);
   }
 
   override error(...args: unknown[]): void {
-    this.logFn(args, LogLevel.ERROR);
+    this.stringifyAndLog(args, LogLevel.ERROR);
   }
 }
 

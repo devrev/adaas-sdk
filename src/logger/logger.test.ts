@@ -197,30 +197,93 @@ describe(Logger.name, () => {
     expect(logObject.message).toBe(shortString);
   });
 
-  it('should skip sanitization when skipSanitization flag is true', () => {
+  it('[edge] should not truncate message exactly at maximum length', () => {
     // Arrange
-    const alreadySanitizedArgs = ['Sanitized message 1', 'Sanitized message 2'];
+    const messageAtLimit = 'A'.repeat(MAX_LOG_STRING_LENGTH);
     const logger = new Logger({ event: mockEvent, options: mockOptions });
 
     // Act
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    logger.logFn(alreadySanitizedArgs, 'info' as any, true);
+    logger.info(messageAtLimit);
 
     // Assert
     const callArgs = mockConsoleInfo.mock.calls[0][0];
     const logObject = JSON.parse(callArgs);
-    expect(logObject.message).toBe('Sanitized message 1 Sanitized message 2');
+    expect(logObject.message).toBe(messageAtLimit);
+    expect(logObject.message.length).toBe(MAX_LOG_STRING_LENGTH);
   });
 
-  it('should apply sanitization when skipSanitization flag is false', () => {
+  it('[edge] should truncate message one character over maximum length', () => {
+    // Arrange
+    const messageOverLimit = 'B'.repeat(MAX_LOG_STRING_LENGTH + 1);
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+    const expectedMessage = `${messageOverLimit.substring(
+      0,
+      MAX_LOG_STRING_LENGTH
+    )}... 1 more characters`;
+
+    // Act
+    logger.info(messageOverLimit);
+
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe(expectedMessage);
+  });
+
+  it('[edge] should handle empty string without truncation', () => {
+    // Arrange
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act
+    logger.info('');
+
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe('');
+  });
+
+  it('[edge] should show correct character count for very long messages', () => {
+    // Arrange
+    const veryLongString = 'X'.repeat(50000);
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+    const expectedCharactersRemaining = 50000 - MAX_LOG_STRING_LENGTH;
+    const expectedMessage = `${veryLongString.substring(
+      0,
+      MAX_LOG_STRING_LENGTH
+    )}... ${expectedCharactersRemaining} more characters`;
+
+    // Act
+    logger.info(veryLongString);
+
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe(expectedMessage);
+    expect(logObject.message).toContain('40000 more characters');
+  });
+
+  it('should stringify string arguments and join them with spaces', () => {
+    // Arrange
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act
+    logger.info('Message 1', 'Message 2');
+
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe('Message 1 Message 2');
+  });
+
+  it('should stringify object arguments using util.inspect', () => {
     // Arrange
     const data = { id: 123 };
     const logger = new Logger({ event: mockEvent, options: mockOptions });
     const expectedMessage = inspect(data, EXPECTED_INSPECT_OPTIONS);
 
     // Act
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    logger.logFn([data], 'info' as any, false);
+    logger.info(data);
 
     // Assert
     const callArgs = mockConsoleInfo.mock.calls[0][0];
@@ -272,13 +335,12 @@ describe(Logger.name, () => {
     expect(mockConsoleError).toHaveBeenCalledTimes(1);
   });
 
-  it('[edge] should handle empty string as valid log message', () => {
+  it('[edge] should log empty string as valid message with tags', () => {
     // Arrange
-    const emptyString = '';
     const logger = new Logger({ event: mockEvent, options: mockOptions });
 
     // Act
-    logger.info(emptyString);
+    logger.info('');
 
     // Assert
     const callArgs = mockConsoleInfo.mock.calls[0][0];

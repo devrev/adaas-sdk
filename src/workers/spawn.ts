@@ -244,10 +244,10 @@ export class Spawn {
       // Since it is not possible to log from the worker thread, we need to log
       // from the main thread.
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
-        const args = message.payload?.args;
+        const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
         // Args are already sanitized in the worker thread, skip double sanitization
-        (console as Logger).logFn(args, level, true);
+        (console as Logger).logFn(stringifiedArgs, level);
       }
 
       // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.
