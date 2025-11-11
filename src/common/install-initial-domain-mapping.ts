@@ -94,8 +94,7 @@ export async function installInitialDomainMapping(
   );
 
   console.log(
-    `Successfully installed initial domain mapping ${JSON.stringify(
-      initialDomainMappingInstallResponse.data
-    )}`
+    'Successfully installed initial domain mapping',
+    initialDomainMappingInstallResponse.data
   );
 }
