@@ -31,12 +31,10 @@ import { createWorker } from './create-worker';
 
 function getWorkerPath({
   event,
-  connectorWorkerPath,
 }: GetWorkerPathInterface): string | null {
-  if (connectorWorkerPath) return connectorWorkerPath;
   let path = null;
-  // After translation in spawn, event_type is always EventTypeV2
-  const eventType = event.payload.event_type;
+
+  const eventType = getEventType(event.payload.event_type);
 
   switch (eventType) {
     // Extraction - External Sync Units
@@ -105,9 +103,6 @@ function getWorkerPath({
  * The class provides utilities to emit control events to the platform and exit the worker gracefully.
  * In case of lambda timeout, the class emits a lambda timeout event to the platform.
  * @param {SpawnFactoryInterface} options - The options to create a new instance of Spawn class
- * @param {AirdropEvent} event - The event object received from the platform
- * @param {object} initialState - The initial state of the adapter
- * @param {string} workerPath - The path to the worker file
  * @returns {Promise<Spawn>} - A new instance of Spawn class
  */
 export async function spawn<ConnectorState>({
@@ -119,10 +114,15 @@ export async function spawn<ConnectorState>({
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
   event.payload.event_type = getEventType(event.payload.event_type);
   const logger = new Logger({ event, options });
-  const script = getWorkerPath({
-    event,
-    connectorWorkerPath: workerPath,
-  });
+
+  let script = null;
+  if (workerPath) {
+    script = workerPath;
+  } else if (options?.worker_path_overrides?.[event.payload.event_type]) {
+    script = options.worker_path_overrides[event.payload.event_type];
+  } else {
+    script = getWorkerPath({ event });
+  }
 
   if (options?.isLocalDevelopment) {
     logger.warn(
