@@ -214,43 +214,40 @@ export function truncateFilename(filename: string): string {
 
 export interface MemoryInfo {
   rssUsedMB: string;
-  rssUsedPercent: string; // Critical for OOM detection
-  heapUsedPercent: string; // GC pressure indicator
-  externalMB: string; // C++ objects and buffers (HTTP streams, etc.)
-  arrayBuffersMB: string; // Buffer data (unclosed streams show here)
+  rssUsedPercent: string;
+  heapUsedPercent: string;
+  externalMB: string;
+  arrayBuffersMB: string;
   formattedMessage: string;
 }
 
-export function getMemoryUsage(): MemoryInfo {
+export function getMemoryUsage(heapStats: v8.HeapInfo): MemoryInfo {
   try {
-    const memUsage = process.memoryUsage();
-    const heapStats = v8.getHeapStatistics();
+    const memUsage: NodeJS.MemoryUsage = {
+      rss: heapStats.total_heap_size,
+      heapTotal: heapStats.total_heap_size,
+      heapUsed: heapStats.used_heap_size,
+      external: heapStats.external_memory,
+      arrayBuffers: 0,
+    };
 
     const rssUsedMB = memUsage.rss / 1024 / 1024;
     const heapLimitMB = heapStats.heap_size_limit / 1024 / 1024;
-
-    const effectiveMemoryLimitMB = heapLimitMB;
-
-    // Calculate heap values for consistent format
     const heapUsedMB = heapStats.used_heap_size / 1024 / 1024;
     const heapTotalMB = heapStats.heap_size_limit / 1024 / 1024;
-
-    // Calculate external and buffer values (critical for detecting stream leaks)
     const externalMB = memUsage.external / 1024 / 1024;
     const arrayBuffersMB = memUsage.arrayBuffers / 1024 / 1024;
 
-    // Critical percentages for OOM detection
     const rssUsedPercent =
-      ((rssUsedMB / effectiveMemoryLimitMB) * 100).toFixed(2) + '%';
+      ((rssUsedMB / heapLimitMB) * 100).toFixed(2) + '%';
     const heapUsedPercent =
       ((heapStats.used_heap_size / heapStats.heap_size_limit) * 100).toFixed(
         2
       ) + '%';
 
-    // Detailed message showing RSS breakdown for leak detection
-    const formattedMessage = `Memory: RSS ${rssUsedMB.toFixed(
+    const formattedMessage = `Worker memory: RSS ${rssUsedMB.toFixed(
       2
-    )}/${effectiveMemoryLimitMB.toFixed(
+    )}/${heapLimitMB.toFixed(
       2
     )}MB (${rssUsedPercent}) [Heap ${heapUsedMB.toFixed(
       2

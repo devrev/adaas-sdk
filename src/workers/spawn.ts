@@ -2,7 +2,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../common/control-protocol';
-import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
+import { getTimeoutErrorEventType } from '../common/helpers';
 import { Logger, serializeError } from '../logger/logger';
 import {
   AirdropEvent,
@@ -20,7 +20,6 @@ import {
 import {
   DEFAULT_LAMBDA_TIMEOUT,
   HARD_TIMEOUT_MULTIPLIER,
-  MEMORY_LOG_INTERVAL,
 } from '../common/constants';
 import { LogLevel } from '../logger/logger.interfaces';
 import { createWorker } from './create-worker';
@@ -174,7 +173,6 @@ export class Spawn {
   private lambdaTimeout: number;
   private softTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
   private hardTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
-  private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
   private resolve: (value: void | PromiseLike<void>) => void;
   private originalConsole: Console;
   private logger: Logger;
@@ -259,25 +257,29 @@ export class Spawn {
       }
     });
 
-    // Log memory usage every 30 seconds
-    this.memoryMonitoringInterval = setInterval(() => {
-      try {
-        const memoryInfo = getMemoryUsage();
-        if (memoryInfo) {
-          console.info(memoryInfo.formattedMessage);
-        }
-      } catch (error) {
-        // If memory monitoring fails, log the warning and clear the interval to prevent further issues
-        console.warn(
-          'Memory monitoring failed, stopping logging of memory usage interval',
-          error
-        );
-        if (this.memoryMonitoringInterval) {
-          clearInterval(this.memoryMonitoringInterval);
-          this.memoryMonitoringInterval = undefined;
-        }
-      }
-    }, MEMORY_LOG_INTERVAL);
+    // Listen for worker errors to detect OOM conditions
+    worker.on(
+      WorkerEvent.WorkerError,
+      (error: Error) =>
+        void (async () => {
+          console.error('Worker error occurred:', error);
+
+          // Check if this is an OOM-related error
+          const errorMessage = error.message?.toLowerCase() || '';
+          const isOOMError =
+            errorMessage.includes('out of memory') ||
+            errorMessage.includes('maximum call stack') ||
+            errorMessage.includes('heap limit');
+
+          if (isOOMError) {
+            console.error('Detected OOM error in worker');
+            await this.handleOOMError();
+          } else {
+            // For non-OOM errors, use the standard exit handler
+            await this.exitFromMainThread();
+          }
+        })()
+    );
   }
 
   private clearTimeouts(): void {
@@ -287,8 +289,39 @@ export class Spawn {
     if (this.hardTimeoutTimer) {
       clearTimeout(this.hardTimeoutTimer);
     }
-    if (this.memoryMonitoringInterval) {
-      clearInterval(this.memoryMonitoringInterval);
+  }
+
+  private async handleOOMError(): Promise<void> {
+    this.clearTimeouts();
+
+    // Check if an error has already been emitted
+    if (this.alreadyEmitted) {
+      return;
+    }
+    this.alreadyEmitted = true;
+
+    const { eventType } = getTimeoutErrorEventType(
+      this.event.payload.event_type
+    );
+
+    try {
+      await emit({
+        eventType,
+        event: this.event,
+        data: {
+          error: {
+            message:
+              'Worker exceeded memory limit and crashed. The process ran out of memory (OOM). Consider optimizing memory usage or processing data in smaller batches.',
+          },
+        },
+      });
+
+      this.resolve();
+    } catch (error) {
+      console.error('Error while emitting OOM event.', serializeError(error));
+    } finally {
+      // eslint-disable-next-line no-global-assign
+      console = this.originalConsole;
     }
   }
 

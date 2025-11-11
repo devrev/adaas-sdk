@@ -58,6 +58,7 @@ export function processTask<ConnectorState>({
               })()
           );
           await task({ adapter });
+
           process.exit(0);
         }
       } catch (error) {
