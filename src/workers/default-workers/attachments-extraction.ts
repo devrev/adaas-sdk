@@ -82,21 +82,21 @@ processTask({
       });
 
       if (response?.delay) {
-        await adapter.emit(ExtractorEventType.ExtractionAttachmentsDelay, {
+        await adapter.emit(ExtractorEventType.AttachmentExtractionDelayed, {
           delay: response.delay,
         });
       } else if (response?.error) {
-        await adapter.emit(ExtractorEventType.ExtractionAttachmentsError, {
+        await adapter.emit(ExtractorEventType.AttachmentExtractionError, {
           error: response.error,
         });
       } else {
-        await adapter.emit(ExtractorEventType.ExtractionAttachmentsDone);
+        await adapter.emit(ExtractorEventType.AttachmentExtractionDone);
       }
     } catch (error) {
       console.error('An error occured while processing a task.', error);
     }
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionAttachmentsProgress);
+    await adapter.emit(ExtractorEventType.AttachmentExtractionProgress);
   },
 });

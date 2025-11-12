@@ -11,7 +11,7 @@ processTask({
     });
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(LoaderEventType.AttachmentLoadingError, {
+    await adapter.emit(LoaderEventType.AttachmentsLoadingError, {
       reports: adapter.reports,
       processed_files: adapter.processedFiles,
     });

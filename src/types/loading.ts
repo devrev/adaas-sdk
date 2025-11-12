@@ -136,17 +136,40 @@ export type SyncMapperRecord = {
 };
 
 export enum LoaderEventType {
+  // Old member names with OLD values (deprecated, but kept for backwards compatibility)
   DataLoadingProgress = 'DATA_LOADING_PROGRESS',
+  /**
+   * @deprecated This was a typo. Use DataLoadingDelayed for the corrected spelling
+   */
   DataLoadingDelay = 'DATA_LOADING_DELAYED',
   DataLoadingDone = 'DATA_LOADING_DONE',
   DataLoadingError = 'DATA_LOADING_ERROR',
+  /**
+   * @deprecated Use AttachmentsLoadingProgress instead (note: singular changed to plural)
+   */
   AttachmentLoadingProgress = 'ATTACHMENT_LOADING_PROGRESS',
+  /**
+   * @deprecated Use AttachmentsLoadingDelayed instead (note: singular changed to plural)
+   */
   AttachmentLoadingDelayed = 'ATTACHMENT_LOADING_DELAYED',
+  /**
+   * @deprecated Use AttachmentsLoadingDone instead (note: singular changed to plural)
+   */
   AttachmentLoadingDone = 'ATTACHMENT_LOADING_DONE',
+  /**
+   * @deprecated Use AttachmentsLoadingError instead (note: singular changed to plural)
+   */
   AttachmentLoadingError = 'ATTACHMENT_LOADING_ERROR',
   LoaderStateDeletionDone = 'LOADER_STATE_DELETION_DONE',
   LoaderStateDeletionError = 'LOADER_STATE_DELETION_ERROR',
   LoaderAttachmentStateDeletionDone = 'LOADER_ATTACHMENT_STATE_DELETION_DONE',
   LoaderAttachmentStateDeletionError = 'LOADER_ATTACHMENT_STATE_DELETION_ERROR',
   UnknownEventType = 'UNKNOWN_EVENT_TYPE',
+
+  // New member names with NEW values (preferred)
+  DataLoadingDelayed = 'DATA_LOADING_DELAYED',
+  AttachmentsLoadingProgress = 'ATTACHMENTS_LOADING_PROGRESS',
+  AttachmentsLoadingDelayed = 'ATTACHMENTS_LOADING_DELAYED',
+  AttachmentsLoadingDone = 'ATTACHMENTS_LOADING_DONE',
+  AttachmentsLoadingError = 'ATTACHMENTS_LOADING_ERROR',
 }

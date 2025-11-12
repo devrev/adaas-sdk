@@ -86,21 +86,21 @@ processTask({
     console.log('Logging something from worker thread', {});
 
     adapter.initializeRepos(repos);
-    if (adapter.event.payload.event_type === EventType.ExtractionDataStart) {
+    if (adapter.event.payload.event_type === EventType.StartExtractingData) {
       await adapter.getRepo('issues')?.push(issues);
-      await adapter.emit(ExtractorEventType.ExtractionDataProgress, {
+      await adapter.emit(ExtractorEventType.DataExtractionProgress, {
         progress: 50,
       });
     } else {
       await adapter.getRepo('users')?.push(users);
       await adapter.getRepo('attachments')?.push(attachments);
-      await adapter.emit(ExtractorEventType.ExtractionDataDone, {
+      await adapter.emit(ExtractorEventType.DataExtractionDone, {
         progress: 100,
       });
     }
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionDataProgress, {
+    await adapter.emit(ExtractorEventType.DataExtractionProgress, {
       progress: 50,
     });
   },
