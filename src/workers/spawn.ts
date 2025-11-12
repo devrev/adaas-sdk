@@ -2,6 +2,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../common/control-protocol';
+import { normalizeIncomingEventType } from '../common/event-type-normalization';
 import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
 import { Logger, serializeError } from '../logger/logger';
 import {
@@ -32,24 +33,38 @@ function getWorkerPath({
   if (connectorWorkerPath) return connectorWorkerPath;
   let path = null;
   switch (event.payload.event_type) {
-    // Extraction
+    // Extraction - New event types
+    case EventType.StartExtractingExternalSyncUnits:
+    // Backwards compatibility with old event types
     case EventType.ExtractionExternalSyncUnitsStart:
       path = __dirname + '/default-workers/external-sync-units-extraction';
       break;
+
+    case EventType.StartExtractingMetadata:
     case EventType.ExtractionMetadataStart:
       path = __dirname + '/default-workers/metadata-extraction';
       break;
+
+    case EventType.StartExtractingData:
+    case EventType.ContinueExtractingData:
     case EventType.ExtractionDataStart:
     case EventType.ExtractionDataContinue:
       path = __dirname + '/default-workers/data-extraction';
       break;
+
+    case EventType.StartExtractingAttachments:
+    case EventType.ContinueExtractingAttachments:
     case EventType.ExtractionAttachmentsStart:
     case EventType.ExtractionAttachmentsContinue:
       path = __dirname + '/default-workers/attachments-extraction';
       break;
+
+    case EventType.StartDeletingExtractorState:
     case EventType.ExtractionDataDelete:
       path = __dirname + '/default-workers/data-deletion';
       break;
+
+    case EventType.StartDeletingExtractorAttachmentsState:
     case EventType.ExtractionAttachmentsDelete:
       path = __dirname + '/default-workers/attachments-deletion';
       break;
@@ -93,6 +108,22 @@ export async function spawn<ConnectorState>({
   initialDomainMapping,
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
+  // Normalize incoming event type for backwards compatibility
+  // This allows the SDK to accept both old and new event type formats
+  const originalEventType = event.payload.event_type;
+  const normalizedEventType = normalizeIncomingEventType(
+    event.payload.event_type as string
+  );
+
+  // Update the event with the normalized event type
+  event.payload.event_type = normalizedEventType;
+
+  if (normalizedEventType !== originalEventType) {
+    console.log(
+      `Event type normalized from ${originalEventType} to ${normalizedEventType}`
+    );
+  }
+
   if (options?.isLocalDevelopment) {
     console.log('Snap-in is running in local development mode.');
   }
