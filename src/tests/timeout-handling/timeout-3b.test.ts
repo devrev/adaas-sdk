@@ -42,9 +42,9 @@ describe('timeout-3b extraction', () => {
     const requests = mockServer.getRequests();
     const lastRequest = requests[requests.length - 1];
 
-    // Expect last request to be emission of progress event
+    // Expect last request to be emission of progress event (using new event type string)
     expect(lastRequest.url).toContain('airdrop.external-extractor.message');
     expect(lastRequest.method).toBe('POST');
-    expect(lastRequest.body.event_type).toBe('EXTRACTION_DATA_PROGRESS');
+    expect(lastRequest.body.event_type).toBe('DATA_EXTRACTION_PROGRESS');
   });
 });

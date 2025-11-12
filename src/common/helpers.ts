@@ -23,55 +23,73 @@ export function getTimeoutErrorEventType(eventType: EventType): {
   eventType: ExtractorEventType | LoaderEventType;
 } {
   switch (eventType) {
+    // Metadata extraction (handles both old and new enum members)
+    case EventType.StartExtractingMetadata:
     case EventType.ExtractionMetadataStart:
       return {
-        eventType: ExtractorEventType.ExtractionMetadataError,
+        eventType: ExtractorEventType.MetadataExtractionError, // Using NEW enum member
       };
 
+    // Data extraction (handles both old and new enum members)
+    case EventType.StartExtractingData:
+    case EventType.ContinueExtractingData:
     case EventType.ExtractionDataStart:
     case EventType.ExtractionDataContinue:
       return {
-        eventType: ExtractorEventType.ExtractionDataError,
+        eventType: ExtractorEventType.DataExtractionError, // Using NEW enum member
       };
 
+    // Data deletion (handles both old and new enum members)
+    case EventType.StartDeletingExtractorState:
     case EventType.ExtractionDataDelete:
       return {
-        eventType: ExtractorEventType.ExtractionDataDeleteError,
+        eventType: ExtractorEventType.ExtractorStateDeletionError, // Using NEW enum member
       };
 
+    // Attachments extraction (handles both old and new enum members)
+    case EventType.StartExtractingAttachments:
+    case EventType.ContinueExtractingAttachments:
     case EventType.ExtractionAttachmentsStart:
     case EventType.ExtractionAttachmentsContinue:
       return {
-        eventType: ExtractorEventType.ExtractionAttachmentsError,
+        eventType: ExtractorEventType.AttachmentExtractionError, // Using NEW enum member
       };
 
+    // Attachments deletion (handles both old and new enum members)
+    case EventType.StartDeletingExtractorAttachmentsState:
     case EventType.ExtractionAttachmentsDelete:
       return {
-        eventType: ExtractorEventType.ExtractionAttachmentsDeleteError,
+        eventType: ExtractorEventType.ExtractorAttachmentsStateDeletionError, // Using NEW enum member
       };
 
+    // External sync units (handles both old and new enum members)
+    case EventType.StartExtractingExternalSyncUnits:
     case EventType.ExtractionExternalSyncUnitsStart:
       return {
-        eventType: ExtractorEventType.ExtractionExternalSyncUnitsError,
+        eventType: ExtractorEventType.ExternalSyncUnitExtractionError, // Using NEW enum member
       };
 
+    // Loading data
     case EventType.StartLoadingData:
     case EventType.ContinueLoadingData:
       return {
         eventType: LoaderEventType.DataLoadingError,
       };
 
+    // Deleting loader state
     case EventType.StartDeletingLoaderState:
       return {
         eventType: LoaderEventType.LoaderStateDeletionError,
       };
 
+    // Loading attachments
     case EventType.StartLoadingAttachments:
     case EventType.ContinueLoadingAttachments:
       return {
-        eventType: LoaderEventType.AttachmentLoadingError,
+        eventType: LoaderEventType.AttachmentsLoadingError, // Using NEW enum member
       };
 
+    // Deleting loader attachment state
     case EventType.StartDeletingLoaderAttachmentState:
       return {
         eventType: LoaderEventType.LoaderAttachmentStateDeletionError,
