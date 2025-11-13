@@ -9,6 +9,7 @@ import {
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
 import { LIBRARY_VERSION } from './constants';
+import { normalizeOutgoingEventType } from './event-type-normalization';
 
 export interface EmitInterface {
   event: AirdropEvent;
@@ -21,8 +22,11 @@ export const emit = async ({
   eventType,
   data,
 }: EmitInterface): Promise<AxiosResponse> => {
+  // Normalize outgoing event type to ensure we always send new event types
+  const normalizedEventType = normalizeOutgoingEventType(eventType);
+
   const newEvent: ExtractorEvent | LoaderEvent = {
-    event_type: eventType,
+    event_type: normalizedEventType,
     event_context: event.payload.event_context,
     event_data: {
       ...data,
