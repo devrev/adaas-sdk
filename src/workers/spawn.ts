@@ -1,5 +1,6 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import fs from 'fs';
 
 import { emit } from '../common/control-protocol';
 import { normalizeIncomingEventType } from '../common/event-type-normalization';
@@ -28,30 +29,48 @@ import { createWorker } from './create-worker';
 
 function getWorkerPath({
   event,
+  connectorWorkerPath
+}: GetWorkerPathInterface): string | null {
+  if (connectorWorkerPath) return connectorWorkerPath;
+
+  let path = null;
+  switch (event.payload.event_type) {
+    case EventType.ExtractionExternalSyncUnitsStart:
+    case EventType.StartExtractingExternalSyncUnits:
+      path = __dirname + '/workers/external-sync-units-extraction';
+      break;
+    case EventType.ExtractionMetadataStart:
+    case EventType.StartExtractingMetadata:
+      path = __dirname + '/workers/metadata-extraction';
+      break;
+    case EventType.ExtractionDataStart:
+    case EventType.ExtractionDataContinue:
+    case EventType.StartExtractingData:
+    case EventType.ContinueExtractingData:
+      path = __dirname + '/workers/data-extraction';
+      break;
+    case EventType.ExtractionAttachmentsStart:
+    case EventType.ExtractionAttachmentsContinue:
+    case EventType.StartExtractingAttachments:
+    case EventType.ContinueExtractingAttachments:
+      path = __dirname + '/workers/attachments-extraction';
+      break;
+  }
+
+  // If the worker path does not exist or wasn't found, use the default worker path
+  if (!path || (path && !(fs.existsSync(path + ".js") || fs.existsSync(path + ".ts")))) {
+    return getDefaultWorkerPath({ event, connectorWorkerPath });
+  }
+  return path;
+}
+
+function getDefaultWorkerPath({
+  event,
   connectorWorkerPath,
 }: GetWorkerPathInterface): string | null {
   if (connectorWorkerPath) return connectorWorkerPath;
   let path = null;
   switch (event.payload.event_type) {
-    // Extraction - New event types
-    case EventType.StartExtractingExternalSyncUnits:
-    // Backwards compatibility with old event types
-    case EventType.ExtractionExternalSyncUnitsStart:
-      path = __dirname + '/default-workers/external-sync-units-extraction';
-      break;
-
-    case EventType.StartExtractingMetadata:
-    case EventType.ExtractionMetadataStart:
-      path = __dirname + '/default-workers/metadata-extraction';
-      break;
-
-    case EventType.StartExtractingData:
-    case EventType.ContinueExtractingData:
-    case EventType.ExtractionDataStart:
-    case EventType.ExtractionDataContinue:
-      path = __dirname + '/default-workers/data-extraction';
-      break;
-
     case EventType.StartExtractingAttachments:
     case EventType.ContinueExtractingAttachments:
     case EventType.ExtractionAttachmentsStart:
@@ -96,9 +115,9 @@ function getWorkerPath({
  * The class provides utilities to emit control events to the platform and exit the worker gracefully.
  * In case of lambda timeout, the class emits a lambda timeout event to the platform.
  * @param {SpawnFactoryInterface} options - The options to create a new instance of Spawn class
- * @param {AirdropEvent} event - The event object received from the platform
- * @param {object} initialState - The initial state of the adapter
- * @param {string} workerPath - The path to the worker file
+ * @param {AirdropEvent} options.event - The event object received from the platform
+ * @param {object} options.initialState - The initial state of the adapter
+ * @param {string} options.workerPath - The path to the worker file
  * @returns {Promise<Spawn>} - A new instance of Spawn class
  */
 export async function spawn<ConnectorState>({
@@ -140,10 +159,16 @@ export async function spawn<ConnectorState>({
   const originalConsole = console;
   // eslint-disable-next-line no-global-assign
   console = new Logger({ event, options });
-  const script = getWorkerPath({
-    event,
-    connectorWorkerPath: workerPath,
-  });
+
+  let script = null;
+  if (options?.worker_path_overrides && options.worker_path_overrides[normalizedEventType as EventType]) {
+    script = options.worker_path_overrides[normalizedEventType as EventType];
+  } else {
+    script = getWorkerPath({
+      event,
+      connectorWorkerPath: workerPath,
+    });
+  }
 
   if (script) {
     try {
