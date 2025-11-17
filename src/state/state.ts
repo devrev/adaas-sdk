@@ -1,12 +1,12 @@
 import axios from 'axios';
 
-import { axiosClient } from '../http/axios-client-internal';
-import { EventType } from '../types/extraction';
-import { SyncMode } from '../types/common';
 import { STATELESS_EVENT_TYPES } from '../common/constants';
-import { getPrintableState, serializeError } from '../logger/logger';
-import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
 import { getSyncDirection } from '../common/helpers';
+import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
+import { axiosClient } from '../http/axios-client-internal';
+import { getPrintableState, serializeError } from '../logger/logger';
+import { SyncMode } from '../types/common';
+import { EventType } from '../types/extraction';
 
 import {
   AdapterState,
@@ -128,7 +128,7 @@ export class State<ConnectorState> {
       try {
         parsedState = JSON.parse(stringifiedState);
       } catch (error) {
-        throw new Error('Failed to parse state.');
+        throw new Error(`Failed to parse state. ${error}`);
       }
 
       this.state = parsedState;

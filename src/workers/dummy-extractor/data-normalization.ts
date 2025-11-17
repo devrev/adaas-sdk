@@ -1,4 +1,4 @@
-import { NormalizedItem, NormalizedAttachment } from '../../index';
+import { NormalizedAttachment, NormalizedItem } from '../../index';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function normalizeIssue(item: any): NormalizedItem {

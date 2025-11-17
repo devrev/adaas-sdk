@@ -1,9 +1,6 @@
 name: Validate Pull Request
 run-name: Validate Pull Request
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main

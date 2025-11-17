@@ -1,16 +1,19 @@
 import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
-import { getPrintableState, serializeAxiosError, Logger } from './logger';
-import { LogLevel } from './logger.interfaces';
+import { LIBRARY_VERSION } from '../common/constants';
+import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
-import { createEvent } from '../tests/test-helpers';
+import { getPrintableState, Logger, serializeAxiosError } from './logger';
+import {
+  INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
+  MAX_LOG_STRING_LENGTH,
+} from './logger.constants';
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
 const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation();
 const mockConsoleError = jest.spyOn(console, 'error').mockImplementation();
-const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation();
 
 // Mock worker_threads
 jest.mock('node:worker_threads', () => ({
@@ -54,267 +57,572 @@ describe(Logger.name, () => {
     jest.restoreAllMocks();
   });
 
-  describe('constructor', () => {
-    it('should initialize logger with event context and dev_oid', () => {
-      const logger = new Logger({ event: mockEvent, options: mockOptions });
+  it('should initialize with event context and SDK version in tags', () => {
+    // Arrange & Act
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
 
-      // Access private property for testing
-      const tags = (logger as any).tags;
+    // Assert
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tags = (logger as any).tags;
+    expect(tags).toEqual({
+      ...mockEvent.payload.event_context,
+      sdk_version: LIBRARY_VERSION,
+    });
+  });
 
-      expect(tags).toEqual({
+  it('should log string message as JSON with event context tags in production mode', () => {
+    // Arrange
+    const message = 'Worker is online. Started processing the task.';
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act
+    logger.info(message);
+
+    // Assert
+    expect(mockConsoleInfo).toHaveBeenCalledWith(
+      JSON.stringify({
+        message,
         ...mockEvent.payload.event_context,
-        dev_oid: mockEvent.payload.event_context.dev_oid,
-      });
-    });
+        sdk_version: LIBRARY_VERSION,
+      })
+    );
   });
 
-  describe('production logging', () => {
-    let logger: Logger;
+  it('should log object message using inspect with proper formatting in production mode', () => {
+    // Arrange
+    const data = { id: 123, name: 'test' };
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+    const expectedMessage = inspect(data, EXPECTED_INSPECT_OPTIONS);
 
-    beforeEach(() => {
-      mockOptions.isLocalDevelopment = false;
-      logger = new Logger({ event: mockEvent, options: mockOptions });
-    });
+    // Act
+    logger.info(data);
 
-    it('should log single string message without backslashes', () => {
-      const message = 'Worker is online. Started processing the task.';
-
-      logger.info(message);
-
-      expect(mockConsoleInfo).toHaveBeenCalledWith(
-        JSON.stringify({
-          message,
-          ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_oid,
-        })
-      );
-    });
-
-    it('should log single object message with JSON stringify', () => {
-      const data = { id: 123, name: 'test' };
-
-      logger.info(data);
-
-      const expectedMessage = inspect(data, {
-        compact: false,
-        depth: Infinity,
-      });
-      expect(mockConsoleInfo).toHaveBeenCalledWith(
-        JSON.stringify({
-          message: expectedMessage,
-          ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_oid,
-        })
-      );
-    });
-
-    it('should log multiple arguments joined with space', () => {
-      const text = 'Successfully fetched';
-      const data = { count: 42 };
-
-      logger.info(text, data);
-
-      const expectedDataMessage = inspect(data, {
-        compact: false,
-        depth: Infinity,
-      });
-      expect(mockConsoleInfo).toHaveBeenCalledWith(
-        JSON.stringify({
-          message: `${text} ${expectedDataMessage}`,
-          ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_oid,
-        })
-      );
-    });
-
-    it('should handle mixed string and object arguments', () => {
-      const text1 = 'Processing';
-      const data = { id: 123 };
-      const text2 = 'completed';
-
-      logger.info(text1, data, text2);
-
-      const expectedDataMessage = inspect(data, {
-        compact: false,
-        depth: Infinity,
-      });
-      expect(mockConsoleInfo).toHaveBeenCalledWith(
-        JSON.stringify({
-          message: `${text1} ${expectedDataMessage} ${text2}`,
-          ...mockEvent.payload.event_context,
-          dev_oid: mockEvent.payload.event_context.dev_oid,
-        })
-      );
-    });
+    // Assert
+    expect(mockConsoleInfo).toHaveBeenCalledWith(
+      JSON.stringify({
+        message: expectedMessage,
+        ...mockEvent.payload.event_context,
+        sdk_version: LIBRARY_VERSION,
+      })
+    );
   });
 
-  describe('local development logging', () => {
-    let logger: Logger;
+  it('should join multiple arguments with space when logging in production mode', () => {
+    // Arrange
+    const text = 'Successfully fetched';
+    const data = { count: 42 };
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+    const expectedDataMessage = inspect(data, EXPECTED_INSPECT_OPTIONS);
 
-    beforeEach(() => {
-      mockOptions.isLocalDevelopment = true;
-      logger = new Logger({ event: mockEvent, options: mockOptions });
-    });
+    // Act
+    logger.info(text, data);
 
-    it('should use regular console methods in local development', () => {
-      const message = 'Test message';
-      const data = { test: true };
-
-      logger.info(message, data);
-
-      expect(mockConsoleInfo).toHaveBeenCalledWith(message, data);
-    });
+    // Assert
+    expect(mockConsoleInfo).toHaveBeenCalledWith(
+      JSON.stringify({
+        message: `${text} ${expectedDataMessage}`,
+        ...mockEvent.payload.event_context,
+        sdk_version: LIBRARY_VERSION,
+      })
+    );
   });
 
-  describe('log levels', () => {
-    let logger: Logger;
+  it('should log mixed string and object arguments joined with spaces in production mode', () => {
+    // Arrange
+    const text1 = 'Processing';
+    const data = { id: 123 };
+    const text2 = 'completed';
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+    const expectedDataMessage = inspect(data, EXPECTED_INSPECT_OPTIONS);
 
-    beforeEach(() => {
-      mockOptions.isLocalDevelopment = false;
-      logger = new Logger({ event: mockEvent, options: mockOptions });
-    });
+    // Act
+    logger.info(text1, data, text2);
 
-    it('should call console.info for info level', () => {
-      logger.info('test message');
-      expect(mockConsoleInfo).toHaveBeenCalled();
-    });
-
-    it('should call console.warn for warn level', () => {
-      logger.warn('test warning');
-      expect(mockConsoleWarn).toHaveBeenCalled();
-    });
-
-    it('should call console.error for error level', () => {
-      logger.error('test error');
-      expect(mockConsoleError).toHaveBeenCalled();
-    });
-
-    it('should call console.info for log level', () => {
-      logger.log('test log');
-      expect(mockConsoleInfo).toHaveBeenCalled();
-    });
+    // Assert
+    expect(mockConsoleInfo).toHaveBeenCalledWith(
+      JSON.stringify({
+        message: `${text1} ${expectedDataMessage} ${text2}`,
+        ...mockEvent.payload.event_context,
+        sdk_version: LIBRARY_VERSION,
+      })
+    );
   });
 
-  describe('edge cases', () => {
-    let logger: Logger;
+  it('should log directly without JSON wrapping in local development mode', () => {
+    // Arrange
+    const message = 'Test message';
+    const data = { test: true };
+    mockOptions.isLocalDevelopment = true;
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+    const expectedDataMessage = inspect(data, EXPECTED_INSPECT_OPTIONS);
 
-    beforeEach(() => {
-      mockOptions.isLocalDevelopment = false;
-      logger = new Logger({ event: mockEvent, options: mockOptions });
-    });
+    // Act
+    logger.info(message, data);
 
-    it('[edge] should handle empty string message', () => {
-      logger.info('');
+    // Assert
+    expect(mockConsoleInfo).toHaveBeenCalledWith(
+      `${message} ${expectedDataMessage}`
+    );
+  });
 
-      expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
-      const callArgs = mockConsoleInfo.mock.calls[0][0];
-      const logObject = JSON.parse(callArgs);
+  it('should truncate long strings and show remaining character count', () => {
+    // Arrange
+    const longString = 'C'.repeat(20000);
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+    const expectedTruncatedMessage = `${longString.substring(
+      0,
+      MAX_LOG_STRING_LENGTH
+    )}... ${20000 - MAX_LOG_STRING_LENGTH} more characters`;
 
-      expect(logObject.message).toBe('');
-      expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
-      expect(logObject.request_id).toBe(
-        mockEvent.payload.event_context.request_id
-      );
-    });
+    // Act
+    logger.info(longString);
 
-    it('[edge] should handle null and undefined values', () => {
-      logger.info('test', null, undefined);
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe(expectedTruncatedMessage);
+  });
 
-      expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
-      const callArgs = mockConsoleInfo.mock.calls[0][0];
-      const logObject = JSON.parse(callArgs);
+  it('should not truncate strings shorter than maximum length', () => {
+    // Arrange
+    const shortString = 'Short message';
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
 
-      // inspect shows 'null' and 'undefined' as strings
-      expect(logObject.message).toBe('test null undefined');
-      expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
-    });
+    // Act
+    logger.info(shortString);
 
-    it('[edge] should handle complex nested objects', () => {
-      const complexObject = {
-        level1: {
-          level2: {
-            array: [1, 2, 3],
-            string: 'nested',
-          },
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe(shortString);
+  });
+
+  it('[edge] should not truncate message exactly at maximum length', () => {
+    // Arrange
+    const messageAtLimit = 'A'.repeat(MAX_LOG_STRING_LENGTH);
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act
+    logger.info(messageAtLimit);
+
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe(messageAtLimit);
+    expect(logObject.message.length).toBe(MAX_LOG_STRING_LENGTH);
+  });
+
+  it('[edge] should truncate message one character over maximum length', () => {
+    // Arrange
+    const messageOverLimit = 'B'.repeat(MAX_LOG_STRING_LENGTH + 1);
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+    const expectedMessage = `${messageOverLimit.substring(
+      0,
+      MAX_LOG_STRING_LENGTH
+    )}... 1 more characters`;
+
+    // Act
+    logger.info(messageOverLimit);
+
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe(expectedMessage);
+  });
+
+  it('[edge] should handle empty string without truncation', () => {
+    // Arrange
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act
+    logger.info('');
+
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe('');
+  });
+
+  it('[edge] should show correct character count for very long messages', () => {
+    // Arrange
+    const veryLongString = 'X'.repeat(50000);
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+    const expectedCharactersRemaining = 50000 - MAX_LOG_STRING_LENGTH;
+    const expectedMessage = `${veryLongString.substring(
+      0,
+      MAX_LOG_STRING_LENGTH
+    )}... ${expectedCharactersRemaining} more characters`;
+
+    // Act
+    logger.info(veryLongString);
+
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe(expectedMessage);
+    expect(logObject.message).toContain('40000 more characters');
+  });
+
+  it('should stringify string arguments and join them with spaces', () => {
+    // Arrange
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act
+    logger.info('Message 1', 'Message 2');
+
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe('Message 1 Message 2');
+  });
+
+  it('should stringify object arguments using util.inspect', () => {
+    // Arrange
+    const data = { id: 123 };
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+    const expectedMessage = inspect(data, EXPECTED_INSPECT_OPTIONS);
+
+    // Act
+    logger.info(data);
+
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe(expectedMessage);
+  });
+
+  it('should call info method for log level', () => {
+    // Arrange
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act
+    logger.log('test log');
+
+    // Assert
+    expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call info method for info level', () => {
+    // Arrange
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act
+    logger.info('test info');
+
+    // Assert
+    expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call warn method for warn level', () => {
+    // Arrange
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act
+    logger.warn('test warning');
+
+    // Assert
+    expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call error method for error level', () => {
+    // Arrange
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act
+    logger.error('test error');
+
+    // Assert
+    expect(mockConsoleError).toHaveBeenCalledTimes(1);
+  });
+
+  it('[edge] should log empty string as valid message with tags', () => {
+    // Arrange
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act
+    logger.info('');
+
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe('');
+    expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
+  });
+
+  it('[edge] should handle null and undefined values in log arguments', () => {
+    // Arrange
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act
+    logger.info('test', null, undefined);
+
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe('test null undefined');
+  });
+
+  it('[edge] should handle deeply nested objects with inspect', () => {
+    // Arrange
+    const complexObject = {
+      level1: {
+        level2: {
+          array: [1, 2, 3],
+          string: 'nested',
         },
-      };
+      },
+    };
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+    const expectedMessage = inspect(complexObject, EXPECTED_INSPECT_OPTIONS);
 
-      logger.info(complexObject);
+    // Act
+    logger.info(complexObject);
 
-      expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
-      const callArgs = mockConsoleInfo.mock.calls[0][0];
-      const logObject = JSON.parse(callArgs);
+    // Assert
+    const callArgs = mockConsoleInfo.mock.calls[0][0];
+    const logObject = JSON.parse(callArgs);
+    expect(logObject.message).toBe(expectedMessage);
+  });
 
-      // The logger uses inspect() with formatting, not JSON.stringify()
-      const expectedMessage = require('util').inspect(complexObject, {
-        compact: false,
-        depth: Infinity,
-      });
-      expect(logObject.message).toBe(expectedMessage);
-      expect(logObject.dev_oid).toBe(mockEvent.payload.event_context.dev_oid);
-      expect(typeof logObject.callback_url).toBe('string');
-    });
+  it('[edge] should handle circular references in objects', () => {
+    // Arrange
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const circularObject: any = { name: 'test' };
+    circularObject.self = circularObject;
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    // Act & Assert
+    expect(() => logger.info(circularObject)).not.toThrow();
+    expect(mockConsoleInfo).toHaveBeenCalledTimes(1);
   });
 });
 
-it('getPrintableState should return printable state', () => {
-  const state = {
-    test_key: 'test_value',
-    big_array: Array.from({ length: 1000 }, (_, index) => index),
-    nested_object: {
-      nested_key: 'nested_value',
-      nested_array: Array.from({ length: 1000 }, (_, index) => index),
-    },
-  };
+describe(getPrintableState.name, () => {
+  it('should convert arrays to summary objects with type, length, and boundary items', () => {
+    // Arrange
+    const state = {
+      test_key: 'test_value',
+      big_array: Array.from({ length: 1000 }, (_, index) => index),
+    };
 
-  const printableState = getPrintableState(state);
+    // Act
+    const printableState = getPrintableState(state);
 
-  expect(printableState).toEqual({
-    test_key: 'test_value',
-    big_array: {
-      type: 'array',
-      length: 1000,
-      firstItem: 0,
-      lastItem: 999,
-    },
-    nested_object: {
-      nested_key: 'nested_value',
-      nested_array: {
+    // Assert
+    expect(printableState).toEqual({
+      test_key: 'test_value',
+      big_array: {
         type: 'array',
         length: 1000,
         firstItem: 0,
         lastItem: 999,
       },
-    },
+    });
+  });
+
+  it('should recursively process nested objects and arrays', () => {
+    // Arrange
+    const state = {
+      test_key: 'test_value',
+      nested_object: {
+        nested_key: 'nested_value',
+        nested_array: Array.from({ length: 1000 }, (_, index) => index),
+      },
+    };
+
+    // Act
+    const printableState = getPrintableState(state);
+
+    // Assert
+    expect(printableState).toEqual({
+      test_key: 'test_value',
+      nested_object: {
+        nested_key: 'nested_value',
+        nested_array: {
+          type: 'array',
+          length: 1000,
+          firstItem: 0,
+          lastItem: 999,
+        },
+      },
+    });
+  });
+
+  it('should preserve primitive values without modification', () => {
+    // Arrange
+    const state = {
+      string_key: 'string_value',
+      number_key: 42,
+      boolean_key: true,
+      null_key: null,
+    };
+
+    // Act
+    const printableState = getPrintableState(state);
+
+    // Assert
+    expect(printableState).toEqual(state);
+  });
+
+  it('[edge] should handle empty arrays with no first or last items', () => {
+    // Arrange
+    const state = {
+      empty_array: [],
+    };
+
+    // Act
+    const printableState = getPrintableState(state);
+
+    // Assert
+    expect(printableState).toEqual({
+      empty_array: {
+        type: 'array',
+        length: 0,
+        firstItem: undefined,
+        lastItem: undefined,
+      },
+    });
+  });
+
+  it('[edge] should handle single-item arrays with same first and last item', () => {
+    // Arrange
+    const state = {
+      single_item_array: [42],
+    };
+
+    // Act
+    const printableState = getPrintableState(state);
+
+    // Assert
+    expect(printableState).toEqual({
+      single_item_array: {
+        type: 'array',
+        length: 1,
+        firstItem: 42,
+        lastItem: undefined,
+      },
+    });
   });
 });
 
-it('serializeAxiosError should return formatted error', () => {
-  const error = {
-    response: {
-      status: 500,
-      data: 'Internal server error',
-    },
-    config: {
-      method: 'GET',
-    },
-  } as AxiosError;
+describe(serializeAxiosError.name, () => {
+  it('should serialize Axios error with response data', () => {
+    // Arrange
+    const error = {
+      response: {
+        status: 500,
+        statusText: 'Internal Server Error',
+        data: 'Internal server error',
+        headers: { 'content-type': 'application/json' },
+      },
+      config: {
+        method: 'GET',
+        url: '/api/test',
+        params: { id: 123 },
+      },
+    } as unknown as AxiosError;
 
-  const formattedError = serializeAxiosError(error);
+    // Act
+    const formattedError = serializeAxiosError(error);
 
-  expect(formattedError).toEqual({
-    config: {
-      method: 'GET',
-      params: undefined,
-      url: undefined,
-    },
-    isAxiosError: true,
-    isCorsOrNoNetworkError: false,
-    response: {
-      data: 'Internal server error',
-      headers: undefined,
-      status: 500,
-      statusText: undefined,
-    },
+    // Assert
+    expect(formattedError).toEqual({
+      config: {
+        method: 'GET',
+        params: { id: 123 },
+        url: '/api/test',
+      },
+      isAxiosError: true,
+      isCorsOrNoNetworkError: false,
+      response: {
+        data: 'Internal server error',
+        headers: { 'content-type': 'application/json' },
+        status: 500,
+        statusText: 'Internal Server Error',
+      },
+    });
+  });
+
+  it('should serialize Axios error without response as CORS or network error', () => {
+    // Arrange
+    const error = {
+      code: 'ERR_NETWORK',
+      message: 'Network Error',
+      config: {
+        method: 'POST',
+        url: '/api/create',
+      },
+    } as unknown as AxiosError;
+
+    // Act
+    const formattedError = serializeAxiosError(error);
+
+    // Assert
+    expect(formattedError).toEqual({
+      config: {
+        method: 'POST',
+        params: undefined,
+        url: '/api/create',
+      },
+      isAxiosError: true,
+      isCorsOrNoNetworkError: true,
+      code: 'ERR_NETWORK',
+      message: 'Network Error',
+    });
+  });
+
+  it('[edge] should handle Axios error with minimal config information', () => {
+    // Arrange
+    const error = {
+      response: {
+        status: 404,
+        data: 'Not Found',
+      },
+      config: {},
+    } as unknown as AxiosError;
+
+    // Act
+    const formattedError = serializeAxiosError(error);
+
+    // Assert
+    expect(formattedError).toEqual({
+      config: {
+        method: undefined,
+        params: undefined,
+        url: undefined,
+      },
+      isAxiosError: true,
+      isCorsOrNoNetworkError: false,
+      response: {
+        data: 'Not Found',
+        headers: undefined,
+        status: 404,
+        statusText: undefined,
+      },
+    });
+  });
+
+  it('[edge] should handle Axios error with no config', () => {
+    // Arrange
+    const error = {
+      code: 'ERR_TIMEOUT',
+      message: 'Request timeout',
+    } as unknown as AxiosError;
+
+    // Act
+    const formattedError = serializeAxiosError(error);
+
+    // Assert
+    expect(formattedError).toEqual({
+      config: {
+        method: undefined,
+        params: undefined,
+        url: undefined,
+      },
+      isAxiosError: true,
+      isCorsOrNoNetworkError: true,
+      code: 'ERR_TIMEOUT',
+      message: 'Request timeout',
+    });
   });
 });

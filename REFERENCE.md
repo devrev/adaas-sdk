@@ -344,6 +344,7 @@ Defines the structure of events sent to external extractors from Airdrop platfor
 - _context_
 
   Required. An object containing:
+
   - _secrets_: An object containing:
     - _service_account_token_: A **string** representing the DevRev authentication token for Airdrop platform
   - _snap_in_version_id_: A **string** representing the version ID of the snap-in
@@ -351,6 +352,7 @@ Defines the structure of events sent to external extractors from Airdrop platfor
 - _payload_
 
   Required. An object of type **AirdropMessage** containing:
+
   - _connection_data_: An object containing:
     - _org_id_: A **string** representing the organization ID
     - _org_name_: A **string** representing the organization name
@@ -370,6 +372,7 @@ Defines the structure of events sent to external extractors from Airdrop platfor
 - _execution_metadata_
 
   Required. An object containing:
+
   - _devrev_endpoint_: A **string** representing the DevRev endpoint URL
 
 - _input_data_
@@ -425,6 +428,7 @@ spawn({ event, initialState, workerPath, options });
 - _options_
 
   Optional. An object of type **WorkerAdapterOptions**, which will be passed to the newly created worker. This worker will then initialize a `WorkerAdapter` by invoking the `processTask` function. The options include:
+
   - `isLocalDevelopment`
 
     A **boolean** flag. If set to `true`, intermediary files containing extracted data will be stored on the local machine, which is useful during development. The default value is `false`.
@@ -735,16 +739,19 @@ Manages sync mapper records that link external system items to DevRev items duri
 #### Methods
 
 - `getByTargetId(params)`
+
   - **params**: `MappersGetByTargetIdParams`
   - **returns**: `Promise<AxiosResponse<MappersGetByTargetIdResponse>>`
   - Use when you know the DevRev ID and want the corresponding mapping.
 
 - `getByExternalId(params)`
+
   - **params**: `MappersGetByExternalIdParams`
   - **returns**: `Promise<AxiosResponse<MappersGetByExternalIdResponse>>`
   - Use when you know an external ID and need the DevRev mapping.
 
 - `create(params)`
+
   - **params**: `MappersCreateParams`
   - **returns**: `Promise<AxiosResponse<MappersCreateResponse>>`
   - Call after creating an item in the external system to persist the mapping.

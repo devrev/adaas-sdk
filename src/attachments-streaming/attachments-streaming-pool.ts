@@ -1,11 +1,11 @@
+import { sleep } from '../common/helpers';
 import {
-  NormalizedAttachment,
   ExternalSystemAttachmentStreamingFunction,
+  NormalizedAttachment,
   ProcessAttachmentReturnType,
 } from '../types';
-import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 import { WorkerAdapter } from '../workers/worker-adapter';
-import { sleep } from '../common/helpers';
+import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 
 export class AttachmentsStreamingPool<ConnectorState> {
   private adapter: WorkerAdapter<ConnectorState>;
@@ -34,7 +34,8 @@ export class AttachmentsStreamingPool<ConnectorState> {
     this.totalProcessedCount++;
     if (this.totalProcessedCount % this.PROGRESS_REPORT_INTERVAL === 0) {
       console.info(`Processed ${this.totalProcessedCount} attachments so far.`);
-      await sleep(2000);
+      // Sleep for 100ms to avoid blocking the event loop
+      await sleep(100);
     }
   }
 

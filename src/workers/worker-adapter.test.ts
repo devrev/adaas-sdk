@@ -1,13 +1,10 @@
-import { WorkerAdapter } from './worker-adapter';
+import { AttachmentsStreamingPool } from '../attachments-streaming/attachments-streaming-pool';
 import { State } from '../state/state';
 import { createEvent } from '../tests/test-helpers';
-import {
-  EventType,
-  NormalizedAttachment,
-  AdapterState,
-  ExtractorEventType,
-} from '../types';
-import { AttachmentsStreamingPool } from '../attachments-streaming/attachments-streaming-pool';
+import { AdapterState, EventType, ExtractorEventType } from '../types';
+import { WorkerAdapter } from './worker-adapter';
+
+/* eslint-disable @typescript-eslint/no-require-imports */
 
 // Mock dependencies
 jest.mock('../common/control-protocol', () => ({
@@ -145,139 +142,159 @@ describe(WorkerAdapter.name, () => {
     });
 
     it('[edge] should handle invalid batch size by using 1 instead', async () => {
-        const mockStream = jest.fn();
+      const mockStream = jest.fn();
 
-        // Set up adapter state with artifact IDs
-        adapter.state.toDevRev = {
-          attachmentsMetadata: {
-            artifactIds: ['artifact1'],
-            lastProcessed: 0,
-            lastProcessedAttachmentsIdsList: [],
-          },
-        };
-      
-        // Mock getting attachments
-        adapter['uploader'].getAttachmentsFromArtifactId = jest.fn().mockResolvedValue({
+      // Set up adapter state with artifact IDs
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: ['artifact1'],
+          lastProcessed: 0,
+          lastProcessedAttachmentsIdsList: [],
+        },
+      };
+
+      // Mock getting attachments
+      adapter['uploader'].getAttachmentsFromArtifactId = jest
+        .fn()
+        .mockResolvedValue({
           attachments: [
-            { url: 'http://example.com/file1.pdf', id: 'attachment1', file_name: 'file1.pdf', parent_id: 'parent1' },
+            {
+              url: 'http://example.com/file1.pdf',
+              id: 'attachment1',
+              file_name: 'file1.pdf',
+              parent_id: 'parent1',
+            },
           ],
         });
 
-        adapter.initializeRepos = jest.fn();
-        
-        const result = await adapter.streamAttachments({
-          stream: mockStream,
-          batchSize: 0,
-        });
+      adapter.initializeRepos = jest.fn();
 
-        expect(result).toBeUndefined();
+      const result = await adapter.streamAttachments({
+        stream: mockStream,
+        batchSize: 0,
       });
+
+      expect(result).toBeUndefined();
+    });
 
     it('[edge] should cap batch size to 50 when batchSize is greater than 50', async () => {
-        const mockStream = jest.fn();
-        
-        // Set up adapter state with artifact IDs
-        adapter.state.toDevRev = {
-          attachmentsMetadata: {
-            artifactIds: ['artifact1'],
-            lastProcessed: 0,
-            lastProcessedAttachmentsIdsList: [],
-          },
-        };
-      
-        // Mock getting attachments
-        adapter['uploader'].getAttachmentsFromArtifactId = jest.fn().mockResolvedValue({
+      const mockStream = jest.fn();
+
+      // Set up adapter state with artifact IDs
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: ['artifact1'],
+          lastProcessed: 0,
+          lastProcessedAttachmentsIdsList: [],
+        },
+      };
+
+      // Mock getting attachments
+      adapter['uploader'].getAttachmentsFromArtifactId = jest
+        .fn()
+        .mockResolvedValue({
           attachments: [
-            { url: 'http://example.com/file1.pdf', id: 'attachment1', file_name: 'file1.pdf', parent_id: 'parent1' },
+            {
+              url: 'http://example.com/file1.pdf',
+              id: 'attachment1',
+              file_name: 'file1.pdf',
+              parent_id: 'parent1',
+            },
           ],
         });
-      
-        // Mock the required methods
-        adapter.initializeRepos = jest.fn();
-      
-        const result = await adapter.streamAttachments({
-          stream: mockStream,
-          batchSize: 100, // Set batch size greater than 50
-        });
-      
-        expect(result).toBeUndefined();
+
+      // Mock the required methods
+      adapter.initializeRepos = jest.fn();
+
+      const result = await adapter.streamAttachments({
+        stream: mockStream,
+        batchSize: 100, // Set batch size greater than 50
       });
-      
+
+      expect(result).toBeUndefined();
+    });
+
     it('[edge] should handle empty attachments metadata artifact IDs', async () => {
-        const mockStream = jest.fn();
-        
-        // Set up adapter state with no artifact IDs
-        adapter.state.toDevRev = {
-          attachmentsMetadata: {
-            artifactIds: [],
-            lastProcessed: 0,
-          },
-        };
+      const mockStream = jest.fn();
 
-        const result = await adapter.streamAttachments({
-          stream: mockStream,
-        });
+      // Set up adapter state with no artifact IDs
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: [],
+          lastProcessed: 0,
+        },
+      };
 
-        expect(result).toBeUndefined();
+      const result = await adapter.streamAttachments({
+        stream: mockStream,
       });
+
+      expect(result).toBeUndefined();
+    });
 
     it('[edge] should handle errors when getting attachments', async () => {
-        const mockStream = jest.fn();
-        
-        // Set up adapter state with artifact IDs
-        adapter.state.toDevRev = {
-          attachmentsMetadata: {
-            artifactIds: ['artifact1'],
-            lastProcessed: 0,
-            lastProcessedAttachmentsIdsList: [],
-          },
-        };
+      const mockStream = jest.fn();
 
-        // Mock error when getting attachments
-        const mockError = new Error('Failed to get attachments');
-        adapter['uploader'].getAttachmentsFromArtifactId = jest.fn().mockResolvedValue({
+      // Set up adapter state with artifact IDs
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: ['artifact1'],
+          lastProcessed: 0,
+          lastProcessedAttachmentsIdsList: [],
+        },
+      };
+
+      // Mock error when getting attachments
+      const mockError = new Error('Failed to get attachments');
+      adapter['uploader'].getAttachmentsFromArtifactId = jest
+        .fn()
+        .mockResolvedValue({
           error: mockError,
         });
 
-        // Mock methods
-        adapter.initializeRepos = jest.fn();
-        
-        const result = await adapter.streamAttachments({
-          stream: mockStream,
-        });
+      // Mock methods
+      adapter.initializeRepos = jest.fn();
 
-        expect(result).toEqual({
-          error: mockError,
-        });
+      const result = await adapter.streamAttachments({
+        stream: mockStream,
       });
 
-    it('[edge] should handle empty attachments array from artifact', async () => {
-        const mockStream = jest.fn();
-        
-        // Set up adapter state with artifact IDs
-        adapter.state.toDevRev = {
-          attachmentsMetadata: {
-            artifactIds: ['artifact1'],
-            lastProcessed: 0,
-            lastProcessedAttachmentsIdsList: [],
-          },
-        };
+      expect(result).toEqual({
+        error: mockError,
+      });
+    });
 
-        // Mock getting empty attachments
-        adapter['uploader'].getAttachmentsFromArtifactId = jest.fn().mockResolvedValue({
+    it('[edge] should handle empty attachments array from artifact', async () => {
+      const mockStream = jest.fn();
+
+      // Set up adapter state with artifact IDs
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: ['artifact1'],
+          lastProcessed: 0,
+          lastProcessedAttachmentsIdsList: [],
+        },
+      };
+
+      // Mock getting empty attachments
+      adapter['uploader'].getAttachmentsFromArtifactId = jest
+        .fn()
+        .mockResolvedValue({
           attachments: [],
         });
 
-        // Mock methods
-        adapter.initializeRepos = jest.fn();
-        
-        const result = await adapter.streamAttachments({
-          stream: mockStream,
-        });
+      // Mock methods
+      adapter.initializeRepos = jest.fn();
 
-        expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([]);
-        expect(result).toBeUndefined();
+      const result = await adapter.streamAttachments({
+        stream: mockStream,
       });
+
+      expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual(
+        []
+      );
+      expect(result).toBeUndefined();
+    });
 
     it('should use custom processors when provided', async () => {
       const mockStream = jest.fn();
@@ -302,7 +319,7 @@ describe(WorkerAdapter.name, () => {
 
       // Mock methods
       adapter.initializeRepos = jest.fn();
-      
+
       const result = await adapter.streamAttachments({
         stream: mockStream,
         processors: {
@@ -352,7 +369,7 @@ describe(WorkerAdapter.name, () => {
 
       // Mock methods
       adapter.initializeRepos = jest.fn();
-      
+
       const result = await adapter.streamAttachments({
         stream: mockStream,
       });
@@ -396,7 +413,7 @@ describe(WorkerAdapter.name, () => {
 
       // Mock methods
       adapter.initializeRepos = jest.fn();
-      
+
       const result = await adapter.streamAttachments({
         stream: mockStream,
       });
@@ -458,7 +475,7 @@ describe(WorkerAdapter.name, () => {
   });
 
   describe(WorkerAdapter.prototype.emit.name, () => {
-    let counter: {counter: number};
+    let counter: { counter: number };
     let mockPostMessage: jest.Mock;
 
     beforeEach(() => {
@@ -466,7 +483,7 @@ describe(WorkerAdapter.name, () => {
 
       // Import the worker_threads module and spy on parentPort.postMessage
       const workerThreads = require('node:worker_threads');
-      mockPostMessage = jest.fn().mockImplementation((a: any) => {
+      mockPostMessage = jest.fn().mockImplementation(() => {
         counter.counter += 1;
       });
 
@@ -489,7 +506,9 @@ describe(WorkerAdapter.name, () => {
     });
 
     it('should emit only one event when multiple events of same type are sent', async () => {
-      adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
+      adapter['adapterState'].postState = jest
+        .fn()
+        .mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
       await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
@@ -500,12 +519,14 @@ describe(WorkerAdapter.name, () => {
         reports: [],
         processed_files: [],
       });
-      
+
       expect(counter.counter).toBe(1);
     });
 
     it('should emit event when different event type is sent after previous events', async () => {
-      adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
+      adapter['adapterState'].postState = jest
+        .fn()
+        .mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
       await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
@@ -520,12 +541,14 @@ describe(WorkerAdapter.name, () => {
         reports: [],
         processed_files: [],
       });
-      
+
       expect(counter.counter).toBe(1);
     });
-     
+
     it('should correctly emit one event even if postState errors', async () => {
-      adapter['adapterState'].postState = jest.fn().mockRejectedValue(new Error('postState error'));
+      adapter['adapterState'].postState = jest
+        .fn()
+        .mockRejectedValue(new Error('postState error'));
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
       await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
@@ -536,8 +559,12 @@ describe(WorkerAdapter.name, () => {
     });
 
     it('should correctly emit one event even if uploadAllRepos errors', async () => {
-      adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
-      adapter.uploadAllRepos = jest.fn().mockRejectedValue(new Error('uploadAllRepos error'));
+      adapter['adapterState'].postState = jest
+        .fn()
+        .mockResolvedValue(undefined);
+      adapter.uploadAllRepos = jest
+        .fn()
+        .mockRejectedValue(new Error('uploadAllRepos error'));
 
       await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
         reports: [],

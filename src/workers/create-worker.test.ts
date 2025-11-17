@@ -7,7 +7,7 @@ import { createWorker } from './create-worker';
 describe(createWorker.name, () => {
   it('should create a Worker instance when valid parameters are provided', async () => {
     const workerPath = __dirname + '../tests/dummy-worker.ts';
-    
+
     const worker = isMainThread
       ? await createWorker<object>({
           event: createEvent({
@@ -28,6 +28,7 @@ describe(createWorker.name, () => {
 
   it('should throw error when not in main thread', async () => {
     const originalIsMainThread = isMainThread;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (isMainThread as any) = false;
     const workerPath = __dirname + '../tests/dummy-worker.ts';
 
@@ -42,63 +43,64 @@ describe(createWorker.name, () => {
     ).rejects.toThrow('Worker threads can not start more worker threads.');
 
     // Restore original value
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (isMainThread as any) = originalIsMainThread;
   });
 
   it('[edge] should handle worker creation with minimal valid data', async () => {
-      const workerPath = __dirname + '../tests/dummy-worker.ts';
+    const workerPath = __dirname + '../tests/dummy-worker.ts';
 
-      if (isMainThread) {
-        const worker = await createWorker<object>({
-          event: createEvent({
-            eventType: EventType.ExtractionExternalSyncUnitsStart,
-          }),
-          initialState: {},
-          workerPath,
-        });
+    if (isMainThread) {
+      const worker = await createWorker<object>({
+        event: createEvent({
+          eventType: EventType.ExtractionExternalSyncUnitsStart,
+        }),
+        initialState: {},
+        workerPath,
+      });
 
-        expect(worker).toBeInstanceOf(Worker);
-        await worker.terminate();
-      }
-    });
+      expect(worker).toBeInstanceOf(Worker);
+      await worker.terminate();
+    }
+  });
 
   it('[edge] should handle worker creation with complex initial state', async () => {
-      const workerPath = __dirname + '../tests/dummy-worker.ts';
-      const complexState = {
-        nested: {
-          data: [1, 2, 3],
-          config: { enabled: true }
-        }
-      };
+    const workerPath = __dirname + '../tests/dummy-worker.ts';
+    const complexState = {
+      nested: {
+        data: [1, 2, 3],
+        config: { enabled: true },
+      },
+    };
 
-      if (isMainThread) {
-        const worker = await createWorker<typeof complexState>({
-          event: createEvent({
-            eventType: EventType.ExtractionDataStart,
-          }),
-          initialState: complexState,
-          workerPath,
-        });
+    if (isMainThread) {
+      const worker = await createWorker<typeof complexState>({
+        event: createEvent({
+          eventType: EventType.ExtractionDataStart,
+        }),
+        initialState: complexState,
+        workerPath,
+      });
 
-        expect(worker).toBeInstanceOf(Worker);
-        await worker.terminate();
-      }
-    });
+      expect(worker).toBeInstanceOf(Worker);
+      await worker.terminate();
+    }
+  });
 
   it('[edge] should handle different event types', async () => {
-      const workerPath = __dirname + '../tests/dummy-worker.ts';
+    const workerPath = __dirname + '../tests/dummy-worker.ts';
 
-      if (isMainThread) {
-        const worker = await createWorker<object>({
-          event: createEvent({
-            eventType: EventType.ExtractionMetadataStart,
-          }),
-          initialState: {},
-          workerPath,
-        });
+    if (isMainThread) {
+      const worker = await createWorker<object>({
+        event: createEvent({
+          eventType: EventType.ExtractionMetadataStart,
+        }),
+        initialState: {},
+        workerPath,
+      });
 
-        expect(worker).toBeInstanceOf(Worker);
-        await worker.terminate();
-      }
-    });
+      expect(worker).toBeInstanceOf(Worker);
+      await worker.terminate();
+    }
+  });
 });

@@ -1,12 +1,13 @@
-import MockAdapter from 'axios-mock-adapter';
-import { State, createAdapterState } from './state';
-import { EventType } from '../types/extraction';
-import { createEvent } from '../tests/test-helpers';
 import {
-  STATELESS_EVENT_TYPES,
   STATEFUL_EVENT_TYPES,
+  STATELESS_EVENT_TYPES,
 } from '../common/constants';
+import { createEvent } from '../tests/test-helpers';
+import { EventType } from '../types/extraction';
+import { State, createAdapterState } from './state';
 import { extractionSdkState } from './state.interfaces';
+
+/* eslint-disable @typescript-eslint/no-require-imports */
 
 describe(State.name, () => {
   let initSpy: jest.SpyInstance;

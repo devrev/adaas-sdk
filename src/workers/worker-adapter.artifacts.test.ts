@@ -1,7 +1,7 @@
+import { State } from '../state/state';
 import { createEvent, createItems } from '../tests/test-helpers';
-import { WorkerAdapter } from "./worker-adapter";
-import { State } from "../state/state";
-import { EventType } from "../types";
+import { Artifact, EventType } from '../types';
+import { WorkerAdapter } from './worker-adapter';
 
 // 1. Create a mock function for the method you want to override.
 const mockUpload = (itemType: string, objects: object[]) => {
@@ -11,7 +11,7 @@ const mockUpload = (itemType: string, objects: object[]) => {
       id: `artifact-${itemType}-${Math.random().toString(36).substring(2, 15)}`,
       item_type: itemType,
       item_count: objects.length,
-    }
+    },
   };
 };
 
@@ -30,23 +30,26 @@ jest.mock('../uploader/uploader', () => {
   };
 });
 
-function checkArtifactOrder(artifacts: any[], expectedOrder: {itemType: string}[]): boolean {
+function checkArtifactOrder(
+  artifacts: Artifact[],
+  expectedOrder: { itemType: string }[]
+): boolean {
   let outerIndex = 0;
-  for(const artifact of artifacts) {
+  for (const artifact of artifacts) {
     try {
       // Always increase outer index. If items are out of order, the array will overflow and exception will be thrown
-      while(artifact.item_type != expectedOrder[outerIndex].itemType){
+      while (artifact.item_type != expectedOrder[outerIndex].itemType) {
         outerIndex++;
       }
     } catch (e) {
-      console.error("Error finding artifact type in repos:", e);
+      console.error('Error finding artifact type in repos:', e);
       return false;
     }
   }
   return true;
 }
 
-describe("Artifact ordering when artifacts overflow batch sizes in repositories", () => {
+describe('Artifact ordering when artifacts overflow batch sizes in repositories', () => {
   interface TestState {
     attachments: { completed: boolean };
   }
@@ -54,8 +57,8 @@ describe("Artifact ordering when artifacts overflow batch sizes in repositories"
 
   beforeEach(() => {
     // Create a fresh adapter instance for this test to avoid mocking conflicts
-    let mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
-    let mockAdapterState = new State<TestState>({
+    const mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+    const mockAdapterState = new State<TestState>({
       event: mockEvent,
       initialState: { attachments: { completed: false } },
     });
@@ -64,16 +67,13 @@ describe("Artifact ordering when artifacts overflow batch sizes in repositories"
       event: mockEvent,
       adapterState: mockAdapterState,
       options: {
-        batchSize: 50
-      }
+        batchSize: 50,
+      },
     });
   });
 
   it('should maintain artifact ordering when repo ItemTypeA has items below batch size and repo ItemTypeB has items above batch size', async () => {
-    const repos = [
-      { itemType: 'ItemTypeA' },
-      { itemType: 'ItemTypeB' }
-    ];
+    const repos = [{ itemType: 'ItemTypeA' }, { itemType: 'ItemTypeB' }];
 
     // Initialize repos
     testAdapter.initializeRepos(repos);
@@ -95,7 +95,7 @@ describe("Artifact ordering when artifacts overflow batch sizes in repositories"
       { itemType: 'ItemTypeB' },
       { itemType: 'ItemTypeC' },
       { itemType: 'ItemTypeD' },
-    ]
+    ];
 
     // Initialize repos
     testAdapter.initializeRepos(repos);
@@ -114,10 +114,7 @@ describe("Artifact ordering when artifacts overflow batch sizes in repositories"
   });
 
   it('should maintain order with multiple pushes and uploads', async () => {
-    const repos = [
-      { itemType: 'ItemTypeA' },
-      { itemType: 'ItemTypeB' },
-    ]
+    const repos = [{ itemType: 'ItemTypeA' }, { itemType: 'ItemTypeB' }];
 
     // Initialize repos
     testAdapter.initializeRepos(repos);
@@ -142,9 +139,7 @@ describe("Artifact ordering when artifacts overflow batch sizes in repositories"
   });
 
   it('should not count artifacts if 0 items are pushed to the repo', async () => {
-    const repos = [
-      { itemType: 'ItemTypeA' }
-    ];
+    const repos = [{ itemType: 'ItemTypeA' }];
 
     // Initialize repos
     testAdapter.initializeRepos(repos);

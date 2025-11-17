@@ -1,9 +1,9 @@
 import { ErrorRecord } from '../types/common';
 import {
   AirdropEvent,
+  EventContext,
   EventType,
   ExternalSyncUnit,
-  EventContext,
 } from '../types/extraction';
 
 export interface CreateEventInterface {

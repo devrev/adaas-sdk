@@ -1,30 +1,29 @@
-import axios from 'axios';
-import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
+import { emit } from '../common/control-protocol';
+import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
+import { Logger, serializeError } from '../logger/logger';
 import {
   AirdropEvent,
   EventType,
   ExtractorEventType,
 } from '../types/extraction';
-import { emit } from '../common/control-protocol';
-import { getTimeoutErrorEventType, getMemoryUsage } from '../common/helpers';
-import { Logger, serializeError } from '../logger/logger';
 import {
   GetWorkerPathInterface,
-  WorkerEvent,
-  WorkerMessageSubject,
   SpawnFactoryInterface,
   SpawnInterface,
+  WorkerEvent,
+  WorkerMessageSubject,
 } from '../types/workers';
 
-import { createWorker } from './create-worker';
-import { LogLevel } from '../logger/logger.interfaces';
 import {
   DEFAULT_LAMBDA_TIMEOUT,
   HARD_TIMEOUT_MULTIPLIER,
   MEMORY_LOG_INTERVAL,
 } from '../common/constants';
+import { LogLevel } from '../logger/logger.interfaces';
+import { createWorker } from './create-worker';
 
 function getWorkerPath({
   event,
@@ -94,16 +93,8 @@ export async function spawn<ConnectorState>({
   initialDomainMapping,
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
-  const logger = new Logger({ event, options });
-  const script = getWorkerPath({
-    event,
-    connectorWorkerPath: workerPath,
-  });
-
   if (options?.isLocalDevelopment) {
-    logger.warn(
-      'WARN: isLocalDevelopment is deprecated. Please use the -- local flag instead.'
-    );
+    console.log('Snap-in is running in local development mode.');
   }
 
   // read the command line arguments to check if the local flag is passed
@@ -114,6 +105,14 @@ export async function spawn<ConnectorState>({
       isLocalDevelopment: true,
     };
   }
+
+  const originalConsole = console;
+  // eslint-disable-next-line no-global-assign
+  console = new Logger({ event, options });
+  const script = getWorkerPath({
+    event,
+    connectorWorkerPath: workerPath,
+  });
 
   if (script) {
     try {
@@ -131,14 +130,17 @@ export async function spawn<ConnectorState>({
           worker,
           options,
           resolve,
+          originalConsole,
         });
       });
     } catch (error) {
-      logger.error('Worker error while processing task', error);
+      console.error('Worker error while processing task', error);
+      // eslint-disable-next-line no-global-assign
+      console = originalConsole;
       return Promise.reject(error);
     }
   } else {
-    logger.error(
+    console.error(
       'Script was not found for event type: ' + event.payload.event_type + '.'
     );
 
@@ -156,8 +158,11 @@ export async function spawn<ConnectorState>({
         },
       });
     } catch (error) {
-      logger.error('Error while emitting event.', serializeError(error));
+      console.error('Error while emitting event.', serializeError(error));
       return Promise.reject(error);
+    } finally {
+      // eslint-disable-next-line no-global-assign
+      console = originalConsole;
     }
   }
 }
@@ -170,65 +175,84 @@ export class Spawn {
   private softTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
   private hardTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
   private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
-  private logger: Logger;
   private resolve: (value: void | PromiseLike<void>) => void;
-
-  constructor({ event, worker, options, resolve }: SpawnInterface) {
+  private originalConsole: Console;
+  constructor({
+    event,
+    worker,
+    options,
+    resolve,
+    originalConsole,
+  }: SpawnInterface) {
+    this.originalConsole = originalConsole || console;
     this.alreadyEmitted = false;
     this.event = event;
-    this.logger = new Logger({ event, options });
     this.lambdaTimeout = options?.timeout
       ? Math.min(options.timeout, this.defaultLambdaTimeout)
       : this.defaultLambdaTimeout;
     this.resolve = resolve;
 
     // If soft timeout is reached, send a message to the worker to gracefully exit.
-    this.softTimeoutTimer = setTimeout(async () => {
-      this.logger.log(
-        'SOFT TIMEOUT: Sending a message to the worker to gracefully exit.'
-      );
-      if (worker) {
-        worker.postMessage({
-          subject: WorkerMessageSubject.WorkerMessageExit,
-        });
-      } else {
-        console.log('Worker does not exist. Exiting from main thread.');
-        await this.exitFromMainThread();
-      }
-    }, this.lambdaTimeout);
+    this.softTimeoutTimer = setTimeout(
+      () =>
+        void (async () => {
+          console.log(
+            'SOFT TIMEOUT: Sending a message to the worker to gracefully exit.'
+          );
+          if (worker) {
+            worker.postMessage({
+              subject: WorkerMessageSubject.WorkerMessageExit,
+            });
+          } else {
+            console.log('Worker does not exist. Exiting from main thread.');
+            await this.exitFromMainThread();
+          }
+        })(),
+      this.lambdaTimeout
+    );
 
     // If hard timeout is reached, that means the worker did not exit in time. Terminate the worker.
-    this.hardTimeoutTimer = setTimeout(async () => {
-      this.logger.error(
-        'HARD TIMEOUT: Worker did not exit in time. Terminating the worker.'
-      );
-      if (worker) {
-        worker.terminate();
-      } else {
-        console.log('Worker does not exist. Exiting from main thread.');
-        await this.exitFromMainThread();
-      }
-    }, this.lambdaTimeout * HARD_TIMEOUT_MULTIPLIER);
+    this.hardTimeoutTimer = setTimeout(
+      () =>
+        void (async () => {
+          console.error(
+            'HARD TIMEOUT: Worker did not exit in time. Terminating the worker.'
+          );
+          if (worker) {
+            await worker.terminate();
+          } else {
+            console.log('Worker does not exist. Exiting from main thread.');
+            await this.exitFromMainThread();
+          }
+        })(),
+      this.lambdaTimeout * HARD_TIMEOUT_MULTIPLIER
+    );
 
-    // If worker exits with process.exit(code), clear the timeouts and exit from main thread.
-    worker.on(WorkerEvent.WorkerExit, async (code) => {
-      this.logger.info('Worker exited with exit code: ' + code + '.');
-      this.clearTimeouts();
-      await this.exitFromMainThread();
-    });
+    // If worker exits with process.exit(code), clear the timeouts and exit from
+    // main thread.
+    worker.on(
+      WorkerEvent.WorkerExit,
+      (code: number) =>
+        void (async () => {
+          console.info('Worker exited with exit code: ' + code + '.');
+          this.clearTimeouts();
+          await this.exitFromMainThread();
+        })()
+    );
 
-    worker.on(WorkerEvent.WorkerMessage, async (message) => {
+    worker.on(WorkerEvent.WorkerMessage, (message) => {
       // Since it is not possible to log from the worker thread, we need to log
       // from the main thread.
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
-        const args = message.payload?.args;
+        const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
-        this.logger.logFn(args, level);
+        // Args are already sanitized in the worker thread, skip double sanitization
+        (console as Logger).logFn(stringifiedArgs, level);
       }
 
       // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.
       if (message?.subject === WorkerMessageSubject.WorkerMessageEmitted) {
-        this.logger.info('Worker has emitted message to ADaaS.');
+        console.info('Worker has emitted message to ADaaS.');
         this.alreadyEmitted = true;
       }
     });
@@ -238,11 +262,11 @@ export class Spawn {
       try {
         const memoryInfo = getMemoryUsage();
         if (memoryInfo) {
-          this.logger.info(memoryInfo.formattedMessage);
+          console.info(memoryInfo.formattedMessage);
         }
       } catch (error) {
         // If memory monitoring fails, log the warning and clear the interval to prevent further issues
-        this.logger.warn(
+        console.warn(
           'Memory monitoring failed, stopping logging of memory usage interval',
           error
         );
@@ -269,6 +293,9 @@ export class Spawn {
   private async exitFromMainThread(): Promise<void> {
     this.clearTimeouts();
 
+    // eslint-disable-next-line no-global-assign
+    console = this.originalConsole;
+
     if (this.alreadyEmitted) {
       this.resolve();
       return;
@@ -285,7 +312,8 @@ export class Spawn {
         event: this.event,
         data: {
           error: {
-            message: 'Worker has not emitted anything. Exited.',
+            message:
+              'Worker exited the process without emitting an event. Check other logs for more information.',
           },
         },
       });

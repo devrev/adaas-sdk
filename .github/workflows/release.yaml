@@ -7,12 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       release-type:
-        description: 'Release type'
+        description: "Release type"
         type: choice
         required: true
         options: [patch, minor, prepatch, preminor, prerelease]
       dry-run:
-        description: 'Dry Run - skip commit and publish'
+        description: "Dry Run - skip commit and publish"
         type: boolean
         default: false
 
@@ -59,8 +59,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           registry-url: https://registry.npmjs.org/
-          node-version: '18.x'
-          scope: '@devrev'
+          node-version: "18.x"
+          scope: "@devrev"
           token: ${{ secrets.NPMJS_NPM_TOKEN }}
 
       - name: Git configuration
@@ -68,25 +68,45 @@ jobs:
           git config --global user.email "svc-devrev-sdk@devrev.ai"
           git config --global user.name "svc-devrev-sdk"
 
-      # Bump package version
-      # Use tag latest
-      - name: Bump release version
-        if: startsWith(github.event.inputs.release-type, 'pre') != true
+      # Get latest published version and show target release
+      - name: Get latest published version and show target release
         run: |
-          echo "NEW_VERSION=$(npm --no-git-tag-version version $RELEASE_TYPE)" >> $GITHUB_ENV
-          echo "RELEASE_TAG=latest" >> $GITHUB_ENV
-        env:
-          RELEASE_TYPE: ${{ github.event.inputs.release-type }}
+          # Get the latest version including prereleases
+          LATEST_VERSION=$(npm view @devrev/ts-adaas versions --json 2>/dev/null | jq -r '.[-1]' || echo "0.0.0")
+          echo "Latest published version: $LATEST_VERSION"
+          echo "LATEST_PUBLISHED_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
 
-      # Bump package pre-release version
-      # Use tag beta for pre-release versions
-      - name: Bump pre-release version
-        if: startsWith(github.event.inputs.release-type, 'pre')
+          # Get current package.json version
+          CURRENT_VERSION=$(cat package.json | jq -r '.version')
+          echo "Current package.json version: $CURRENT_VERSION"
+
+          # Only update package.json if versions don't match
+          if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+            echo "Syncing package.json version to latest published version"
+            npm --no-git-tag-version version $LATEST_VERSION
+          else
+            echo "Package.json version already matches latest published version"
+          fi
+
+
+          # Calculate and apply the new version
+          if [ "${{ github.event.inputs.release-type }}" = "prerelease" ]; then
+            NEW_VERSION=$(npm --no-git-tag-version --preid=beta version prerelease)
+          else
+            NEW_VERSION=$(npm --no-git-tag-version version ${{ github.event.inputs.release-type }})
+          fi
+
+          echo "Target release version: $NEW_VERSION"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      # Set release tag based on release type
+      - name: Set release tag
         run: |
-          echo "NEW_VERSION=$(npm --no-git-tag-version --preid=beta version $RELEASE_TYPE)" >> $GITHUB_ENV
-          echo "RELEASE_TAG=beta" >> $GITHUB_ENV
-        env:
-          RELEASE_TYPE: ${{ github.event.inputs.release-type }}
+          if [[ "${{ github.event.inputs.release-type }}" == pre* ]]; then
+            echo "RELEASE_TAG=beta" >> $GITHUB_ENV
+          else
+            echo "RELEASE_TAG=latest" >> $GITHUB_ENV
+          fi
 
       # Run tests
       - name: Run tests
@@ -96,9 +116,9 @@ jobs:
           npm run test
 
       # Commit changes
-      - name: Commit package.json changes and create tag
+      - name: Commit package.json and package-lock.json changes and create tag
         run: |
-          git add "package.json"
+          git add "package.json" "package-lock.json"
           git commit -m "chore: release ${{ env.NEW_VERSION }}"
           git tag ${{ env.NEW_VERSION }}
 
@@ -112,13 +132,13 @@ jobs:
 
       # Documentation on config options https://github.com/softprops/action-gh-release
       - name: Update GitHub release documentation
-        if: ${{ github.event.inputs.dry-run == 'false' }}
+        if: ${{ github.event.inputs.dry-run == 'false' && !startsWith(github.event.inputs.release-type, 'pre') }}
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.NEW_VERSION }}
           name: ${{ env.NEW_VERSION }}
           generate_release_notes: true
-          prerelease: ${{ startsWith(github.event.inputs.release-type, 'pre') }}
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GH_SVC_TOKEN }}
 

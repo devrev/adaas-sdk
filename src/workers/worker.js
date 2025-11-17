@@ -1,6 +1,9 @@
-//eslint-disable-next-line @typescript-eslint/no-var-requires
 const { workerData } = require('worker_threads');
 
-//eslint-disable-next-line @typescript-eslint/no-var-requires
 require('ts-node').register();
+
+const { Logger } = require('../logger/logger');
+// eslint-disable-next-line no-global-assign
+console = new Logger({ event: workerData.event, options: workerData.options });
+
 require(workerData.workerPath);

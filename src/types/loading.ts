@@ -1,6 +1,6 @@
-import { AirdropEvent } from './extraction';
 import { Mappers } from '../mappers/mappers';
 import { ErrorRecord } from './common';
+import { AirdropEvent } from './extraction';
 
 export interface StatsFileObject {
   id: string;

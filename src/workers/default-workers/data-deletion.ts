@@ -1,4 +1,4 @@
-import { processTask, ExtractorEventType } from '../../index';
+import { ExtractorEventType, processTask } from '../../index';
 
 processTask({
   task: async ({ adapter }) => {

@@ -1,22 +1,22 @@
-import fs, { promises as fsPromises } from 'fs';
-import { axiosClient } from '../http/axios-client-internal';
-import zlib from 'zlib';
-import { jsonl } from 'js-jsonl';
 import FormData from 'form-data';
+import fs, { promises as fsPromises } from 'fs';
+import { jsonl } from 'js-jsonl';
+import zlib from 'zlib';
+import { axiosClient } from '../http/axios-client-internal';
 
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
 import { truncateFilename } from '../common/helpers';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { AirdropEvent } from '../types/extraction';
 
+import { AxiosResponse } from 'axios';
+import { serializeError } from '../logger/logger';
 import {
   Artifact,
+  ArtifactToUpload,
   UploadResponse,
   UploaderFactoryInterface,
-  ArtifactToUpload,
 } from './uploader.interfaces';
-import { serializeError } from '../logger/logger';
-import { AxiosResponse } from 'axios';
 
 export class Uploader {
   private event: AirdropEvent;
@@ -155,7 +155,7 @@ export class Uploader {
 
   async streamArtifact(
     artifact: ArtifactToUpload,
-    fileStream: any
+    fileStream: AxiosResponse
   ): Promise<AxiosResponse | void> {
     const formData = new FormData();
     for (const field in artifact.form_data) {
@@ -223,7 +223,7 @@ export class Uploader {
    * Destroys a stream to prevent resource leaks.
    * @param {any} fileStream - The axios response stream to destroy
    */
-  private destroyStream(fileStream: any): void {
+  private destroyStream(fileStream: AxiosResponse): void {
     try {
       if (fileStream && fileStream.data) {
         // For axios response streams, the data property contains the actual stream
@@ -390,7 +390,9 @@ export class Uploader {
       }
 
       const timestamp = new Date().getTime();
-      const filePath = `extracted_files/extractor_${itemType}_${timestamp}.${itemType === 'external_domain_metadata' ? 'json' : 'jsonl'}`;
+      const filePath = `extracted_files/extractor_${itemType}_${timestamp}.${
+        itemType === 'external_domain_metadata' ? 'json' : 'jsonl'
+      }`;
       const fileHandle = await fsPromises.open(filePath, 'w');
       let objArray = [];
       if (!Array.isArray(fetchedObjects)) {
