@@ -540,12 +540,12 @@ export class WorkerAdapter<ConnectorState> {
       });
 
       if (id) {
-        if (modifiedDate) {
-          try {
-            await this._mappers.update({
-              id: syncMapperRecord.sync_mapper_record.id,
-              sync_unit: this.event.payload.event_context.sync_unit,
-              status: SyncMapperRecordStatus.OPERATIONAL,
+        try {
+          const syncMapperRecordUpdateResponse = await this._mappers.update({
+            id: syncMapperRecord.sync_mapper_record.id,
+            sync_unit: this.event.payload.event_context.sync_unit,
+            status: SyncMapperRecordStatus.OPERATIONAL,
+            ...(modifiedDate && {
               external_versions: {
                 add: [
                   {
@@ -554,25 +554,30 @@ export class WorkerAdapter<ConnectorState> {
                   },
                 ],
               },
-              external_ids: {
-                add: [id],
-              },
-              targets: {
-                add: [devrevId],
-              },
-            });
-          } catch (error) {
-            console.warn(
-              'Failed to update sync mapper record.',
-              serializeError(error)
-            );
-            return {
-              error: {
-                message:
-                  'Failed to update sync mapper record' + serializeError(error),
-              },
-            };
-          }
+            }),
+            external_ids: {
+              add: [id],
+            },
+            targets: {
+              add: [devrevId],
+            },
+          });
+
+          console.log(
+            'Successfully updated sync mapper record.',
+            syncMapperRecordUpdateResponse.data
+          );
+        } catch (error) {
+          console.warn(
+            'Failed to update sync mapper record.',
+            serializeError(error)
+          );
+          return {
+            error: {
+              message:
+                'Failed to update sync mapper record' + serializeError(error),
+            },
+          };
         }
 
         return {
@@ -606,21 +611,37 @@ export class WorkerAdapter<ConnectorState> {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 404) {
           // Create item in external system if mapper record not found
-          const { id, delay, error } = await itemTypeToLoad.create({
-            item,
-            mappers: this._mappers,
-            event: this.event,
-          });
+          const { id, modifiedDate, delay, error } =
+            await itemTypeToLoad.create({
+              item,
+              mappers: this._mappers,
+              event: this.event,
+            });
 
           if (id) {
             // Create mapper
             try {
-              await this._mappers.create({
-                sync_unit: this.event.payload.event_context.sync_unit,
-                status: SyncMapperRecordStatus.OPERATIONAL,
-                external_ids: [id],
-                targets: [devrevId],
-              });
+              const syncMapperRecordCreateResponse = await this._mappers.create(
+                {
+                  sync_unit: this.event.payload.event_context.sync_unit,
+                  status: SyncMapperRecordStatus.OPERATIONAL,
+                  external_ids: [id],
+                  targets: [devrevId],
+                  ...(modifiedDate && {
+                    external_versions: [
+                      {
+                        modified_date: modifiedDate,
+                        recipe_version: 0,
+                      },
+                    ],
+                  }),
+                }
+              );
+
+              console.log(
+                'Successfully created sync mapper record.',
+                syncMapperRecordCreateResponse.data
+              );
 
               return {
                 report: {
