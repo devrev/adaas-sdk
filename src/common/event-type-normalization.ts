@@ -11,40 +11,46 @@ export function normalizeIncomingEventType(eventTypeString: string): EventType {
   // Create a reverse mapping from OLD string values to NEW enum member names
   const eventTypeMap: Record<string, EventType> = {
     // Old extraction event types from platform -> New enum members
-    EXTRACTION_EXTERNAL_SYNC_UNITS_START:
+    [EventType.ExtractionExternalSyncUnitsStart]:
       EventType.StartExtractingExternalSyncUnits,
-    EXTRACTION_METADATA_START: EventType.StartExtractingMetadata,
-    EXTRACTION_DATA_START: EventType.StartExtractingData,
-    EXTRACTION_DATA_CONTINUE: EventType.ContinueExtractingData,
-    EXTRACTION_DATA_DELETE: EventType.StartDeletingExtractorState,
-    EXTRACTION_ATTACHMENTS_START: EventType.StartExtractingAttachments,
-    EXTRACTION_ATTACHMENTS_CONTINUE: EventType.ContinueExtractingAttachments,
-    EXTRACTION_ATTACHMENTS_DELETE:
+    [EventType.ExtractionMetadataStart]: EventType.StartExtractingMetadata,
+    [EventType.ExtractionDataStart]: EventType.StartExtractingData,
+    [EventType.ExtractionDataContinue]: EventType.ContinueExtractingData,
+    [EventType.ExtractionDataDelete]: EventType.StartDeletingExtractorState,
+    [EventType.ExtractionAttachmentsStart]:
+      EventType.StartExtractingAttachments,
+    [EventType.ExtractionAttachmentsContinue]:
+      EventType.ContinueExtractingAttachments,
+    [EventType.ExtractionAttachmentsDelete]:
       EventType.StartDeletingExtractorAttachmentsState,
 
     // New extraction event types (already correct, map to new enum members)
-    START_EXTRACTING_EXTERNAL_SYNC_UNITS:
+    [EventType.StartExtractingExternalSyncUnits]:
       EventType.StartExtractingExternalSyncUnits,
-    START_EXTRACTING_METADATA: EventType.StartExtractingMetadata,
-    START_EXTRACTING_DATA: EventType.StartExtractingData,
-    CONTINUE_EXTRACTING_DATA: EventType.ContinueExtractingData,
-    START_DELETING_EXTRACTOR_STATE: EventType.StartDeletingExtractorState,
-    START_EXTRACTING_ATTACHMENTS: EventType.StartExtractingAttachments,
-    CONTINUE_EXTRACTING_ATTACHMENTS: EventType.ContinueExtractingAttachments,
-    START_DELETING_EXTRACTOR_ATTACHMENTS_STATE:
+    [EventType.StartExtractingMetadata]: EventType.StartExtractingMetadata,
+    [EventType.StartExtractingData]: EventType.StartExtractingData,
+    [EventType.ContinueExtractingData]: EventType.ContinueExtractingData,
+    [EventType.StartDeletingExtractorState]:
+      EventType.StartDeletingExtractorState,
+    [EventType.StartExtractingAttachments]:
+      EventType.StartExtractingAttachments,
+    [EventType.ContinueExtractingAttachments]:
+      EventType.ContinueExtractingAttachments,
+    [EventType.StartDeletingExtractorAttachmentsState]:
       EventType.StartDeletingExtractorAttachmentsState,
 
     // Loading events
-    START_LOADING_DATA: EventType.StartLoadingData,
-    CONTINUE_LOADING_DATA: EventType.ContinueLoadingData,
-    START_LOADING_ATTACHMENTS: EventType.StartLoadingAttachments,
-    CONTINUE_LOADING_ATTACHMENTS: EventType.ContinueLoadingAttachments,
-    START_DELETING_LOADER_STATE: EventType.StartDeletingLoaderState,
-    START_DELETING_LOADER_ATTACHMENT_STATE:
+    [EventType.StartLoadingData]: EventType.StartLoadingData,
+    [EventType.ContinueLoadingData]: EventType.ContinueLoadingData,
+    [EventType.StartLoadingAttachments]: EventType.StartLoadingAttachments,
+    [EventType.ContinueLoadingAttachments]:
+      EventType.ContinueLoadingAttachments,
+    [EventType.StartDeletingLoaderState]: EventType.StartDeletingLoaderState,
+    [EventType.StartDeletingLoaderAttachmentState]:
       EventType.StartDeletingLoaderAttachmentState,
 
     // Unknown
-    UNKNOWN_EVENT_TYPE: EventType.UnknownEventType,
+    [EventType.UnknownEventType]: EventType.UnknownEventType,
   };
 
   const normalized = eventTypeMap[eventTypeString];
@@ -71,28 +77,37 @@ export function normalizeExtractorEventType(
 
   const mapping: Record<string, ExtractorEventType> = {
     // Old string values -> New enum members
-    EXTRACTION_EXTERNAL_SYNC_UNITS_DONE:
+    [ExtractorEventType.ExtractionExternalSyncUnitsDone]:
       ExtractorEventType.ExternalSyncUnitExtractionDone,
-    EXTRACTION_EXTERNAL_SYNC_UNITS_ERROR:
+    [ExtractorEventType.ExtractionExternalSyncUnitsError]:
       ExtractorEventType.ExternalSyncUnitExtractionError,
-    EXTRACTION_METADATA_DONE: ExtractorEventType.MetadataExtractionDone,
-    EXTRACTION_METADATA_ERROR: ExtractorEventType.MetadataExtractionError,
-    EXTRACTION_DATA_PROGRESS: ExtractorEventType.DataExtractionProgress,
-    EXTRACTION_DATA_DELAY: ExtractorEventType.DataExtractionDelayed,
-    EXTRACTION_DATA_DONE: ExtractorEventType.DataExtractionDone,
-    EXTRACTION_DATA_ERROR: ExtractorEventType.DataExtractionError,
-    EXTRACTION_DATA_DELETE_DONE: ExtractorEventType.ExtractorStateDeletionDone,
-    EXTRACTION_DATA_DELETE_ERROR:
+    [ExtractorEventType.ExtractionMetadataDone]:
+      ExtractorEventType.MetadataExtractionDone,
+    [ExtractorEventType.ExtractionMetadataError]:
+      ExtractorEventType.MetadataExtractionError,
+    [ExtractorEventType.ExtractionDataProgress]:
+      ExtractorEventType.DataExtractionProgress,
+    [ExtractorEventType.ExtractionDataDelay]:
+      ExtractorEventType.DataExtractionDelayed,
+    [ExtractorEventType.ExtractionDataDone]:
+      ExtractorEventType.DataExtractionDone,
+    [ExtractorEventType.ExtractionDataError]:
+      ExtractorEventType.DataExtractionError,
+    [ExtractorEventType.ExtractionDataDeleteDone]:
+      ExtractorEventType.ExtractorStateDeletionDone,
+    [ExtractorEventType.ExtractionDataDeleteError]:
       ExtractorEventType.ExtractorStateDeletionError,
-    EXTRACTION_ATTACHMENTS_PROGRESS:
+    [ExtractorEventType.ExtractionAttachmentsProgress]:
       ExtractorEventType.AttachmentExtractionProgress,
-    EXTRACTION_ATTACHMENTS_DELAY:
+    [ExtractorEventType.ExtractionAttachmentsDelay]:
       ExtractorEventType.AttachmentExtractionDelayed,
-    EXTRACTION_ATTACHMENTS_DONE: ExtractorEventType.AttachmentExtractionDone,
-    EXTRACTION_ATTACHMENTS_ERROR: ExtractorEventType.AttachmentExtractionError,
-    EXTRACTION_ATTACHMENTS_DELETE_DONE:
+    [ExtractorEventType.ExtractionAttachmentsDone]:
+      ExtractorEventType.AttachmentExtractionDone,
+    [ExtractorEventType.ExtractionAttachmentsError]:
+      ExtractorEventType.AttachmentExtractionError,
+    [ExtractorEventType.ExtractionAttachmentsDeleteDone]:
       ExtractorEventType.ExtractorAttachmentsStateDeletionDone,
-    EXTRACTION_ATTACHMENTS_DELETE_ERROR:
+    [ExtractorEventType.ExtractionAttachmentsDeleteError]:
       ExtractorEventType.ExtractorAttachmentsStateDeletionError,
   };
 
@@ -112,11 +127,15 @@ export function normalizeLoaderEventType(
 
   const mapping: Record<string, LoaderEventType> = {
     // Old string values -> New enum members
-    DATA_LOADING_DELAYED: LoaderEventType.DataLoadingDelayed,
-    ATTACHMENT_LOADING_PROGRESS: LoaderEventType.AttachmentsLoadingProgress,
-    ATTACHMENT_LOADING_DELAYED: LoaderEventType.AttachmentsLoadingDelayed,
-    ATTACHMENT_LOADING_DONE: LoaderEventType.AttachmentsLoadingDone,
-    ATTACHMENT_LOADING_ERROR: LoaderEventType.AttachmentsLoadingError,
+    [LoaderEventType.DataLoadingDelay]: LoaderEventType.DataLoadingDelayed,
+    [LoaderEventType.AttachmentLoadingProgress]:
+      LoaderEventType.AttachmentsLoadingProgress,
+    [LoaderEventType.AttachmentLoadingDelayed]:
+      LoaderEventType.AttachmentsLoadingDelayed,
+    [LoaderEventType.AttachmentLoadingDone]:
+      LoaderEventType.AttachmentsLoadingDone,
+    [LoaderEventType.AttachmentLoadingError]:
+      LoaderEventType.AttachmentsLoadingError,
   };
 
   // If there's a mapping, use it; otherwise return original (already new)
