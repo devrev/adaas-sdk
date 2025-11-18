@@ -3,7 +3,7 @@ import MockAdapter from 'axios-mock-adapter';
 import { axiosClient } from '../../http/axios-client-internal';
 import { EventType } from '../../types/extraction';
 import { createEvent } from '../test-helpers';
-import { run } from './extraction';
+import run from './extraction';
 
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
