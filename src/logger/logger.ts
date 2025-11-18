@@ -8,6 +8,7 @@ import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 
 import { INSPECT_OPTIONS, MAX_LOG_STRING_LENGTH } from './logger.constants';
+import { ensureSdkLogContext, getSdkLogContextValue } from './logger.context';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
@@ -16,10 +17,6 @@ import {
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
-import {
-  ensureSdkLogContext,
-  getSdkLogContextValue,
-} from './logger.context';
 
 /**
  * Custom logger that extends Node.js Console with context-aware logging.
@@ -160,7 +157,6 @@ export class Logger extends Console {
   private getSdkLogFlag(): boolean {
     return getSdkLogContextValue(this.tags.sdk_log);
   }
-
 }
 /**
  * Converts a state object into a printable format where arrays are summarized.
