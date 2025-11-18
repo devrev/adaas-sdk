@@ -16,7 +16,10 @@ import {
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
-import { getSdkLogContextValue } from './logger.context';
+import {
+  ensureSdkLogContext,
+  getSdkLogContextValue,
+} from './logger.context';
 
 /**
  * Custom logger that extends Node.js Console with context-aware logging.
@@ -29,6 +32,7 @@ export class Logger extends Console {
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
+    ensureSdkLogContext();
     this.originalConsole = console;
     this.options = options;
     this.tags = {
@@ -104,11 +108,16 @@ export class Logger extends Console {
    * @param args - Values to log (will be stringified and truncated if needed)
    * @param level - Log level (info, warn, error)
    */
-  private stringifyAndLog(args: unknown[], level: LogLevel): void {
+  private stringifyAndLog(
+    args: unknown[],
+    level: LogLevel,
+    sdkOverride?: boolean
+  ): void {
     let stringifiedArgs = args.map((arg) => this.valueToString(arg)).join(' ');
     stringifiedArgs = this.truncateMessage(stringifiedArgs);
 
-    const sdkLogFlag = this.getSdkLogFlag();
+    const sdkLogFlag =
+      typeof sdkOverride === 'boolean' ? sdkOverride : this.getSdkLogFlag();
 
     if (isMainThread) {
       this.logFn(stringifiedArgs, level, sdkLogFlag);
@@ -134,6 +143,18 @@ export class Logger extends Console {
 
   override error(...args: unknown[]): void {
     this.stringifyAndLog(args, LogLevel.ERROR);
+  }
+
+  sdkInfo(...args: unknown[]): void {
+    this.stringifyAndLog(args, LogLevel.INFO, true);
+  }
+
+  sdkWarn(...args: unknown[]): void {
+    this.stringifyAndLog(args, LogLevel.WARN, true);
+  }
+
+  sdkError(...args: unknown[]): void {
+    this.stringifyAndLog(args, LogLevel.ERROR, true);
   }
 
   private getSdkLogFlag(): boolean {

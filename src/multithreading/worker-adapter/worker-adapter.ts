@@ -12,7 +12,7 @@ import {
   getFilesToLoad,
 } from './worker-adapter.helpers';
 import { serializeError } from '../../logger/logger';
-import { runWithSdkLogContext } from '../logger/logger.context';
+import type { Logger } from '../logger/logger';
 import { Mappers } from '../../mappers/mappers';
 import { SyncMapperRecordStatus } from '../../mappers/mappers.interface';
 import { Repo } from '../../repo/repo';
@@ -215,10 +215,8 @@ export class WorkerAdapter<ConnectorState> {
 
     // We want to upload all the repos before emitting the event, except for the external sync units done event
     if (newEventType !== ExtractorEventType.ExternalSyncUnitExtractionDone) {
-      runWithSdkLogContext(() =>
-        console.log(
-          `Uploading all repos before emitting event with event type: ${newEventType}.`
-        )
+      (console as Logger).sdkInfo(
+        `Uploading all repos before emitting event with event type: ${newEventType}.`
       );
 
       try {
@@ -243,10 +241,8 @@ export class WorkerAdapter<ConnectorState> {
 
     // We want to save the state every time we emit an event, except for the start and delete events
     if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
-      runWithSdkLogContext(() =>
-        console.log(
-          `Saving state before emitting event with event type: ${newEventType}.`
-        )
+      (console as Logger).sdkInfo(
+        `Saving state before emitting event with event type: ${newEventType}.`
       );
 
       try {
