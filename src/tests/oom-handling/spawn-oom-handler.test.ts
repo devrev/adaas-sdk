@@ -1,10 +1,10 @@
 import { EventEmitter } from 'node:events';
 
 import { emit } from '../../common/control-protocol';
-import { Spawn } from '../../workers/spawn';
-import { WorkerEvent } from '../../types/workers';
-import { createEvent } from '../test-helpers';
 import { EventType } from '../../types/extraction';
+import { WorkerEvent } from '../../types/workers';
+import { Spawn } from '../../workers/spawn';
+import { createEvent } from '../test-helpers';
 
 jest.mock('../../common/control-protocol', () => ({
   emit: jest.fn().mockResolvedValue(undefined),
@@ -49,12 +49,17 @@ describe('Spawn OOM handling', () => {
   it('emits a single OOM error when worker crashes with heap message', async () => {
     const { worker, spawnInstance, resolve } = createSpawnInstance();
 
-    worker.emit(WorkerEvent.WorkerError, new Error('JavaScript heap out of memory'));
+    worker.emit(
+      WorkerEvent.WorkerError,
+      new Error('JavaScript heap out of memory')
+    );
     await flushMicrotasks();
 
     expect(emit).toHaveBeenCalledTimes(1);
     const payload = (emit as jest.Mock).mock.calls[0][0];
-    expect(payload.data.error.message).toContain('Worker exceeded memory limit');
+    expect(payload.data.error.message).toContain(
+      'Worker exceeded memory limit'
+    );
     expect(resolve).toHaveBeenCalled();
 
     (spawnInstance as unknown as { clearTimeouts: () => void }).clearTimeouts();
@@ -76,7 +81,8 @@ describe('Spawn OOM handling', () => {
   it('does not emit twice when an OOM occurs after an event was already sent', async () => {
     const { worker, spawnInstance } = createSpawnInstance();
 
-    (spawnInstance as unknown as { alreadyEmitted: boolean }).alreadyEmitted = true;
+    (spawnInstance as unknown as { alreadyEmitted: boolean }).alreadyEmitted =
+      true;
     worker.emit(WorkerEvent.WorkerError, new Error('out of memory'));
     await flushMicrotasks();
 
@@ -129,4 +135,3 @@ describe('Spawn OOM handling', () => {
     (spawnInstance as unknown as { clearTimeouts: () => void }).clearTimeouts();
   });
 });
-
