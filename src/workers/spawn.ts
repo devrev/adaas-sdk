@@ -285,8 +285,6 @@ export class Spawn {
       WorkerEvent.WorkerError,
       (error: Error) =>
         void (async () => {
-          console.error('Worker error occurred:', error);
-
           // Check if this is an OOM-related error
           const errorMessage = error.message?.toLowerCase() || '';
           const isOOMError =
@@ -295,10 +293,8 @@ export class Spawn {
             errorMessage.includes('heap limit');
 
           if (isOOMError) {
-            console.error('Detected OOM error in worker');
-            await this.handleOOMError();
+            await this.exitFromMainThread({message: 'Worker exceeded memory limit and crashed. The process ran out of memory (OOM). Consider optimizing memory usage or processing data in smaller batches.'});
           } else {
-            // For non-OOM errors, use the standard exit handler
             await this.exitFromMainThread();
           }
         })()
@@ -317,41 +313,7 @@ export class Spawn {
     }
   }
 
-  private async handleOOMError(): Promise<void> {
-    this.clearTimeouts();
-
-    // Check if an error has already been emitted
-    if (this.alreadyEmitted) {
-      return;
-    }
-    this.alreadyEmitted = true;
-
-    const { eventType } = getTimeoutErrorEventType(
-      this.event.payload.event_type
-    );
-
-    try {
-      await emit({
-        eventType,
-        event: this.event,
-        data: {
-          error: {
-            message:
-              'Worker exceeded memory limit and crashed. The process ran out of memory (OOM). Consider optimizing memory usage or processing data in smaller batches.',
-          },
-        },
-      });
-
-      this.resolve();
-    } catch (error) {
-      console.error('Error while emitting OOM event.', serializeError(error));
-    } finally {
-      // eslint-disable-next-line no-global-assign
-      console = this.originalConsole;
-    }
-  }
-
-  private async exitFromMainThread(): Promise<void> {
+  private async exitFromMainThread(error: { message?: string } | null = null): Promise<void> {
     this.clearTimeouts();
 
     // eslint-disable-next-line no-global-assign
@@ -373,8 +335,7 @@ export class Spawn {
         event: this.event,
         data: {
           error: {
-            message:
-              'Worker exited the process without emitting an event. Check other logs for more information.',
+            message: error?.message || 'Worker exited the process without emitting an event. Check other logs for more information.',
           },
         },
       });
