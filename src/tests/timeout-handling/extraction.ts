@@ -8,7 +8,6 @@ interface ExtractorState {}
 const run = async (
   events: AirdropEvent[],
   workerPath: string,
-  customOptions?: Partial<WorkerAdapterOptions>
 ) => {
   for (const event of events) {
     await spawn<ExtractorState>({
@@ -20,11 +19,9 @@ const run = async (
         batchSize: 1000,
         timeout: 5 * 1000, // 5 seconds
         isLocalDevelopment: true,
-        ...customOptions,
       },
     });
   }
 };
 
 export default run;
-export { run };
