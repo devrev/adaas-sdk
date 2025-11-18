@@ -590,7 +590,8 @@ describe('Backwards Compatibility', () => {
 
     // Verify that the type alias is the same as the current type alias
     describe('should verify type aliases are the same as the current type aliases', () => {
-      const normalizeTypeText = (text: string): string => text.replace(/\s/g, '');
+      const normalizeTypeText = (text: string): string =>
+        text.replace(/\s/g, '');
       const getUnionMembers = (text: string): string[] =>
         normalizeTypeText(text)
           .split('|')

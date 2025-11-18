@@ -1,20 +1,17 @@
 import { AxiosError } from 'axios';
 import path from 'node:path';
-import { Worker } from 'node:worker_threads';
 import { inspect } from 'node:util';
+import { Worker } from 'node:worker_threads';
 import { LIBRARY_VERSION } from '../common/constants';
 import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
-import {
-  WorkerAdapterOptions,
-  WorkerMessageSubject,
-} from '../types/workers';
+import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 import { getPrintableState, Logger, serializeAxiosError } from './logger';
-import { LogLevel } from './logger.interfaces';
 import {
   INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
   MAX_LOG_STRING_LENGTH,
 } from './logger.constants';
+import { LogLevel } from './logger.interfaces';
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
@@ -164,10 +161,7 @@ describe(Logger.name, () => {
   });
 
   async function runWorkerLog(mode: 'user' | 'sdk') {
-    const workerScriptPath = path.join(
-      __dirname,
-      'logger.worker-fixture.js'
-    );
+    const workerScriptPath = path.join(__dirname, 'logger.worker-fixture.js');
 
     const worker = new Worker(workerScriptPath, {
       workerData: {
@@ -200,14 +194,16 @@ describe(Logger.name, () => {
           };
           if (typedMessage?.subject === WorkerMessageSubject.WorkerMessageLog) {
             cleanup();
-            resolve(typedMessage as {
-              subject: WorkerMessageSubject;
-              payload: {
-                stringifiedArgs: string;
-                level: LogLevel;
-                sdk_log: boolean;
-              };
-            });
+            resolve(
+              typedMessage as {
+                subject: WorkerMessageSubject;
+                payload: {
+                  stringifiedArgs: string;
+                  level: LogLevel;
+                  sdk_log: boolean;
+                };
+              }
+            );
           }
         }
 
