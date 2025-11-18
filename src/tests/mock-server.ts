@@ -9,7 +9,33 @@ export class MockServer {
   private requests: Array<{ method: string; url: string; body?: any }> = [];
 
   constructor(port?: number) {
-    this.port = port || 3001; // Default to standard test port
+    this.port = typeof port === 'number' ? port : 3001;
+  }
+
+  async waitForRequests(count: number, timeoutMs = 2000): Promise<void> {
+    const start = Date.now();
+
+    return new Promise((resolve, reject) => {
+      const poll = () => {
+        if (this.requests.length >= count) {
+          resolve();
+          return;
+        }
+
+        if (Date.now() - start >= timeoutMs) {
+          reject(
+            new Error(
+              `Timed out waiting for ${count} request(s). Only received ${this.requests.length}.`
+            )
+          );
+          return;
+        }
+
+        setTimeout(poll, 50);
+      };
+
+      poll();
+    });
   }
 
   private getDefaultWorkerState() {
@@ -256,7 +282,14 @@ export class MockServer {
         this.handleRequest(req, res);
       });
 
-      this.server.listen(this.port, () => {
+      this.server.listen(this.port, '127.0.0.1', () => {
+        if (this.server) {
+          const address = this.server.address();
+          if (typeof address === 'object' && address?.port) {
+            this.port = address.port;
+          }
+        }
+
         console.log(`Mock server running on port ${this.port}`);
         resolve();
       });
