@@ -12,9 +12,8 @@ import { AdapterState } from '../../state/state.interfaces';
 
 import { STATELESS_EVENT_TYPES } from '../../common/constants';
 import { getTimeoutExtractorEventType } from '../common/helpers';
-// import { Logger } from '../../logger/logger';
+import type { Logger } from '../../logger/logger';
 import { State, createAdapterState } from '../../state/state';
-import { runWithSdkLogContext } from '../../logger/logger.context';
 
 /**
  * Adapter class is used to interact with Airdrop platform. The class provides
@@ -132,9 +131,7 @@ export class Adapter<ConnectorState> {
 
     // We want to save the state every time we emit an event, except for the start and delete events
     if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
-      runWithSdkLogContext(() =>
-        console.log(`Saving state before emitting event`)
-      );
+      (console as Logger).sdkInfo(`Saving state before emitting event`);
       await this.adapterState.postState(this.state);
     }
 
