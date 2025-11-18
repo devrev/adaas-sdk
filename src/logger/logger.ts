@@ -16,6 +16,7 @@ import {
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
+import { getSdkLogContextValue } from './logger.context';
 
 /**
  * Custom logger that extends Node.js Console with context-aware logging.
@@ -76,7 +77,11 @@ export class Logger extends Console {
    * @param level - Log level (info, warn, error)
    * @param sdkLog - Flag indicating if the log originated from the SDK
    */
-  logFn(message: string, level: LogLevel, sdkLog: boolean = this.tags.sdk_log): void {
+  logFn(
+    message: string,
+    level: LogLevel,
+    sdkLog: boolean = this.getSdkLogFlag()
+  ): void {
     if (this.options?.isLocalDevelopment) {
       this.originalConsole[level](message);
       return;
@@ -103,12 +108,14 @@ export class Logger extends Console {
     let stringifiedArgs = args.map((arg) => this.valueToString(arg)).join(' ');
     stringifiedArgs = this.truncateMessage(stringifiedArgs);
 
+    const sdkLogFlag = this.getSdkLogFlag();
+
     if (isMainThread) {
-      this.logFn(stringifiedArgs, level);
+      this.logFn(stringifiedArgs, level, sdkLogFlag);
     } else {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: { stringifiedArgs, level, sdk_log: false },
+        payload: { stringifiedArgs, level, sdk_log: sdkLogFlag },
       });
     }
   }
@@ -128,8 +135,11 @@ export class Logger extends Console {
   override error(...args: unknown[]): void {
     this.stringifyAndLog(args, LogLevel.ERROR);
   }
-}
 
+  private getSdkLogFlag(): boolean {
+    return getSdkLogContextValue(this.tags.sdk_log);
+  }
+}
 /**
  * Converts a state object into a printable format where arrays are summarized.
  * Arrays show their length, first item, and last item instead of all elements.
