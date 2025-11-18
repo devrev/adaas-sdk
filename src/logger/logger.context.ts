@@ -13,6 +13,10 @@ export function runWithUserLogContext<T>(fn: () => T): T {
   return sdkLogContext.run(false, fn);
 }
 
+export function runWithSdkLogContext<T>(fn: () => T): T {
+  return sdkLogContext.run(true, fn);
+}
+
 export function getSdkLogContextValue(defaultValue: boolean): boolean {
   const storeValue = sdkLogContext.getStore();
   if (typeof storeValue === 'boolean') {

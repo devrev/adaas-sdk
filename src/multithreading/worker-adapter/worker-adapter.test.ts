@@ -33,6 +33,17 @@ jest.mock('../../attachments-streaming/attachments-streaming-pool', () => {
   };
 });
 
+type TestConsole = typeof console & { sdkInfo?: jest.Mock };
+const mockSdkInfo = jest.fn();
+
+beforeAll(() => {
+  (console as TestConsole).sdkInfo = mockSdkInfo;
+});
+
+beforeEach(() => {
+  mockSdkInfo.mockReset();
+});
+
 describe(WorkerAdapter.name, () => {
   interface TestState {
     attachments: { completed: boolean };

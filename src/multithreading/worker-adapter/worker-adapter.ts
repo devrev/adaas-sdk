@@ -11,8 +11,8 @@ import {
   addReportToLoaderReport,
   getFilesToLoad,
 } from './worker-adapter.helpers';
-import { serializeError } from '../../logger/logger';
 import type { Logger } from '../logger/logger';
+import { serializeError } from '../../logger/logger';
 import { Mappers } from '../../mappers/mappers';
 import { SyncMapperRecordStatus } from '../../mappers/mappers.interface';
 import { Repo } from '../../repo/repo';
