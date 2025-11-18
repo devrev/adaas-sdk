@@ -8,6 +8,7 @@ import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 
 import { INSPECT_OPTIONS, MAX_LOG_STRING_LENGTH } from './logger.constants';
+import { ensureSdkLogContext, getSdkLogContextValue } from './logger.context';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
@@ -28,11 +29,13 @@ export class Logger extends Console {
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
+    ensureSdkLogContext();
     this.originalConsole = console;
     this.options = options;
     this.tags = {
       ...event.payload.event_context,
       sdk_version: LIBRARY_VERSION,
+      sdk_log: true,
     };
   }
 
@@ -73,8 +76,13 @@ export class Logger extends Console {
    *
    * @param message - The pre-formatted message string to log
    * @param level - Log level (info, warn, error)
+   * @param sdkLog - Flag indicating if the log originated from the SDK
    */
-  logFn(message: string, level: LogLevel): void {
+  logFn(
+    message: string,
+    level: LogLevel,
+    sdkLog: boolean = this.getSdkLogFlag()
+  ): void {
     if (this.options?.isLocalDevelopment) {
       this.originalConsole[level](message);
       return;
@@ -83,6 +91,7 @@ export class Logger extends Console {
     const logObject = {
       message,
       ...this.tags,
+      sdk_log: sdkLog,
     };
     this.originalConsole[level](JSON.stringify(logObject));
   }
@@ -96,16 +105,23 @@ export class Logger extends Console {
    * @param args - Values to log (will be stringified and truncated if needed)
    * @param level - Log level (info, warn, error)
    */
-  private stringifyAndLog(args: unknown[], level: LogLevel): void {
+  private stringifyAndLog(
+    args: unknown[],
+    level: LogLevel,
+    sdkOverride?: boolean
+  ): void {
     let stringifiedArgs = args.map((arg) => this.valueToString(arg)).join(' ');
     stringifiedArgs = this.truncateMessage(stringifiedArgs);
 
+    const sdkLogFlag =
+      typeof sdkOverride === 'boolean' ? sdkOverride : this.getSdkLogFlag();
+
     if (isMainThread) {
-      this.logFn(stringifiedArgs, level);
+      this.logFn(stringifiedArgs, level, sdkLogFlag);
     } else {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: { stringifiedArgs, level },
+        payload: { stringifiedArgs, level, sdk_log: sdkLogFlag },
       });
     }
   }
@@ -125,8 +141,23 @@ export class Logger extends Console {
   override error(...args: unknown[]): void {
     this.stringifyAndLog(args, LogLevel.ERROR);
   }
-}
 
+  sdkInfo(...args: unknown[]): void {
+    this.stringifyAndLog(args, LogLevel.INFO, true);
+  }
+
+  sdkWarn(...args: unknown[]): void {
+    this.stringifyAndLog(args, LogLevel.WARN, true);
+  }
+
+  sdkError(...args: unknown[]): void {
+    this.stringifyAndLog(args, LogLevel.ERROR, true);
+  }
+
+  private getSdkLogFlag(): boolean {
+    return getSdkLogContextValue(this.tags.sdk_log);
+  }
+}
 /**
  * Converts a state object into a printable format where arrays are summarized.
  * Arrays show their length, first item, and last item instead of all elements.
