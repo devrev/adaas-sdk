@@ -1,5 +1,6 @@
 import { Worker } from 'worker_threads';
 
+import type { LogLevel } from '../logger/logger.interfaces';
 import { State } from '../state/state';
 import { WorkerAdapter } from '../workers/worker-adapter';
 
@@ -132,9 +133,24 @@ export interface WorkerMessageExit {
 }
 
 /**
+ * WorkerMessageLog interface represents the structure of the worker log message.
+ */
+export interface WorkerMessageLog {
+  subject: WorkerMessageSubject.WorkerMessageLog;
+  payload: {
+    stringifiedArgs: string;
+    level: LogLevel;
+    sdk_log?: boolean;
+  };
+}
+
+/**
  * WorkerMessage represents the structure of the worker message.
  */
-export type WorkerMessage = WorkerMessageEmitted | WorkerMessageExit;
+export type WorkerMessage =
+  | WorkerMessageEmitted
+  | WorkerMessageExit
+  | WorkerMessageLog;
 
 /**
  * WorkerData represents the structure of the worker data object.
