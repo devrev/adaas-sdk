@@ -1,6 +1,6 @@
+import fs from 'fs';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import fs from 'fs';
 
 import { emit } from '../common/control-protocol';
 import { normalizeIncomingEventType } from '../common/event-type-normalization';
@@ -29,7 +29,7 @@ import { createWorker } from './create-worker';
 
 function getWorkerPath({
   event,
-  connectorWorkerPath
+  connectorWorkerPath,
 }: GetWorkerPathInterface): string | null {
   if (connectorWorkerPath) return connectorWorkerPath;
 
@@ -58,7 +58,10 @@ function getWorkerPath({
   }
 
   // If the worker path does not exist or wasn't found, use the default worker path
-  if (!path || (path && !(fs.existsSync(path + ".js") || fs.existsSync(path + ".ts")))) {
+  if (
+    !path ||
+    (path && !(fs.existsSync(path + '.js') || fs.existsSync(path + '.ts')))
+  ) {
     return getDefaultWorkerPath({ event, connectorWorkerPath });
   }
   return path;
@@ -161,7 +164,10 @@ export async function spawn<ConnectorState>({
   console = new Logger({ event, options });
 
   let script = null;
-  if (options?.worker_path_overrides && options.worker_path_overrides[normalizedEventType as EventType]) {
+  if (
+    options?.worker_path_overrides &&
+    options.worker_path_overrides[normalizedEventType as EventType]
+  ) {
     script = options.worker_path_overrides[normalizedEventType as EventType];
   } else {
     script = getWorkerPath({
