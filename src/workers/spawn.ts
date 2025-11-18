@@ -2,7 +2,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../common/control-protocol';
-import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
+import { getTimeoutErrorEventType } from '../common/helpers';
 import { Logger, serializeError } from '../logger/logger';
 import {
   AirdropEvent,
@@ -22,6 +22,7 @@ import {
   HARD_TIMEOUT_MULTIPLIER,
   MEMORY_LOG_INTERVAL,
 } from '../common/constants';
+import { getMemoryUsage } from '../common/helpers';
 import { LogLevel } from '../logger/logger.interfaces';
 import { createWorker } from './create-worker';
 
@@ -228,6 +229,7 @@ export class Spawn {
       this.lambdaTimeout * HARD_TIMEOUT_MULTIPLIER
     );
 
+
     // If worker exits with process.exit(code), clear the timeouts and exit from
     // main thread.
     worker.on(
@@ -257,7 +259,7 @@ export class Spawn {
       }
     });
 
-    // Log memory usage every 30 seconds
+    // Log memory usage every MEMORY_LOG_INTERVAL seconds
     this.memoryMonitoringInterval = setInterval(() => {
       try {
         const memoryInfo = getMemoryUsage();
@@ -276,6 +278,26 @@ export class Spawn {
         }
       }
     }, MEMORY_LOG_INTERVAL);
+
+    // Listen for worker errors to detect OOM conditions
+    worker.on(
+      WorkerEvent.WorkerError,
+      (error: Error) =>
+        void (async () => {
+          // Check if this is an OOM-related error
+          const errorMessage = error.message?.toLowerCase() || '';
+          const isOOMError =
+            errorMessage.includes('out of memory') ||
+            errorMessage.includes('maximum call stack') ||
+            errorMessage.includes('heap limit');
+
+          if (isOOMError) {
+            await this.exitFromMainThread({message: 'Worker exceeded memory limit and crashed. The process ran out of memory (OOM). Consider optimizing memory usage or processing data in smaller batches.'});
+          } else {
+            await this.exitFromMainThread();
+          }
+        })()
+    );
   }
 
   private clearTimeouts(): void {
@@ -290,7 +312,7 @@ export class Spawn {
     }
   }
 
-  private async exitFromMainThread(): Promise<void> {
+  private async exitFromMainThread(error: { message?: string } | null = null): Promise<void> {
     this.clearTimeouts();
 
     // eslint-disable-next-line no-global-assign
@@ -312,8 +334,7 @@ export class Spawn {
         event: this.event,
         data: {
           error: {
-            message:
-              'Worker exited the process without emitting an event. Check other logs for more information.',
+            message: error?.message || 'Worker exited the process without emitting an event. Check other logs for more information.',
           },
         },
       });
