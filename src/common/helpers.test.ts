@@ -1,5 +1,9 @@
 import { EventType, ExtractorEventType } from '../types/extraction';
-import { ItemTypeToLoad, LoaderEventType, StatsFileObject } from '../types/loading';
+import {
+  ItemTypeToLoad,
+  LoaderEventType,
+  StatsFileObject,
+} from '../types/loading';
 import { getFilesToLoad, getTimeoutErrorEventType } from './helpers';
 
 describe(getFilesToLoad.name, () => {
@@ -166,20 +170,62 @@ describe(getFilesToLoad.name, () => {
 });
 
 describe(getTimeoutErrorEventType.name, () => {
-  const cases: Array<{ input: EventType; expected: ExtractorEventType | LoaderEventType }> = [
-    { input: EventType.ExtractionMetadataStart, expected: ExtractorEventType.ExtractionMetadataError },
-    { input: EventType.ExtractionDataStart, expected: ExtractorEventType.ExtractionDataError },
-    { input: EventType.ExtractionDataContinue, expected: ExtractorEventType.ExtractionDataError },
-    { input: EventType.ExtractionDataDelete, expected: ExtractorEventType.ExtractionDataDeleteError },
-    { input: EventType.ExtractionAttachmentsStart, expected: ExtractorEventType.ExtractionAttachmentsError },
-    { input: EventType.ExtractionAttachmentsContinue, expected: ExtractorEventType.ExtractionAttachmentsError },
-    { input: EventType.ExtractionAttachmentsDelete, expected: ExtractorEventType.ExtractionAttachmentsDeleteError },
-    { input: EventType.ExtractionExternalSyncUnitsStart, expected: ExtractorEventType.ExtractionExternalSyncUnitsError },
-    { input: EventType.StartLoadingData, expected: LoaderEventType.DataLoadingError },
-    { input: EventType.ContinueLoadingData, expected: LoaderEventType.DataLoadingError },
-    { input: EventType.StartDeletingLoaderState, expected: LoaderEventType.LoaderStateDeletionError },
-    { input: EventType.StartLoadingAttachments, expected: LoaderEventType.AttachmentLoadingError },
-    { input: EventType.ContinueLoadingAttachments, expected: LoaderEventType.AttachmentLoadingError },
+  const cases: Array<{
+    input: EventType;
+    expected: ExtractorEventType | LoaderEventType;
+  }> = [
+    {
+      input: EventType.ExtractionMetadataStart,
+      expected: ExtractorEventType.ExtractionMetadataError,
+    },
+    {
+      input: EventType.ExtractionDataStart,
+      expected: ExtractorEventType.ExtractionDataError,
+    },
+    {
+      input: EventType.ExtractionDataContinue,
+      expected: ExtractorEventType.ExtractionDataError,
+    },
+    {
+      input: EventType.ExtractionDataDelete,
+      expected: ExtractorEventType.ExtractionDataDeleteError,
+    },
+    {
+      input: EventType.ExtractionAttachmentsStart,
+      expected: ExtractorEventType.ExtractionAttachmentsError,
+    },
+    {
+      input: EventType.ExtractionAttachmentsContinue,
+      expected: ExtractorEventType.ExtractionAttachmentsError,
+    },
+    {
+      input: EventType.ExtractionAttachmentsDelete,
+      expected: ExtractorEventType.ExtractionAttachmentsDeleteError,
+    },
+    {
+      input: EventType.ExtractionExternalSyncUnitsStart,
+      expected: ExtractorEventType.ExtractionExternalSyncUnitsError,
+    },
+    {
+      input: EventType.StartLoadingData,
+      expected: LoaderEventType.DataLoadingError,
+    },
+    {
+      input: EventType.ContinueLoadingData,
+      expected: LoaderEventType.DataLoadingError,
+    },
+    {
+      input: EventType.StartDeletingLoaderState,
+      expected: LoaderEventType.LoaderStateDeletionError,
+    },
+    {
+      input: EventType.StartLoadingAttachments,
+      expected: LoaderEventType.AttachmentLoadingError,
+    },
+    {
+      input: EventType.ContinueLoadingAttachments,
+      expected: LoaderEventType.AttachmentLoadingError,
+    },
     {
       input: EventType.StartDeletingLoaderAttachmentState,
       expected: LoaderEventType.LoaderAttachmentStateDeletionError,
@@ -191,8 +237,8 @@ describe(getTimeoutErrorEventType.name, () => {
   });
 
   it('falls back to unknown event type for unmapped events', () => {
-    expect(getTimeoutErrorEventType('UNMAPPED_EVENT' as EventType).eventType).toBe(
-      LoaderEventType.UnknownEventType
-    );
+    expect(
+      getTimeoutErrorEventType('UNMAPPED_EVENT' as EventType).eventType
+    ).toBe(LoaderEventType.UnknownEventType);
   });
 });
