@@ -135,13 +135,14 @@ export type SyncMapperRecord = {
   input_file?: string;
 };
 
+/* eslint-disable @typescript-eslint/no-duplicate-enum-values */
 export enum LoaderEventType {
   // Old member names with OLD values (deprecated, but kept for backwards compatibility)
   DataLoadingProgress = 'DATA_LOADING_PROGRESS',
   /**
    * @deprecated This was a typo. Use DataLoadingDelayed for the corrected spelling
    */
-  DataLoadingDelay = 'DATA_LOADING_DELAY',
+  DataLoadingDelay = 'DATA_LOADING_DELAYED',
   DataLoadingDone = 'DATA_LOADING_DONE',
   DataLoadingError = 'DATA_LOADING_ERROR',
   /**
