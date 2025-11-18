@@ -231,25 +231,6 @@ export class Spawn {
       this.lambdaTimeout * HARD_TIMEOUT_MULTIPLIER
     );
 
-    // Log memory usage every 30 seconds
-    this.memoryMonitoringInterval = setInterval(() => {
-      try {
-        const memoryInfo = getMemoryUsage();
-        if (memoryInfo) {
-          console.info(memoryInfo.formattedMessage);
-        }
-      } catch (error) {
-        // If memory monitoring fails, log the warning and clear the interval to prevent further issues
-        console.warn(
-          'Memory monitoring failed, stopping logging of memory usage interval',
-          error
-        );
-        if (this.memoryMonitoringInterval) {
-          clearInterval(this.memoryMonitoringInterval);
-          this.memoryMonitoringInterval = undefined;
-        }
-      }
-    }, MEMORY_LOG_INTERVAL);
 
     // If worker exits with process.exit(code), clear the timeouts and exit from
     // main thread.
@@ -279,6 +260,26 @@ export class Spawn {
         this.alreadyEmitted = true;
       }
     });
+
+    // Log memory usage every MEMORY_LOG_INTERVAL seconds
+    this.memoryMonitoringInterval = setInterval(() => {
+      try {
+        const memoryInfo = getMemoryUsage();
+        if (memoryInfo) {
+          console.info(memoryInfo.formattedMessage);
+        }
+      } catch (error) {
+        // If memory monitoring fails, log the warning and clear the interval to prevent further issues
+        console.warn(
+          'Memory monitoring failed, stopping logging of memory usage interval',
+          error
+        );
+        if (this.memoryMonitoringInterval) {
+          clearInterval(this.memoryMonitoringInterval);
+          this.memoryMonitoringInterval = undefined;
+        }
+      }
+    }, MEMORY_LOG_INTERVAL);
 
     // Listen for worker errors to detect OOM conditions
     worker.on(
