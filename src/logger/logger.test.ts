@@ -5,6 +5,7 @@ import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import { getPrintableState, Logger, serializeAxiosError } from './logger';
+import { LogLevel } from './logger.interfaces';
 import {
   INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
   MAX_LOG_STRING_LENGTH,
@@ -67,6 +68,7 @@ describe(Logger.name, () => {
     expect(tags).toEqual({
       ...mockEvent.payload.event_context,
       sdk_version: LIBRARY_VERSION,
+      sdk_log: true,
     });
   });
 
@@ -84,6 +86,7 @@ describe(Logger.name, () => {
         message,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
+        sdk_log: true,
       })
     );
   });
@@ -103,6 +106,7 @@ describe(Logger.name, () => {
         message: expectedMessage,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
+        sdk_log: true,
       })
     );
   });
@@ -123,6 +127,7 @@ describe(Logger.name, () => {
         message: `${text} ${expectedDataMessage}`,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
+        sdk_log: true,
       })
     );
   });
@@ -144,6 +149,22 @@ describe(Logger.name, () => {
         message: `${text1} ${expectedDataMessage} ${text2}`,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
+        sdk_log: true,
+      })
+    );
+  });
+
+  it('should set sdk_log to false for worker thread logs', () => {
+    const logger = new Logger({ event: mockEvent, options: mockOptions });
+
+    logger.logFn('Worker log', LogLevel.INFO, false);
+
+    expect(mockConsoleInfo).toHaveBeenCalledWith(
+      JSON.stringify({
+        message: 'Worker log',
+        ...mockEvent.payload.event_context,
+        sdk_version: LIBRARY_VERSION,
+        sdk_log: false,
       })
     );
   });
@@ -347,6 +368,7 @@ describe(Logger.name, () => {
     const logObject = JSON.parse(callArgs);
     expect(logObject.message).toBe('');
     expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
+    expect(logObject.sdk_log).toBe(true);
   });
 
   it('[edge] should handle null and undefined values in log arguments', () => {
