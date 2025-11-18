@@ -221,7 +221,9 @@ export interface MemoryInfo {
   formattedMessage: string;
 }
 
-export function getMemoryUsage(heapStats: v8.HeapInfo): MemoryInfo {
+export function getMemoryUsage(
+  heapStats: v8.HeapInfo = v8.getHeapStatistics()
+): MemoryInfo {
   try {
     const memUsage: NodeJS.MemoryUsage = {
       rss: heapStats.total_heap_size,
