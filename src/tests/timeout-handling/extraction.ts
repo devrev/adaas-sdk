@@ -1,14 +1,11 @@
-import { AirdropEvent, spawn, WorkerAdapterOptions } from '../../index';
+import { AirdropEvent, spawn } from '../../index';
 
 const initialState = {};
 const initialDomainMapping = {};
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface ExtractorState {}
 
-const run = async (
-  events: AirdropEvent[],
-  workerPath: string,
-) => {
+const run = async (events: AirdropEvent[], workerPath: string) => {
   for (const event of events) {
     await spawn<ExtractorState>({
       event,
