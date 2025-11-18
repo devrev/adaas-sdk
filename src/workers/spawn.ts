@@ -20,7 +20,9 @@ import {
 import {
   DEFAULT_LAMBDA_TIMEOUT,
   HARD_TIMEOUT_MULTIPLIER,
+  MEMORY_LOG_INTERVAL,
 } from '../common/constants';
+import { getMemoryUsage } from '../common/helpers';
 import { LogLevel } from '../logger/logger.interfaces';
 import { createWorker } from './create-worker';
 
@@ -173,6 +175,7 @@ export class Spawn {
   private lambdaTimeout: number;
   private softTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
   private hardTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
+  private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
   private resolve: (value: void | PromiseLike<void>) => void;
   private originalConsole: Console;
   private logger: Logger;
@@ -227,6 +230,26 @@ export class Spawn {
         })(),
       this.lambdaTimeout * HARD_TIMEOUT_MULTIPLIER
     );
+
+    // Log memory usage every 30 seconds
+    this.memoryMonitoringInterval = setInterval(() => {
+      try {
+        const memoryInfo = getMemoryUsage();
+        if (memoryInfo) {
+          console.info(memoryInfo.formattedMessage);
+        }
+      } catch (error) {
+        // If memory monitoring fails, log the warning and clear the interval to prevent further issues
+        console.warn(
+          'Memory monitoring failed, stopping logging of memory usage interval',
+          error
+        );
+        if (this.memoryMonitoringInterval) {
+          clearInterval(this.memoryMonitoringInterval);
+          this.memoryMonitoringInterval = undefined;
+        }
+      }
+    }, MEMORY_LOG_INTERVAL);
 
     // If worker exits with process.exit(code), clear the timeouts and exit from
     // main thread.
@@ -288,6 +311,9 @@ export class Spawn {
     }
     if (this.hardTimeoutTimer) {
       clearTimeout(this.hardTimeoutTimer);
+    }
+    if (this.memoryMonitoringInterval) {
+      clearInterval(this.memoryMonitoringInterval);
     }
   }
 
