@@ -1,9 +1,14 @@
 import { AxiosError } from 'axios';
+import path from 'node:path';
+import { Worker } from 'node:worker_threads';
 import { inspect } from 'node:util';
 import { LIBRARY_VERSION } from '../common/constants';
 import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
-import { WorkerAdapterOptions } from '../types/workers';
+import {
+  WorkerAdapterOptions,
+  WorkerMessageSubject,
+} from '../types/workers';
 import { getPrintableState, Logger, serializeAxiosError } from './logger';
 import { LogLevel } from './logger.interfaces';
 import {
@@ -16,11 +21,15 @@ const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
 const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation();
 const mockConsoleError = jest.spyOn(console, 'error').mockImplementation();
 
-// Mock worker_threads
-jest.mock('node:worker_threads', () => ({
-  isMainThread: true,
-  parentPort: null,
-}));
+// Mock worker_threads for main-thread specific behavior but keep actual Worker implementation
+jest.mock('node:worker_threads', () => {
+  const actual = jest.requireActual('node:worker_threads');
+  return {
+    ...actual,
+    isMainThread: true,
+    parentPort: null,
+  };
+});
 
 describe(Logger.name, () => {
   let mockEvent: AirdropEvent;
@@ -154,19 +163,90 @@ describe(Logger.name, () => {
     );
   });
 
-  it('should set sdk_log to false for worker thread logs', () => {
-    const logger = new Logger({ event: mockEvent, options: mockOptions });
-
-    logger.logFn('Worker log', LogLevel.INFO, false);
-
-    expect(mockConsoleInfo).toHaveBeenCalledWith(
-      JSON.stringify({
-        message: 'Worker log',
-        ...mockEvent.payload.event_context,
-        sdk_version: LIBRARY_VERSION,
-        sdk_log: false,
-      })
+  async function runWorkerLog(mode: 'user' | 'sdk') {
+    const workerScriptPath = path.join(
+      __dirname,
+      'logger.worker-fixture.js'
     );
+
+    const worker = new Worker(workerScriptPath, {
+      workerData: {
+        event: mockEvent,
+        options: mockOptions,
+        message: 'Worker log',
+        mode,
+      },
+    });
+
+    try {
+      const logMessage = await new Promise<{
+        subject: WorkerMessageSubject;
+        payload: { stringifiedArgs: string; level: LogLevel; sdk_log: boolean };
+      }>((resolve, reject) => {
+        function cleanup() {
+          worker.off('message', handleMessage);
+          worker.off('exit', handleExit);
+          worker.off('error', handleError);
+        }
+
+        function handleMessage(message: unknown) {
+          const typedMessage = message as {
+            subject?: WorkerMessageSubject;
+            payload?: {
+              stringifiedArgs: string;
+              level: LogLevel;
+              sdk_log?: boolean;
+            };
+          };
+          if (typedMessage?.subject === WorkerMessageSubject.WorkerMessageLog) {
+            cleanup();
+            resolve(typedMessage as {
+              subject: WorkerMessageSubject;
+              payload: {
+                stringifiedArgs: string;
+                level: LogLevel;
+                sdk_log: boolean;
+              };
+            });
+          }
+        }
+
+        function handleExit(code: number) {
+          cleanup();
+          reject(
+            new Error(
+              `Worker exited before emitting log. Exit code: ${code.toString()}`
+            )
+          );
+        }
+
+        function handleError(error: Error) {
+          cleanup();
+          reject(error);
+        }
+
+        worker.on('message', handleMessage);
+        worker.once('exit', handleExit);
+        worker.once('error', handleError);
+      });
+
+      return logMessage;
+    } finally {
+      await worker.terminate();
+    }
+  }
+
+  it('should set sdk_log to false for worker thread logs', async () => {
+    const logMessage = await runWorkerLog('user');
+    expect(logMessage.payload.sdk_log).toBe(false);
+    expect(logMessage.payload.level).toBe(LogLevel.INFO);
+    expect(logMessage.payload.stringifiedArgs).toContain('Worker log');
+  });
+
+  it('should keep sdk_log true for SDK logs inside worker thread', async () => {
+    const logMessage = await runWorkerLog('sdk');
+    expect(logMessage.payload.sdk_log).toBe(true);
+    expect(logMessage.payload.stringifiedArgs).toContain('Worker log');
   });
 
   it('should log directly without JSON wrapping in local development mode', () => {
