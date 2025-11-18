@@ -33,6 +33,7 @@ export class Logger extends Console {
     this.tags = {
       ...event.payload.event_context,
       sdk_version: LIBRARY_VERSION,
+      sdk_log: true,
     };
   }
 
@@ -73,8 +74,9 @@ export class Logger extends Console {
    *
    * @param message - The pre-formatted message string to log
    * @param level - Log level (info, warn, error)
+   * @param sdkLog - Flag indicating if the log originated from the SDK
    */
-  logFn(message: string, level: LogLevel): void {
+  logFn(message: string, level: LogLevel, sdkLog: boolean = this.tags.sdk_log): void {
     if (this.options?.isLocalDevelopment) {
       this.originalConsole[level](message);
       return;
@@ -83,6 +85,7 @@ export class Logger extends Console {
     const logObject = {
       message,
       ...this.tags,
+      sdk_log: sdkLog,
     };
     this.originalConsole[level](JSON.stringify(logObject));
   }
@@ -105,7 +108,7 @@ export class Logger extends Console {
     } else {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: { stringifiedArgs, level },
+        payload: { stringifiedArgs, level, sdk_log: false },
       });
     }
   }
