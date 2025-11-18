@@ -141,7 +141,7 @@ export enum LoaderEventType {
   /**
    * @deprecated This was a typo. Use DataLoadingDelayed for the corrected spelling
    */
-  DataLoadingDelay = 'DATA_LOADING_DELAYED',
+  DataLoadingDelay = 'DATA_LOADING_DELAY',
   DataLoadingDone = 'DATA_LOADING_DONE',
   DataLoadingError = 'DATA_LOADING_ERROR',
   /**

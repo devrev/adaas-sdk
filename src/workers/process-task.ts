@@ -1,4 +1,5 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
+import { normalizeIncomingEventType } from '../common/event-type-normalization';
 import { Logger, serializeError } from '../logger/logger';
 import { createAdapterState } from '../state/state';
 import {
@@ -7,7 +8,6 @@ import {
   WorkerMessageSubject,
 } from '../types/workers';
 import { WorkerAdapter } from './worker-adapter';
-import { normalizeIncomingEventType } from '../common/event-type-normalization';
 
 export function processTask<ConnectorState>({
   task,
@@ -17,7 +17,9 @@ export function processTask<ConnectorState>({
     void (async () => {
       try {
         const event = workerData.event;
-        event.payload.event_type = normalizeIncomingEventType(event.payload.event_type);
+        event.payload.event_type = normalizeIncomingEventType(
+          event.payload.event_type
+        );
 
         const initialState = workerData.initialState as ConnectorState;
         const initialDomainMapping = workerData.initialDomainMapping;
