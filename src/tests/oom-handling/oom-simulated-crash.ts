@@ -9,8 +9,6 @@ import { ExtractorEventType, processTask } from '../../index';
 
 processTask({
   task: async ({ adapter }) => {
-    console.log('🔁 Simulating sustained allocations before crash...');
-
     const allocations: Buffer[] = [];
 
     for (let i = 0; i < 32; i++) {
@@ -22,11 +20,10 @@ processTask({
       }
     }
 
-    // Crash with an OOM-like error so the parent detects it deterministically.
     throw new Error('Simulated out of memory condition for integration tests');
   },
   onTimeout: async ({ adapter }) => {
-    console.log('⏱️ Timeout handler invoked unexpectedly');
+    console.log('Timeout handler invoked unexpectedly');
     await adapter.emit(ExtractorEventType.ExtractionDataProgress);
   },
 });
