@@ -271,3 +271,10 @@ export function getMemoryUsage(
     throw err;
   }
 }
+
+/*
+ * This function is used to escape special characters in a string to be used in a regex.
+*/
+export function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

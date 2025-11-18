@@ -1,13 +1,9 @@
 import MockAdapter from 'axios-mock-adapter';
-
+import { escapeRegex } from '../../common/helpers';
 import { axiosClient } from '../../http/axios-client-internal';
 import { EventType } from '../../types/extraction';
 import { createEvent } from '../test-helpers';
 import run from './extraction';
-
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 describe('Worker OOM integration', () => {
   const axiosMock = new MockAdapter(axiosClient);
