@@ -12,7 +12,7 @@ import { AdapterState } from '../../state/state.interfaces';
 
 import { STATELESS_EVENT_TYPES } from '../../common/constants';
 import { getTimeoutExtractorEventType } from '../common/helpers';
-import type { Logger } from '../../logger/logger';
+// import { Logger } from '../../logger/logger';
 import { State, createAdapterState } from '../../state/state';
 import { translateIncomingEventType } from '../../common/event-type-translation';
 import { runWithSdkLogContext } from '../../logger/logger.context';
