@@ -1,6 +1,8 @@
 import { AirdropEvent, spawn, WorkerAdapterOptions } from '../../index';
 
-const initialState = {};
+const initialState = {
+  snapInVersionId: 'test_snap_in_version_id',
+};
 const initialDomainMapping = {};
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface ExtractorState {}

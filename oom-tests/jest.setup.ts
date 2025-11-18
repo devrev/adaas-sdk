@@ -1,4 +1,5 @@
 // Jest setup for OOM tests
+export {};
 
 // Extend Jest timeout globally for OOM tests
 jest.setTimeout(120000); // 2 minutes
@@ -71,6 +72,6 @@ global.forceGC = () => {
 declare global {
   function logMemoryUsage(label?: string): void;
   function forceGC(): void;
-  var gc: (() => void) | undefined;
+  // eslint-disable-next-line no-var
+  var gc: NodeJS.GCFunction | undefined;
 }
-
