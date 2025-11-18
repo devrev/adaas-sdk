@@ -139,6 +139,7 @@ export class Logger extends Console {
   private getSdkLogFlag(): boolean {
     return getSdkLogContextValue(this.tags.sdk_log);
   }
+
 }
 /**
  * Converts a state object into a printable format where arrays are summarized.

@@ -4,6 +4,7 @@ import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
 import { axiosClient } from '../http/axios-client-internal';
 import { getPrintableState, serializeError } from '../logger/logger';
+import { runWithUserLogContext } from '../logger/logger.context';
 import { SyncMode } from '../types/common';
 import { EventType } from '../types/extraction';
 
@@ -131,9 +132,11 @@ export class State<ConnectorState> {
       }
 
       this.state = parsedState;
-      console.log(
-        'State fetched successfully. Current state',
-        getPrintableState(this.state)
+      runWithUserLogContext(() =>
+        console.log(
+          'State fetched successfully. Current state',
+          getPrintableState(this.state)
+        )
       );
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -185,9 +188,11 @@ export class State<ConnectorState> {
         }
       );
 
-      console.log(
-        'State updated successfully to',
-        getPrintableState(this.state)
+      runWithUserLogContext(() =>
+        console.log(
+          'State updated successfully to',
+          getPrintableState(this.state)
+        )
       );
     } catch (error) {
       console.error('Failed to update the state.', serializeError(error));
