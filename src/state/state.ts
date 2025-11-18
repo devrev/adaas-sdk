@@ -68,9 +68,9 @@ export async function createAdapterState<ConnectorState>({
       }
     }
 
-    // Set lastSyncStarted if the event type is ExtractionDataStart
+    // Set lastSyncStarted if the event type is StartExtractingData
     if (
-      event.payload.event_type === EventType.ExtractionDataStart &&
+      event.payload.event_type === EventType.StartExtractingData &&
       !as.state.lastSyncStarted
     ) {
       as.state.lastSyncStarted = new Date().toISOString();

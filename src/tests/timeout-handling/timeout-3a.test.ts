@@ -45,6 +45,6 @@ describe('timeout-3a extraction', () => {
     // Expect last request to be emission of error event since we force-kill the worker
     expect(lastRequest.url).toContain('airdrop.external-extractor.message');
     expect(lastRequest.method).toBe('POST');
-    expect(lastRequest.body.event_type).toBe('EXTRACTION_DATA_ERROR');
+    expect(lastRequest.body.event_type).toBe('DATA_EXTRACTION_ERROR');
   });
 });
