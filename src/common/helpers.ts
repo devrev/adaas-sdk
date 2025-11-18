@@ -27,7 +27,7 @@ export function getTimeoutErrorEventType(eventType: EventType): {
     case EventType.StartExtractingMetadata:
     case EventType.ExtractionMetadataStart:
       return {
-        eventType: ExtractorEventType.MetadataExtractionError, // Using NEW enum member
+        eventType: ExtractorEventType.MetadataExtractionError,
       };
 
     // Data extraction (handles both old and new enum members)
@@ -36,14 +36,14 @@ export function getTimeoutErrorEventType(eventType: EventType): {
     case EventType.ExtractionDataStart:
     case EventType.ExtractionDataContinue:
       return {
-        eventType: ExtractorEventType.DataExtractionError, // Using NEW enum member
+        eventType: ExtractorEventType.DataExtractionError,
       };
 
     // Data deletion (handles both old and new enum members)
     case EventType.StartDeletingExtractorState:
     case EventType.ExtractionDataDelete:
       return {
-        eventType: ExtractorEventType.ExtractorStateDeletionError, // Using NEW enum member
+        eventType: ExtractorEventType.ExtractorStateDeletionError,
       };
 
     // Attachments extraction (handles both old and new enum members)
@@ -52,21 +52,21 @@ export function getTimeoutErrorEventType(eventType: EventType): {
     case EventType.ExtractionAttachmentsStart:
     case EventType.ExtractionAttachmentsContinue:
       return {
-        eventType: ExtractorEventType.AttachmentExtractionError, // Using NEW enum member
+        eventType: ExtractorEventType.AttachmentExtractionError,
       };
 
     // Attachments deletion (handles both old and new enum members)
     case EventType.StartDeletingExtractorAttachmentsState:
     case EventType.ExtractionAttachmentsDelete:
       return {
-        eventType: ExtractorEventType.ExtractorAttachmentsStateDeletionError, // Using NEW enum member
+        eventType: ExtractorEventType.ExtractorAttachmentsStateDeletionError,
       };
 
     // External sync units (handles both old and new enum members)
     case EventType.StartExtractingExternalSyncUnits:
     case EventType.ExtractionExternalSyncUnitsStart:
       return {
-        eventType: ExtractorEventType.ExternalSyncUnitExtractionError, // Using NEW enum member
+        eventType: ExtractorEventType.ExternalSyncUnitExtractionError,
       };
 
     // Loading data
@@ -86,7 +86,7 @@ export function getTimeoutErrorEventType(eventType: EventType): {
     case EventType.StartLoadingAttachments:
     case EventType.ContinueLoadingAttachments:
       return {
-        eventType: LoaderEventType.AttachmentsLoadingError, // Using NEW enum member
+        eventType: LoaderEventType.AttachmentsLoadingError,
       };
 
     // Deleting loader attachment state
