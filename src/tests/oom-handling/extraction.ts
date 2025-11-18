@@ -36,4 +36,3 @@ const run = async (
 };
 
 export { run };
-export default run;

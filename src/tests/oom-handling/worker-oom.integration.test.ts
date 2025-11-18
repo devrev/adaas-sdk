@@ -1,9 +1,9 @@
 import MockAdapter from 'axios-mock-adapter';
 
-import { axiosClient } from '../src/http/axios-client-internal';
-import { run } from '../src/tests/oom-handling/extraction';
-import { createEvent } from '../src/tests/test-helpers';
-import { EventType } from '../src/types/extraction';
+import { axiosClient } from '../../http/axios-client-internal';
+import { run } from './extraction';
+import { createEvent } from '../test-helpers';
+import { EventType } from '../../types/extraction';
 
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -48,7 +48,7 @@ describe('Worker OOM integration', () => {
 
     await run(
       [event],
-      __dirname + '/../src/tests/oom-handling/oom-simulated-crash',
+      __dirname + '/oom-simulated-crash',
       {
         workerHeapSizeMb: 96,
       }
@@ -71,3 +71,4 @@ describe('Worker OOM integration', () => {
     expect(messageCall).toBeDefined();
   });
 });
+
