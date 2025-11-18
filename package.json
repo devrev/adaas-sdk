@@ -12,8 +12,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
     "test": "jest --forceExit --coverage --runInBand --selectProjects default --",
-    "test:backwards-compatibility": "jest --forceExit --runInBand --selectProjects backwards-compatibility --",
-    "test:oom": "node --expose-gc node_modules/.bin/jest --config oom-tests/jest.config.oom.cjs --runInBand"
+    "test:backwards-compatibility": "jest --forceExit --runInBand --selectProjects backwards-compatibility --"
   },
   "repository": {
     "type": "git",

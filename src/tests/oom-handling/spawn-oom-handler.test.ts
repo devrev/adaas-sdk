@@ -1,16 +1,16 @@
 import { EventEmitter } from 'node:events';
 
-import { emit } from '../src/common/control-protocol';
-import { Spawn } from '../src/workers/spawn';
-import { WorkerEvent } from '../src/types/workers';
-import { createEvent } from '../src/tests/test-helpers';
-import { EventType } from '../src/types/extraction';
+import { emit } from '../../common/control-protocol';
+import { Spawn } from '../../workers/spawn';
+import { WorkerEvent } from '../../types/workers';
+import { createEvent } from '../test-helpers';
+import { EventType } from '../../types/extraction';
 
-jest.mock('../src/common/control-protocol', () => ({
+jest.mock('../../common/control-protocol', () => ({
   emit: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../src/logger/logger', () => ({
+jest.mock('../../logger/logger', () => ({
   Logger: class MockLogger {
     logFn = jest.fn();
   },
@@ -129,3 +129,4 @@ describe('Spawn OOM handling', () => {
     (spawnInstance as unknown as { clearTimeouts: () => void }).clearTimeouts();
   });
 });
+
