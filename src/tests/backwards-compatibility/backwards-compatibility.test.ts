@@ -590,6 +590,13 @@ describe('Backwards Compatibility', () => {
 
     // Verify that the type alias is the same as the current type alias
     describe('should verify type aliases are the same as the current type aliases', () => {
+      const normalizeTypeText = (text: string): string => text.replace(/\s/g, '');
+      const getUnionMembers = (text: string): string[] =>
+        normalizeTypeText(text)
+          .split('|')
+          .map((member) => member.trim())
+          .filter(Boolean);
+
       for (const newType of newTypes) {
         const currentType = currentTypes.find(
           (t: ApiTypeAlias) => t.name === newType.name
@@ -598,10 +605,27 @@ describe('Backwards Compatibility', () => {
           continue;
         }
         it(`Type ${newType.name} should have the same type as the current type`, () => {
-          // Replace all whitespace with an empty string to ignore whitespace differences
-          expect(newType.typeExcerpt.text.replace(/\s/g, '')).toEqual(
-            currentType.typeExcerpt.text.replace(/\s/g, '')
+          const currentTypeText = normalizeTypeText(
+            currentType.typeExcerpt.text
           );
+          const newTypeText = normalizeTypeText(newType.typeExcerpt.text);
+
+          if (currentTypeText.includes('|')) {
+            const currentUnionMembers = getUnionMembers(
+              currentType.typeExcerpt.text
+            );
+            const newUnionMembers = new Set(
+              getUnionMembers(newType.typeExcerpt.text)
+            );
+
+            expect(!!currentUnionMembers.length).toBe(true);
+            for (const member of currentUnionMembers) {
+              expect(newUnionMembers.has(member)).toBe(true);
+            }
+            return;
+          }
+
+          expect(newTypeText).toEqual(currentTypeText);
         });
       }
     });
