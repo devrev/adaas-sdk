@@ -2,8 +2,11 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 
 const sdkLogContext = new AsyncLocalStorage<boolean>();
 
-export function runWithSdkLogContext<T>(fn: () => T): T {
-  return sdkLogContext.run(true, fn);
+export function ensureSdkLogContext(defaultValue = true): void {
+  const storeValue = sdkLogContext.getStore();
+  if (typeof storeValue !== 'boolean') {
+    sdkLogContext.enterWith(defaultValue);
+  }
 }
 
 export function runWithUserLogContext<T>(fn: () => T): T {
