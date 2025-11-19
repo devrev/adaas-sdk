@@ -135,3 +135,6 @@ dist
 
 src/tests/backwards-compatibility/temp/
 src/tests/backwards-compatibility/report/
+
+memory-filled-basic.csv
+extracted_files
