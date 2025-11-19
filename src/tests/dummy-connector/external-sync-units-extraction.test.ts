@@ -1,7 +1,7 @@
 import { EventType } from '../../types/extraction';
+import { MockServer } from '../mock-server-v2';
 import { createEvent } from '../test-helpers';
 import run from './extraction';
-import { MockServer } from '../mock-server-v2';
 
 jest.setTimeout(15000);
 
@@ -15,6 +15,10 @@ describe('Dummy Connector - External Sync Units Extraction', () => {
 
   afterAll(async () => {
     await mockServer.stop();
+  });
+
+  beforeEach(() => {
+    mockServer.resetRoutes();
   });
 
   it('should emit external sync units done event', async () => {
