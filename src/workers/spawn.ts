@@ -245,7 +245,7 @@ export class Spawn {
     worker.on(WorkerEvent.WorkerMessage, (message) => {
       // Since logs from the worker thread are handled differently in snap-in
       // platform,  we need to catch the log messages from worker thread and log
-      // them using in main thread.
+      // them in main thread.
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
         const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
