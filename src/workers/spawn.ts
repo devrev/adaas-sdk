@@ -177,7 +177,7 @@ export class Spawn {
   private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
   private resolve: (value: void | PromiseLike<void>) => void;
   private originalConsole: Console;
-  private logger: Logger;
+g  private logger: Logger;
   constructor({
     event,
     worker,
@@ -193,7 +193,6 @@ export class Spawn {
       ? Math.min(options.timeout, this.defaultLambdaTimeout)
       : this.defaultLambdaTimeout;
     this.resolve = resolve;
-    this.logger = console as Logger;
 
     // If soft timeout is reached, send a message to the worker to gracefully exit.
     this.softTimeoutTimer = setTimeout(
