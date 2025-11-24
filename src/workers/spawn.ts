@@ -177,7 +177,7 @@ export class Spawn {
   private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
   private resolve: (value: void | PromiseLike<void>) => void;
   private originalConsole: Console;
-g  private logger: Logger;
+  private logger: Logger;
   constructor({
     event,
     worker,
