@@ -177,6 +177,7 @@ export class Spawn {
   private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
   private resolve: (value: void | PromiseLike<void>) => void;
   private originalConsole: Console;
+  private logger: Logger;
   constructor({
     event,
     worker,
@@ -185,12 +186,14 @@ export class Spawn {
     originalConsole,
   }: SpawnInterface) {
     this.originalConsole = originalConsole || console;
+    this.logger = console as Logger;
     this.alreadyEmitted = false;
     this.event = event;
     this.lambdaTimeout = options?.timeout
       ? Math.min(options.timeout, this.defaultLambdaTimeout)
       : this.defaultLambdaTimeout;
     this.resolve = resolve;
+    this.logger = console as Logger;
 
     // If soft timeout is reached, send a message to the worker to gracefully exit.
     this.softTimeoutTimer = setTimeout(
@@ -241,13 +244,13 @@ export class Spawn {
     );
 
     worker.on(WorkerEvent.WorkerMessage, (message) => {
-      // Since it is not possible to log from the worker thread, we need to log
-      // from the main thread.
+      // Since logs from the worker thread are handled differently in snap-in
+      // platform,  we need to catch the log messages from worker thread and log
+      // them using in main thread.
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
         const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
-        // Args are already sanitized in the worker thread, skip double sanitization
-        (console as Logger).logFn(stringifiedArgs, level);
+        this.logger.logFn(stringifiedArgs, level);
       }
 
       // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.
