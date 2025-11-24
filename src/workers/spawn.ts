@@ -133,16 +133,16 @@ export async function spawn<ConnectorState>({
   // Normalize incoming event type for backwards compatibility
   // This allows the SDK to accept both old and new event type formats
   const originalEventType = event.payload.event_type;
-  const normalizedEventType = normalizeIncomingEventType(
+  const translatedEventType = normalizeIncomingEventType(
     event.payload.event_type as string
   );
 
   // Update the event with the normalized event type
-  event.payload.event_type = normalizedEventType;
+  event.payload.event_type = translatedEventType;
 
-  if (normalizedEventType !== originalEventType) {
+  if (translatedEventType !== originalEventType) {
     console.log(
-      `Event type normalized from ${originalEventType} to ${normalizedEventType}`
+      `Event type normalized from ${originalEventType} to ${translatedEventType}.`
     );
   }
 
@@ -165,10 +165,10 @@ export async function spawn<ConnectorState>({
 
   let script = null;
   if (
-    options?.worker_path_overrides &&
-    options.worker_path_overrides[normalizedEventType as EventType]
+    options?.workerPathOverrides &&
+    options.workerPathOverrides[translatedEventType as EventType]
   ) {
-    script = options.worker_path_overrides[normalizedEventType as EventType];
+    script = options.workerPathOverrides[translatedEventType as EventType];
   } else {
     script = getWorkerPath({
       event,

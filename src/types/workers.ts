@@ -30,13 +30,13 @@ export interface WorkerAdapterInterface<ConnectorState> {
  * @param {boolean=} isLocalDevelopment - A flag to indicate if the adapter is being used in local development
  * @param {number=} timeout - The timeout for the worker thread
  * @param {number=} batchSize - Maximum number of extracted items in a batch
- * @param {Partial<Record<EventType, string>>=} worker_path_overrides - A map of event types to custom worker paths to override default worker paths
+ * @param {Record<EventType, string>=} worker_path_overrides - A map of event types to custom worker paths to override default worker paths
  */
 export interface WorkerAdapterOptions {
   isLocalDevelopment?: boolean;
   timeout?: number;
   batchSize?: number;
-  worker_path_overrides?: Partial<Record<EventType, string>>;
+  workerPathOverrides?: Record<EventType, string>;
 }
 
 /**

@@ -23,10 +23,11 @@ export const emit = async ({
   data,
 }: EmitInterface): Promise<AxiosResponse> => {
   // Normalize outgoing event type to ensure we always send new event types
-  const normalizedEventType = normalizeOutgoingEventType(eventType);
+  // TODO: Remove when the old types are completely phased out
+  const translatedEventType = normalizeOutgoingEventType(eventType);
 
   const newEvent: ExtractorEvent | LoaderEvent = {
-    event_type: normalizedEventType,
+    event_type: translatedEventType,
     event_context: event.payload.event_context,
     event_data: {
       ...data,
