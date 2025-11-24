@@ -832,6 +832,25 @@ export class WorkerAdapter<ConnectorState> {
         },
       };
     } else if (id) {
+      try {
+        const syncMapperRecordCreateResponse = await this._mappers.create({
+          sync_unit: this.event.payload.event_context.sync_unit,
+          external_ids: [id],
+          targets: [item.reference_id],
+          status: SyncMapperRecordStatus.OPERATIONAL,
+        });
+
+        console.log(
+          'Successfully created sync mapper record.',
+          syncMapperRecordCreateResponse.data
+        );
+      } catch (error) {
+        console.warn(
+          'Failed to create sync mapper record.',
+          serializeError(error)
+        );
+      }
+
       return {
         report: {
           item_type: 'attachment',
