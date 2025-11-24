@@ -3,7 +3,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../common/control-protocol';
-import { normalizeIncomingEventType } from '../common/event-type-normalization';
+import { normalizeIncomingEventType } from '../common/event-type-translation';
 import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
 import { Logger, serializeError } from '../logger/logger';
 import {

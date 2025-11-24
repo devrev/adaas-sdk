@@ -14,7 +14,7 @@ import { STATELESS_EVENT_TYPES } from '../../common/constants';
 import { getTimeoutExtractorEventType } from '../common/helpers';
 // import { Logger } from '../../logger/logger';
 import { State, createAdapterState } from '../../state/state';
-import { normalizeIncomingEventType } from '../../common/event-type-normalization';
+import { normalizeIncomingEventType } from '../../common/event-type-translation';
 
 /**
  * Adapter class is used to interact with Airdrop platform. The class provides

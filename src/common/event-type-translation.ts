@@ -69,7 +69,7 @@ export function normalizeIncomingEventType(eventTypeString: string): EventType {
  * Normalizes ExtractorEventType enum values by converting old enum members to new ones.
  * Old enum members are deprecated and should be replaced with new ones.
  */
-export function normalizeExtractorEventType(
+export function translateExtractorEventType(
   eventType: ExtractorEventType
 ): ExtractorEventType {
   // Map old enum members to new enum members
@@ -119,7 +119,7 @@ export function normalizeExtractorEventType(
  * Normalizes LoaderEventType enum values by converting old enum members to new ones.
  * Old enum members are deprecated and should be replaced with new ones.
  */
-export function normalizeLoaderEventType(
+export function translateLoaderEventType(
   eventType: LoaderEventType
 ): LoaderEventType {
   // Map old enum members to new enum members
@@ -145,18 +145,18 @@ export function normalizeLoaderEventType(
 /**
  * Normalizes any outgoing event type (Extractor or Loader) to ensure new event types are used.
  */
-export function normalizeOutgoingEventType(
+export function translateOutgoingEventType(
   eventType: ExtractorEventType | LoaderEventType
 ): ExtractorEventType | LoaderEventType {
   // Check if it's an ExtractorEventType by checking if the value exists in ExtractorEventType
   if (
     Object.values(ExtractorEventType).includes(eventType as ExtractorEventType)
   ) {
-    return normalizeExtractorEventType(eventType as ExtractorEventType);
+    return translateExtractorEventType(eventType as ExtractorEventType);
   }
   // Otherwise treat as LoaderEventType
   if (Object.values(LoaderEventType).includes(eventType as LoaderEventType)) {
-    return normalizeLoaderEventType(eventType as LoaderEventType);
+    return translateLoaderEventType(eventType as LoaderEventType);
   }
   // If neither, return as-is
   return eventType;

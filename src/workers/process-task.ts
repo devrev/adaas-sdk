@@ -1,5 +1,5 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
-import { normalizeIncomingEventType } from '../common/event-type-normalization';
+import { normalizeIncomingEventType } from '../common/event-type-translation';
 import { Logger, serializeError } from '../logger/logger';
 import { createAdapterState } from '../state/state';
 import {
