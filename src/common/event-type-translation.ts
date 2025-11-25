@@ -7,7 +7,7 @@ import { LoaderEventType } from '../types/loading';
  * @param eventTypeString The raw event type string from the platform
  * @returns The normalized EventType enum value
  */
-export function normalizeIncomingEventType(eventTypeString: string): EventType {
+export function translateIncomingEventType(eventTypeString: string): EventType {
   // Create a reverse mapping from OLD string values to NEW enum member names
   const eventTypeMap: Record<string, EventType> = {
     // Old extraction event types from platform -> New enum members

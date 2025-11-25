@@ -14,7 +14,7 @@ import { STATELESS_EVENT_TYPES } from '../../common/constants';
 import { getTimeoutExtractorEventType } from '../common/helpers';
 // import { Logger } from '../../logger/logger';
 import { State, createAdapterState } from '../../state/state';
-import { normalizeIncomingEventType } from '../../common/event-type-translation';
+import { translateIncomingEventType } from '../../common/event-type-translation';
 
 /**
  * Adapter class is used to interact with Airdrop platform. The class provides
@@ -45,7 +45,7 @@ export async function createAdapter<ConnectorState>(
   initialState: ConnectorState,
   isLocalDevelopment: boolean = false
 ) {
-  event.payload.event_type = normalizeIncomingEventType(event.payload.event_type);
+  event.payload.event_type = translateIncomingEventType(event.payload.event_type);
 
   const newInitialState = structuredClone(initialState);
   const adapterState: State<ConnectorState> = await createAdapterState({

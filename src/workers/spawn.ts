@@ -3,7 +3,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../common/control-protocol';
-import { normalizeIncomingEventType } from '../common/event-type-translation';
+import { translateIncomingEventType } from '../common/event-type-translation';
 import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
 import { Logger, serializeError } from '../logger/logger';
 import {
@@ -57,58 +57,6 @@ function getWorkerPath({
       break;
   }
 
-  // If the worker path does not exist or wasn't found, use the default worker path
-  if (
-    !path ||
-    (path && !(fs.existsSync(path + '.js') || fs.existsSync(path + '.ts')))
-  ) {
-    return getDefaultWorkerPath({ event, connectorWorkerPath });
-  }
-  return path;
-}
-
-function getDefaultWorkerPath({
-  event,
-  connectorWorkerPath,
-}: GetWorkerPathInterface): string | null {
-  if (connectorWorkerPath) return connectorWorkerPath;
-  let path = null;
-  switch (event.payload.event_type) {
-    case EventType.StartExtractingAttachments:
-    case EventType.ContinueExtractingAttachments:
-    case EventType.ExtractionAttachmentsStart:
-    case EventType.ExtractionAttachmentsContinue:
-      path = __dirname + '/default-workers/attachments-extraction';
-      break;
-
-    case EventType.StartDeletingExtractorState:
-    case EventType.ExtractionDataDelete:
-      path = __dirname + '/default-workers/data-deletion';
-      break;
-
-    case EventType.StartDeletingExtractorAttachmentsState:
-    case EventType.ExtractionAttachmentsDelete:
-      path = __dirname + '/default-workers/attachments-deletion';
-      break;
-
-    // Loading
-    case EventType.StartLoadingData:
-    case EventType.ContinueLoadingData:
-      path = __dirname + '/default-workers/load-data';
-      break;
-    case EventType.StartLoadingAttachments:
-    case EventType.ContinueLoadingAttachments:
-      path = __dirname + '/default-workers/load-attachments';
-      break;
-    case EventType.StartDeletingLoaderState:
-      path = __dirname + '/default-workers/delete-loader-state';
-      break;
-    case EventType.StartDeletingLoaderAttachmentState:
-      path = __dirname + '/default-workers/delete-loader-attachment-state';
-      break;
-    default:
-      path = null;
-  }
   return path;
 }
 
@@ -133,7 +81,7 @@ export async function spawn<ConnectorState>({
   // Normalize incoming event type for backwards compatibility
   // This allows the SDK to accept both old and new event type formats
   const originalEventType = event.payload.event_type;
-  const translatedEventType = normalizeIncomingEventType(
+  const translatedEventType = translateIncomingEventType(
     event.payload.event_type as string
   );
 
@@ -142,7 +90,7 @@ export async function spawn<ConnectorState>({
 
   if (translatedEventType !== originalEventType) {
     console.log(
-      `Event type normalized from ${originalEventType} to ${translatedEventType}.`
+      `Event type translated from ${originalEventType} to ${translatedEventType}.`
     );
   }
 
