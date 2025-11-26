@@ -36,7 +36,7 @@ export interface WorkerAdapterOptions {
   isLocalDevelopment?: boolean;
   timeout?: number;
   batchSize?: number;
-  workerPathOverrides?: Record<EventType, string>;
+  workerPathOverrides?: Partial<Record<EventType, string>>;
 }
 
 /**
@@ -155,4 +155,5 @@ export interface WorkerData<ConnectorState> {
 export interface GetWorkerPathInterface {
   event: AirdropEvent;
   connectorWorkerPath?: string | null;
+  callerDir?: string | null;
 }
