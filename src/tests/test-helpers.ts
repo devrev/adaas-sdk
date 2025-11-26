@@ -4,6 +4,7 @@ import {
   NormalizedItem,
 } from '../repo/repo.interfaces';
 import { AirdropEvent } from '../types/extraction';
+import { mockServer } from './e2e/jest.setup';
 import { CreateEventInterface } from './test-helpers.interfaces';
 
 export function createEvent({
@@ -18,7 +19,7 @@ export function createEvent({
   executionMetadataOverrides = {},
 }: CreateEventInterface): AirdropEvent {
   const defaultEventContext = {
-    callback_url: 'test_callback_url',
+    callback_url: `${mockServer.baseUrl}/callback_url`,
     dev_org: 'test_dev_org',
     dev_oid: 'test_dev_oid',
     dev_org_id: 'test_dev_org_id',
@@ -47,7 +48,7 @@ export function createEvent({
     sync_unit: 'test_sync_unit',
     sync_unit_id: 'test_sync_unit_id',
     uuid: 'test_uuid',
-    worker_data_url: 'test_worker_data_url',
+    worker_data_url: `${mockServer.baseUrl}/worker_data_url`,
   };
 
   return {
@@ -80,7 +81,7 @@ export function createEvent({
       ...payloadOverrides,
     },
     execution_metadata: {
-      devrev_endpoint: 'test_devrev_endpoint',
+      devrev_endpoint: mockServer.baseUrl,
       ...executionMetadataOverrides,
     },
     input_data: {

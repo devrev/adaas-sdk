@@ -1,33 +1,11 @@
 import express, { Express, Request, Response } from 'express';
 import { Server } from 'http';
 
-const DEFAULT_PORT = 3001;
-
-/**
- * Configuration object for setting up a route response.
- */
-export interface RouteConfig {
-  /** The path of the route (e.g., '/callback_url', '/worker_data_url.get') */
-  path: string;
-  /** The HTTP method (e.g., 'GET', 'POST', 'PUT', 'DELETE') */
-  method: string;
-  /** The HTTP status code to return (e.g., 200, 401, 500) */
-  status: number;
-  /** Optional response body to send as JSON */
-  body?: unknown;
-}
-
-/**
- * Type for custom route handler functions.
- */
-type RouteHandler = (req: Request, res: Response) => void;
-
-/**
- * Default response handler that returns { success: true }.
- */
-const defaultHandler: RouteHandler = (_req: Request, res: Response) => {
-  res.status(200).json({ success: true });
-};
+import {
+  DEFAULT_PORT,
+  RouteConfig,
+  RouteHandler,
+} from './mock-server-v2.interfaces';
 
 /**
  * MockServer used in tests to mock internal AirSync endpoints.
@@ -37,17 +15,10 @@ const defaultHandler: RouteHandler = (_req: Request, res: Response) => {
 export class MockServer {
   private app: Express;
   private server: Server | null = null;
-  /** The port number the server is listening on */
   public readonly port: number;
-  /** The base URL of the mock server (e.g., 'http://localhost:3001') */
   public readonly baseUrl: string;
-  /** Registry of custom route handlers keyed by 'method:path' */
   private routeHandlers: Map<string, RouteHandler> = new Map();
 
-  /**
-   * Creates a new MockServer instance.
-   * @param port - The port to listen on. Defaults to 3001.
-   */
   constructor(port: number = DEFAULT_PORT) {
     this.port = port;
     this.baseUrl = `http://localhost:${this.port}`;
@@ -55,6 +26,10 @@ export class MockServer {
 
     this.setupMiddleware();
     this.setupRoutes();
+  }
+
+  private defaultRouteHandler(_req: Request, res: Response): void {
+    res.status(200).json({ success: true });
   }
 
   /**
@@ -112,7 +87,7 @@ export class MockServer {
       if (customHandler) {
         customHandler(req, res);
       } else {
-        defaultHandler(req, res);
+        this.defaultRouteHandler(req, res);
       }
     };
   }
@@ -185,9 +160,7 @@ export class MockServer {
   public async start(): Promise<void> {
     return new Promise((resolve) => {
       this.server = this.app.listen(this.port, () => {
-        console.log(
-          `✅ Mock server running on http://localhost:${this.port}\n`
-        );
+        console.log(`Mock server running on http://localhost:${this.port}`);
         resolve();
       });
     });
@@ -207,7 +180,7 @@ export class MockServer {
         if (err) {
           reject(err);
         } else {
-          console.log('🛑 Mock server stopped\n');
+          console.log('Mock server stopped');
           this.server = null;
           resolve();
         }
