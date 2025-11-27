@@ -10,7 +10,7 @@ on:
         description: "Release type"
         type: choice
         required: true
-        options: [patch, minor, prepatch, preminor, prerelease]
+        options: [patch, minor, beta]
       dry-run:
         description: "Dry Run - skip commit and publish"
         type: boolean
@@ -45,7 +45,7 @@ jobs:
 
       # Check branch restriction for non-beta releases
       - name: Check branch for production releases
-        if: startsWith(github.event.inputs.release-type, 'pre') != true
+        if: github.event.inputs.release-type != 'beta'
         run: |
           if [ "${{ github.ref_name }}" != "main" ]; then
             echo "ERROR: Production releases (non-pre releases) can only be made from the main branch"
@@ -90,7 +90,7 @@ jobs:
 
 
           # Calculate and apply the new version
-          if [ "${{ github.event.inputs.release-type }}" = "prerelease" ]; then
+          if [[ "${{ github.event.inputs.release-type }}" == "beta" ]]; then
             NEW_VERSION=$(npm --no-git-tag-version --preid=beta version prerelease)
           else
             NEW_VERSION=$(npm --no-git-tag-version version ${{ github.event.inputs.release-type }})
@@ -102,7 +102,7 @@ jobs:
       # Set release tag based on release type
       - name: Set release tag
         run: |
-          if [[ "${{ github.event.inputs.release-type }}" == pre* ]]; then
+          if [[ "${{ github.event.inputs.release-type }}" == "beta" ]]; then
             echo "RELEASE_TAG=beta" >> $GITHUB_ENV
           else
             echo "RELEASE_TAG=latest" >> $GITHUB_ENV
@@ -132,7 +132,7 @@ jobs:
 
       # Documentation on config options https://github.com/softprops/action-gh-release
       - name: Update GitHub release documentation
-        if: ${{ github.event.inputs.dry-run == 'false' && !startsWith(github.event.inputs.release-type, 'pre') }}
+        if: ${{ github.event.inputs.dry-run == 'false' && github.event.inputs.release-type != 'beta' }}
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.NEW_VERSION }}
