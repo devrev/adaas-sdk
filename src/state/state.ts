@@ -15,7 +15,6 @@ import {
   SdkState,
   StateInterface,
 } from './state.interfaces';
-import { runWithUserLogContext } from '../logger/logger.context';
 
 export async function createAdapterState<ConnectorState>({
   event,
@@ -133,11 +132,10 @@ export class State<ConnectorState> {
       }
 
       this.state = parsedState;
-      runWithUserLogContext(
-        () => console.log(
-          'State fetched successfully. Current state',
-          getPrintableState(this.state)
-        ));
+      console.log(
+        'State fetched successfully. Current state',
+        getPrintableState(this.state)
+      );
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         console.log('State not found. Initializing state with initial state.');
@@ -188,11 +186,10 @@ export class State<ConnectorState> {
         }
       );
 
-      runWithUserLogContext(() =>
-        console.log(
-          'State updated successfully to',
-          getPrintableState(this.state)
-        ));
+      console.log(
+        'State updated successfully to',
+        getPrintableState(this.state)
+      );
     } catch (error) {
       console.error('Failed to update the state.', serializeError(error));
       process.exit(1);

@@ -8,7 +8,7 @@ import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 
 import { INSPECT_OPTIONS, MAX_LOG_STRING_LENGTH } from './logger.constants';
-import { ensureSdkLogContext, getSdkLogContextValue } from './logger.context';
+import { getSdkLogContextValueOrUndefined } from './logger.context';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
@@ -29,7 +29,6 @@ export class Logger extends Console {
 
   constructor({ event, options }: LoggerFactoryInterface) {
     super(process.stdout, process.stderr);
-    ensureSdkLogContext();
     this.originalConsole = console;
     this.options = options;
     this.tags = {
@@ -97,6 +96,58 @@ export class Logger extends Console {
   }
 
   /**
+   * Determines if a log call originated from SDK code.
+   *
+   * This uses a two-tier approach:
+   * 1. First checks AsyncLocalStorage context (set by runWithUserLogContext/runWithSdkLogContext)
+   * 2. Falls back to stack-based detection if no explicit context is set
+   *
+   * Stack-based detection examines the call stack to find the first frame outside
+   * of the logger module. If that frame is from SDK code (within node_modules/@devrev/ts-adaas
+   * or the SDK's src/dist directories), it's an SDK log. Otherwise, it's a user log.
+   */
+  private getSdkLogFlag(): boolean {
+    // First, check if there's an explicit context set via AsyncLocalStorage
+    const contextValue = getSdkLogContextValueOrUndefined();
+    if (typeof contextValue === 'boolean') {
+      return contextValue;
+    }
+
+    // Fall back to stack-based detection
+    const stack = new Error().stack;
+    if (!stack) return true; // Default to SDK log if we can't determine
+
+    const stackLines = stack.split('\n');
+
+    // Skip the first few lines and find the first frame that's not from the logger itself
+    for (let i = 1; i < stackLines.length; i++) {
+      const line = stackLines[i];
+
+      // Skip logger internal frames (allow tests)
+      if (line.includes('/logger/logger.') && !line.includes('/logger/logger.test.')) {
+        continue;
+      }
+
+      // Skip node internals and node_modules (except our SDK)
+      if (line.includes('node:')) {
+        continue;
+      }
+
+      // Now we have the first real caller frame
+      // Check if it's from SDK code
+      const isSdkCode =
+        line.includes('/@devrev/ts-adaas/') ||  // Installed as dependency
+        line.includes('/adaas-sdk/dist/') ||    // Compiled SDK
+        line.includes('/adaas-sdk/src/');       // Source SDK
+
+      return isSdkCode;
+    }
+
+    // Default to SDK log if we can't determine
+    return true;
+  }
+
+  /**
    * Stringifies and logs arguments to the appropriate destination.
    * On main thread, converts arguments to strings and calls logFn.
    * In worker threads, forwards stringified arguments to the main thread for processing.
@@ -152,10 +203,6 @@ export class Logger extends Console {
 
   sdkError(...args: unknown[]): void {
     this.stringifyAndLog(args, LogLevel.ERROR, true);
-  }
-
-  private getSdkLogFlag(): boolean {
-    return getSdkLogContextValue(this.tags.sdk_log);
   }
 }
 /**

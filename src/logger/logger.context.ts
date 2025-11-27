@@ -24,3 +24,7 @@ export function getSdkLogContextValue(defaultValue: boolean): boolean {
   }
   return defaultValue;
 }
+
+export function getSdkLogContextValueOrUndefined(): boolean | undefined {
+  return sdkLogContext.getStore();
+}
