@@ -206,7 +206,7 @@ export class WorkerAdapter<ConnectorState> {
 
     // We want to upload all the repos before emitting the event, except for the external sync units done event
     if (newEventType !== ExtractorEventType.ExternalSyncUnitExtractionDone) {
-      (console as Logger).sdkInfo(
+      console.log(
         `Uploading all repos before emitting event with event type: ${newEventType}.`
       );
 
@@ -232,7 +232,7 @@ export class WorkerAdapter<ConnectorState> {
 
     // We want to save the state every time we emit an event, except for the start and delete events
     if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
-      (console as Logger).sdkInfo(
+      console.log(
         `Saving state before emitting event with event type: ${newEventType}.`
       );
 
