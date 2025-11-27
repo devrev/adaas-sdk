@@ -75,7 +75,6 @@ function getCallerDirectory(): string {
     const filename = callSite.getFileName();
     if (
       filename &&
-      !filename.includes('node_modules') &&
       !filename.includes('@devrev/ts-adaas') &&
       !filename.includes('adaas-sdk')
     ) {
