@@ -3,9 +3,10 @@ import { Server } from 'http';
 
 import {
   DEFAULT_PORT,
+  RequestInfo,
   RouteConfig,
   RouteHandler,
-} from './mock-server-v2.interfaces';
+} from './mock-server.interfaces';
 
 /**
  * MockServer used in tests to mock internal AirSync endpoints.
@@ -18,26 +19,42 @@ export class MockServer {
   public readonly port: number;
   public readonly baseUrl: string;
   private routeHandlers: Map<string, RouteHandler> = new Map();
+  private requests: RequestInfo[] = [];
 
   constructor(port: number = DEFAULT_PORT) {
     this.port = port;
     this.baseUrl = `http://localhost:${this.port}`;
     this.app = express();
 
-    this.setupMiddleware();
+    this.app.use(express.json());
     this.setupRoutes();
   }
 
-  private defaultRouteHandler(_req: Request, res: Response): void {
-    res.status(200).json({ success: true });
+  public async start(): Promise<void> {
+    return new Promise((resolve) => {
+      this.server = this.app.listen(this.port, () => {
+        console.log(`Mock server running on http://localhost:${this.port}`);
+        resolve();
+      });
+    });
   }
 
-  /**
-   * Sets up Express middleware for JSON parsing.
-   * @private
-   */
-  private setupMiddleware(): void {
-    this.app.use(express.json());
+  public async stop(): Promise<void> {
+    if (!this.server) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      this.server!.close((err) => {
+        if (err) {
+          reject(err);
+        } else {
+          console.log('Mock server stopped');
+          this.server = null;
+          resolve();
+        }
+      });
+    });
   }
 
   /**
@@ -71,6 +88,35 @@ export class MockServer {
       '/internal/snap-ins.get',
       this.createRouteHandler('GET', '/internal/snap-ins.get')
     );
+
+    // AIRDROP RECIPE INITIAL DOMAIN MAPPINGS INSTALL URL
+    this.app.post(
+      '/internal/airdrop.recipe.initial-domain-mappings.install',
+      this.createRouteHandler(
+        'POST',
+        '/internal/airdrop.recipe.initial-domain-mappings.install'
+      )
+    );
+
+    // ARTIFACTS URL
+    this.app.get(
+      '/internal/airdrop.artifacts.upload-url',
+      this.createRouteHandler('GET', '/internal/airdrop.artifacts.upload-url')
+    );
+
+    this.app.post(
+      '/internal/airdrop.artifacts.confirm-upload',
+      this.createRouteHandler(
+        'POST',
+        '/internal/airdrop.artifacts.confirm-upload'
+      )
+    );
+
+    // FILE UPLOAD URL
+    this.app.post(
+      '/file-upload-url',
+      this.createRouteHandler('POST', '/file-upload-url')
+    );
   }
 
   /**
@@ -82,6 +128,19 @@ export class MockServer {
    */
   private createRouteHandler(method: string, path: string): RouteHandler {
     return (req: Request, res: Response) => {
+      // Capture request information
+      const requestInfo: RequestInfo = {
+        method: req.method,
+        url: req.url || req.path,
+      };
+
+      // Capture body if present (already parsed by express.json())
+      if (req.body !== undefined && req.body !== null) {
+        requestInfo.body = req.body;
+      }
+
+      this.requests.push(requestInfo);
+
       const key = `${method}:${path}`;
       const customHandler = this.routeHandlers.get(key);
       if (customHandler) {
@@ -90,6 +149,30 @@ export class MockServer {
         this.defaultRouteHandler(req, res);
       }
     };
+  }
+
+  private defaultRouteHandler(req: Request, res: Response): void {
+    if (req.method === 'GET' && req.path === '/worker_data_url.get') {
+      res.status(200).json({
+        state: JSON.stringify({}),
+      });
+    } else if (req.method === 'GET' && req.path === '/internal/snap-ins.get') {
+      res.status(200).json({
+        snap_in: {
+          imports: [{ name: 'test_import_slug' }],
+          snap_in_version: { slug: 'test_snap_in_slug' },
+        },
+      });
+    } else if (
+      req.method === 'GET' &&
+      req.path === '/internal/airdrop.artifacts.upload-url'
+    ) {
+      res.status(200).json({
+        upload_url: `${this.baseUrl}/file-upload-url`,
+      });
+    } else {
+      res.status(200).json({ success: true });
+    }
   }
 
   /**
@@ -104,18 +187,6 @@ export class MockServer {
   }
 
   /**
-   * Registers a route handler for a specific method and path.
-   * This handler will override the default handler for the route.
-   * @param path - The path of the route (e.g., '/callback_url')
-   * @param method - The HTTP method (e.g., 'GET', 'POST')
-   * @param handler - The handler function that receives Express Request and Response objects
-   */
-  public mockRoute(path: string, method: string, handler: RouteHandler): void {
-    const key = this.getRouteKey(method, path);
-    this.routeHandlers.set(key, handler);
-  }
-
-  /**
    * Configures a route to return a specific status code and optional response body.
    * This is a convenience method for simple status/body responses.
    * @param config - The route configuration object
@@ -126,23 +197,14 @@ export class MockServer {
    */
   public setRoute(config: RouteConfig): void {
     const { path, method, status, body } = config;
-    this.mockRoute(path, method, (req: Request, res: Response) => {
+    const key = this.getRouteKey(method, path);
+    this.routeHandlers.set(key, (req: Request, res: Response) => {
       if (body !== undefined) {
         res.status(status).json(body);
       } else {
         res.status(status).send();
       }
     });
-  }
-
-  /**
-   * Clears a specific route handler, restoring the default handler.
-   * @param path - The path of the route to clear
-   * @param method - The HTTP method of the route to clear
-   */
-  public clearRoute(path: string, method: string): void {
-    const key = this.getRouteKey(method, path);
-    this.routeHandlers.delete(key);
   }
 
   /**
@@ -154,37 +216,29 @@ export class MockServer {
   }
 
   /**
-   * Starts the mock server and begins listening on the configured port.
-   * @returns A Promise that resolves when the server has started
+   * Returns a copy of all tracked requests.
+   * @returns An array of RequestInfo objects representing all requests received
    */
-  public async start(): Promise<void> {
-    return new Promise((resolve) => {
-      this.server = this.app.listen(this.port, () => {
-        console.log(`Mock server running on http://localhost:${this.port}`);
-        resolve();
-      });
-    });
+  public getRequests(): RequestInfo[] {
+    return [...this.requests];
   }
 
   /**
-   * Stops the mock server and closes the connection.
-   * @returns A Promise that resolves when the server has stopped, or rejects if an error occurs
+   * Clears all tracked requests.
+   * This should be called in beforeEach hooks to ensure test isolation.
    */
-  public async stop(): Promise<void> {
-    if (!this.server) {
-      return Promise.resolve();
-    }
+  public clearRequests(): void {
+    this.requests = [];
+  }
 
-    return new Promise((resolve, reject) => {
-      this.server!.close((err) => {
-        if (err) {
-          reject(err);
-        } else {
-          console.log('Mock server stopped');
-          this.server = null;
-          resolve();
-        }
-      });
-    });
+  /**
+   * Returns the most recent request or undefined if no requests exist.
+   * @returns The last RequestInfo object or undefined
+   */
+  public getLastRequest(): RequestInfo | undefined {
+    if (this.requests.length === 0) {
+      return undefined;
+    }
+    return this.requests[this.requests.length - 1];
   }
 }

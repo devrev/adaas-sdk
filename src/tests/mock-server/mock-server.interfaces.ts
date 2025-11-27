@@ -20,3 +20,15 @@ export interface RouteConfig {
  * Type for custom route handler functions.
  */
 export type RouteHandler = (req: Request, res: Response) => unknown;
+
+/**
+ * Information about a request received by the mock server.
+ */
+export interface RequestInfo {
+  /** The HTTP method (e.g., 'GET', 'POST') */
+  method: string;
+  /** The full URL path of the request */
+  url: string;
+  /** Optional request body (for POST/PUT requests) */
+  body?: unknown;
+}

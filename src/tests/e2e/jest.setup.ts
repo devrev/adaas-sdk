@@ -1,7 +1,7 @@
-import { MockServer } from '../mock-server-v2/mock-server-v2';
-import { DEFAULT_PORT } from '../mock-server-v2/mock-server-v2.interfaces';
+import { MockServer } from '../mock-server/mock-server';
+import { DEFAULT_PORT } from '../mock-server/mock-server.interfaces';
 
-jest.setTimeout(15000);
+jest.setTimeout(15000); // 15 seconds
 
 export const mockServer = new MockServer(DEFAULT_PORT);
 
