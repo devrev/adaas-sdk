@@ -2,13 +2,13 @@ import {
   AirdropEvent,
   EventType,
   ExtractorEventType,
-} from '../../../types/extraction';
-import { createEvent } from '../../test-helpers';
-import { mockServer } from '../jest.setup';
+} from '../../types/extraction';
+import { createEvent } from '../test-helpers';
+import { mockServer } from './jest.setup';
 
-import run from '../extraction';
+import run from './extraction';
 
-describe('No timeout', () => {
+describe('Timeout graceful', () => {
   let event: AirdropEvent;
   beforeEach(() => {
     event = createEvent({
@@ -16,14 +16,14 @@ describe('No timeout', () => {
     });
   });
 
-  it('should emit done event when no timeout is reached', async () => {
-    await run([event], __dirname + '/no-timeout');
+  it('should emit progress event when timeout is reached but event loop is not blocked', async () => {
+    await run([event], __dirname + '/timeout-graceful');
 
     const lastRequest = mockServer.getLastRequest();
     expect(lastRequest?.url).toContain('/callback_url');
     expect(lastRequest?.method).toBe('POST');
     expect((lastRequest?.body as { event_type: string }).event_type).toBe(
-      ExtractorEventType.ExtractionDataDone
+      ExtractorEventType.ExtractionDataProgress
     );
   });
 });

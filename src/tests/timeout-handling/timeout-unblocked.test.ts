@@ -2,11 +2,11 @@ import {
   AirdropEvent,
   EventType,
   ExtractorEventType,
-} from '../../../types/extraction';
-import { createEvent } from '../../test-helpers';
-import { mockServer } from '../jest.setup';
+} from '../../types/extraction';
+import { createEvent } from '../test-helpers';
+import { mockServer } from './jest.setup';
 
-import run from '../extraction';
+import run from './extraction';
 
 describe('Timeout unblocked', () => {
   let event: AirdropEvent;
@@ -27,4 +27,3 @@ describe('Timeout unblocked', () => {
     );
   });
 });
-

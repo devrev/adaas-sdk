@@ -1,4 +1,4 @@
-import { ExtractorEventType, processTask } from '../../../index';
+import { ExtractorEventType, processTask } from '../../index';
 
 const repos = [
   {

@@ -1,8 +1,4 @@
-import {
-  ExternalSyncUnit,
-  ExtractorEventType,
-  processTask,
-} from '../../../index';
+import { ExternalSyncUnit, ExtractorEventType, processTask } from '../../index';
 
 processTask({
   task: async ({ adapter }) => {

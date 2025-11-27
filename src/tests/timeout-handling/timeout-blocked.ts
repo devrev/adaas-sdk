@@ -1,9 +1,8 @@
-import { ExtractorEventType, processTask } from '../../../index';
+import { ExtractorEventType, processTask } from '../../index';
 
 processTask({
   task: async ({ adapter }) => {
-    // CPU-intensive nested loops that yield control after logging
-    // This allows the event loop to process timeout messages
+    // Simple CPU-intensive nested loops that block the event loop
     let result = 0;
     for (let i = 0; i < 100000; i++) {
       for (let j = 0; j < 10000; j++) {
@@ -11,10 +10,9 @@ processTask({
         result = Math.abs(result) % 1000000;
       }
 
-      // Log every 10000 iterations and yield control to event loop
+      // Log every 10000 iterations to show progress
       if (i % 10000 === 0) {
-        console.log(`timeout-unblocked iteration ${i}`);
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        console.log(`timeout-blocked iteration ${i}`);
       }
     }
 
