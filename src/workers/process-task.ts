@@ -18,8 +18,8 @@ export function processTask<ConnectorState>({
   onTimeout,
 }: ProcessTaskInterface<ConnectorState>) {
   if (!isMainThread) {
-    runWithSdkLogContext(() => {
-      void (async () => {
+    void (async () => {
+      await runWithSdkLogContext(async () => {
         try {
           const event = workerData.event;
 
@@ -52,23 +52,25 @@ export function processTask<ConnectorState>({
               WorkerEvent.WorkerMessage,
               (message) =>
                 void (async () => {
-                  if (
-                    message.subject === WorkerMessageSubject.WorkerMessageExit
-                  ) {
-                    console.log(
-                      'Worker received message to gracefully exit. Setting isTimeout flag and executing onTimeout function.'
-                    );
+                  await runWithSdkLogContext(async () => {
+                    if (
+                      message.subject === WorkerMessageSubject.WorkerMessageExit
+                    ) {
+                      console.log(
+                        'Worker received message to gracefully exit. Setting isTimeout flag and executing onTimeout function.'
+                      );
 
-                    adapter.handleTimeout();
-                    await runWithUserLogContext(async () =>
-                      onTimeout({ adapter })
-                    );
+                      adapter.handleTimeout();
+                      await runWithUserLogContext(async () =>
+                        onTimeout({ adapter })
+                      );
 
-                    console.log(
-                      'Finished executing onTimeout function. Exiting worker.'
-                    );
-                    process.exit(0);
-                  }
+                      console.log(
+                        'Finished executing onTimeout function. Exiting worker.'
+                      );
+                      process.exit(0);
+                    }
+                  });
                 })()
             );
             await runWithUserLogContext(async () => task({ adapter }));
@@ -78,7 +80,7 @@ export function processTask<ConnectorState>({
           console.error('Error while processing task.', serializeError(error));
           process.exit(1);
         }
-      })();
-    });
+      });
+    })();
   }
 }
