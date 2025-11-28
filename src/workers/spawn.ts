@@ -1,4 +1,3 @@
-import fs from 'fs';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -26,16 +25,11 @@ import {
 } from '../common/constants';
 import { LogLevel } from '../logger/logger.interfaces';
 import { createWorker } from './create-worker';
-import path from 'path';
 
 function getWorkerPath({
   event,
-  connectorWorkerPath,
   callerDir
 }: GetWorkerPathInterface): string | null {
-  if (connectorWorkerPath) return connectorWorkerPath;
-
-
   let path = null;
   switch (event.payload.event_type) {
     case EventType.StartExtractingExternalSyncUnits:
@@ -58,35 +52,6 @@ function getWorkerPath({
 }
 
 /**
- * Gets the directory of the file that called into the SDK (the snap-in's file)
- * by inspecting the call stack and finding the first file outside the SDK.
- */
-function getCallerDirectory(): string {
-  const originalPrepareStackTrace = Error.prepareStackTrace;
-  
-  Error.prepareStackTrace = (_, stack) => stack;
-  const err = new Error();
-  Error.captureStackTrace(err);
-  const stack = err.stack as unknown as NodeJS.CallSite[];
-  Error.prepareStackTrace = originalPrepareStackTrace;
-  
-  // Iterate through the stack to find the first file that's not part of the SDK
-  for (const callSite of stack) {
-    const filename = callSite.getFileName();
-    if (
-      filename &&
-      !filename.includes('@devrev/ts-adaas') &&
-      !filename.includes('adaas-sdk')
-    ) {
-      return path.dirname(filename);
-    }
-  }
-  
-  // Fallback to __dirname if we can't determine the caller
-  return __dirname;
-}
-
-/**
  * Creates a new instance of Spawn class.
  * Spawn class is responsible for spawning a new worker thread and managing the lifecycle of the worker.
  * The class provides utilities to emit control events to the platform and exit the worker gracefully.
@@ -104,9 +69,6 @@ export async function spawn<ConnectorState>({
   initialDomainMapping,
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
-  // Get the directory of the snap-in file that called spawn
-  const callerDir = getCallerDirectory();
-
   // Normalize incoming event type for backwards compatibility
   // This allows the SDK to accept both old and new event type formats
   const originalEventType = event.payload.event_type;
@@ -141,16 +103,18 @@ export async function spawn<ConnectorState>({
   console = new Logger({ event, options });
 
   let script = null;
-  if (
+  if (workerPath != null) {
+    script = workerPath;
+  } else if (
+    options?.baseWorkerPath != null &&
     options?.workerPathOverrides != null &&
     options.workerPathOverrides[translatedEventType as EventType] != null
   ) {
-    script = callerDir + options.workerPathOverrides[translatedEventType as EventType];
+    script = options.baseWorkerPath + options.workerPathOverrides[translatedEventType as EventType];
   } else {
     script = getWorkerPath({
       event,
-      connectorWorkerPath: workerPath,
-      callerDir: callerDir
+      callerDir: options?.baseWorkerPath ?? __dirname
     });
   }
 
