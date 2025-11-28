@@ -204,7 +204,7 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     // We want to upload all the repos before emitting the event, except for the external sync units done event
-    if (newEventType !== ExtractorEventType.ExtractionExternalSyncUnitsDone) {
+    if (newEventType !== ExtractorEventType.ExternalSyncUnitExtractionDone) {
       console.log(
         `Uploading all repos before emitting event with event type: ${newEventType}.`
       );
@@ -220,7 +220,7 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     // If the extraction is done, we want to save the timestamp of the last successful sync
-    if (newEventType === ExtractorEventType.ExtractionAttachmentsDone) {
+    if (newEventType === ExtractorEventType.AttachmentExtractionDone) {
       console.log(
         `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${this.state.lastSyncStarted}).`
       );
@@ -375,7 +375,7 @@ export class WorkerAdapter<ConnectorState> {
           });
 
           if (rateLimit?.delay) {
-            await this.emit(LoaderEventType.DataLoadingDelay, {
+            await this.emit(LoaderEventType.DataLoadingDelayed, {
               delay: rateLimit.delay,
               reports: this.reports,
               processed_files: this.processedFiles,
@@ -478,7 +478,7 @@ export class WorkerAdapter<ConnectorState> {
           });
 
           if (rateLimit?.delay) {
-            await this.emit(LoaderEventType.DataLoadingDelay, {
+            await this.emit(LoaderEventType.DataLoadingDelayed, {
               delay: rateLimit.delay,
               reports: this.reports,
               processed_files: this.processedFiles,
