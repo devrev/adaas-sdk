@@ -28,7 +28,7 @@ import { createWorker } from './create-worker';
 
 function getWorkerPath({
   event,
-  callerDir
+  workerBasePath
 }: GetWorkerPathInterface): string | null {
   let path = null;
   switch (event.payload.event_type) {
@@ -48,7 +48,7 @@ function getWorkerPath({
       break;
   }
 
-  return path ? callerDir + path : null;
+  return path ? workerBasePath + path : null;
 }
 
 /**
@@ -69,14 +69,14 @@ export async function spawn<ConnectorState>({
   initialDomainMapping,
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
-  // Normalize incoming event type for backwards compatibility
+  // Translates incoming event type for backwards compatibility
   // This allows the SDK to accept both old and new event type formats
   const originalEventType = event.payload.event_type;
   const translatedEventType = translateIncomingEventType(
     event.payload.event_type as string
   );
 
-  // Update the event with the normalized event type
+  // Update the event with the translated event type
   event.payload.event_type = translatedEventType;
 
   if (translatedEventType !== originalEventType) {
@@ -114,7 +114,7 @@ export async function spawn<ConnectorState>({
   } else {
     script = getWorkerPath({
       event,
-      callerDir: options?.baseWorkerPath ?? __dirname
+      workerBasePath: options?.baseWorkerPath ?? __dirname
     });
   }
 

@@ -156,6 +156,5 @@ export interface WorkerData<ConnectorState> {
  */
 export interface GetWorkerPathInterface {
   event: AirdropEvent;
-  connectorWorkerPath?: string | null;
-  callerDir?: string | null;
+  workerBasePath?: string | null;
 }

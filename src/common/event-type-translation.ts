@@ -5,7 +5,7 @@ import { LoaderEventType } from '../types/loading';
  * Maps old incoming event type strings to new EventType enum values.
  * This ensures backwards compatibility when the platform sends old event types.
  * @param eventTypeString The raw event type string from the platform
- * @returns The normalized EventType enum value
+ * @returns The translated EventType enum value
  */
 export function translateIncomingEventType(eventTypeString: string): EventType {
   // Create a reverse mapping from OLD string values to NEW enum member names
@@ -53,8 +53,8 @@ export function translateIncomingEventType(eventTypeString: string): EventType {
     [EventType.UnknownEventType]: EventType.UnknownEventType,
   };
 
-  const normalized = eventTypeMap[eventTypeString];
-  if (!normalized) {
+  const translated = eventTypeMap[eventTypeString];
+  if (!translated) {
     console.warn(
       `Unknown event type received: ${eventTypeString}. This may indicate a new event type or a typo.`
     );
@@ -62,11 +62,11 @@ export function translateIncomingEventType(eventTypeString: string): EventType {
     return eventTypeString as EventType;
   }
 
-  return normalized;
+  return translated;
 }
 
 /**
- * Normalizes ExtractorEventType enum values by converting old enum members to new ones.
+ * Translates ExtractorEventType enum values by converting old enum members to new ones.
  * Old enum members are deprecated and should be replaced with new ones.
  */
 export function translateExtractorEventType(
@@ -116,7 +116,7 @@ export function translateExtractorEventType(
 }
 
 /**
- * Normalizes LoaderEventType enum values by converting old enum members to new ones.
+ * Translates LoaderEventType enum values by converting old enum members to new ones.
  * Old enum members are deprecated and should be replaced with new ones.
  */
 export function translateLoaderEventType(
@@ -143,7 +143,7 @@ export function translateLoaderEventType(
 }
 
 /**
- * Normalizes any outgoing event type (Extractor or Loader) to ensure new event types are used.
+ * Translates any outgoing event type (Extractor or Loader) to ensure new event types are used.
  */
 export function translateOutgoingEventType(
   eventType: ExtractorEventType | LoaderEventType

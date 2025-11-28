@@ -22,7 +22,7 @@ export const emit = async ({
   eventType,
   data,
 }: EmitInterface): Promise<AxiosResponse> => {
-  // Normalize outgoing event type to ensure we always send new event types
+  // Translate outgoing event type to ensure we always send new event types
   // TODO: Remove when the old types are completely phased out
   const translatedEventType = translateOutgoingEventType(eventType);
 
