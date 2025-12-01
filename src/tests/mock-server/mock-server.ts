@@ -6,6 +6,7 @@ import {
   RequestInfo,
   RouteConfig,
   RouteHandler,
+  RouteHandlers,
 } from './mock-server.interfaces';
 
 /**
@@ -18,7 +19,7 @@ export class MockServer {
   private server: Server | null = null;
   public readonly port: number;
   public readonly baseUrl: string;
-  private routeHandlers: Map<string, RouteHandler> = new Map();
+  private routeHandlers: RouteHandlers = new Map();
   private requests: RequestInfo[] = [];
 
   constructor(port: number = DEFAULT_MOCK_SERVER_PORT) {
@@ -33,7 +34,7 @@ export class MockServer {
   public async start(): Promise<void> {
     return new Promise((resolve) => {
       this.server = this.app.listen(this.port, () => {
-        console.log(`Mock server running on http://localhost:${this.port}`);
+        console.log(`Mock server running on http://localhost:${this.port}.`);
         resolve();
       });
     });
@@ -49,7 +50,7 @@ export class MockServer {
         if (err) {
           reject(err);
         } else {
-          console.log('Mock server stopped');
+          console.log('Mock server stopped.');
           this.server = null;
           resolve();
         }
@@ -60,7 +61,6 @@ export class MockServer {
   /**
    * Sets up default routes for the mock server.
    * All routes return { success: true } by default unless overridden.
-   * @private
    */
   private setupRoutes(): void {
     // CALLBACK URL

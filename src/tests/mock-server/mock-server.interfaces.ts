@@ -32,3 +32,5 @@ export interface RequestInfo {
   /** Optional request body (for POST/PUT requests) */
   body?: unknown;
 }
+
+export type RouteHandlers = Map<string, RouteHandler>;
