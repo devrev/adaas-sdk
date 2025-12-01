@@ -11,7 +11,7 @@ describe('Dummy Connector - Metadata Extraction', () => {
   let event: AirdropEvent;
   beforeEach(() => {
     event = createEvent({
-      eventType: EventType.ExtractionMetadataStart,
+      eventType: EventType.StartExtractingMetadata,
     });
   });
 

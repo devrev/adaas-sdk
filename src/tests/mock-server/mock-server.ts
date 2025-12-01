@@ -59,40 +59,36 @@ export class MockServer {
   }
 
   /**
-   * Sets up default routes for the mock server.
-   * All routes return { success: true } by default unless overridden.
+   * Sets up routes for the mock server.
    */
   private setupRoutes(): void {
     // CALLBACK URL
-    this.app.post(
-      '/callback_url',
-      this.createRouteHandler('POST', '/callback_url')
-    );
+    this.app.post('/callback_url', this.routeHandler('POST', '/callback_url'));
 
     // WORKER DATA URL
     this.app.post(
       '/worker_data_url',
-      this.createRouteHandler('POST', '/worker_data_url')
+      this.routeHandler('POST', '/worker_data_url')
     );
     this.app.get(
       '/worker_data_url.get',
-      this.createRouteHandler('GET', '/worker_data_url.get')
+      this.routeHandler('GET', '/worker_data_url.get')
     );
     this.app.post(
       '/worker_data_url.update',
-      this.createRouteHandler('POST', '/worker_data_url.update')
+      this.routeHandler('POST', '/worker_data_url.update')
     );
 
     // SNAP-INS URL
     this.app.get(
       '/internal/snap-ins.get',
-      this.createRouteHandler('GET', '/internal/snap-ins.get')
+      this.routeHandler('GET', '/internal/snap-ins.get')
     );
 
     // AIRDROP RECIPE INITIAL DOMAIN MAPPINGS INSTALL URL
     this.app.post(
       '/internal/airdrop.recipe.initial-domain-mappings.install',
-      this.createRouteHandler(
+      this.routeHandler(
         'POST',
         '/internal/airdrop.recipe.initial-domain-mappings.install'
       )
@@ -101,21 +97,18 @@ export class MockServer {
     // ARTIFACTS URL
     this.app.get(
       '/internal/airdrop.artifacts.upload-url',
-      this.createRouteHandler('GET', '/internal/airdrop.artifacts.upload-url')
+      this.routeHandler('GET', '/internal/airdrop.artifacts.upload-url')
     );
 
     this.app.post(
       '/internal/airdrop.artifacts.confirm-upload',
-      this.createRouteHandler(
-        'POST',
-        '/internal/airdrop.artifacts.confirm-upload'
-      )
+      this.routeHandler('POST', '/internal/airdrop.artifacts.confirm-upload')
     );
 
     // FILE UPLOAD URL
     this.app.post(
       '/file-upload-url',
-      this.createRouteHandler('POST', '/file-upload-url')
+      this.routeHandler('POST', '/file-upload-url')
     );
   }
 
@@ -124,20 +117,16 @@ export class MockServer {
    * @param method - The HTTP method
    * @param path - The route path
    * @returns A route handler function
-   * @private
    */
-  private createRouteHandler(method: string, path: string): RouteHandler {
+  private routeHandler(method: string, path: string): RouteHandler {
     return (req: Request, res: Response) => {
-      // Capture request information
       const requestInfo: RequestInfo = {
         method: req.method,
         url: req.url || req.path,
+        ...(req.body !== undefined && req.body !== null
+          ? { body: req.body }
+          : {}),
       };
-
-      // Capture body if present (already parsed by express.json())
-      if (req.body !== undefined && req.body !== null) {
-        requestInfo.body = req.body;
-      }
 
       this.requests.push(requestInfo);
 
@@ -151,6 +140,13 @@ export class MockServer {
     };
   }
 
+  /**
+   * Default route handler for the mock server. Returns { success: true } for
+   * routes that are not explicitly set.
+   * @param req - The request object
+   * @param res - The response object
+   * @returns void
+   */
   private defaultRouteHandler(req: Request, res: Response): void {
     if (req.method === 'GET' && req.path === '/worker_data_url.get') {
       res.status(200).json({
@@ -180,7 +176,6 @@ export class MockServer {
    * @param method - The HTTP method
    * @param path - The route path
    * @returns The route key in the format 'METHOD:path'
-   * @private
    */
   private getRouteKey(method: string, path: string): string {
     return `${method.toUpperCase()}:${path}`;
@@ -188,7 +183,6 @@ export class MockServer {
 
   /**
    * Configures a route to return a specific status code and optional response body.
-   * This is a convenience method for simple status/body responses.
    * @param config - The route configuration object
    * @param config.path - The path of the route (e.g., '/callback_url')
    * @param config.method - The HTTP method (e.g., 'GET', 'POST')
@@ -198,7 +192,7 @@ export class MockServer {
   public setRoute(config: RouteConfig): void {
     const { path, method, status, body } = config;
     const key = this.getRouteKey(method, path);
-    this.routeHandlers.set(key, (req: Request, res: Response) => {
+    this.routeHandlers.set(key, (_req: Request, res: Response) => {
       if (body !== undefined) {
         res.status(status).json(body);
       } else {
@@ -209,26 +203,9 @@ export class MockServer {
 
   /**
    * Resets all custom route handlers, restoring all default handlers.
-   * This should be called in beforeEach hooks to ensure test isolation.
    */
   public resetRoutes(): void {
     this.routeHandlers.clear();
-  }
-
-  /**
-   * Returns a copy of all tracked requests.
-   * @returns An array of RequestInfo objects representing all requests received
-   */
-  public getRequests(): RequestInfo[] {
-    return [...this.requests];
-  }
-
-  /**
-   * Clears all tracked requests.
-   * This should be called in beforeEach hooks to ensure test isolation.
-   */
-  public clearRequests(): void {
-    this.requests = [];
   }
 
   /**

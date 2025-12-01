@@ -12,12 +12,12 @@ processTask({
       },
     ];
 
-    await adapter.emit(ExtractorEventType.ExtractionExternalSyncUnitsDone, {
+    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionDone, {
       external_sync_units: dummyExternalSyncUnits,
     });
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionExternalSyncUnitsError, {
+    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionError, {
       error: {
         message: 'Failed to extract external sync units. Lambda timeout.',
       },

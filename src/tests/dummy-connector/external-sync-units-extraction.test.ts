@@ -11,7 +11,14 @@ describe('Dummy Connector - External Sync Units Extraction', () => {
   let event: AirdropEvent;
   beforeEach(() => {
     event = createEvent({
-      eventType: EventType.ExtractionExternalSyncUnitsStart,
+      eventType: EventType.StartExtractingExternalSyncUnits,
+    });
+    // Configure the callback URL to return success
+    mockServer.setRoute({
+      path: '/callback_url',
+      method: 'POST',
+      status: 200,
+      body: { success: true },
     });
   });
 

@@ -15,8 +15,6 @@ const run = async (events: AirdropEvent[], workerPath: string) => {
       workerPath,
       initialDomainMapping,
       options: {
-        batchSize: 1000,
-        timeout: 10 * 1000, // 30 seconds
         isLocalDevelopment: true,
       },
     });
