@@ -3,7 +3,7 @@ import { Worker } from 'worker_threads';
 import { State } from '../state/state';
 import { WorkerAdapter } from '../workers/worker-adapter';
 
-import { AirdropEvent, ExtractorEventType } from './extraction';
+import { AirdropEvent, EventType, ExtractorEventType } from './extraction';
 
 import { LoaderEventType } from './loading';
 
@@ -30,11 +30,15 @@ export interface WorkerAdapterInterface<ConnectorState> {
  * @param {boolean=} isLocalDevelopment - A flag to indicate if the adapter is being used in local development
  * @param {number=} timeout - The timeout for the worker thread
  * @param {number=} batchSize - Maximum number of extracted items in a batch
+ * @param {string=} baseWorkerPath - The base path for the worker files, usually `__dirname`
+ * @param {Record<EventType, string>=} workerPathOverrides - A map of event types to custom worker paths to override default worker paths
  */
 export interface WorkerAdapterOptions {
   isLocalDevelopment?: boolean;
   timeout?: number;
   batchSize?: number;
+  baseWorkerPath?: string;
+  workerPathOverrides?: WorkerPathOverrides;
 }
 
 /**
@@ -152,5 +156,10 @@ export interface WorkerData<ConnectorState> {
  */
 export interface GetWorkerPathInterface {
   event: AirdropEvent;
-  connectorWorkerPath?: string | null;
+  workerBasePath?: string | null;
 }
+
+/**
+ * WorkerPathOverrides represents a mapping of event types to custom worker paths.
+ */
+export type WorkerPathOverrides = Partial<Record<EventType, string>>;

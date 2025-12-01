@@ -23,55 +23,73 @@ export function getTimeoutErrorEventType(eventType: EventType): {
   eventType: ExtractorEventType | LoaderEventType;
 } {
   switch (eventType) {
+    // Metadata extraction (handles both old and new enum members)
+    case EventType.StartExtractingMetadata:
     case EventType.ExtractionMetadataStart:
       return {
-        eventType: ExtractorEventType.ExtractionMetadataError,
+        eventType: ExtractorEventType.MetadataExtractionError,
       };
 
+    // Data extraction (handles both old and new enum members)
+    case EventType.StartExtractingData:
+    case EventType.ContinueExtractingData:
     case EventType.ExtractionDataStart:
     case EventType.ExtractionDataContinue:
       return {
-        eventType: ExtractorEventType.ExtractionDataError,
+        eventType: ExtractorEventType.DataExtractionError,
       };
 
+    // Data deletion (handles both old and new enum members)
+    case EventType.StartDeletingExtractorState:
     case EventType.ExtractionDataDelete:
       return {
-        eventType: ExtractorEventType.ExtractionDataDeleteError,
+        eventType: ExtractorEventType.ExtractorStateDeletionError,
       };
 
+    // Attachments extraction (handles both old and new enum members)
+    case EventType.StartExtractingAttachments:
+    case EventType.ContinueExtractingAttachments:
     case EventType.ExtractionAttachmentsStart:
     case EventType.ExtractionAttachmentsContinue:
       return {
-        eventType: ExtractorEventType.ExtractionAttachmentsError,
+        eventType: ExtractorEventType.AttachmentExtractionError,
       };
 
+    // Attachments deletion (handles both old and new enum members)
+    case EventType.StartDeletingExtractorAttachmentsState:
     case EventType.ExtractionAttachmentsDelete:
       return {
-        eventType: ExtractorEventType.ExtractionAttachmentsDeleteError,
+        eventType: ExtractorEventType.ExtractorAttachmentsStateDeletionError,
       };
 
+    // External sync units (handles both old and new enum members)
+    case EventType.StartExtractingExternalSyncUnits:
     case EventType.ExtractionExternalSyncUnitsStart:
       return {
-        eventType: ExtractorEventType.ExtractionExternalSyncUnitsError,
+        eventType: ExtractorEventType.ExternalSyncUnitExtractionError,
       };
 
+    // Loading data
     case EventType.StartLoadingData:
     case EventType.ContinueLoadingData:
       return {
         eventType: LoaderEventType.DataLoadingError,
       };
 
+    // Deleting loader state
     case EventType.StartDeletingLoaderState:
       return {
         eventType: LoaderEventType.LoaderStateDeletionError,
       };
 
+    // Loading attachments
     case EventType.StartLoadingAttachments:
     case EventType.ContinueLoadingAttachments:
       return {
-        eventType: LoaderEventType.AttachmentLoadingError,
+        eventType: LoaderEventType.AttachmentsLoadingError,
       };
 
+    // Deleting loader attachment state
     case EventType.StartDeletingLoaderAttachmentState:
       return {
         eventType: LoaderEventType.LoaderAttachmentStateDeletionError,
