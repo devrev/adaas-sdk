@@ -3,6 +3,18 @@ import { Request, Response } from 'express';
 export const DEFAULT_MOCK_SERVER_PORT = 3001;
 
 /**
+ * Configuration for retry simulation behavior.
+ */
+export interface RetryConfig {
+  /** Number of times to return error before succeeding (default: 4) */
+  failureCount?: number;
+  /** 5xx status code to return during failures (default: 500) */
+  errorStatus?: number;
+  /** Optional error response body to send as JSON during failures */
+  errorBody?: unknown;
+}
+
+/**
  * Configuration object for setting up a route response.
  */
 export interface RouteConfig {
@@ -14,6 +26,8 @@ export interface RouteConfig {
   status: number;
   /** Optional response body to send as JSON */
   body?: unknown;
+  /** Optional retry configuration for simulating failures before success */
+  retry?: RetryConfig;
 }
 
 /**
@@ -34,3 +48,8 @@ export interface RequestInfo {
 }
 
 export type RouteHandlers = Map<string, RouteHandler>;
+
+/**
+ * Type for tracking request counts per route.
+ */
+export type RequestCounts = Map<string, number>;

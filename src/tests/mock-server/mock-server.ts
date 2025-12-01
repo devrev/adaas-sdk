@@ -3,6 +3,7 @@ import { Server } from 'http';
 
 import {
   DEFAULT_MOCK_SERVER_PORT,
+  RequestCounts,
   RequestInfo,
   RouteConfig,
   RouteHandler,
@@ -21,6 +22,7 @@ export class MockServer {
   public readonly baseUrl: string;
   private routeHandlers: RouteHandlers = new Map();
   private requests: RequestInfo[] = [];
+  private requestCounts: RequestCounts = new Map();
 
   constructor(port: number = DEFAULT_MOCK_SERVER_PORT) {
     this.port = port;
@@ -188,15 +190,44 @@ export class MockServer {
    * @param config.method - The HTTP method (e.g., 'GET', 'POST')
    * @param config.status - The HTTP status code to return (e.g., 200, 401, 500)
    * @param config.body - Optional response body to send as JSON
+   * @param config.retry - Optional retry configuration for simulating failures before success
    */
   public setRoute(config: RouteConfig): void {
-    const { path, method, status, body } = config;
+    const { path, method, status, body, retry } = config;
     const key = this.getRouteKey(method, path);
-    this.routeHandlers.set(key, (_req: Request, res: Response) => {
-      if (body !== undefined) {
-        res.status(status).json(body);
+
+    // Initialize request count for this route if retry is configured
+    if (retry && !this.requestCounts.has(key)) {
+      this.requestCounts.set(key, 0);
+    }
+
+    this.routeHandlers.set(key, (req: Request, res: Response) => {
+      if (retry) {
+        const currentCount = this.requestCounts.get(key) || 0;
+        const failureCount = retry.failureCount ?? 4;
+        const errorStatus = retry.errorStatus ?? 500;
+
+        if (currentCount < failureCount) {
+          this.requestCounts.set(key, currentCount + 1);
+          if (retry.errorBody !== undefined) {
+            res.status(errorStatus).json(retry.errorBody);
+          } else {
+            res.status(errorStatus).send();
+          }
+        } else {
+          this.requestCounts.set(key, currentCount + 1);
+          if (body !== undefined) {
+            res.status(status).json(body);
+          } else {
+            this.defaultRouteHandler(req, res);
+          }
+        }
       } else {
-        res.status(status).send();
+        if (body !== undefined) {
+          res.status(status).json(body);
+        } else {
+          res.status(status).send();
+        }
       }
     });
   }
@@ -206,6 +237,7 @@ export class MockServer {
    */
   public resetRoutes(): void {
     this.routeHandlers.clear();
+    this.requestCounts.clear();
   }
 
   /**

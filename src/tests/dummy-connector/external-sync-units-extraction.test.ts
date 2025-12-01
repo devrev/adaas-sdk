@@ -5,7 +5,8 @@ import {
 } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
 import { createEvent } from '../test-helpers';
-import run from '../timeout-handling/extraction';
+
+import run from './extraction';
 
 describe('Dummy Connector - External Sync Units Extraction', () => {
   let event: AirdropEvent;
