@@ -2,14 +2,14 @@ import { EventType } from '../types/extraction';
 import { getLibraryVersion } from './helpers';
 
 export const ALLOWED_EXTRACTION_EVENT_TYPES = [
-  EventType.ExtractionExternalSyncUnitsStart,
-  EventType.ExtractionMetadataStart,
-  EventType.ExtractionDataStart,
-  EventType.ExtractionDataContinue,
-  EventType.ExtractionDataDelete,
-  EventType.ExtractionAttachmentsStart,
-  EventType.ExtractionAttachmentsContinue,
-  EventType.ExtractionAttachmentsDelete,
+  EventType.StartExtractingExternalSyncUnits,
+  EventType.StartExtractingMetadata,
+  EventType.StartExtractingData,
+  EventType.ContinueExtractingData,
+  EventType.StartDeletingExtractorState,
+  EventType.StartExtractingAttachments,
+  EventType.ContinueExtractingAttachments,
+  EventType.StartDeletingExtractorAttachmentsState,
 ];
 
 export const ALLOWED_LOADING_EVENT_TYPES = [
@@ -25,9 +25,9 @@ export const ALLOWED_EVENT_TYPES = [
 ];
 
 export const STATELESS_EXTRACTION_EVENT_TYPES = [
-  EventType.ExtractionExternalSyncUnitsStart,
-  EventType.ExtractionDataDelete,
-  EventType.ExtractionAttachmentsDelete,
+  EventType.StartExtractingExternalSyncUnits,
+  EventType.StartDeletingExtractorState,
+  EventType.StartDeletingExtractorAttachmentsState,
 ];
 
 export const STATELESS_LOADING_EVENT_TYPES = [

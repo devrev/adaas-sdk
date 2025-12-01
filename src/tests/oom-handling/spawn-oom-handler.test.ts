@@ -41,7 +41,7 @@ function createSpawnInstance() {
  * This function is used to flush microtasks in the event loop.
  * It is used to ensure that all microtasks are executed before the next event loop iteration.
  * It waits for all `void (async () => { ... })()` to be executed.
-*/
+ */
 async function flushMicrotasks() {
   await new Promise((resolve) => setImmediate(resolve));
 }

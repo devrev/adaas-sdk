@@ -1,7 +1,7 @@
 import MockAdapter from 'axios-mock-adapter';
 import { escapeRegex } from '../../common/helpers';
 import { axiosClient } from '../../http/axios-client-internal';
-import { EventType } from '../../types/extraction';
+import { EventType, ExtractorEventType } from '../../types/extraction';
 import { createEvent } from '../test-helpers';
 import run from './extraction';
 
@@ -23,7 +23,7 @@ describe('Worker OOM integration', () => {
 
   it('emits a descriptive error when the worker crashes with an OOM-like error', async () => {
     const event = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventType.StartExtractingData,
       eventContextOverrides: {
         callback_url: `${baseUrl}/internal/airdrop.external-extractor.message`,
         worker_data_url: `${baseUrl}/internal/airdrop.external-worker`,
@@ -51,7 +51,7 @@ describe('Worker OOM integration', () => {
       event_type: string;
       event_data?: { error?: { message?: string } };
     };
-    expect(payload.event_type).toBe('EXTRACTION_DATA_ERROR');
+    expect(payload.event_type).toBe(ExtractorEventType.DataExtractionError);
     expect(payload.event_data?.error?.message).toContain(
       'Worker exceeded memory limit'
     );

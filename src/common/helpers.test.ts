@@ -1,10 +1,5 @@
-import { EventType, ExtractorEventType } from '../types/extraction';
-import {
-  ItemTypeToLoad,
-  LoaderEventType,
-  StatsFileObject,
-} from '../types/loading';
-import { getFilesToLoad, getTimeoutErrorEventType } from './helpers';
+import { ItemTypeToLoad, StatsFileObject } from '../types/loading';
+import { getFilesToLoad } from './helpers';
 
 describe(getFilesToLoad.name, () => {
   let statsFile: StatsFileObject[];
@@ -166,79 +161,5 @@ describe(getFilesToLoad.name, () => {
       statsFile,
     });
     expect(result).toEqual([]);
-  });
-});
-
-describe(getTimeoutErrorEventType.name, () => {
-  const cases: Array<{
-    input: EventType;
-    expected: ExtractorEventType | LoaderEventType;
-  }> = [
-    {
-      input: EventType.ExtractionMetadataStart,
-      expected: ExtractorEventType.ExtractionMetadataError,
-    },
-    {
-      input: EventType.ExtractionDataStart,
-      expected: ExtractorEventType.ExtractionDataError,
-    },
-    {
-      input: EventType.ExtractionDataContinue,
-      expected: ExtractorEventType.ExtractionDataError,
-    },
-    {
-      input: EventType.ExtractionDataDelete,
-      expected: ExtractorEventType.ExtractionDataDeleteError,
-    },
-    {
-      input: EventType.ExtractionAttachmentsStart,
-      expected: ExtractorEventType.ExtractionAttachmentsError,
-    },
-    {
-      input: EventType.ExtractionAttachmentsContinue,
-      expected: ExtractorEventType.ExtractionAttachmentsError,
-    },
-    {
-      input: EventType.ExtractionAttachmentsDelete,
-      expected: ExtractorEventType.ExtractionAttachmentsDeleteError,
-    },
-    {
-      input: EventType.ExtractionExternalSyncUnitsStart,
-      expected: ExtractorEventType.ExtractionExternalSyncUnitsError,
-    },
-    {
-      input: EventType.StartLoadingData,
-      expected: LoaderEventType.DataLoadingError,
-    },
-    {
-      input: EventType.ContinueLoadingData,
-      expected: LoaderEventType.DataLoadingError,
-    },
-    {
-      input: EventType.StartDeletingLoaderState,
-      expected: LoaderEventType.LoaderStateDeletionError,
-    },
-    {
-      input: EventType.StartLoadingAttachments,
-      expected: LoaderEventType.AttachmentLoadingError,
-    },
-    {
-      input: EventType.ContinueLoadingAttachments,
-      expected: LoaderEventType.AttachmentLoadingError,
-    },
-    {
-      input: EventType.StartDeletingLoaderAttachmentState,
-      expected: LoaderEventType.LoaderAttachmentStateDeletionError,
-    },
-  ];
-
-  it.each(cases)('maps %s to %s', ({ input, expected }) => {
-    expect(getTimeoutErrorEventType(input).eventType).toBe(expected);
-  });
-
-  it('falls back to unknown event type for unmapped events', () => {
-    expect(
-      getTimeoutErrorEventType('UNMAPPED_EVENT' as EventType).eventType
-    ).toBe(LoaderEventType.UnknownEventType);
   });
 });

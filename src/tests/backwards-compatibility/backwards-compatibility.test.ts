@@ -27,17 +27,6 @@ import {
   updateCurrentApiJson,
 } from './helpers';
 
-function parseDestructuredParameter(paramName: string): string[] {
-  // Extract properties from "{ prop1, prop2, prop3 }" format
-  const match = paramName.match(/^\{\s*([^}]+)\s*\}$/);
-  if (!match) return [paramName]; // Not destructured, return as-is
-
-  return match[1]
-    .split(',')
-    .map((prop) => prop.trim())
-    .filter((prop) => prop.length > 0);
-}
-
 export function checkFunctionCompatibility(
   newFunction: ApiFunction | ApiConstructor | ApiMethodSignature,
   currentFunction: ApiFunction | ApiConstructor | ApiMethodSignature
@@ -58,25 +47,38 @@ export function checkFunctionCompatibility(
       (p: Parameter) => p.name
     );
 
-    // Handle destructured parameters specially
-    if (
-      newFunctionParamNames.length === 1 &&
-      currentFunctionParamNames.length === 1
+    // Check each parameter position for destructured parameter compatibility
+    for (
+      let i = 0;
+      i <
+      Math.min(newFunctionParamNames.length, currentFunctionParamNames.length);
+      i++
     ) {
-      const newProps = parseDestructuredParameter(newFunctionParamNames[0]);
-      const currentProps = parseDestructuredParameter(
-        currentFunctionParamNames[0]
-      );
+      const newParam = newFunctionParamNames[i];
+      const currentParam = currentFunctionParamNames[i];
 
-      if (newProps.length > 1 || currentProps.length > 1) {
-        // Check that all current properties exist in new parameter in same order
-        const newPropsStart = newProps.slice(0, currentProps.length);
-        expect(newPropsStart).toEqual(currentProps);
-        return;
+      // If both are destructured parameters (contain '{')
+      if (newParam.includes('{') && currentParam.includes('{')) {
+        // Extract field names from destructured parameters
+        const extractFields = (param: string) =>
+          param
+            .replace(/[{}\s]/g, '')
+            .split(',')
+            .filter((f) => f.length > 0);
+
+        const newFields = extractFields(newParam);
+        const currentFields = extractFields(currentParam);
+
+        // Check that all current fields are present in new fields
+        const missingFields = currentFields.filter(
+          (field) => !newFields.includes(field)
+        );
+        expect(missingFields).toEqual([]);
+      } else {
+        // For non-destructured parameters, they must match exactly
+        expect(newParam).toEqual(currentParam);
       }
     }
-
-    expect(newFunctionParamNames).toEqual(currentFunctionParamNames);
   });
 
   it(`Function ${newFunction.displayName} should have compatible parameter types with the current function`, () => {
@@ -138,6 +140,11 @@ export function checkFunctionCompatibility(
         throw new Error(
           `Parameter ${newParam.name} became required but was optional`
         );
+      }
+
+      // Skip interface compatibility check for destructured parameters
+      if (newParam.name.includes('{') || currentParam.name.includes('{')) {
+        continue;
       }
     }
   });

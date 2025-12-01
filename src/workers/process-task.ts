@@ -1,4 +1,5 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
+import { translateIncomingEventType } from '../common/event-type-translation';
 import { Logger, serializeError } from '../logger/logger';
 import { createAdapterState } from '../state/state';
 import {
@@ -16,6 +17,12 @@ export function processTask<ConnectorState>({
     void (async () => {
       try {
         const event = workerData.event;
+
+        // TODO: Remove when the old types are completely phased out
+        event.payload.event_type = translateIncomingEventType(
+          event.payload.event_type
+        );
+
         const initialState = workerData.initialState as ConnectorState;
         const initialDomainMapping = workerData.initialDomainMapping;
         const options = workerData.options;

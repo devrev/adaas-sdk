@@ -1,4 +1,4 @@
-import { EventType } from '../../types/extraction';
+import { EventType, ExtractorEventType } from '../../types/extraction';
 import { MockServer } from '../mock-server';
 import { createEvent } from '../test-helpers';
 import run from './extraction';
@@ -45,6 +45,8 @@ describe('timeout-2 extraction', () => {
     // Expect last request to be emission of progress event
     expect(lastRequest.url).toContain('airdrop.external-extractor.message');
     expect(lastRequest.method).toBe('POST');
-    expect(lastRequest.body.event_type).toBe('EXTRACTION_DATA_PROGRESS');
+    expect(lastRequest.body.event_type).toBe(
+      ExtractorEventType.DataExtractionProgress
+    );
   });
 });
