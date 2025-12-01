@@ -24,7 +24,7 @@ describe('No timeout', () => {
     expect(lastRequest?.url).toContain('/callback_url');
     expect(lastRequest?.method).toBe('POST');
     expect((lastRequest?.body as { event_type: string }).event_type).toBe(
-      ExtractorEventType.ExtractionDataDone
+      ExtractorEventType.DataExtractionDone
     );
   });
 });
