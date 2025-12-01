@@ -2,6 +2,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../common/control-protocol';
+import { translateIncomingEventType } from '../common/event-type-translation';
 import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
 import { Logger, serializeError } from '../logger/logger';
 import {
@@ -27,52 +28,27 @@ import { createWorker } from './create-worker';
 
 function getWorkerPath({
   event,
-  connectorWorkerPath,
+  workerBasePath
 }: GetWorkerPathInterface): string | null {
-  if (connectorWorkerPath) return connectorWorkerPath;
   let path = null;
   switch (event.payload.event_type) {
-    // Extraction
-    case EventType.ExtractionExternalSyncUnitsStart:
-      path = __dirname + '/default-workers/external-sync-units-extraction';
+    case EventType.StartExtractingExternalSyncUnits:
+      path = '/workers/external-sync-units-extraction';
       break;
-    case EventType.ExtractionMetadataStart:
-      path = __dirname + '/default-workers/metadata-extraction';
+    case EventType.StartExtractingMetadata:
+      path = '/workers/metadata-extraction';
       break;
-    case EventType.ExtractionDataStart:
-    case EventType.ExtractionDataContinue:
-      path = __dirname + '/default-workers/data-extraction';
+    case EventType.StartExtractingData:
+    case EventType.ContinueExtractingData:
+      path = '/workers/data-extraction';
       break;
-    case EventType.ExtractionAttachmentsStart:
-    case EventType.ExtractionAttachmentsContinue:
-      path = __dirname + '/default-workers/attachments-extraction';
+    case EventType.StartExtractingAttachments:
+    case EventType.ContinueExtractingAttachments:
+      path = '/workers/attachments-extraction';
       break;
-    case EventType.ExtractionDataDelete:
-      path = __dirname + '/default-workers/data-deletion';
-      break;
-    case EventType.ExtractionAttachmentsDelete:
-      path = __dirname + '/default-workers/attachments-deletion';
-      break;
-
-    // Loading
-    case EventType.StartLoadingData:
-    case EventType.ContinueLoadingData:
-      path = __dirname + '/default-workers/load-data';
-      break;
-    case EventType.StartLoadingAttachments:
-    case EventType.ContinueLoadingAttachments:
-      path = __dirname + '/default-workers/load-attachments';
-      break;
-    case EventType.StartDeletingLoaderState:
-      path = __dirname + '/default-workers/delete-loader-state';
-      break;
-    case EventType.StartDeletingLoaderAttachmentState:
-      path = __dirname + '/default-workers/delete-loader-attachment-state';
-      break;
-    default:
-      path = null;
   }
-  return path;
+
+  return path ? workerBasePath + path : null;
 }
 
 /**
@@ -81,9 +57,9 @@ function getWorkerPath({
  * The class provides utilities to emit control events to the platform and exit the worker gracefully.
  * In case of lambda timeout, the class emits a lambda timeout event to the platform.
  * @param {SpawnFactoryInterface} options - The options to create a new instance of Spawn class
- * @param {AirdropEvent} event - The event object received from the platform
- * @param {object} initialState - The initial state of the adapter
- * @param {string} workerPath - The path to the worker file
+ * @param {AirdropEvent} options.event - The event object received from the platform
+ * @param {object} options.initialState - The initial state of the adapter
+ * @param {string} options.workerPath - The path to the worker file
  * @returns {Promise<Spawn>} - A new instance of Spawn class
  */
 export async function spawn<ConnectorState>({
@@ -93,6 +69,22 @@ export async function spawn<ConnectorState>({
   initialDomainMapping,
   options,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
+  // Translates incoming event type for backwards compatibility
+  // This allows the SDK to accept both old and new event type formats
+  const originalEventType = event.payload.event_type;
+  const translatedEventType = translateIncomingEventType(
+    event.payload.event_type as string
+  );
+
+  // Update the event with the translated event type
+  event.payload.event_type = translatedEventType;
+
+  if (translatedEventType !== originalEventType) {
+    console.log(
+      `Event type translated from ${originalEventType} to ${translatedEventType}.`
+    );
+  }
+
   if (options?.isLocalDevelopment) {
     console.log('Snap-in is running in local development mode.');
   }
@@ -109,10 +101,22 @@ export async function spawn<ConnectorState>({
   const originalConsole = console;
   // eslint-disable-next-line no-global-assign
   console = new Logger({ event, options });
-  const script = getWorkerPath({
-    event,
-    connectorWorkerPath: workerPath,
-  });
+
+  let script = null;
+  if (workerPath != null) {
+    script = workerPath;
+  } else if (
+    options?.baseWorkerPath != null &&
+    options?.workerPathOverrides != null &&
+    options.workerPathOverrides[translatedEventType as EventType] != null
+  ) {
+    script = options.baseWorkerPath + options.workerPathOverrides[translatedEventType as EventType];
+  } else {
+    script = getWorkerPath({
+      event,
+      workerBasePath: options?.baseWorkerPath ?? __dirname
+    });
+  }
 
   if (script) {
     try {

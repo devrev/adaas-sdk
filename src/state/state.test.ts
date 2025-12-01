@@ -126,7 +126,7 @@ describe(State.name, () => {
 
   it.each(
     STATEFUL_EVENT_TYPES.filter(
-      (eventType) => eventType !== EventType.ExtractionDataStart
+      (eventType) => eventType !== EventType.StartExtractingData
     )
   )(
     'should call post state with full adapter state if fetching returns 404 for event type %s',
@@ -168,13 +168,13 @@ describe(State.name, () => {
     }
   );
 
-  it(EventType.ExtractionDataStart, async () => {
+  it(EventType.StartExtractingData, async () => {
     // Arrange
     const initialState = {
       test: 'test',
     };
     const event = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventType.StartExtractingData,
       contextOverrides: {
         snap_in_version_id: '',
       },
