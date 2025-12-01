@@ -11,7 +11,6 @@ import {
   addReportToLoaderReport,
   getFilesToLoad,
 } from './worker-adapter.helpers';
-import type { Logger } from '../logger/logger';
 import { serializeError } from '../../logger/logger';
 import { runWithSdkLogContext } from '../logger/logger.context';
 import { Mappers } from '../../mappers/mappers';
@@ -312,117 +311,118 @@ export class WorkerAdapter<ConnectorState> {
   }: ItemTypesToLoadParams): Promise<LoadItemTypesResponse> {
     return runWithSdkLogContext(async () => {
       if (this.event.payload.event_type === EventType.StartLoadingData) {
-      const itemTypes = itemTypesToLoad.map(
-        (itemTypeToLoad) => itemTypeToLoad.itemType
-      );
+        const itemTypes = itemTypesToLoad.map(
+          (itemTypeToLoad) => itemTypeToLoad.itemType
+        );
 
-      if (!itemTypes.length) {
-        console.warn('No item types to load, returning.');
+        if (!itemTypes.length) {
+          console.warn('No item types to load, returning.');
+          return {
+            reports: this.reports,
+            processed_files: this.processedFiles,
+          };
+        }
+
+        const filesToLoad = await this.getLoaderBatches({
+          supportedItemTypes: itemTypes,
+        });
+        this.adapterState.state.fromDevRev = {
+          filesToLoad,
+        };
+      }
+
+      if (
+        !this.adapterState.state.fromDevRev ||
+        !this.adapterState.state.fromDevRev.filesToLoad.length
+      ) {
+        console.warn('No files to load, returning.');
         return {
           reports: this.reports,
           processed_files: this.processedFiles,
         };
       }
 
-      const filesToLoad = await this.getLoaderBatches({
-        supportedItemTypes: itemTypes,
-      });
-      this.adapterState.state.fromDevRev = {
-        filesToLoad,
-      };
-    }
+      console.log(
+        'Files to load in state',
+        this.adapterState.state.fromDevRev?.filesToLoad
+      );
 
-    if (
-      !this.adapterState.state.fromDevRev ||
-      !this.adapterState.state.fromDevRev.filesToLoad.length
-    ) {
-      console.warn('No files to load, returning.');
+      outerloop: for (const fileToLoad of this.adapterState.state.fromDevRev
+        .filesToLoad) {
+        const itemTypeToLoad = itemTypesToLoad.find(
+          (itemTypeToLoad: ItemTypeToLoad) =>
+            itemTypeToLoad.itemType === fileToLoad.itemType
+        );
+
+        if (!itemTypeToLoad) {
+          console.error(
+            `Item type to load not found for item type: ${fileToLoad.itemType}.`
+          );
+
+          await this.emit(LoaderEventType.DataLoadingError, {
+            error: {
+              message: `Item type to load not found for item type: ${fileToLoad.itemType}.`,
+            },
+          });
+
+          break;
+        }
+
+        if (!fileToLoad.completed) {
+          const { response, error: transformerFileError } =
+            await this.uploader.getJsonObjectByArtifactId({
+              artifactId: fileToLoad.id,
+              isGzipped: true,
+            });
+
+          if (transformerFileError) {
+            console.error(
+              `Transformer file not found for artifact ID: ${fileToLoad.id}.`
+            );
+            await this.emit(LoaderEventType.DataLoadingError, {
+              error: {
+                message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
+              },
+            });
+          }
+
+          const transformerFile =
+            response as ExternalSystemItem[];
+
+          for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
+            const { report, rateLimit } = await this.loadItem({
+              item: transformerFile[i],
+              itemTypeToLoad,
+            });
+
+            if (rateLimit?.delay) {
+              await this.emit(LoaderEventType.DataLoadingDelayed, {
+                delay: rateLimit.delay,
+                reports: this.reports,
+                processed_files: this.processedFiles,
+              });
+
+              break outerloop;
+            }
+
+            if (report) {
+              addReportToLoaderReport({
+                loaderReports: this.loaderReports,
+                report,
+              });
+              fileToLoad.lineToProcess = fileToLoad.lineToProcess + 1;
+            }
+          }
+
+          fileToLoad.completed = true;
+          this._processedFiles.push(fileToLoad.id);
+        }
+      }
+
       return {
         reports: this.reports,
         processed_files: this.processedFiles,
       };
-    }
-
-    console.log(
-      'Files to load in state',
-      this.adapterState.state.fromDevRev?.filesToLoad
-    );
-
-    outerloop: for (const fileToLoad of this.adapterState.state.fromDevRev
-      .filesToLoad) {
-      const itemTypeToLoad = itemTypesToLoad.find(
-        (itemTypeToLoad: ItemTypeToLoad) =>
-          itemTypeToLoad.itemType === fileToLoad.itemType
-      );
-
-      if (!itemTypeToLoad) {
-        console.error(
-          `Item type to load not found for item type: ${fileToLoad.itemType}.`
-        );
-
-        await this.emit(LoaderEventType.DataLoadingError, {
-          error: {
-            message: `Item type to load not found for item type: ${fileToLoad.itemType}.`,
-          },
-        });
-
-        break;
-      }
-
-      if (!fileToLoad.completed) {
-        const { response, error: transformerFileError } =
-          await this.uploader.getJsonObjectByArtifactId({
-            artifactId: fileToLoad.id,
-            isGzipped: true,
-          });
-
-        if (transformerFileError) {
-          console.error(
-            `Transformer file not found for artifact ID: ${fileToLoad.id}.`
-          );
-          await this.emit(LoaderEventType.DataLoadingError, {
-            error: {
-              message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
-            },
-          });
-        }
-
-        const transformerFile = response as ExternalSystemItem[];
-
-        for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
-          const { report, rateLimit } = await this.loadItem({
-            item: transformerFile[i],
-            itemTypeToLoad,
-          });
-
-          if (rateLimit?.delay) {
-            await this.emit(LoaderEventType.DataLoadingDelayed, {
-              delay: rateLimit.delay,
-              reports: this.reports,
-              processed_files: this.processedFiles,
-            });
-
-            break outerloop;
-          }
-
-          if (report) {
-            addReportToLoaderReport({
-              loaderReports: this.loaderReports,
-              report,
-            });
-            fileToLoad.lineToProcess = fileToLoad.lineToProcess + 1;
-          }
-        }
-
-        fileToLoad.completed = true;
-        this._processedFiles.push(fileToLoad.id);
-      }
-    }
-
-    return {
-      reports: this.reports,
-      processed_files: this.processedFiles,
-    };
     });
   }
 
@@ -550,190 +550,193 @@ export class WorkerAdapter<ConnectorState> {
     return runWithSdkLogContext(async () => {
       const devrevId = item.id.devrev;
 
-    try {
-      const syncMapperRecordResponse = await this._mappers.getByTargetId({
-        sync_unit: this.event.payload.event_context.sync_unit,
-        target: devrevId,
-      });
+      try {
+        const syncMapperRecordResponse = await this._mappers.getByTargetId({
+          sync_unit: this.event.payload.event_context.sync_unit,
+          target: devrevId,
+        });
 
-      const syncMapperRecord = syncMapperRecordResponse.data;
-      if (!syncMapperRecord) {
-        console.warn('Failed to get sync mapper record from response.');
-        return {
-          error: {
-            message: 'Failed to get sync mapper record from response.',
-          },
-        };
-      }
-
-      // Update item in external system
-      const { id, modifiedDate, delay, error } = await itemTypeToLoad.update({
-        item,
-        mappers: this._mappers,
-        event: this.event,
-      });
-
-      if (id) {
-        try {
-          const syncMapperRecordUpdateResponse = await this._mappers.update({
-            id: syncMapperRecord.sync_mapper_record.id,
-            sync_unit: this.event.payload.event_context.sync_unit,
-            status: SyncMapperRecordStatus.OPERATIONAL,
-            ...(modifiedDate && {
-              external_versions: {
-                add: [
-                  {
-                    modified_date: modifiedDate,
-                    recipe_version: 0,
-                  },
-                ],
-              },
-            }),
-            external_ids: {
-              add: [id],
-            },
-            targets: {
-              add: [devrevId],
-            },
-          });
-
-          console.log(
-            'Successfully updated sync mapper record.',
-            syncMapperRecordUpdateResponse.data
-          );
-        } catch (error) {
-          console.warn(
-            'Failed to update sync mapper record.',
-            serializeError(error)
-          );
+        const syncMapperRecord = syncMapperRecordResponse.data;
+        if (!syncMapperRecord) {
+          console.warn('Failed to get sync mapper record from response.');
           return {
             error: {
-              message:
-                'Failed to update sync mapper record' + serializeError(error),
+              message: 'Failed to get sync mapper record from response.',
             },
           };
         }
 
-        return {
-          report: {
-            item_type: itemTypeToLoad.itemType,
-            [ActionType.UPDATED]: 1,
-          },
-        };
-      } else if (delay) {
-        console.log(
-          `Rate limited while updating item in external system, delaying for ${delay} seconds.`
-        );
+        // Update item in external system
+        const { id, modifiedDate, delay, error } = await itemTypeToLoad.update({
+          item,
+          mappers: this._mappers,
+          event: this.event,
+        });
 
-        return {
-          rateLimit: {
-            delay,
-          },
-        };
-      } else {
-        console.warn('Failed to update item in external system', error);
-        return {
-          report: {
-            item_type: itemTypeToLoad.itemType,
-            [ActionType.FAILED]: 1,
-          },
-        };
-      }
-
-      // TODO: Update mapper (optional)
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 404) {
-          // Create item in external system if mapper record not found
-          const { id, modifiedDate, delay, error } =
-            await itemTypeToLoad.create({
-              item,
-              mappers: this._mappers,
-              event: this.event,
+        if (id) {
+          try {
+            const syncMapperRecordUpdateResponse = await this._mappers.update({
+              id: syncMapperRecord.sync_mapper_record.id,
+              sync_unit: this.event.payload.event_context.sync_unit,
+              status: SyncMapperRecordStatus.OPERATIONAL,
+              ...(modifiedDate && {
+                external_versions: {
+                  add: [
+                    {
+                      modified_date: modifiedDate,
+                      recipe_version: 0,
+                    },
+                  ],
+                },
+              }),
+              external_ids: {
+                add: [id],
+              },
+              targets: {
+                add: [devrevId],
+              },
             });
 
-          if (id) {
-            // Create mapper
-            try {
-              const syncMapperRecordCreateResponse = await this._mappers.create(
-                {
-                  sync_unit: this.event.payload.event_context.sync_unit,
-                  status: SyncMapperRecordStatus.OPERATIONAL,
-                  external_ids: [id],
-                  targets: [devrevId],
-                  ...(modifiedDate && {
-                    external_versions: [
-                      {
-                        modified_date: modifiedDate,
-                        recipe_version: 0,
-                      },
-                    ],
-                  }),
-                }
-              );
-
-              console.log(
-                'Successfully created sync mapper record.',
-                syncMapperRecordCreateResponse.data
-              );
-
-              return {
-                report: {
-                  item_type: itemTypeToLoad.itemType,
-                  [ActionType.CREATED]: 1,
-                },
-              };
-            } catch (error) {
-              console.warn(
-                'Failed to create sync mapper record.',
-                serializeError(error)
-              );
-              return {
-                error: {
-                  message:
-                    'Failed to create sync mapper record. ' +
-                    serializeError(error),
-                },
-              };
-            }
-          } else if (delay) {
-            return {
-              rateLimit: {
-                delay,
-              },
-            };
-          } else {
+            console.log(
+              'Successfully updated sync mapper record.',
+              syncMapperRecordUpdateResponse.data
+            );
+          } catch (error) {
             console.warn(
-              'Failed to create item in external system.',
+              'Failed to update sync mapper record.',
               serializeError(error)
             );
             return {
-              report: {
-                item_type: itemTypeToLoad.itemType,
-                [ActionType.FAILED]: 1,
+              error: {
+                message:
+                  'Failed to update sync mapper record' + serializeError(error),
               },
             };
           }
-        } else {
-          console.warn(
-            'Failed to get sync mapper record.',
-            serializeError(error)
-          );
+
           return {
-            error: {
-              message: error.message,
+            report: {
+              item_type: itemTypeToLoad.itemType,
+              [ActionType.UPDATED]: 1,
+            },
+          };
+        } else if (delay) {
+          console.log(
+            `Rate limited while updating item in external system, delaying for ${delay} seconds.`
+          );
+
+          return {
+            rateLimit: {
+              delay,
+            },
+          };
+        } else {
+          console.warn('Failed to update item in external system', error);
+          return {
+            report: {
+              item_type: itemTypeToLoad.itemType,
+              [ActionType.FAILED]: 1,
             },
           };
         }
-      }
 
-      console.warn('Failed to get sync mapper record.', serializeError(error));
-      return {
-        error: {
-          message: 'Failed to get sync mapper record. ' + serializeError(error),
-        },
-      };
-    }
+        // TODO: Update mapper (optional)
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 404) {
+            // Create item in external system if mapper record not found
+            const { id, modifiedDate, delay, error } =
+              await itemTypeToLoad.create({
+                item,
+                mappers: this._mappers,
+                event: this.event,
+              });
+
+            if (id) {
+              // Create mapper
+              try {
+                const syncMapperRecordCreateResponse =
+                  await this._mappers.create({
+                    sync_unit: this.event.payload.event_context.sync_unit,
+                    status: SyncMapperRecordStatus.OPERATIONAL,
+                    external_ids: [id],
+                    targets: [devrevId],
+                    ...(modifiedDate && {
+                      external_versions: [
+                        {
+                          modified_date: modifiedDate,
+                          recipe_version: 0,
+                        },
+                      ],
+                    }),
+                  });
+
+                console.log(
+                  'Successfully created sync mapper record.',
+                  syncMapperRecordCreateResponse.data
+                );
+
+                return {
+                  report: {
+                    item_type: itemTypeToLoad.itemType,
+                    [ActionType.CREATED]: 1,
+                  },
+                };
+              } catch (error) {
+                console.warn(
+                  'Failed to create sync mapper record.',
+                  serializeError(error)
+                );
+                return {
+                  error: {
+                    message:
+                      'Failed to create sync mapper record. ' +
+                      serializeError(error),
+                  },
+                };
+              }
+            } else if (delay) {
+              return {
+                rateLimit: {
+                  delay,
+                },
+              };
+            } else {
+              console.warn(
+                'Failed to create item in external system.',
+                serializeError(error)
+              );
+              return {
+                report: {
+                  item_type: itemTypeToLoad.itemType,
+                  [ActionType.FAILED]: 1,
+                },
+              };
+            }
+          } else {
+            console.warn(
+              'Failed to get sync mapper record.',
+              serializeError(error)
+            );
+            return {
+              error: {
+                message: error.message,
+              },
+            };
+          }
+        }
+
+        console.warn(
+          'Failed to get sync mapper record.',
+          serializeError(error)
+        );
+        return {
+          error: {
+            message:
+              'Failed to get sync mapper record. ' + serializeError(error),
+          },
+        };
+      }
     });
   }
 
