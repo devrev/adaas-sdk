@@ -68,6 +68,7 @@ export async function spawn<ConnectorState>({
   workerPath,
   initialDomainMapping,
   options,
+  baseWorkerPath,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
   // Translates incoming event type for backwards compatibility
   // This allows the SDK to accept both old and new event type formats
@@ -106,17 +107,17 @@ export async function spawn<ConnectorState>({
   if (workerPath != null) {
     script = workerPath;
   } else if (
-    options?.baseWorkerPath != null &&
+    baseWorkerPath != null &&
     options?.workerPathOverrides != null &&
     options.workerPathOverrides[translatedEventType as EventType] != null
   ) {
     script =
-      options.baseWorkerPath +
+      baseWorkerPath +
       options.workerPathOverrides[translatedEventType as EventType];
   } else {
     script = getWorkerPath({
       event,
-      workerBasePath: options?.baseWorkerPath ?? __dirname,
+      workerBasePath: baseWorkerPath ?? __dirname,
     });
   }
 
