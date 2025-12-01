@@ -38,7 +38,7 @@ export interface WorkerAdapterOptions {
   timeout?: number;
   batchSize?: number;
   baseWorkerPath?: string;
-  workerPathOverrides?: Partial<Record<EventType, string>>;
+  workerPathOverrides?: WorkerPathOverrides;
 }
 
 /**
@@ -158,3 +158,8 @@ export interface GetWorkerPathInterface {
   event: AirdropEvent;
   workerBasePath?: string | null;
 }
+
+/**
+ * WorkerPathOverrides represents a mapping of event types to custom worker paths.
+ */
+export type WorkerPathOverrides = Partial<Record<EventType, string>>;
