@@ -45,6 +45,8 @@ describe('timeout-3b extraction', () => {
     // Expect last request to be emission of progress event
     expect(lastRequest.url).toContain('airdrop.external-extractor.message');
     expect(lastRequest.method).toBe('POST');
-    expect(lastRequest.body.event_type).toBe(ExtractorEventType.DataExtractionProgress);
+    expect(lastRequest.body.event_type).toBe(
+      ExtractorEventType.DataExtractionProgress
+    );
   });
 });

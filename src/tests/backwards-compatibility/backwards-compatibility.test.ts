@@ -46,23 +46,33 @@ export function checkFunctionCompatibility(
     const currentFunctionParamNames = currentFunction.parameters.map(
       (p: Parameter) => p.name
     );
-    
+
     // Check each parameter position for destructured parameter compatibility
-    for (let i = 0; i < Math.min(newFunctionParamNames.length, currentFunctionParamNames.length); i++) {
+    for (
+      let i = 0;
+      i <
+      Math.min(newFunctionParamNames.length, currentFunctionParamNames.length);
+      i++
+    ) {
       const newParam = newFunctionParamNames[i];
       const currentParam = currentFunctionParamNames[i];
-      
+
       // If both are destructured parameters (contain '{')
       if (newParam.includes('{') && currentParam.includes('{')) {
         // Extract field names from destructured parameters
-        const extractFields = (param: string) => 
-          param.replace(/[{}\s]/g, '').split(',').filter(f => f.length > 0);
-        
+        const extractFields = (param: string) =>
+          param
+            .replace(/[{}\s]/g, '')
+            .split(',')
+            .filter((f) => f.length > 0);
+
         const newFields = extractFields(newParam);
         const currentFields = extractFields(currentParam);
-        
+
         // Check that all current fields are present in new fields
-        const missingFields = currentFields.filter(field => !newFields.includes(field));
+        const missingFields = currentFields.filter(
+          (field) => !newFields.includes(field)
+        );
         expect(missingFields).toEqual([]);
       } else {
         // For non-destructured parameters, they must match exactly
@@ -131,7 +141,7 @@ export function checkFunctionCompatibility(
           `Parameter ${newParam.name} became required but was optional`
         );
       }
-      
+
       // Skip interface compatibility check for destructured parameters
       if (newParam.name.includes('{') || currentParam.name.includes('{')) {
         continue;
