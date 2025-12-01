@@ -30,14 +30,12 @@ export interface WorkerAdapterInterface<ConnectorState> {
  * @param {boolean=} isLocalDevelopment - A flag to indicate if the adapter is being used in local development
  * @param {number=} timeout - The timeout for the worker thread
  * @param {number=} batchSize - Maximum number of extracted items in a batch
- * @param {string=} baseWorkerPath - The base path for the worker files, usually `__dirname`
  * @param {Record<EventType, string>=} workerPathOverrides - A map of event types to custom worker paths to override default worker paths
  */
 export interface WorkerAdapterOptions {
   isLocalDevelopment?: boolean;
   timeout?: number;
   batchSize?: number;
-  baseWorkerPath?: string;
   workerPathOverrides?: WorkerPathOverrides;
 }
 
@@ -68,6 +66,7 @@ export interface SpawnInterface {
  * @param {string} workerPath - The path to the worker file
  * @param {string} initialDomainMapping - The initial domain mapping
  * @param {WorkerAdapterOptions} options - The options to create a new instance of Spawn class
+ * @param {string=} baseWorkerPath - The base path for the worker files, usually `__dirname`
  */
 export interface SpawnFactoryInterface<ConnectorState> {
   event: AirdropEvent;
@@ -75,6 +74,7 @@ export interface SpawnFactoryInterface<ConnectorState> {
   workerPath?: string;
   options?: WorkerAdapterOptions;
   initialDomainMapping?: InitialDomainMapping;
+  baseWorkerPath?: string;
 }
 
 /**
