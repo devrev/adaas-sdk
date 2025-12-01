@@ -4,8 +4,9 @@ import {
   NormalizedItem,
 } from '../repo/repo.interfaces';
 import { AirdropEvent } from '../types/extraction';
+
+import { mockServer } from './jest.setup';
 import { CreateEventInterface } from './test-helpers.interfaces';
-import { mockServer } from './timeout-handling/jest.setup';
 
 export function createEvent({
   eventType,

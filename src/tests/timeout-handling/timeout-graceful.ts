@@ -8,9 +8,9 @@ processTask({
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
-    await adapter.emit(ExtractorEventType.ExtractionDataDone);
+    await adapter.emit(ExtractorEventType.DataExtractionDone);
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionDataProgress);
+    await adapter.emit(ExtractorEventType.DataExtractionProgress);
   },
 });

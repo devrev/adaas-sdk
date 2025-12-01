@@ -2,7 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import { Server } from 'http';
 
 import {
-  DEFAULT_PORT,
+  DEFAULT_MOCK_SERVER_PORT,
   RequestInfo,
   RouteConfig,
   RouteHandler,
@@ -21,7 +21,7 @@ export class MockServer {
   private routeHandlers: Map<string, RouteHandler> = new Map();
   private requests: RequestInfo[] = [];
 
-  constructor(port: number = DEFAULT_PORT) {
+  constructor(port: number = DEFAULT_MOCK_SERVER_PORT) {
     this.port = port;
     this.baseUrl = `http://localhost:${this.port}`;
     this.app = express();

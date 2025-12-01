@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-export const DEFAULT_PORT = 3001;
+export const DEFAULT_MOCK_SERVER_PORT = 3001;
 
 /**
  * Configuration object for setting up a route response.
