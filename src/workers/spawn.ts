@@ -28,7 +28,7 @@ import { createWorker } from './create-worker';
 
 function getWorkerPath({
   event,
-  workerBasePath
+  workerBasePath,
 }: GetWorkerPathInterface): string | null {
   let path = null;
   switch (event.payload.event_type) {
@@ -110,11 +110,13 @@ export async function spawn<ConnectorState>({
     options?.workerPathOverrides != null &&
     options.workerPathOverrides[translatedEventType as EventType] != null
   ) {
-    script = options.baseWorkerPath + options.workerPathOverrides[translatedEventType as EventType];
+    script =
+      options.baseWorkerPath +
+      options.workerPathOverrides[translatedEventType as EventType];
   } else {
     script = getWorkerPath({
       event,
-      workerBasePath: options?.baseWorkerPath ?? __dirname
+      workerBasePath: options?.baseWorkerPath ?? __dirname,
     });
   }
 
