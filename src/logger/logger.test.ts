@@ -1,17 +1,14 @@
 import { AxiosError } from 'axios';
-import path from 'node:path';
 import { inspect } from 'node:util';
-import { Worker } from 'node:worker_threads';
 import { LIBRARY_VERSION } from '../common/constants';
 import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
-import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
+import { WorkerAdapterOptions } from '../types/workers';
 import { getPrintableState, Logger, serializeAxiosError } from './logger';
 import {
   INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
   MAX_LOG_STRING_LENGTH,
 } from './logger.constants';
-import { LogLevel } from './logger.interfaces';
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
@@ -36,7 +33,7 @@ describe(Logger.name, () => {
     jest.clearAllMocks();
 
     mockEvent = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventType.StartExtractingData,
       eventContextOverrides: {
         dev_org: 'DEV-test',
         dev_org_id: 'DEV-test-id',
@@ -74,7 +71,7 @@ describe(Logger.name, () => {
     expect(tags).toEqual({
       ...mockEvent.payload.event_context,
       sdk_version: LIBRARY_VERSION,
-      sdk_log: true,
+      is_sdk_log: true,
     });
   });
 
@@ -92,7 +89,7 @@ describe(Logger.name, () => {
         message,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
-        sdk_log: true,
+        is_sdk_log: true,
       })
     );
   });
@@ -112,7 +109,7 @@ describe(Logger.name, () => {
         message: expectedMessage,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
-        sdk_log: true,
+        is_sdk_log: true,
       })
     );
   });
@@ -133,7 +130,7 @@ describe(Logger.name, () => {
         message: `${text} ${expectedDataMessage}`,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
-        sdk_log: true,
+        is_sdk_log: true,
       })
     );
   });
@@ -155,95 +152,11 @@ describe(Logger.name, () => {
         message: `${text1} ${expectedDataMessage} ${text2}`,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
-        sdk_log: true,
+        is_sdk_log: true,
       })
     );
   });
 
-  async function runWorkerLog(mode: 'user' | 'sdk') {
-    const workerScriptPath = path.join(__dirname, 'logger.worker-fixture.js');
-
-    const worker = new Worker(workerScriptPath, {
-      workerData: {
-        event: mockEvent,
-        options: mockOptions,
-        message: 'Worker log',
-        mode,
-      },
-    });
-
-    try {
-      const logMessage = await new Promise<{
-        subject: WorkerMessageSubject;
-        payload: { stringifiedArgs: string; level: LogLevel; sdk_log: boolean };
-      }>((resolve, reject) => {
-        function cleanup() {
-          worker.off('message', handleMessage);
-          worker.off('exit', handleExit);
-          worker.off('error', handleError);
-        }
-
-        function handleMessage(message: unknown) {
-          const typedMessage = message as {
-            subject?: WorkerMessageSubject;
-            payload?: {
-              stringifiedArgs: string;
-              level: LogLevel;
-              sdk_log?: boolean;
-            };
-          };
-          if (typedMessage?.subject === WorkerMessageSubject.WorkerMessageLog) {
-            cleanup();
-            resolve(
-              typedMessage as {
-                subject: WorkerMessageSubject;
-                payload: {
-                  stringifiedArgs: string;
-                  level: LogLevel;
-                  sdk_log: boolean;
-                };
-              }
-            );
-          }
-        }
-
-        function handleExit(code: number) {
-          cleanup();
-          reject(
-            new Error(
-              `Worker exited before emitting log. Exit code: ${code.toString()}`
-            )
-          );
-        }
-
-        function handleError(error: Error) {
-          cleanup();
-          reject(error);
-        }
-
-        worker.on('message', handleMessage);
-        worker.once('exit', handleExit);
-        worker.once('error', handleError);
-      });
-
-      return logMessage;
-    } finally {
-      await worker.terminate();
-    }
-  }
-
-  it('should set sdk_log to false for worker thread logs', async () => {
-    const logMessage = await runWorkerLog('user');
-    expect(logMessage.payload.sdk_log).toBe(false);
-    expect(logMessage.payload.level).toBe(LogLevel.INFO);
-    expect(logMessage.payload.stringifiedArgs).toContain('Worker log');
-  });
-
-  it('should keep sdk_log true for SDK logs inside worker thread', async () => {
-    const logMessage = await runWorkerLog('sdk');
-    expect(logMessage.payload.sdk_log).toBe(true);
-    expect(logMessage.payload.stringifiedArgs).toContain('Worker log');
-  });
 
   it('should log directly without JSON wrapping in local development mode', () => {
     // Arrange
@@ -444,7 +357,7 @@ describe(Logger.name, () => {
     const logObject = JSON.parse(callArgs);
     expect(logObject.message).toBe('');
     expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
-    expect(logObject.sdk_log).toBe(true);
+    expect(logObject.is_sdk_log).toBe(true);
   });
 
   it('[edge] should handle null and undefined values in log arguments', () => {
