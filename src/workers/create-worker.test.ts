@@ -2,13 +2,13 @@ import { isMainThread, Worker } from 'worker_threads';
 
 import { createEvent } from '../tests/test-helpers';
 import { EventType } from '../types/extraction';
-import { createWorker } from './create-worker';
+import { createWorker, CreateWorkerResult } from './create-worker';
 
 describe(createWorker.name, () => {
   it('should create a Worker instance when valid parameters are provided', async () => {
     const workerPath = __dirname + '../tests/dummy-worker.ts';
 
-    const worker = isMainThread
+    const result: CreateWorkerResult | null = isMainThread
       ? await createWorker<object>({
           event: createEvent({
             eventType: EventType.ExtractionExternalSyncUnitsStart,
@@ -18,11 +18,13 @@ describe(createWorker.name, () => {
         })
       : null;
 
-    expect(worker).not.toBeNull();
-    expect(worker).toBeInstanceOf(Worker);
+    expect(result).not.toBeNull();
+    expect(result?.worker).toBeInstanceOf(Worker);
+    expect(result?.memoryConfig).toBeDefined();
+    expect(result?.resourceLimits).toBeDefined();
 
-    if (worker) {
-      await worker.terminate();
+    if (result) {
+      await result.worker.terminate();
     }
   });
 
@@ -51,7 +53,7 @@ describe(createWorker.name, () => {
     const workerPath = __dirname + '../tests/dummy-worker.ts';
 
     if (isMainThread) {
-      const worker = await createWorker<object>({
+      const result = await createWorker<object>({
         event: createEvent({
           eventType: EventType.ExtractionExternalSyncUnitsStart,
         }),
@@ -59,8 +61,8 @@ describe(createWorker.name, () => {
         workerPath,
       });
 
-      expect(worker).toBeInstanceOf(Worker);
-      await worker.terminate();
+      expect(result.worker).toBeInstanceOf(Worker);
+      await result.worker.terminate();
     }
   });
 
@@ -74,7 +76,7 @@ describe(createWorker.name, () => {
     };
 
     if (isMainThread) {
-      const worker = await createWorker<typeof complexState>({
+      const result = await createWorker<typeof complexState>({
         event: createEvent({
           eventType: EventType.ExtractionDataStart,
         }),
@@ -82,8 +84,8 @@ describe(createWorker.name, () => {
         workerPath,
       });
 
-      expect(worker).toBeInstanceOf(Worker);
-      await worker.terminate();
+      expect(result.worker).toBeInstanceOf(Worker);
+      await result.worker.terminate();
     }
   });
 
@@ -91,7 +93,7 @@ describe(createWorker.name, () => {
     const workerPath = __dirname + '../tests/dummy-worker.ts';
 
     if (isMainThread) {
-      const worker = await createWorker<object>({
+      const result = await createWorker<object>({
         event: createEvent({
           eventType: EventType.ExtractionMetadataStart,
         }),
@@ -99,8 +101,30 @@ describe(createWorker.name, () => {
         workerPath,
       });
 
-      expect(worker).toBeInstanceOf(Worker);
-      await worker.terminate();
+      expect(result.worker).toBeInstanceOf(Worker);
+      await result.worker.terminate();
+    }
+  });
+
+  it('should include memory configuration in result', async () => {
+    const workerPath = __dirname + '../tests/dummy-worker.ts';
+
+    if (isMainThread) {
+      const result = await createWorker<object>({
+        event: createEvent({
+          eventType: EventType.ExtractionExternalSyncUnitsStart,
+        }),
+        initialState: {},
+        workerPath,
+      });
+
+      expect(result.memoryConfig).toHaveProperty('maxOldGenerationSizeMb');
+      expect(result.memoryConfig).toHaveProperty('totalAvailableMemoryMb');
+      expect(result.memoryConfig).toHaveProperty('isLambda');
+      expect(result.memoryConfig).toHaveProperty('isLocalDevelopment');
+      expect(result.resourceLimits).toHaveProperty('maxOldGenerationSizeMb');
+
+      await result.worker.terminate();
     }
   });
 });
