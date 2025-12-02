@@ -48,5 +48,5 @@ export interface AxiosErrorResponse {
 
 export interface LoggerTags extends EventContext {
   sdk_version: string;
-  sdk_log: boolean;
+  is_sdk_log: boolean;
 }

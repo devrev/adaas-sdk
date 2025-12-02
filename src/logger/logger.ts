@@ -8,7 +8,7 @@ import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 
 import { INSPECT_OPTIONS, MAX_LOG_STRING_LENGTH } from './logger.constants';
-import { getSdkLogContextValueOrUndefined } from './logger.context';
+import { getSdkLogContextValue } from './logger.context';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
@@ -34,7 +34,7 @@ export class Logger extends Console {
     this.tags = {
       ...event.payload.event_context,
       sdk_version: LIBRARY_VERSION,
-      sdk_log: true,
+      is_sdk_log: true,
     };
   }
 
@@ -90,7 +90,7 @@ export class Logger extends Console {
     const logObject = {
       message,
       ...this.tags,
-      sdk_log: sdkLog,
+      is_sdk_log: sdkLog,
     };
     this.originalConsole[level](JSON.stringify(logObject));
   }
@@ -106,9 +106,9 @@ export class Logger extends Console {
    * in edge cases or during testing.
    */
   private getSdkLogFlag(): boolean {
-    const contextValue = getSdkLogContextValueOrUndefined();
     // Default to SDK log (true) if context is not set
-    return typeof contextValue === 'boolean' ? contextValue : true;
+    const contextValue = getSdkLogContextValue(true);
+    return contextValue;
   }
 
   /**
@@ -136,7 +136,7 @@ export class Logger extends Console {
     } else {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: { stringifiedArgs, level, sdk_log: sdkLogFlag },
+        payload: { stringifiedArgs, level, is_sdk_log: sdkLogFlag },
       });
     }
   }
@@ -155,18 +155,6 @@ export class Logger extends Console {
 
   override error(...args: unknown[]): void {
     this.stringifyAndLog(args, LogLevel.ERROR);
-  }
-
-  sdkInfo(...args: unknown[]): void {
-    this.stringifyAndLog(args, LogLevel.INFO, true);
-  }
-
-  sdkWarn(...args: unknown[]): void {
-    this.stringifyAndLog(args, LogLevel.WARN, true);
-  }
-
-  sdkError(...args: unknown[]): void {
-    this.stringifyAndLog(args, LogLevel.ERROR, true);
   }
 }
 /**
