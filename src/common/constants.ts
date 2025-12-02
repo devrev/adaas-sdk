@@ -55,7 +55,6 @@ export const STATEFUL_EVENT_TYPES = [
 ];
 
 export const ARTIFACT_BATCH_SIZE = 2000;
-export const MAX_DEVREV_ARTIFACT_SIZE = 262144000; // 250MB
 export const MAX_DEVREV_FILENAME_LENGTH = 256;
 export const MAX_DEVREV_FILENAME_EXTENSION_LENGTH = 20; // 20 characters for the file extension
 

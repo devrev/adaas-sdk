@@ -4,7 +4,6 @@ import { jsonl } from 'js-jsonl';
 import zlib from 'zlib';
 import { axiosClient } from '../http/axios-client-internal';
 
-import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
 import { truncateFilename } from '../common/helpers';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { AirdropEvent } from '../types/extraction';
@@ -163,26 +162,15 @@ export class Uploader {
     }
     formData.append('file', fileStream.data);
 
-    if (fileStream.headers['content-length'] > MAX_DEVREV_ARTIFACT_SIZE) {
-      console.warn(
-        `File size exceeds the maximum limit of ${MAX_DEVREV_ARTIFACT_SIZE} bytes.`
-      );
-      this.destroyStream(fileStream);
-      return;
-    }
-
     try {
       const response = await axiosClient.post(artifact.upload_url, formData, {
         headers: {
           ...formData.getHeaders(),
-          ...(!fileStream.headers['content-length']
-            ? {
-                'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
-              }
-            : {}),
         },
-        maxRedirects: 0, // Prevents buffering
-        validateStatus: () => true, // Prevents errors on redirects
+        // Prevents buffering of the response in the memory
+        maxRedirects: 0,
+        // Allow 2xx and 3xx (redirects) to be considered successful, 4xx and 5xx will throw errors and be caught in the catch block
+        validateStatus: (status) => status >= 200 && status < 400,
       });
       this.destroyStream(fileStream);
       return response;
