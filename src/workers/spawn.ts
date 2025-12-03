@@ -253,12 +253,14 @@ export class Spawn {
     );
 
     // Listen for worker errors to detect OOM
+    // Node.js worker threads emit ERR_WORKER_OUT_OF_MEMORY error code when OOM occurs
+    // @see https://nodejs.org/api/errors.html#err_worker_out_of_memory
     worker.on(WorkerEvent.WorkerError, (error: Error) => {
-      const errorMessage = error?.message || String(error);
-      if (isOOMError(errorMessage)) {
+      if (isOOMError(error)) {
         this.isOOMExit = true;
         console.error('OOM ERROR DETECTED: Worker ran out of memory.', {
-          errorMessage,
+          errorCode: (error as NodeJS.ErrnoException).code,
+          errorMessage: error?.message,
           memoryConfig: this.memoryConfig,
           resourceLimits: this.resourceLimits,
         });

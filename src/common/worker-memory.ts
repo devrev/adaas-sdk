@@ -111,22 +111,56 @@ export function calculateWorkerMemoryConfig(
 }
 
 /**
- * Checks if an error message indicates an OOM (Out-Of-Memory) error.
- * @param errorMessage - The error message to check
- * @returns true if the error indicates OOM
+ * Node.js error code for worker thread OOM.
+ * @see https://nodejs.org/api/errors.html#err_worker_out_of_memory
  */
-export function isOOMError(errorMessage: string): boolean {
-  const oomPatterns = [
-    /JavaScript heap out of memory/i,
-    /JS heap out of memory/i,
-    /FATAL ERROR: .* out of memory/i,
-    /Allocation failed - JavaScript heap out of memory/i,
-    /FATAL ERROR: Reached heap limit/i,
-    /FATAL ERROR: CALL_AND_RETRY_LAST/i,
-    /memory allocation failed/i,
-    /Worker terminated due to reaching memory limit/i,
-    /ERR_WORKER_OUT_OF_MEMORY/i,
-  ];
+export const ERR_WORKER_OUT_OF_MEMORY = 'ERR_WORKER_OUT_OF_MEMORY';
 
-  return oomPatterns.some((pattern) => pattern.test(errorMessage));
+/**
+ * Regex patterns to detect OOM errors from error messages.
+ * Used as a fallback when the error code is not available.
+ */
+const OOM_MESSAGE_PATTERNS = [
+  /JavaScript heap out of memory/i,
+  /JS heap out of memory/i,
+  /FATAL ERROR: .* out of memory/i,
+  /Allocation failed - JavaScript heap out of memory/i,
+  /FATAL ERROR: Reached heap limit/i,
+  /FATAL ERROR: CALL_AND_RETRY_LAST/i,
+  /memory allocation failed/i,
+  /Worker terminated due to reaching memory limit/i,
+];
+
+/**
+ * Checks if an error indicates an OOM (Out-Of-Memory) error.
+ *
+ * This function first checks for the Node.js error code `ERR_WORKER_OUT_OF_MEMORY`
+ * which is the standard way to detect worker thread OOM errors.
+ * Falls back to regex pattern matching on the error message for other OOM scenarios.
+ *
+ * @param error - The error to check (can be an Error object or string message)
+ * @returns true if the error indicates OOM
+ * @see https://nodejs.org/api/errors.html#err_worker_out_of_memory
+ */
+export function isOOMError(error: Error | string): boolean {
+  // If it's an Error object, check the code property first
+  if (error instanceof Error) {
+    // Node.js worker thread OOM errors have this code
+    if ((error as NodeJS.ErrnoException).code === ERR_WORKER_OUT_OF_MEMORY) {
+      return true;
+    }
+    // Fall back to checking the message
+    return OOM_MESSAGE_PATTERNS.some((pattern) => pattern.test(error.message));
+  }
+
+  // If it's a string, check against patterns (including the error code as a string)
+  if (typeof error === 'string') {
+    // Check if the string contains the error code
+    if (error.includes(ERR_WORKER_OUT_OF_MEMORY)) {
+      return true;
+    }
+    return OOM_MESSAGE_PATTERNS.some((pattern) => pattern.test(error));
+  }
+
+  return false;
 }
