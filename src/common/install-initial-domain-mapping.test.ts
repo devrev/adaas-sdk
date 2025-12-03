@@ -48,7 +48,7 @@ describe(installInitialDomainMapping.name, () => {
     },
   };
 
-  const mockEndpoint = 'test_devrev_endpoint';
+  const mockEndpoint = 'http://localhost:3001';
   const mockToken = 'test_token';
 
   // After each test, clear all mocks to prevent state from leaking.
