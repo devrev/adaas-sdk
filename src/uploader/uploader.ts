@@ -4,6 +4,7 @@ import { jsonl } from 'js-jsonl';
 import zlib from 'zlib';
 import { axiosClient } from '../http/axios-client-internal';
 
+import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
 import { truncateFilename } from '../common/helpers';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { AirdropEvent } from '../types/extraction';
@@ -166,6 +167,11 @@ export class Uploader {
       const response = await axiosClient.post(artifact.upload_url, formData, {
         headers: {
           ...formData.getHeaders(),
+          ...(!fileStream.headers['content-length']
+            ? {
+                'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
+              }
+            : {}),
         },
         // Prevents buffering of the response in the memory
         maxRedirects: 0,
