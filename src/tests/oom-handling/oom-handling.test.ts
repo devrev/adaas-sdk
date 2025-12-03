@@ -54,7 +54,9 @@ describe('OOM handling', () => {
       // The error should contain OOM information
       expect(lastRequest.body.event_data).toBeDefined();
       expect(lastRequest.body.event_data.error).toBeDefined();
-      expect(lastRequest.body.event_data.error.message).toContain('out of memory');
+      expect(lastRequest.body.event_data.error.message).toContain(
+        'out of memory'
+      );
 
       // OOM error info should be present
       const oomErrorInfo = lastRequest.body.event_data.error.oom_error_info;
@@ -112,8 +114,10 @@ describe('OOM handling', () => {
       const requests = mockServer.getRequests();
 
       // Filter for callback requests (event emissions)
-      const callbackRequests = requests.filter(r =>
-        r.url.includes('airdrop.external-extractor.message') && r.method === 'POST'
+      const callbackRequests = requests.filter(
+        (r) =>
+          r.url.includes('airdrop.external-extractor.message') &&
+          r.method === 'POST'
       );
 
       // Should have at least one event (either progress or error)
@@ -122,12 +126,12 @@ describe('OOM handling', () => {
 
       // Check if we got a progress event (worker emitted before OOM)
       const progressRequest = callbackRequests.find(
-        r => r.body?.event_type === ExtractorEventType.DataExtractionProgress
+        (r) => r.body?.event_type === ExtractorEventType.DataExtractionProgress
       );
 
       // Check if we got an error event (OOM error)
       const errorRequest = callbackRequests.find(
-        r => r.body?.event_type === ExtractorEventType.DataExtractionError
+        (r) => r.body?.event_type === ExtractorEventType.DataExtractionError
       );
 
       // At least one of these should be present
@@ -140,7 +144,9 @@ describe('OOM handling', () => {
 
       // If error was emitted, verify it contains OOM info
       if (errorRequest) {
-        expect(errorRequest.body?.event_data?.error?.oom_error_info).toBeDefined();
+        expect(
+          errorRequest.body?.event_data?.error?.oom_error_info
+        ).toBeDefined();
       }
     }, 120000);
   });
@@ -372,7 +378,9 @@ describe('OOM handling', () => {
       expect(lastRequest.body.event_type).toBe(
         ExtractorEventType.DataExtractionError
       );
-      expect(lastRequest.body.event_data.error.oom_error_info.memoryLimitMb).toBe(32);
+      expect(
+        lastRequest.body.event_data.error.oom_error_info.memoryLimitMb
+      ).toBe(32);
     }, 120000);
 
     it('should handle moderate memory limit (128MB)', async () => {
@@ -398,7 +406,9 @@ describe('OOM handling', () => {
       expect(lastRequest.body.event_type).toBe(
         ExtractorEventType.DataExtractionError
       );
-      expect(lastRequest.body.event_data.error.oom_error_info.memoryLimitMb).toBe(128);
+      expect(
+        lastRequest.body.event_data.error.oom_error_info.memoryLimitMb
+      ).toBe(128);
     }, 120000);
   });
 
@@ -472,7 +482,8 @@ describe('OOM handling', () => {
       expect(requestsAfterSecond).toBeGreaterThan(0);
 
       // Both should have emitted OOM errors
-      const lastRequest = mockServer.getRequests()[mockServer.getRequests().length - 1];
+      const lastRequest =
+        mockServer.getRequests()[mockServer.getRequests().length - 1];
       expect(lastRequest.body.event_type).toBe(
         ExtractorEventType.DataExtractionError
       );
@@ -509,4 +520,3 @@ describe('OOM handling', () => {
     }, 120000);
   });
 });
-

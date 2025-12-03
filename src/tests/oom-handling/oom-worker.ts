@@ -34,7 +34,9 @@ processTask({
         totalAllocated += 1; // Approximately 1MB per chunk
 
         if (totalAllocated % 10 === 0) {
-          console.log(`Allocated approximately ${totalAllocated}MB of heap memory`);
+          console.log(
+            `Allocated approximately ${totalAllocated}MB of heap memory`
+          );
         }
 
         // Small delay to allow logging (but not too long to avoid timeout)
@@ -56,4 +58,3 @@ processTask({
     await adapter.emit(ExtractorEventType.DataExtractionProgress);
   },
 });
-

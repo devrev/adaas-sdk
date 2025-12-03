@@ -144,7 +144,9 @@ describe(createWorker.name, () => {
         },
       });
 
-      expect(result.resourceLimits.maxOldGenerationSizeMb).toBe(testMemoryLimit);
+      expect(result.resourceLimits.maxOldGenerationSizeMb).toBe(
+        testMemoryLimit
+      );
 
       await result.worker.terminate();
     }

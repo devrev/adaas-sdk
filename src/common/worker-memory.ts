@@ -49,7 +49,7 @@ export function getLambdaMemoryLimitMb(): number | null {
  * For Lambda: Uses AWS_LAMBDA_FUNCTION_MEMORY_SIZE
  * For local development: Caps at LOCAL_DEV_MAX_TOTAL_MEMORY_MB
  * For other environments: Uses system total memory or V8 heap limit
- * 
+ *
  * @param isLocalDevelopment - Whether running in local development mode
  * @returns Total available memory in MB
  */
@@ -63,7 +63,10 @@ export function getTotalAvailableMemoryMb(isLocalDevelopment: boolean): number {
   // For local development, cap at LOCAL_DEV_MAX_TOTAL_MEMORY_MB
   if (isLocalDevelopment) {
     const systemMemoryMb = os.totalmem() / (1024 * 1024);
-    return Math.min(systemMemoryMb, MEMORY_CONSTANTS.LOCAL_DEV_MAX_TOTAL_MEMORY_MB);
+    return Math.min(
+      systemMemoryMb,
+      MEMORY_CONSTANTS.LOCAL_DEV_MAX_TOTAL_MEMORY_MB
+    );
   }
 
   // For other environments, use the smaller of system memory or V8 heap limit
@@ -76,7 +79,7 @@ export function getTotalAvailableMemoryMb(isLocalDevelopment: boolean): number {
 
 /**
  * Calculates the worker memory configuration based on the environment.
- * 
+ *
  * @param isLocalDevelopment - Whether running in local development mode
  * @returns Worker memory configuration
  */
@@ -127,4 +130,3 @@ export function isOOMError(errorMessage: string): boolean {
 
   return oomPatterns.some((pattern) => pattern.test(errorMessage));
 }
-

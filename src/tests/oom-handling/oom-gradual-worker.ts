@@ -32,7 +32,9 @@ processTask({
         totalAllocated++;
 
         if (totalAllocated % 5 === 0) {
-          console.log(`Gradual allocation: ~${totalAllocated * 0.4}MB consumed`);
+          console.log(
+            `Gradual allocation: ~${totalAllocated * 0.4}MB consumed`
+          );
         }
       }
     } catch (error) {
@@ -47,4 +49,3 @@ processTask({
     await adapter.emit(ExtractorEventType.DataExtractionProgress);
   },
 });
-
