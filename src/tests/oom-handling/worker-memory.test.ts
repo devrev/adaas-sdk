@@ -147,12 +147,22 @@ describe('worker-memory utilities', () => {
 
     it('should detect ERR_WORKER_OUT_OF_MEMORY error code', () => {
       expect(isOOMError('ERR_WORKER_OUT_OF_MEMORY')).toBe(true);
-      expect(isOOMError('Error [ERR_WORKER_OUT_OF_MEMORY]: Worker terminated due to reaching memory limit')).toBe(true);
+      expect(
+        isOOMError(
+          'Error [ERR_WORKER_OUT_OF_MEMORY]: Worker terminated due to reaching memory limit'
+        )
+      ).toBe(true);
     });
 
     it('should detect Worker terminated due to reaching memory limit', () => {
-      expect(isOOMError('Worker terminated due to reaching memory limit')).toBe(true);
-      expect(isOOMError('Worker terminated due to reaching memory limit: JavaScript heap out of memory')).toBe(true);
+      expect(isOOMError('Worker terminated due to reaching memory limit')).toBe(
+        true
+      );
+      expect(
+        isOOMError(
+          'Worker terminated due to reaching memory limit: JavaScript heap out of memory'
+        )
+      ).toBe(true);
     });
 
     it('should detect JS heap out of memory (abbreviated)', () => {
@@ -162,7 +172,9 @@ describe('worker-memory utilities', () => {
 
     it('should detect memory allocation failed', () => {
       expect(isOOMError('memory allocation failed')).toBe(true);
-      expect(isOOMError('Error: memory allocation failed during processing')).toBe(true);
+      expect(
+        isOOMError('Error: memory allocation failed during processing')
+      ).toBe(true);
     });
 
     it('should return false for non-OOM errors', () => {
@@ -405,12 +417,15 @@ describe('worker-memory utilities', () => {
 
       const config = calculateWorkerMemoryConfig(false);
 
-      const parentMemory = config.totalAvailableMemoryMb - config.maxOldGenerationSizeMb;
+      const parentMemory =
+        config.totalAvailableMemoryMb - config.maxOldGenerationSizeMb;
       const parentPercentage = parentMemory / config.totalAvailableMemoryMb;
 
       // Parent should get approximately 25% (1 - 0.75)
-      expect(parentPercentage).toBeCloseTo(1 - MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE, 2);
+      expect(parentPercentage).toBeCloseTo(
+        1 - MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE,
+        2
+      );
     });
   });
 });
-

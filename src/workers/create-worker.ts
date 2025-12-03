@@ -35,14 +35,17 @@ async function createWorker<ConnectorState>(
       const workerFile = __dirname + '/worker.js';
 
       // Calculate memory configuration based on environment
-      const isLocalDevelopment = workerData.options?.isLocalDevelopment ?? false;
-      const enableMemoryLimits = workerData.options?.enableMemoryLimits !== false;
+      const isLocalDevelopment =
+        workerData.options?.isLocalDevelopment ?? false;
+      const enableMemoryLimits =
+        workerData.options?.enableMemoryLimits !== false;
       const testMemoryLimitMb = workerData.options?.testMemoryLimitMb;
 
       const memoryConfig = calculateWorkerMemoryConfig(isLocalDevelopment);
 
       // Allow test override for memory limit
-      const effectiveMemoryLimitMb = testMemoryLimitMb ?? memoryConfig.maxOldGenerationSizeMb;
+      const effectiveMemoryLimitMb =
+        testMemoryLimitMb ?? memoryConfig.maxOldGenerationSizeMb;
 
       const resourceLimits: WorkerResourceLimits = {
         maxOldGenerationSizeMb: effectiveMemoryLimitMb,
@@ -62,7 +65,9 @@ async function createWorker<ConnectorState>(
         console.info(
           `Worker memory limits configured: ` +
             `maxOldGenerationSizeMb=${resourceLimits.maxOldGenerationSizeMb}MB, ` +
-            `totalAvailable=${memoryConfig.totalAvailableMemoryMb.toFixed(0)}MB, ` +
+            `totalAvailable=${memoryConfig.totalAvailableMemoryMb.toFixed(
+              0
+            )}MB, ` +
             `isLambda=${memoryConfig.isLambda}, ` +
             `isLocalDevelopment=${memoryConfig.isLocalDevelopment}`
         );

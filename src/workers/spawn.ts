@@ -392,9 +392,14 @@ export class Spawn {
     // Build OOM error info
     const oomErrorInfo: OOMErrorInfo = {
       type: 'OOM_ERROR',
-      message: `Worker thread ran out of memory and was terminated. ` +
-        `Memory limit: ${this.resourceLimits?.maxOldGenerationSizeMb ?? 'unknown'}MB, ` +
-        `Total available: ${this.memoryConfig?.totalAvailableMemoryMb?.toFixed(0) ?? 'unknown'}MB.`,
+      message:
+        `Worker thread ran out of memory and was terminated. ` +
+        `Memory limit: ${
+          this.resourceLimits?.maxOldGenerationSizeMb ?? 'unknown'
+        }MB, ` +
+        `Total available: ${
+          this.memoryConfig?.totalAvailableMemoryMb?.toFixed(0) ?? 'unknown'
+        }MB.`,
       memoryLimitMb: this.resourceLimits?.maxOldGenerationSizeMb ?? 0,
       totalAvailableMemoryMb: this.memoryConfig?.totalAvailableMemoryMb ?? 0,
       isLambda: this.memoryConfig?.isLambda ?? false,
@@ -419,7 +424,10 @@ export class Spawn {
 
       this.resolve();
     } catch (error) {
-      console.error('Error while emitting OOM error event.', serializeError(error));
+      console.error(
+        'Error while emitting OOM error event.',
+        serializeError(error)
+      );
     }
   }
 }

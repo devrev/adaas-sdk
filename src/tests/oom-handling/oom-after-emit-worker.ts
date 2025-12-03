@@ -38,4 +38,3 @@ processTask({
     await adapter.emit(ExtractorEventType.DataExtractionProgress);
   },
 });
-

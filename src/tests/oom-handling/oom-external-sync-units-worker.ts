@@ -1,5 +1,8 @@
 import { ExtractorEventType, processTask } from '../../index';
 
+/* eslint-disable @typescript-eslint/require-await */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 /**
  * Worker that causes OOM during external sync units extraction.
  * Tests OOM handling for EventType.StartExtractingExternalSyncUnits.
@@ -23,7 +26,6 @@ processTask({
     }
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExternalSyncUnitsDone);
+    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionDone);
   },
 });
-
