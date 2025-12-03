@@ -117,10 +117,13 @@ describe('worker-memory utilities', () => {
 
       expect(config.isLambda).toBe(true);
       expect(config.totalAvailableMemoryMb).toBe(1024);
-      // Worker should get 75% of Lambda memory
-      expect(config.maxOldGenerationSizeMb).toBe(
-        Math.floor(1024 * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE)
+      // Worker should get 75% of (Lambda memory - currently used memory)
+      const currentlyUsed = process.memoryUsage().rss / (1024 * 1024);
+      const expectedMaxHeap = Math.max(
+        Math.floor((1024 - currentlyUsed) * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE),
+        MEMORY_CONSTANTS.MIN_WORKER_HEAP_SIZE_MB
       );
+      expect(config.maxOldGenerationSizeMb).toBe(expectedMaxHeap);
     });
   });
 
@@ -302,10 +305,13 @@ describe('worker-memory utilities', () => {
 
       expect(config.isLambda).toBe(true);
       expect(config.totalAvailableMemoryMb).toBe(10240);
-      // Worker should get 75% of 10240MB = 7680MB
-      expect(config.maxOldGenerationSizeMb).toBe(
-        Math.floor(10240 * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE)
+      // Worker should get 75% of (10240MB - currently used memory)
+      const currentlyUsed = process.memoryUsage().rss / (1024 * 1024);
+      const expectedMaxHeap = Math.max(
+        Math.floor((10240 - currentlyUsed) * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE),
+        MEMORY_CONSTANTS.MIN_WORKER_HEAP_SIZE_MB
       );
+      expect(config.maxOldGenerationSizeMb).toBe(expectedMaxHeap);
     });
 
     it('should handle floating point memory size', () => {
@@ -366,9 +372,10 @@ describe('worker-memory utilities', () => {
       const config = calculateWorkerMemoryConfig(false);
 
       expect(config.totalAvailableMemoryMb).toBe(256);
-      // 256 * 0.75 = 192MB for worker, but MIN is 128MB
+      // Worker gets 75% of (256MB - currently used memory), but MIN is 128MB
+      const currentlyUsed = process.memoryUsage().rss / (1024 * 1024);
       const expectedWorkerMemory = Math.max(
-        Math.floor(256 * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE),
+        Math.floor((256 - currentlyUsed) * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE),
         MEMORY_CONSTANTS.MIN_WORKER_HEAP_SIZE_MB
       );
       expect(config.maxOldGenerationSizeMb).toBe(expectedWorkerMemory);
@@ -381,10 +388,13 @@ describe('worker-memory utilities', () => {
       const config = calculateWorkerMemoryConfig(false);
 
       expect(config.totalAvailableMemoryMb).toBe(512);
-      // 512 * 0.75 = 384MB for worker
-      expect(config.maxOldGenerationSizeMb).toBe(
-        Math.floor(512 * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE)
+      // Worker gets 75% of (512MB - currently used memory)
+      const currentlyUsed = process.memoryUsage().rss / (1024 * 1024);
+      const expectedMaxHeap = Math.max(
+        Math.floor((512 - currentlyUsed) * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE),
+        MEMORY_CONSTANTS.MIN_WORKER_HEAP_SIZE_MB
       );
+      expect(config.maxOldGenerationSizeMb).toBe(expectedMaxHeap);
     });
 
     it('should calculate correct worker memory for Lambda 1024MB', () => {
@@ -394,10 +404,13 @@ describe('worker-memory utilities', () => {
       const config = calculateWorkerMemoryConfig(false);
 
       expect(config.totalAvailableMemoryMb).toBe(1024);
-      // 1024 * 0.75 = 768MB for worker
-      expect(config.maxOldGenerationSizeMb).toBe(
-        Math.floor(1024 * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE)
+      // Worker gets 75% of (1024MB - currently used memory)
+      const currentlyUsed = process.memoryUsage().rss / (1024 * 1024);
+      const expectedMaxHeap = Math.max(
+        Math.floor((1024 - currentlyUsed) * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE),
+        MEMORY_CONSTANTS.MIN_WORKER_HEAP_SIZE_MB
       );
+      expect(config.maxOldGenerationSizeMb).toBe(expectedMaxHeap);
     });
 
     it('should calculate correct worker memory for Lambda 3008MB (max)', () => {
@@ -407,10 +420,13 @@ describe('worker-memory utilities', () => {
       const config = calculateWorkerMemoryConfig(false);
 
       expect(config.totalAvailableMemoryMb).toBe(3008);
-      // 3008 * 0.75 = 2256MB for worker
-      expect(config.maxOldGenerationSizeMb).toBe(
-        Math.floor(3008 * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE)
+      // Worker gets 75% of (3008MB - currently used memory)
+      const currentlyUsed = process.memoryUsage().rss / (1024 * 1024);
+      const expectedMaxHeap = Math.max(
+        Math.floor((3008 - currentlyUsed) * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE),
+        MEMORY_CONSTANTS.MIN_WORKER_HEAP_SIZE_MB
       );
+      expect(config.maxOldGenerationSizeMb).toBe(expectedMaxHeap);
     });
 
     it('should use local dev memory cap even when Lambda env vars are not set', () => {
@@ -451,26 +467,34 @@ describe('worker-memory utilities', () => {
       expect(config.workerMemoryPercentage).toBe(
         MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE
       );
-      expect(config.maxOldGenerationSizeMb).toBe(
-        Math.floor(1000 * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE)
+      // Worker gets 75% of (1000MB - currently used memory)
+      const currentlyUsed = process.memoryUsage().rss / (1024 * 1024);
+      const expectedMaxHeap = Math.max(
+        Math.floor((1000 - currentlyUsed) * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE),
+        MEMORY_CONSTANTS.MIN_WORKER_HEAP_SIZE_MB
       );
+      expect(config.maxOldGenerationSizeMb).toBe(expectedMaxHeap);
     });
 
-    it('should leave ~25% for parent thread', () => {
+    it('should leave memory for parent thread including currently used', () => {
       process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE = '1000';
       process.env.AWS_LAMBDA_FUNCTION_NAME = 'test';
 
       const config = calculateWorkerMemoryConfig(false);
+      const currentlyUsed = process.memoryUsage().rss / (1024 * 1024);
+      const availableAfterCurrent = config.totalAvailableMemoryMb - currentlyUsed;
 
+      // Worker should get 75% of remaining memory after current usage is subtracted
+      const expectedWorkerMemory = Math.max(
+        Math.floor(availableAfterCurrent * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE),
+        MEMORY_CONSTANTS.MIN_WORKER_HEAP_SIZE_MB
+      );
+      expect(config.maxOldGenerationSizeMb).toBe(expectedWorkerMemory);
+
+      // Parent gets: currently used memory + 25% of remaining
       const parentMemory =
         config.totalAvailableMemoryMb - config.maxOldGenerationSizeMb;
-      const parentPercentage = parentMemory / config.totalAvailableMemoryMb;
-
-      // Parent should get approximately 25% (1 - 0.75)
-      expect(parentPercentage).toBeCloseTo(
-        1 - MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE,
-        2
-      );
+      expect(parentMemory).toBeGreaterThanOrEqual(currentlyUsed);
     });
   });
 });
