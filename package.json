@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
     "test": "jest --forceExit --coverage --runInBand --selectProjects default --",
+    "test:oom": "node --max-old-space-size=4096 ./node_modules/.bin/jest --forceExit --runInBand --selectProjects oom-tests --logHeapUsage --",
     "test:backwards-compatibility": "jest --forceExit --runInBand --selectProjects backwards-compatibility --"
   },
   "repository": {
