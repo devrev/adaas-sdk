@@ -127,4 +127,99 @@ describe(createWorker.name, () => {
       await result.worker.terminate();
     }
   });
+
+  it('should apply testMemoryLimitMb override when provided', async () => {
+    const workerPath = __dirname + '../tests/dummy-worker.ts';
+    const testMemoryLimit = 64;
+
+    if (isMainThread) {
+      const result = await createWorker<object>({
+        event: createEvent({
+          eventType: EventType.ExtractionExternalSyncUnitsStart,
+        }),
+        initialState: {},
+        workerPath,
+        options: {
+          testMemoryLimitMb: testMemoryLimit,
+        },
+      });
+
+      expect(result.resourceLimits.maxOldGenerationSizeMb).toBe(testMemoryLimit);
+
+      await result.worker.terminate();
+    }
+  });
+
+  it('should create worker without memory limits when enableMemoryLimits is false', async () => {
+    const workerPath = __dirname + '../tests/dummy-worker.ts';
+
+    if (isMainThread) {
+      const result = await createWorker<object>({
+        event: createEvent({
+          eventType: EventType.ExtractionExternalSyncUnitsStart,
+        }),
+        initialState: {},
+        workerPath,
+        options: {
+          enableMemoryLimits: false,
+        },
+      });
+
+      // Worker should still be created successfully
+      expect(result.worker).toBeInstanceOf(Worker);
+      // Memory config should still be calculated (for logging purposes)
+      expect(result.memoryConfig).toBeDefined();
+      expect(result.resourceLimits).toBeDefined();
+
+      await result.worker.terminate();
+    }
+  });
+
+  it('should set isLocalDevelopment in memory config when option is provided', async () => {
+    const workerPath = __dirname + '../tests/dummy-worker.ts';
+
+    if (isMainThread) {
+      const result = await createWorker<object>({
+        event: createEvent({
+          eventType: EventType.ExtractionExternalSyncUnitsStart,
+        }),
+        initialState: {},
+        workerPath,
+        options: {
+          isLocalDevelopment: true,
+        },
+      });
+
+      expect(result.memoryConfig.isLocalDevelopment).toBe(true);
+
+      await result.worker.terminate();
+    }
+  });
+
+  it('[edge] should handle all extraction event types', async () => {
+    const workerPath = __dirname + '../tests/dummy-worker.ts';
+    const eventTypes = [
+      EventType.ExtractionExternalSyncUnitsStart,
+      EventType.ExtractionMetadataStart,
+      EventType.ExtractionDataStart,
+      EventType.ExtractionDataContinue,
+      EventType.ExtractionAttachmentsStart,
+      EventType.ExtractionAttachmentsContinue,
+    ];
+
+    if (isMainThread) {
+      for (const eventType of eventTypes) {
+        const result = await createWorker<object>({
+          event: createEvent({ eventType }),
+          initialState: {},
+          workerPath,
+        });
+
+        expect(result.worker).toBeInstanceOf(Worker);
+        expect(result.memoryConfig).toBeDefined();
+
+        await result.worker.terminate();
+      }
+    }
+  });
 });
