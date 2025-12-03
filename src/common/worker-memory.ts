@@ -90,9 +90,11 @@ export function calculateWorkerMemoryConfig(
   const totalAvailableMemoryMb = getTotalAvailableMemoryMb(isLocalDevelopment);
   const workerMemoryPercentage = MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE;
 
+  const currentlyUsed = process.memoryUsage().rss / (1024 * 1024);
+
   // Calculate worker heap size (75-80% of total available)
   let maxOldGenerationSizeMb = Math.floor(
-    totalAvailableMemoryMb * workerMemoryPercentage
+    (totalAvailableMemoryMb - currentlyUsed) * workerMemoryPercentage
   );
 
   // Ensure minimum heap size
