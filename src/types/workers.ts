@@ -31,12 +31,17 @@ export interface WorkerAdapterInterface<ConnectorState> {
  * @param {number=} timeout - The timeout for the worker thread
  * @param {number=} batchSize - Maximum number of extracted items in a batch
  * @param {Record<EventType, string>=} workerPathOverrides - A map of event types to custom worker paths to override default worker paths
+ * @param {boolean=} enableMemoryLimits - Whether to enable automatic memory limits for worker threads (default: true)
+ * @param {number=} testMemoryLimitMb - Override memory limit for testing purposes (only used when enableMemoryLimits is true)
  */
 export interface WorkerAdapterOptions {
   isLocalDevelopment?: boolean;
   timeout?: number;
   batchSize?: number;
   workerPathOverrides?: WorkerPathOverrides;
+  enableMemoryLimits?: boolean;
+  /** Override memory limit for testing purposes (only used when enableMemoryLimits is true) */
+  testMemoryLimitMb?: number;
 }
 
 /**
@@ -45,6 +50,8 @@ export interface WorkerAdapterOptions {
  * @constructor
  * @param {AirdropEvent} event - The event object received from the platform
  * @param {Worker} worker - The worker thread
+ * @param {WorkerMemoryConfig} memoryConfig - Memory configuration for the worker
+ * @param {WorkerResourceLimits} resourceLimits - Resource limits applied to the worker
  */
 export interface SpawnInterface {
   event: AirdropEvent;
@@ -52,6 +59,24 @@ export interface SpawnInterface {
   options?: WorkerAdapterOptions;
   resolve: (value: void | PromiseLike<void>) => void;
   originalConsole?: Console;
+  memoryConfig?: WorkerMemoryConfig;
+  resourceLimits?: WorkerResourceLimits;
+}
+
+/**
+ * Memory configuration for worker threads.
+ */
+export interface WorkerMemoryConfig {
+  /** Maximum heap size in MB for the worker thread */
+  maxOldGenerationSizeMb: number;
+  /** Total available memory in MB (for logging/debugging) */
+  totalAvailableMemoryMb: number;
+  /** Whether running in Lambda environment */
+  isLambda: boolean;
+  /** Whether running in local development mode */
+  isLocalDevelopment: boolean;
+  /** The percentage of memory allocated to the worker (0-1) */
+  workerMemoryPercentage: number;
 }
 
 /**
@@ -163,3 +188,39 @@ export interface GetWorkerPathInterface {
  * WorkerPathOverrides represents a mapping of event types to custom worker paths.
  */
 export type WorkerPathOverrides = Partial<Record<EventType, string>>;
+
+/**
+ * WorkerResourceLimits represents the resource limits applied to a worker thread.
+ */
+export interface WorkerResourceLimits {
+  /** Maximum size of the main (old generation) heap in MB */
+  maxOldGenerationSizeMb: number;
+  /** Maximum size of the young generation heap in MB (optional) */
+  maxYoungGenerationSizeMb?: number;
+  /** Size of pre-allocated memory range for generated code in MB (optional) */
+  codeRangeSizeMb?: number;
+  /** Maximum stack size in MB (optional) */
+  stackSizeMb?: number;
+}
+
+/**
+ * OOMErrorInfo represents detailed information about an OOM (Out-Of-Memory) error.
+ */
+export interface OOMErrorInfo {
+  /** Error type identifier */
+  type: 'OOM_ERROR';
+  /** Human-readable error message */
+  message: string;
+  /** Memory limit that was configured for the worker in MB */
+  memoryLimitMb: number;
+  /** Total available memory at spawn time in MB */
+  totalAvailableMemoryMb: number;
+  /** Whether running in Lambda environment */
+  isLambda: boolean;
+  /** Whether running in local development mode */
+  isLocalDevelopment: boolean;
+  /** Exit code from the worker (if available) */
+  exitCode?: number;
+  /** The event type being processed when OOM occurred */
+  eventType?: string;
+}

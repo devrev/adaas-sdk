@@ -1,4 +1,5 @@
 import { Artifact } from '../uploader/uploader.interfaces';
+import { OOMErrorInfo } from './workers';
 
 /**
  * ErrorLevel is an enum that represents the level of an error.
@@ -15,6 +16,8 @@ export enum ErrorLevel {
  */
 export interface ErrorRecord {
   message: string;
+  /** OOM error information, present when worker died due to out-of-memory */
+  oom_error_info?: OOMErrorInfo;
 }
 
 /**
