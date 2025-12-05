@@ -157,7 +157,6 @@ describe(Logger.name, () => {
     );
   });
 
-
   it('should log directly without JSON wrapping in local development mode', () => {
     // Arrange
     const message = 'Test message';
