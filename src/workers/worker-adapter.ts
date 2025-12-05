@@ -10,7 +10,7 @@ import { emit } from '../common/control-protocol';
 import {
   logSizeLimitWarning,
   pruneEventData,
-  SIZE_LIMIT_THRESHOLD,
+  EVENT_SIZE_THRESHOLD_BYTES,
 } from '../common/event-size-monitor';
 import { addReportToLoaderReport, getFilesToLoad } from '../common/helpers';
 import { serializeError } from '../logger/logger';
@@ -170,7 +170,7 @@ export class WorkerAdapter<ConnectorState> {
 
           // Check for size limit (80% of 200KB = 160KB threshold)
           if (
-            this.currentLength > SIZE_LIMIT_THRESHOLD &&
+            this.currentLength > EVENT_SIZE_THRESHOLD_BYTES &&
             !this.hasWorkerEmitted
           ) {
             logSizeLimitWarning(this.currentLength, 'onUpload');
@@ -179,7 +179,7 @@ export class WorkerAdapter<ConnectorState> {
             this.handleTimeout();
 
             // Emit progress event to save state and continue on next iteration
-            void this.emit(ExtractorEventType.ExtractionDataProgress);
+            void this.emit(ExtractorEventType.DataExtractionProgress);
           }
         },
         options: this.options,
