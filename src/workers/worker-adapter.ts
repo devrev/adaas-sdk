@@ -7,6 +7,11 @@ import {
   STATELESS_EVENT_TYPES,
 } from '../common/constants';
 import { emit } from '../common/control-protocol';
+import {
+  logSizeLimitWarning,
+  pruneEventData,
+  EVENT_SIZE_THRESHOLD_BYTES,
+} from '../common/event-size-monitor';
 import { addReportToLoaderReport, getFilesToLoad } from '../common/helpers';
 import { serializeError } from '../logger/logger';
 import { Mappers } from '../mappers/mappers';
@@ -91,6 +96,9 @@ export class WorkerAdapter<ConnectorState> {
   private _mappers: Mappers;
   private uploader: Uploader;
 
+  // Length of the resulting artifact JSON object string.
+  private currentLength: number = 0;
+
   constructor({
     event,
     adapterState,
@@ -149,11 +157,29 @@ export class WorkerAdapter<ConnectorState> {
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
+          const newLength = JSON.stringify(artifact).length;
+
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AIRDROP_DEFAULT_ITEM_TYPES.ATTACHMENTS) {
             this.state.toDevRev?.attachmentsMetadata.artifactIds.push(
               artifact.id
             );
+          }
+
+          this.currentLength += newLength;
+
+          // Check for size limit (80% of 200KB = 160KB threshold)
+          if (
+            this.currentLength > EVENT_SIZE_THRESHOLD_BYTES &&
+            !this.hasWorkerEmitted
+          ) {
+            logSizeLimitWarning(this.currentLength, 'onUpload');
+
+            // Set timeout flag to trigger onTimeout cleanup after task completes
+            this.handleTimeout();
+
+            // Emit progress event to save state and continue on next iteration
+            void this.emit(ExtractorEventType.DataExtractionProgress);
           }
         },
         options: this.options,
@@ -246,11 +272,14 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     try {
+      // Always prune error messages to 1000 chars before emit
+      const prunedData = pruneEventData(data);
+
       await emit({
         eventType: newEventType,
         event: this.event,
         data: {
-          ...data,
+          ...prunedData,
           ...(ALLOWED_EXTRACTION_EVENT_TYPES.includes(
             this.event.payload.event_type
           )
