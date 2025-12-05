@@ -28,4 +28,16 @@ module.exports = {
       setupFiles: ['<rootDir>/src/tests/backwards-compatibility/jest.setup.ts'],
     },
   ],
+
+  // Suppress console during passing tests
+  silent: false,
+
+  // Use verbose for detailed output
+  verbose: true,
+  
+  // Custom reporters
+  reporters: [
+    //'default',
+    '<rootDir>/custom-reporter.js',
+  ],
 };
