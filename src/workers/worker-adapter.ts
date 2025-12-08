@@ -171,22 +171,17 @@ export class WorkerAdapter<ConnectorState> {
           // Checking the byte lengths of the artifacts, because these are entries inside the artifacts array, additional fields are only added once.
           if (
             this.currentLength > EVENT_SIZE_THRESHOLD_BYTES &&
-            !this.hasWorkerEmitted
+            !this.isTimeout
           ) {
+            console.log(
+              '[SIZE_LIMIT] Artifact size threshold exceeded. Setting timeout flag for early exit.'
+            );
             this.currentLength = 0;
 
-            // Set timeout flag to trigger onTimeout cleanup after task completes
+            // Set timeout flag to trigger onTimeout after task completes
+            // The onTimeout function is responsible for emitting the progress event
+            // This is consistent with the soft timeout behavior from parent
             this.handleTimeout();
-
-            // Emit progress event to save state and continue on next iteration
-            void this.emit(ExtractorEventType.DataExtractionProgress).catch(
-              (err) => {
-                console.error(
-                  '[SIZE_LIMIT] Failed to emit progress event:',
-                  err
-                );
-              }
-            );
           }
         },
         options: this.options,

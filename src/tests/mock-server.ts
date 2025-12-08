@@ -102,6 +102,19 @@ export class MockServer {
             res.end(Buffer.from('mock file content'));
             break;
 
+          case pathname.includes('artifacts.upload-url'):
+            // Artifacts upload-url endpoint for uploader (GET request)
+            // Note: form_data must be empty array to work with current uploader code
+            res.writeHead(200);
+            res.end(
+              JSON.stringify({
+                artifact_id: `test_artifact_${Date.now()}`,
+                upload_url: `${this.getBaseUrl()}/upload`,
+                form_data: [],
+              })
+            );
+            break;
+
           default:
             // Unknown GET endpoint
             res.writeHead(404);
@@ -155,6 +168,17 @@ export class MockServer {
               JSON.stringify({
                 success: true,
                 message: 'Initial domain mappings installed successfully',
+              })
+            );
+            break;
+
+          case pathname.includes('artifacts.confirm-upload'):
+            // Artifacts confirm-upload endpoint for uploader
+            res.writeHead(200);
+            res.end(
+              JSON.stringify({
+                success: true,
+                message: 'Artifact upload confirmed',
               })
             );
             break;
