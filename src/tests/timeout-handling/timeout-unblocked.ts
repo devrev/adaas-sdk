@@ -1,3 +1,4 @@
+import { sleep } from '../../common/helpers';
 import { ExtractorEventType, processTask } from '../../index';
 
 processTask({
@@ -14,7 +15,7 @@ processTask({
       // Log every 10000 iterations and yield control to event loop
       if (i % 10000 === 0) {
         console.log(`timeout-unblocked iteration ${i}`);
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await sleep(50);
       }
     }
 
