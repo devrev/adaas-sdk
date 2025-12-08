@@ -95,7 +95,10 @@ export class WorkerAdapter<ConnectorState> {
   private _mappers: Mappers;
   private uploader: Uploader;
 
-  // Length of the resulting artifact JSON object string.
+  /**
+   * Cumulative byte length of uploaded artifacts for size limit tracking.
+   * @private
+   */
   private currentLength: number = 0;
 
   constructor({

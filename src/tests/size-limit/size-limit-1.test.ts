@@ -57,24 +57,6 @@ describe('size-limit-1: SQS size limit early exit', () => {
     expect(lastEmit.body.event_type).toBe(
       ExtractorEventType.DataExtractionProgress
     );
-  });
-
-  it('should trigger onTimeout when size limit is reached', async () => {
-    const baseUrl = mockServer.getBaseUrl();
-    const event = createEvent({
-      eventType: EventType.StartExtractingData,
-      eventContextOverrides: {
-        callback_url: `${baseUrl}/internal/airdrop.external-extractor.message`,
-        worker_data_url: `${baseUrl}/internal/airdrop.external-worker`,
-      },
-      executionMetadataOverrides: {
-        devrev_endpoint: `${baseUrl}`,
-      },
-    });
-
-    await run([event], __dirname + '/size-limit-1');
-
-    const requests = mockServer.getRequests();
 
     // Verify that artifacts were uploaded (proving data was being processed)
     const artifactUploadRequests = requests.filter((r) =>
@@ -87,8 +69,5 @@ describe('size-limit-1: SQS size limit early exit', () => {
       (r) => r.url.includes('airdrop.external-worker') && r.method === 'POST'
     );
     expect(workerDataRequests.length).toBeGreaterThan(0);
-
-    // Verify onTimeout was called by checking the log output is implicitly
-    // verified by the first test passing (progress event was emitted)
   });
 });
