@@ -1,23 +1,12 @@
 import { ErrorRecord } from '../types/common';
 import { EventData } from '../types/extraction';
 
+// Max SQS message size is 250KB, we want to leave some room for the other data in the message
 const MAX_EVENT_SIZE_BYTES = 200_000;
+// We want to leave some room for the other data in the message and process the rest of queued messages
 const EVENT_SIZE_THRESHOLD_BYTES = Math.floor(MAX_EVENT_SIZE_BYTES * 0.8);
 
-/**
- * Get the JSON serialized size of event data in bytes
- */
-export function getEventDataSize(data: EventData | undefined): number {
-  if (!data) return 0;
-  return Buffer.byteLength(JSON.stringify(data), 'utf8');
-}
-
-/**
- * Check if event data exceeds the 80% threshold (160KB)
- */
-export function shouldTriggerSizeLimit(data: EventData | undefined): boolean {
-  return getEventDataSize(data) > EVENT_SIZE_THRESHOLD_BYTES;
-}
+export { EVENT_SIZE_THRESHOLD_BYTES, MAX_EVENT_SIZE_BYTES };
 
 /**
  * Truncate error message to max length (default 1000 chars)
@@ -47,25 +36,3 @@ export function pruneEventData(
     error: truncateErrorMessage(data.error),
   };
 }
-
-/**
- * Log detailed warning when size limit is detected
- */
-export function logSizeLimitWarning(
-  size: number,
-  triggerType: 'onUpload' | 'onEmit'
-): void {
-  const percentage = (size / MAX_EVENT_SIZE_BYTES) * 100;
-  const detailsString =
-    triggerType === 'onUpload'
-      ? 'during data collection. Emitting progress event and stopping further processing.'
-      : 'during emit. Error messages truncated.';
-
-  console.warn(
-    `[SIZE_LIMIT] Event data size ${size} bytes (${percentage.toFixed(
-      1
-    )}% of ${MAX_EVENT_SIZE_BYTES} limit) detected ${detailsString}`
-  );
-}
-
-export { MAX_EVENT_SIZE_BYTES, EVENT_SIZE_THRESHOLD_BYTES };
