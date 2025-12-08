@@ -8,9 +8,8 @@ import {
 } from '../common/constants';
 import { emit } from '../common/control-protocol';
 import {
-  logSizeLimitWarning,
-  pruneEventData,
   EVENT_SIZE_THRESHOLD_BYTES,
+  pruneEventData,
 } from '../common/event-size-monitor';
 import { addReportToLoaderReport, getFilesToLoad } from '../common/helpers';
 import { serializeError } from '../logger/logger';
@@ -157,7 +156,7 @@ export class WorkerAdapter<ConnectorState> {
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
-          const newLength = JSON.stringify(artifact).length;
+          const newLength = Buffer.byteLength(JSON.stringify(artifact), 'utf8');
 
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AIRDROP_DEFAULT_ITEM_TYPES.ATTACHMENTS) {
@@ -169,17 +168,25 @@ export class WorkerAdapter<ConnectorState> {
           this.currentLength += newLength;
 
           // Check for size limit
+          // Checking the byte lengths of the artifacts, because these are entries inside the artifacts array, additional fields are only added once.
           if (
             this.currentLength > EVENT_SIZE_THRESHOLD_BYTES &&
             !this.hasWorkerEmitted
           ) {
-            logSizeLimitWarning(this.currentLength, 'onUpload');
+            this.currentLength = 0;
 
             // Set timeout flag to trigger onTimeout cleanup after task completes
             this.handleTimeout();
 
             // Emit progress event to save state and continue on next iteration
-            void this.emit(ExtractorEventType.DataExtractionProgress);
+            void this.emit(ExtractorEventType.DataExtractionProgress).catch(
+              (err) => {
+                console.error(
+                  '[SIZE_LIMIT] Failed to emit progress event:',
+                  err
+                );
+              }
+            );
           }
         },
         options: this.options,
@@ -272,7 +279,7 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     try {
-      // Always prune error messages to 1000 characters before emit (limit defined in truncateErrorMessage)
+      // Always prune error messages to make them shorter before emit
       const prunedData = pruneEventData(data);
 
       await emit({
