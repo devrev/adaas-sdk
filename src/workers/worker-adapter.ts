@@ -168,7 +168,7 @@ export class WorkerAdapter<ConnectorState> {
 
           this.currentLength += newLength;
 
-          // Check for size limit (80% of 200KB = 160KB threshold)
+          // Check for size limit
           if (
             this.currentLength > EVENT_SIZE_THRESHOLD_BYTES &&
             !this.hasWorkerEmitted
@@ -272,7 +272,7 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     try {
-      // Always prune error messages to 1000 chars before emit
+      // Always prune error messages to 1000 characters before emit (limit defined in truncateErrorMessage)
       const prunedData = pruneEventData(data);
 
       await emit({

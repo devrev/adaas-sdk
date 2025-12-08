@@ -2,14 +2,14 @@ import { ErrorRecord } from '../types/common';
 import { EventData } from '../types/extraction';
 
 const MAX_EVENT_SIZE_BYTES = 200_000;
-const EVENT_SIZE_THRESHOLD_BYTES = Math.floor(MAX_EVENT_SIZE_BYTES * 0.8); // 160_000 bytes
+const EVENT_SIZE_THRESHOLD_BYTES = Math.floor(MAX_EVENT_SIZE_BYTES * 0.8);
 
 /**
  * Get the JSON serialized size of event data in bytes
  */
 export function getEventDataSize(data: EventData | undefined): number {
   if (!data) return 0;
-  return JSON.stringify(data).length;
+  return Buffer.byteLength(JSON.stringify(data), 'utf8');
 }
 
 /**
@@ -29,7 +29,7 @@ export function truncateErrorMessage(
   if (!error) return undefined;
 
   return {
-    message: error.message.substring(0, maxLength),
+    message: error.message?.substring(0, maxLength) ?? '',
   };
 }
 
