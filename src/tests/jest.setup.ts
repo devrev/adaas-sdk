@@ -13,13 +13,3 @@ afterAll(async () => {
 beforeEach(() => {
   mockServer.resetRoutes();
 });
-
-afterEach(() => {
-  jest.clearAllMocks();
-  jest.resetModules();
-  jest.restoreAllMocks();
-
-  if (global.gc) {
-    global.gc();
-  }
-});
