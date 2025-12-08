@@ -163,14 +163,6 @@ export class Uploader {
     }
     formData.append('file', fileStream.data);
 
-    if (fileStream.headers['content-length'] > MAX_DEVREV_ARTIFACT_SIZE) {
-      console.warn(
-        `File size exceeds the maximum limit of ${MAX_DEVREV_ARTIFACT_SIZE} bytes.`
-      );
-      this.destroyStream(fileStream);
-      return;
-    }
-
     try {
       const response = await axiosClient.post(artifact.upload_url, formData, {
         headers: {
@@ -181,8 +173,10 @@ export class Uploader {
               }
             : {}),
         },
-        maxRedirects: 0, // Prevents buffering
-        validateStatus: () => true, // Prevents errors on redirects
+        // Prevents buffering of the response in the memory
+        maxRedirects: 0,
+        // Allow 2xx and 3xx (redirects) to be considered successful, 4xx and 5xx will throw errors and be caught in the catch block
+        validateStatus: (status) => status >= 200 && status < 400,
       });
       this.destroyStream(fileStream);
       return response;
