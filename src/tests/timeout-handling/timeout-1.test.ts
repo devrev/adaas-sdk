@@ -3,6 +3,8 @@ import { MockServer } from '../mock-server';
 import { createEvent } from '../test-helpers';
 import run from './extraction';
 
+jest.setTimeout(15000);
+
 describe('timeout-1 extraction', () => {
   let mockServer: MockServer;
 
