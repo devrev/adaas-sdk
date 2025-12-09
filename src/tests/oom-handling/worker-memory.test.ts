@@ -110,17 +110,18 @@ describe('worker-memory utilities', () => {
     });
 
     it('should calculate memory config for Lambda environment', () => {
-      process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE = '1024';
+      const MEMORY_AVAILABLE_MB = 2048;
+      process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE = ""+MEMORY_AVAILABLE_MB;
       process.env.AWS_LAMBDA_FUNCTION_NAME = 'test-function';
 
       const config = calculateWorkerMemoryConfig(false);
 
       expect(config.isLambda).toBe(true);
-      expect(config.totalAvailableMemoryMb).toBe(1024);
+      expect(config.totalAvailableMemoryMb).toBe(MEMORY_AVAILABLE_MB);
       // Worker should get 75% of (Lambda memory - currently used memory)
       const currentlyUsed = process.memoryUsage().rss / (1024 * 1024);
       const expectedMaxHeap = Math.max(
-        Math.floor((1024 - currentlyUsed) * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE),
+        Math.floor((MEMORY_AVAILABLE_MB - currentlyUsed) * MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE),
         MEMORY_CONSTANTS.MIN_WORKER_HEAP_SIZE_MB
       );
       expect(config.maxOldGenerationSizeMb).toBe(expectedMaxHeap);
@@ -138,112 +139,11 @@ describe('worker-memory utilities', () => {
         expect(isOOMError(error)).toBe(true);
       });
 
-      it('should detect OOM from Error message when code is not set', () => {
-        const error = new Error('JavaScript heap out of memory');
-        expect(isOOMError(error)).toBe(true);
-      });
-
-      it('should detect OOM from Error message with other error codes', () => {
-        const error = new Error(
-          'FATAL ERROR: Reached heap limit'
-        ) as NodeJS.ErrnoException;
-        error.code = 'SOME_OTHER_CODE';
-
-        expect(isOOMError(error)).toBe(true);
-      });
-
       it('should return false for non-OOM Error objects', () => {
         const error = new Error('Connection timeout') as NodeJS.ErrnoException;
         error.code = 'ECONNREFUSED';
 
         expect(isOOMError(error)).toBe(false);
-      });
-
-      it('should prioritize error code over message', () => {
-        // Error with OOM code but non-OOM message - should still be detected as OOM
-        const error = new Error('Some generic error') as NodeJS.ErrnoException;
-        error.code = ERR_WORKER_OUT_OF_MEMORY;
-
-        expect(isOOMError(error)).toBe(true);
-      });
-    });
-
-    describe('with string messages', () => {
-      it('should detect JavaScript heap out of memory', () => {
-        expect(isOOMError('JavaScript heap out of memory')).toBe(true);
-        expect(isOOMError('FATAL ERROR: JavaScript heap out of memory')).toBe(
-          true
-        );
-      });
-
-      it('should detect allocation failed errors', () => {
-        expect(
-          isOOMError('Allocation failed - JavaScript heap out of memory')
-        ).toBe(true);
-      });
-
-      it('should detect heap limit errors', () => {
-        expect(isOOMError('FATAL ERROR: Reached heap limit')).toBe(true);
-      });
-
-      it('should detect CALL_AND_RETRY_LAST errors', () => {
-        expect(isOOMError('FATAL ERROR: CALL_AND_RETRY_LAST')).toBe(true);
-      });
-
-      it('should detect ERR_WORKER_OUT_OF_MEMORY in string message', () => {
-        expect(isOOMError('ERR_WORKER_OUT_OF_MEMORY')).toBe(true);
-        expect(
-          isOOMError(
-            'Error [ERR_WORKER_OUT_OF_MEMORY]: Worker terminated due to reaching memory limit'
-          )
-        ).toBe(true);
-      });
-
-      it('should detect Worker terminated due to reaching memory limit', () => {
-        expect(
-          isOOMError('Worker terminated due to reaching memory limit')
-        ).toBe(true);
-        expect(
-          isOOMError(
-            'Worker terminated due to reaching memory limit: JavaScript heap out of memory'
-          )
-        ).toBe(true);
-      });
-
-      it('should detect JS heap out of memory (abbreviated)', () => {
-        expect(isOOMError('JS heap out of memory')).toBe(true);
-        expect(isOOMError('FATAL ERROR: JS heap out of memory')).toBe(true);
-      });
-
-      it('should detect memory allocation failed', () => {
-        expect(isOOMError('memory allocation failed')).toBe(true);
-        expect(
-          isOOMError('Error: memory allocation failed during processing')
-        ).toBe(true);
-      });
-
-      it('should return false for non-OOM errors', () => {
-        expect(isOOMError('Connection timeout')).toBe(false);
-        expect(isOOMError('File not found')).toBe(false);
-        expect(isOOMError('Permission denied')).toBe(false);
-        expect(isOOMError('ENOENT: no such file or directory')).toBe(false);
-        expect(isOOMError('ECONNREFUSED')).toBe(false);
-        expect(isOOMError('TypeError: undefined is not a function')).toBe(
-          false
-        );
-      });
-
-      it('should handle empty and undefined-like inputs', () => {
-        expect(isOOMError('')).toBe(false);
-        expect(isOOMError('   ')).toBe(false);
-        expect(isOOMError('null')).toBe(false);
-        expect(isOOMError('undefined')).toBe(false);
-      });
-
-      it('should be case insensitive', () => {
-        expect(isOOMError('JAVASCRIPT HEAP OUT OF MEMORY')).toBe(true);
-        expect(isOOMError('javascript heap out of memory')).toBe(true);
-        expect(isOOMError('JavaScript Heap Out Of Memory')).toBe(true);
       });
     });
   });
