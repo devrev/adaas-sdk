@@ -75,12 +75,12 @@ export class Logger extends Console {
    *
    * @param message - The pre-formatted message string to log
    * @param level - Log level (info, warn, error)
-   * @param sdkLog - Flag indicating if the log originated from the SDK
+   * @param isSdkLog - Flag indicating if the log originated from the SDK
    */
   logFn(
     message: string,
     level: LogLevel,
-    sdkLog: boolean = this.getSdkLogFlag()
+    isSdkLog: boolean = this.getSdkLogFlag()
   ): void {
     if (this.options?.isLocalDevelopment) {
       this.originalConsole[level](message);
@@ -90,7 +90,7 @@ export class Logger extends Console {
     const logObject = {
       message,
       ...this.tags,
-      is_sdk_log: sdkLog,
+      is_sdk_log: isSdkLog,
     };
     this.originalConsole[level](JSON.stringify(logObject));
   }
@@ -128,15 +128,15 @@ export class Logger extends Console {
     let stringifiedArgs = args.map((arg) => this.valueToString(arg)).join(' ');
     stringifiedArgs = this.truncateMessage(stringifiedArgs);
 
-    const sdkLogFlag =
+    const isSdkLogFlag =
       typeof sdkOverride === 'boolean' ? sdkOverride : this.getSdkLogFlag();
 
     if (isMainThread) {
-      this.logFn(stringifiedArgs, level, sdkLogFlag);
+      this.logFn(stringifiedArgs, level, isSdkLogFlag);
     } else {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: { stringifiedArgs, level, is_sdk_log: sdkLogFlag },
+        payload: { stringifiedArgs, level, is_sdk_log: isSdkLogFlag },
       });
     }
   }
