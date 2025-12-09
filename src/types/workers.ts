@@ -202,25 +202,3 @@ export interface WorkerResourceLimits {
   /** Maximum stack size in MB (optional) */
   stackSizeMb?: number;
 }
-
-/**
- * OOMErrorInfo represents detailed information about an OOM (Out-Of-Memory) error.
- */
-export interface OOMErrorInfo {
-  /** Error type identifier */
-  type: 'OOM_ERROR';
-  /** Human-readable error message */
-  message: string;
-  /** Memory limit that was configured for the worker in MB */
-  memoryLimitMb: number;
-  /** Total available memory at spawn time in MB */
-  totalAvailableMemoryMb: number;
-  /** Whether running in Lambda environment */
-  isLambda: boolean;
-  /** Whether running in local development mode */
-  isLocalDevelopment: boolean;
-  /** Exit code from the worker (if available) */
-  exitCode?: number;
-  /** The event type being processed when OOM occurred */
-  eventType?: string;
-}

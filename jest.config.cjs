@@ -1,7 +1,7 @@
 module.exports = {
   testPathIgnorePatterns: ['./dist/'],
   // Limit worker memory to prevent Jest from accumulating memory across tests
-  workerIdleMemoryLimit: '512MB',
+  workerIdleMemoryLimit: '1024MB',
   projects: [
     {
       displayName: 'default',

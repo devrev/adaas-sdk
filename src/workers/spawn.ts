@@ -13,7 +13,6 @@ import {
 } from '../types/extraction';
 import {
   GetWorkerPathInterface,
-  OOMErrorInfo,
   SpawnFactoryInterface,
   SpawnInterface,
   WorkerEvent,
@@ -279,7 +278,7 @@ export class Spawn {
           // Check if this was an OOM exit (non-zero exit code and OOM error detected)
           // Exit code 134 is common for OOM (SIGABRT), but we also check the error message
           if (code !== 0 && this.isOOMExit) {
-            await this.handleOOMExit(code);
+            await this.handleOOMExit();
           } else {
             await this.exitFromMainThread();
           }
@@ -336,7 +335,7 @@ export class Spawn {
     }
   }
 
-  private async exitFromMainThread(): Promise<void> {
+  private async exitFromMainThread(message: string | null = null): Promise<void> {
     this.clearTimeouts();
 
     // eslint-disable-next-line no-global-assign
@@ -359,7 +358,7 @@ export class Spawn {
         data: {
           error: {
             message:
-              'Worker exited the process without emitting an event. Check other logs for more information.',
+              message ?? 'Worker exited the process without emitting an event. Check other logs for more information.',
           },
         },
       });
@@ -375,60 +374,15 @@ export class Spawn {
    * Emits an error event with detailed OOM information.
    * @param exitCode - The exit code from the worker
    */
-  private async handleOOMExit(exitCode: number): Promise<void> {
-    this.clearTimeouts();
-
-    // eslint-disable-next-line no-global-assign
-    console = this.originalConsole;
-
-    if (this.alreadyEmitted) {
-      this.resolve();
-      return;
-    }
-    this.alreadyEmitted = true;
-
-    const { eventType } = getTimeoutErrorEventType(
-      this.event.payload.event_type
-    );
-
+  private async handleOOMExit(): Promise<void> {
     // Build OOM error info
-    const oomErrorInfo: OOMErrorInfo = {
-      type: 'OOM_ERROR',
-      message:
-        `Worker thread ran out of memory and was terminated. ` +
-        `Memory limit: ${
-          this.resourceLimits?.maxOldGenerationSizeMb ?? 'unknown'
-        }MB, ` +
-        `Total available: ${
-          this.memoryConfig?.totalAvailableMemoryMb?.toFixed(0) ?? 'unknown'
-        }MB.`,
-      memoryLimitMb: this.resourceLimits?.maxOldGenerationSizeMb ?? 0,
-      totalAvailableMemoryMb: this.memoryConfig?.totalAvailableMemoryMb ?? 0,
-      isLambda: this.memoryConfig?.isLambda ?? false,
-      isLocalDevelopment: this.memoryConfig?.isLocalDevelopment ?? false,
-      exitCode,
-      eventType: this.event.payload.event_type,
-    };
+    const message =
+      `Worker thread ran out of memory and was terminated. ` +
+      `Memory limit: ${this.resourceLimits?.maxOldGenerationSizeMb ?? 'unknown'
+      }MB, ` +
+      `Total available: ${this.memoryConfig?.totalAvailableMemoryMb?.toFixed(0) ?? 'unknown'
+      }MB.`;
 
-    console.error('OOM Error Details:', oomErrorInfo);
-
-    try {
-      await emit({
-        eventType,
-        event: this.event,
-        data: {
-          error: {
-            message: oomErrorInfo.message,
-          },
-        },
-      });
-
-      this.resolve();
-    } catch (error) {
-      console.error(
-        'Error while emitting OOM error event.',
-        serializeError(error)
-      );
-    }
+      this.exitFromMainThread(message);
   }
 }
