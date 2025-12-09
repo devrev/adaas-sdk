@@ -146,7 +146,7 @@ export interface WorkerMessageLog {
   payload: {
     stringifiedArgs: string;
     level: LogLevel;
-    sdk_log?: boolean;
+    is_sdk_log?: boolean;
   };
 }
 
