@@ -1,5 +1,4 @@
 import * as os from 'os';
-import * as v8 from 'v8';
 
 import { WorkerMemoryConfig } from '../types/workers';
 
@@ -54,7 +53,7 @@ export function getLambdaMemoryLimitMb(): number | null {
 export function getTotalAvailableMemoryMb(): number {
   // For Lambda, use the configured memory limit
   const lambdaMemory = getLambdaMemoryLimitMb();
-  if (lambdaMemory !== null) {
+  if (lambdaMemory) {
     return lambdaMemory;
   }
 
@@ -108,26 +107,10 @@ export function calculateWorkerMemoryConfig(
 export const ERR_WORKER_OUT_OF_MEMORY = 'ERR_WORKER_OUT_OF_MEMORY';
 
 /**
- * Regex patterns to detect OOM errors from error messages.
- * Used as a fallback when the error code is not available.
- */
-const OOM_MESSAGE_PATTERNS = [
-  /JavaScript heap out of memory/i,
-  /JS heap out of memory/i,
-  /FATAL ERROR: .* out of memory/i,
-  /Allocation failed - JavaScript heap out of memory/i,
-  /FATAL ERROR: Reached heap limit/i,
-  /FATAL ERROR: CALL_AND_RETRY_LAST/i,
-  /memory allocation failed/i,
-  /Worker terminated due to reaching memory limit/i,
-];
-
-/**
  * Checks if an error indicates an OOM (Out-Of-Memory) error.
  *
  * This function first checks for the Node.js error code `ERR_WORKER_OUT_OF_MEMORY`
  * which is the standard way to detect worker thread OOM errors.
- * Falls back to regex pattern matching on the error message for other OOM scenarios.
  *
  * @param error - The error to check (can be an Error object or string message)
  * @returns true if the error indicates OOM
@@ -140,17 +123,6 @@ export function isOOMError(error: Error | string): boolean {
     if ((error as NodeJS.ErrnoException).code === ERR_WORKER_OUT_OF_MEMORY) {
       return true;
     }
-    // Fall back to checking the message
-    return OOM_MESSAGE_PATTERNS.some((pattern) => pattern.test(error.message));
-  }
-
-  // If it's a string, check against patterns (including the error code as a string)
-  if (typeof error === 'string') {
-    // Check if the string contains the error code
-    if (error.includes(ERR_WORKER_OUT_OF_MEMORY)) {
-      return true;
-    }
-    return OOM_MESSAGE_PATTERNS.some((pattern) => pattern.test(error));
   }
 
   return false;
