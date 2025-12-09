@@ -4,6 +4,7 @@ import { hideBin } from 'yargs/helpers';
 import { emit } from '../common/control-protocol';
 import { translateIncomingEventType } from '../common/event-type-translation';
 import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
+import { isOOMError } from '../common/worker-memory';
 import { Logger, serializeError } from '../logger/logger';
 import {
   AirdropEvent,
@@ -15,7 +16,9 @@ import {
   SpawnFactoryInterface,
   SpawnInterface,
   WorkerEvent,
+  WorkerMemoryConfig,
   WorkerMessageSubject,
+  WorkerResourceLimits,
 } from '../types/workers';
 
 import {
@@ -123,13 +126,14 @@ export async function spawn<ConnectorState>({
 
   if (script) {
     try {
-      const worker = await createWorker<ConnectorState>({
-        event,
-        initialState,
-        workerPath: script,
-        initialDomainMapping,
-        options,
-      });
+      const { worker, memoryConfig, resourceLimits } =
+        await createWorker<ConnectorState>({
+          event,
+          initialState,
+          workerPath: script,
+          initialDomainMapping,
+          options,
+        });
 
       return new Promise((resolve) => {
         new Spawn({
@@ -138,6 +142,8 @@ export async function spawn<ConnectorState>({
           options,
           resolve,
           originalConsole,
+          memoryConfig,
+          resourceLimits,
         });
       });
     } catch (error) {
@@ -185,12 +191,18 @@ export class Spawn {
   private resolve: (value: void | PromiseLike<void>) => void;
   private originalConsole: Console;
   private logger: Logger;
+  private memoryConfig?: WorkerMemoryConfig;
+  private resourceLimits?: WorkerResourceLimits;
+  private isOOMExit: boolean = false;
+
   constructor({
     event,
     worker,
     options,
     resolve,
     originalConsole,
+    memoryConfig,
+    resourceLimits,
   }: SpawnInterface) {
     this.originalConsole = originalConsole || console;
     this.logger = console as Logger;
@@ -200,6 +212,8 @@ export class Spawn {
       ? Math.min(options.timeout, this.defaultLambdaTimeout)
       : this.defaultLambdaTimeout;
     this.resolve = resolve;
+    this.memoryConfig = memoryConfig;
+    this.resourceLimits = resourceLimits;
 
     // If soft timeout is reached, send a message to the worker to gracefully exit.
     this.softTimeoutTimer = setTimeout(
@@ -237,6 +251,21 @@ export class Spawn {
       this.lambdaTimeout * HARD_TIMEOUT_MULTIPLIER
     );
 
+    // Listen for worker errors to detect OOM
+    // Node.js worker threads emit ERR_WORKER_OUT_OF_MEMORY error code when OOM occurs
+    // @see https://nodejs.org/api/errors.html#err_worker_out_of_memory
+    worker.on(WorkerEvent.WorkerError, (error: Error) => {
+      if (isOOMError(error)) {
+        this.isOOMExit = true;
+        console.error('OOM ERROR DETECTED: Worker ran out of memory.', {
+          errorCode: (error as NodeJS.ErrnoException).code,
+          errorMessage: error?.message,
+          memoryConfig: this.memoryConfig,
+          resourceLimits: this.resourceLimits,
+        });
+      }
+    });
+
     // If worker exits with process.exit(code), clear the timeouts and exit from
     // main thread.
     worker.on(
@@ -245,7 +274,14 @@ export class Spawn {
         void (async () => {
           console.info('Worker exited with exit code: ' + code + '.');
           this.clearTimeouts();
-          await this.exitFromMainThread();
+
+          // Check if this was an OOM exit (non-zero exit code and OOM error detected)
+          // Exit code 134 is common for OOM (SIGABRT), but we also check the error message
+          if (code !== 0 && this.isOOMExit) {
+            await this.handleOOMExit();
+          } else {
+            await this.exitFromMainThread();
+          }
         })()
     );
 
@@ -299,7 +335,7 @@ export class Spawn {
     }
   }
 
-  private async exitFromMainThread(): Promise<void> {
+  private async exitFromMainThread(message: string | null = null): Promise<void> {
     this.clearTimeouts();
 
     // eslint-disable-next-line no-global-assign
@@ -322,7 +358,7 @@ export class Spawn {
         data: {
           error: {
             message:
-              'Worker exited the process without emitting an event. Check other logs for more information.',
+              message ?? 'Worker exited the process without emitting an event. Check other logs for more information.',
           },
         },
       });
@@ -331,5 +367,22 @@ export class Spawn {
     } catch (error) {
       console.error('Error while emitting event.', serializeError(error));
     }
+  }
+
+  /**
+   * Handles worker exit due to OOM (Out-Of-Memory) error.
+   * Emits an error event with detailed OOM information.
+   * @param exitCode - The exit code from the worker
+   */
+  private async handleOOMExit(): Promise<void> {
+    // Build OOM error info
+    const message =
+      `Worker thread ran out of memory and was terminated. ` +
+      `Memory limit: ${this.resourceLimits?.maxOldGenerationSizeMb ?? 'unknown'
+      }MB, ` +
+      `Total available: ${this.memoryConfig?.totalAvailableMemoryMb?.toFixed(0) ?? 'unknown'
+      }MB.`;
+
+      this.exitFromMainThread(message);
   }
 }
