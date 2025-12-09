@@ -419,7 +419,6 @@ export class Spawn {
         data: {
           error: {
             message: oomErrorInfo.message,
-            oom_error_info: oomErrorInfo,
           },
         },
       });

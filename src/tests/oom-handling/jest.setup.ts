@@ -1,6 +1,6 @@
 /**
  * Jest setup file for OOM handling tests.
- * 
+ *
  * These tests intentionally trigger out-of-memory conditions to test
  * OOM detection and handling. This setup ensures proper cleanup between tests.
  */

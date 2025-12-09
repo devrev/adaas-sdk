@@ -112,7 +112,7 @@ export const ERR_WORKER_OUT_OF_MEMORY = 'ERR_WORKER_OUT_OF_MEMORY';
  * This function first checks for the Node.js error code `ERR_WORKER_OUT_OF_MEMORY`
  * which is the standard way to detect worker thread OOM errors.
  *
- * @param error - The error to check (can be an Error object or string message)
+ * @param error - The error to check (has to be an Error object)
  * @returns true if the error indicates OOM
  * @see https://nodejs.org/api/errors.html#err_worker_out_of_memory
  */
