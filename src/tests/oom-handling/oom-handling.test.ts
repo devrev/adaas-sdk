@@ -3,7 +3,38 @@ import { MockServer } from '../mock-server';
 import { createEvent } from '../test-helpers';
 import run from './extraction';
 
-describe('OOM handling', () => {
+/**
+ * OOM Handling Integration Tests
+ *
+ * These tests verify that the SDK correctly handles out-of-memory (OOM) conditions
+ * in worker threads. They intentionally trigger OOM by allocating memory until
+ * the worker thread's resource limits are exceeded.
+ *
+ * IMPORTANT: These tests are SKIPPED in CI environments because:
+ * 1. CI containers (especially Docker-based runners like GitHub Actions or `act`)
+ *    have strict memory limits that may kill the entire Jest process before
+ *    V8's worker thread resource limits trigger an OOM error.
+ * 2. V8's `resourceLimits.maxOldGenerationSizeMb` is a soft limit that doesn't
+ *    immediately prevent memory allocation - it's enforced when GC runs.
+ * 3. The OS OOM killer (or Docker's memory limits) may SIGKILL the process
+ *    before the worker thread's OOM handling can be invoked.
+ *
+ * The OOM detection logic is tested in `worker-memory.test.ts` using unit tests
+ * that don't require actual memory exhaustion.
+ *
+ * To run these tests locally:
+ *   npm run test:oom
+ *
+ * These tests will be skipped when CI=true environment variable is set.
+ */
+
+// Detect if running in CI environment
+const isCI = process.env.CI === 'true' || process.env.CI === '1';
+
+// Use describe.skip in CI to avoid container memory issues
+const describeOrSkip = isCI ? describe.skip : describe;
+
+describeOrSkip('OOM handling', () => {
   let mockServer: MockServer;
 
   beforeAll(async () => {
