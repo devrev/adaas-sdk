@@ -48,12 +48,10 @@ export function getLambdaMemoryLimitMb(): number | null {
  * Gets the total available memory based on the environment.
  * For Lambda: Uses AWS_LAMBDA_FUNCTION_MEMORY_SIZE
  * For local development: Caps at LOCAL_DEV_MAX_TOTAL_MEMORY_MB
- * For other environments: Uses system total memory or V8 heap limit
  *
- * @param isLocalDevelopment - Whether running in local development mode
  * @returns Total available memory in MB
  */
-export function getTotalAvailableMemoryMb(isLocalDevelopment: boolean): number {
+export function getTotalAvailableMemoryMb(): number {
   // For Lambda, use the configured memory limit
   const lambdaMemory = getLambdaMemoryLimitMb();
   if (lambdaMemory !== null) {
@@ -61,20 +59,11 @@ export function getTotalAvailableMemoryMb(isLocalDevelopment: boolean): number {
   }
 
   // For local development, cap at LOCAL_DEV_MAX_TOTAL_MEMORY_MB
-  if (isLocalDevelopment) {
-    const systemMemoryMb = os.totalmem() / (1024 * 1024);
-    return Math.min(
-      systemMemoryMb,
-      MEMORY_CONSTANTS.LOCAL_DEV_MAX_TOTAL_MEMORY_MB
-    );
-  }
-
-  // For other environments, use the smaller of system memory or V8 heap limit
   const systemMemoryMb = os.totalmem() / (1024 * 1024);
-  const heapStats = v8.getHeapStatistics();
-  const heapLimitMb = heapStats.heap_size_limit / (1024 * 1024);
-
-  return Math.min(systemMemoryMb, heapLimitMb);
+  return Math.min(
+    systemMemoryMb,
+    MEMORY_CONSTANTS.LOCAL_DEV_MAX_TOTAL_MEMORY_MB
+  );
 }
 
 /**
@@ -87,7 +76,7 @@ export function calculateWorkerMemoryConfig(
   isLocalDevelopment: boolean = false
 ): WorkerMemoryConfig {
   const isLambda = isLambdaEnvironment();
-  const totalAvailableMemoryMb = getTotalAvailableMemoryMb(isLocalDevelopment);
+  const totalAvailableMemoryMb = getTotalAvailableMemoryMb();
   const workerMemoryPercentage = MEMORY_CONSTANTS.WORKER_MEMORY_PERCENTAGE;
 
   const currentlyUsed = process.memoryUsage().rss / (1024 * 1024);

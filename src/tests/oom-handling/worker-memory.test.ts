@@ -72,7 +72,7 @@ describe('worker-memory utilities', () => {
     it('should use Lambda memory when in Lambda environment', () => {
       process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE = '2048';
 
-      const result = getTotalAvailableMemoryMb(false);
+      const result = getTotalAvailableMemoryMb();
 
       expect(result).toBe(2048);
     });
@@ -80,7 +80,7 @@ describe('worker-memory utilities', () => {
     it('should cap at LOCAL_DEV_MAX_TOTAL_MEMORY_MB for local development', () => {
       delete process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE;
 
-      const result = getTotalAvailableMemoryMb(true);
+      const result = getTotalAvailableMemoryMb();
 
       expect(result).toBeLessThanOrEqual(
         MEMORY_CONSTANTS.LOCAL_DEV_MAX_TOTAL_MEMORY_MB
