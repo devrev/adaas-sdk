@@ -12,10 +12,10 @@ processTask({
         result = Math.abs(result) % 1000000;
       }
 
-      // Log every 10000 iterations and yield control to event loop
+      // Log every 1000 iterations and yield control to event loop
       if (i % 1000 === 0) {
         console.log(`timeout-unblocked iteration ${i}`);
-        await sleep(100);
+        await sleep(0);
       }
     }
 
