@@ -13,7 +13,7 @@ processTask({
       }
 
       // Log every 10000 iterations and yield control to event loop
-      if (i % 10000 === 0) {
+      if (i % 1000 === 0) {
         console.log(`timeout-unblocked iteration ${i}`);
         await sleep(100);
       }

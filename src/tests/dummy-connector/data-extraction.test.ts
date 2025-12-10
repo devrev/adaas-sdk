@@ -8,8 +8,6 @@ import { createEvent } from '../test-helpers';
 
 import run from './extraction';
 
-jest.setTimeout(10000);
-
 describe('Dummy Connector - Data Extraction', () => {
   let event: AirdropEvent;
   beforeEach(() => {

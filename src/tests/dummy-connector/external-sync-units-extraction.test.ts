@@ -9,15 +9,11 @@ import { createEvent } from '../test-helpers';
 import run from './extraction';
 
 describe('Dummy Connector - External Sync Units Extraction', () => {
-  let event: AirdropEvent;
-
-  beforeEach(() => {
-    event = createEvent({
+  it('should successfully emit external sync units done event when all endpoints return 200', async () => {
+    const event = createEvent({
       eventType: EventType.StartExtractingExternalSyncUnits,
     });
-  });
 
-  it('should successfully emit external sync units done event when all endpoints return 200', async () => {
     await run([event], __dirname + '/external-sync-units-extraction');
 
     const lastRequest = mockServer.getLastRequest();
