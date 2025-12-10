@@ -33,7 +33,6 @@
     "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^8.46.0",
     "@typescript-eslint/parser": "^8.46.0",
-    "axios-mock-adapter": "^2.1.0",
     "eslint": "9.32.0",
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-prettier": "4.0.0",
