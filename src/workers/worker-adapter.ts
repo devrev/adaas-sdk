@@ -719,12 +719,16 @@ export class WorkerAdapter<ConnectorState> {
 
     if (httpStream) {
       const fileType =
-        httpStream.headers?.['content-type'] || 'application/octet-stream';
+        httpStream.headers['content-type'] || 'application/octet-stream';
+      const fileSize = httpStream.headers['content-length']
+        ? parseInt(httpStream.headers['content-length'])
+        : undefined;
 
       // Get upload URL
       const preparedArtifact = await this.uploader.getArtifactUploadUrl(
         attachment.file_name,
-        fileType
+        fileType,
+        fileSize
       );
 
       if (!preparedArtifact) {

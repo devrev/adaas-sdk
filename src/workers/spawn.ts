@@ -25,6 +25,7 @@ import {
 } from '../common/constants';
 import { LogLevel } from '../logger/logger.interfaces';
 import { createWorker } from './create-worker';
+import { LoaderEventType } from '../types';
 
 function getWorkerPath({
   event,
@@ -147,6 +148,34 @@ export async function spawn<ConnectorState>({
       return Promise.reject(error);
     }
   } else {
+    // If no script is found for the delete event type, return `Done`
+    switch (event.payload.event_type) {
+      case EventType.StartDeletingExtractorAttachmentsState:
+        await emit({
+          event,
+          eventType: ExtractorEventType.ExtractorAttachmentsStateDeletionDone,
+        });
+        return;
+      case EventType.StartDeletingLoaderAttachmentState:
+        await emit({
+          event,
+          eventType: LoaderEventType.LoaderAttachmentStateDeletionDone,
+        });
+        return;
+      case EventType.StartDeletingExtractorState:
+        await emit({
+          event,
+          eventType: ExtractorEventType.ExtractorStateDeletionDone,
+        });
+        return;
+      case EventType.StartDeletingLoaderState:
+        await emit({
+          event,
+          eventType: LoaderEventType.LoaderStateDeletionDone,
+        });
+        return;
+    }
+
     console.error(
       'Script was not found for event type: ' + event.payload.event_type + '.'
     );
