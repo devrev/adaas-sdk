@@ -7,7 +7,6 @@ import { axiosClient } from '../http/axios-client-internal';
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
 import { truncateFilename } from '../common/helpers';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
-import { AirdropEvent } from '../types/extraction';
 
 import { AxiosResponse } from 'axios';
 import { serializeError } from '../logger/logger';
@@ -19,7 +18,6 @@ import {
 } from './uploader.interfaces';
 
 export class Uploader {
-  private event: AirdropEvent;
   private isLocalDevelopment?: boolean;
   private devrevApiEndpoint: string;
   private devrevApiToken: string;
@@ -27,7 +25,6 @@ export class Uploader {
   private defaultHeaders: Record<string, string>;
 
   constructor({ event, options }: UploaderFactoryInterface) {
-    this.event = event;
     this.devrevApiEndpoint = event.execution_metadata.devrev_endpoint;
     this.devrevApiToken = event.context.secrets.service_account_token;
     this.requestId = event.payload.event_context.request_id;
@@ -38,13 +35,10 @@ export class Uploader {
   }
 
   /**
-   * Uploads the fetched objects to the DevRev platform.
-   * The fetched objects are uploaded to the platform and the artifact information is returned.
-   * @param {string} filename - The name of the file to be uploaded
+   * Uploads the fetched objects to the DevRev platform. Fetched objects are compressed to a gzipped jsonl object and uploaded to the platform.
    * @param {string} itemType - The type of the item to be uploaded
-   * @param {object[] | object} fetchedObjects - The fetched objects to be uploaded
-   * @returns {Promise<UploadResponse>} - The response object containing the artifact information
-   * or error information if there was an error
+   * @param {object[] | object} fetchedObjects - The objects to be uploaded
+   * @returns {Promise<UploadResponse>} - The response object containing the artifact information or error information if there was an error
    */
   async upload(
     itemType: string,
@@ -105,9 +99,17 @@ export class Uploader {
     return { artifact };
   }
 
+  /**
+   * Gets the upload URL for an artifact from the DevRev API.
+   * @param {string} filename - The name of the file to upload
+   * @param {string} fileType - The MIME type of the file
+   * @param {number} [fileSize] - Optional file size in bytes
+   * @returns {Promise<ArtifactToUpload | void>} The artifact upload information or undefined on error
+   */
   async getArtifactUploadUrl(
     filename: string,
-    fileType: string
+    fileType: string,
+    fileSize?: number
   ): Promise<ArtifactToUpload | void> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.upload-url`;
 
@@ -120,6 +122,7 @@ export class Uploader {
           request_id: this.requestId,
           file_type: fileType,
           file_name: truncateFilename(filename),
+          file_size: fileSize,
         },
       });
       return response.data;
@@ -131,6 +134,12 @@ export class Uploader {
     }
   }
 
+  /**
+   * Uploads an artifact file to the provided upload URL using multipart form data.
+   * @param {ArtifactToUpload} artifact - The artifact upload information containing upload URL and form data
+   * @param {Buffer} file - The file buffer to upload
+   * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
+   */
   async uploadArtifact(
     artifact: ArtifactToUpload,
     file: Buffer
@@ -153,6 +162,12 @@ export class Uploader {
     }
   }
 
+  /**
+   * Streams an artifact file from an axios response to the upload URL.
+   * @param {ArtifactToUpload} artifact - The artifact upload information containing upload URL and form data
+   * @param {AxiosResponse} fileStream - The axios response stream containing the file data
+   * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
+   */
   async streamArtifact(
     artifact: ArtifactToUpload,
     fileStream: AxiosResponse
@@ -187,6 +202,11 @@ export class Uploader {
     }
   }
 
+  /**
+   * Confirms that an artifact upload has been completed successfully.
+   * @param {string} artifactId - The ID of the artifact to confirm
+   * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
+   */
   async confirmArtifactUpload(
     artifactId: string
   ): Promise<AxiosResponse | void> {
@@ -232,6 +252,12 @@ export class Uploader {
     }
   }
 
+  /**
+   * Retrieves attachment metadata from an artifact by downloading and parsing it.
+   * @param {object} param0 - Configuration object
+   * @param {string} param0.artifact - The artifact ID to download attachments from
+   * @returns {Promise<{attachments?: NormalizedAttachment[], error?: {message: string}}>} The attachments array or error object
+   */
   async getAttachmentsFromArtifactId({
     artifact,
   }: {
@@ -276,6 +302,11 @@ export class Uploader {
     return { attachments: jsonObject };
   }
 
+  /**
+   * Gets the download URL for an artifact from the DevRev API.
+   * @param {string} artifactId - The ID of the artifact to download
+   * @returns {Promise<string | void>} The download URL or undefined on error
+   */
   private async getArtifactDownloadUrl(
     artifactId: string
   ): Promise<string | void> {
@@ -301,6 +332,11 @@ export class Uploader {
     }
   }
 
+  /**
+   * Downloads an artifact file from the given URL.
+   * @param {string} artifactUrl - The URL to download the artifact from
+   * @returns {Promise<Buffer | void>} The artifact file buffer or undefined on error
+   */
   private async downloadArtifact(artifactUrl: string): Promise<Buffer | void> {
     try {
       const response = await axiosClient.get(artifactUrl, {
@@ -316,6 +352,11 @@ export class Uploader {
     }
   }
 
+  /**
+   * Compresses a JSONL string using gzip compression.
+   * @param {string} jsonlObject - The JSONL string to compress
+   * @returns {Buffer | void} The compressed buffer or undefined on error
+   */
   private compressGzip(jsonlObject: string): Buffer | void {
     try {
       return zlib.gzipSync(jsonlObject);
@@ -324,6 +365,11 @@ export class Uploader {
     }
   }
 
+  /**
+   * Decompresses a gzipped buffer to a JSONL string.
+   * @param {Buffer} gzippedJsonlObject - The gzipped buffer to decompress
+   * @returns {string | void} The decompressed JSONL string or undefined on error
+   */
   private decompressGzip(gzippedJsonlObject: Buffer): string | void {
     try {
       const jsonlObject = zlib.gunzipSync(gzippedJsonlObject);
@@ -333,6 +379,11 @@ export class Uploader {
     }
   }
 
+  /**
+   * Parses a JSONL string into an array of objects.
+   * @param {string} jsonlObject - The JSONL string to parse
+   * @returns {object[] | null} The parsed array of objects or null on error
+   */
   private parseJsonl(jsonlObject: string): object[] | null {
     try {
       return jsonl.parse(jsonlObject);
@@ -342,6 +393,13 @@ export class Uploader {
     return null;
   }
 
+  /**
+   * Retrieves and parses JSON objects from an artifact by artifact ID.
+   * @param {object} param0 - Configuration object
+   * @param {string} param0.artifactId - The artifact ID to download and parse
+   * @param {boolean} [param0.isGzipped=false] - Whether the artifact is gzipped
+   * @returns {Promise<object[] | object | void>} The parsed JSON objects or undefined on error
+   */
   async getJsonObjectByArtifactId({
     artifactId,
     isGzipped = false,
@@ -373,6 +431,12 @@ export class Uploader {
     return jsonl.parse(jsonlObject);
   }
 
+  /**
+   * Downloads fetched objects to the local file system (for local development).
+   * @param {string} itemType - The type of items being downloaded
+   * @param {object | object[]} fetchedObjects - The objects to write to file
+   * @returns {Promise<void>} Resolves when the file is written or rejects on error
+   */
   private async downloadToLocal(
     itemType: string,
     fetchedObjects: object | object[]
