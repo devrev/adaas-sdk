@@ -1,8 +1,4 @@
-import {
-  AirdropEvent,
-  EventType,
-  ExtractorEventType,
-} from '../../types/extraction';
+import { EventType, ExtractorEventType } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
 import { createEvent } from '../test-helpers';
 
