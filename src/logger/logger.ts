@@ -8,6 +8,7 @@ import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 
 import { INSPECT_OPTIONS, MAX_LOG_STRING_LENGTH } from './logger.constants';
+import { getSdkLogContextValue } from './logger.context';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
@@ -33,6 +34,7 @@ export class Logger extends Console {
     this.tags = {
       ...event.payload.event_context,
       sdk_version: LIBRARY_VERSION,
+      is_sdk_log: true,
     };
   }
 
@@ -73,8 +75,13 @@ export class Logger extends Console {
    *
    * @param message - The pre-formatted message string to log
    * @param level - Log level (info, warn, error)
+   * @param isSdkLog - Flag indicating if the log originated from the SDK
    */
-  logFn(message: string, level: LogLevel): void {
+  logFn(
+    message: string,
+    level: LogLevel,
+    isSdkLog: boolean = this.getSdkLogFlag()
+  ): void {
     if (this.options?.isLocalDevelopment) {
       this.originalConsole[level](message);
       return;
@@ -83,8 +90,25 @@ export class Logger extends Console {
     const logObject = {
       message,
       ...this.tags,
+      is_sdk_log: isSdkLog,
     };
     this.originalConsole[level](JSON.stringify(logObject));
+  }
+
+  /**
+   * Determines if a log call originated from SDK code.
+   *
+   * Uses AsyncLocalStorage context set by runWithUserLogContext/runWithSdkLogContext.
+   * All SDK entry points and public methods are wrapped with runWithSdkLogContext,
+   * and user code runs inside runWithUserLogContext, so the context should always be set.
+   *
+   * Defaults to true (SDK log) if no context is set, which should only happen
+   * in edge cases or during testing.
+   */
+  private getSdkLogFlag(): boolean {
+    // Default to SDK log (true) if context is not set
+    const contextValue = getSdkLogContextValue(true);
+    return contextValue;
   }
 
   /**
@@ -96,16 +120,23 @@ export class Logger extends Console {
    * @param args - Values to log (will be stringified and truncated if needed)
    * @param level - Log level (info, warn, error)
    */
-  private stringifyAndLog(args: unknown[], level: LogLevel): void {
+  private stringifyAndLog(
+    args: unknown[],
+    level: LogLevel,
+    sdkOverride?: boolean
+  ): void {
     let stringifiedArgs = args.map((arg) => this.valueToString(arg)).join(' ');
     stringifiedArgs = this.truncateMessage(stringifiedArgs);
 
+    const isSdkLogFlag =
+      typeof sdkOverride === 'boolean' ? sdkOverride : this.getSdkLogFlag();
+
     if (isMainThread) {
-      this.logFn(stringifiedArgs, level);
+      this.logFn(stringifiedArgs, level, isSdkLogFlag);
     } else {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: { stringifiedArgs, level },
+        payload: { stringifiedArgs, level, is_sdk_log: isSdkLogFlag },
       });
     }
   }
@@ -126,7 +157,6 @@ export class Logger extends Console {
     this.stringifyAndLog(args, LogLevel.ERROR);
   }
 }
-
 /**
  * Converts a state object into a printable format where arrays are summarized.
  * Arrays show their length, first item, and last item instead of all elements.
