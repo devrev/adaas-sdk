@@ -64,7 +64,7 @@ export class MockServer {
    * Sets up routes for the mock server.
    */
   private setupRoutes(): void {
-    // ROOT URL
+    // TEST ENDPOINT
     this.app.get('/test-endpoint', this.routeHandler('GET', '/test-endpoint'));
 
     // CALLBACK URL
