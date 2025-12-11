@@ -7,36 +7,33 @@ const axiosClient = axios.create({
 
 axiosRetry(axiosClient, {
   retries: 5,
+  shouldResetTimeout: true,
   retryDelay: (retryCount, error) => {
-    // If the response status is 429, retry after the time specified in the Retry-After header
+    let delay;
     if (error.response?.status === 429) {
       const retryAfter =
         error.response?.headers?.['retry-after'] ||
         error.response?.headers?.['Retry-After'];
 
-      // Since DevRev API returns the retry-after header in seconds and axios-retry expects milliseconds, we need to convert it to milliseconds
-      const delay = parseInt(retryAfter, 10) * 1000;
-      const delayInSeconds = Math.round(delay / 1000);
-
-      console.warn(
-        `Retrying ${error.config?.method} request to ${error.config?.url} in ${delayInSeconds}s due to 429 Too Many Requests.`
-      );
-
-      return delay;
+      delay = parseInt(retryAfter, 10) * 1000;
+    } else {
+      delay = axiosRetry.exponentialDelay(retryCount, error, 1000);
     }
 
-    // Default exponential backoff algorithm: 1 * 2 ^ retryCount * 1000ms
-    // This will retry requests after 2, 4, 8, 16 and 32 seconds
-    const delay = axiosRetry.exponentialDelay(retryCount, error, 1000);
+    const requestId =
+      error.config?.headers?.['x-request-id'] ||
+      error.config?.headers?.['X-Request-ID'];
     const delayInSeconds = Math.round(delay / 1000);
 
-    // Handle network errors (no response) vs HTTP errors
-    const errorDescription = error.response?.status
-      ? `${error.response.status} error`
-      : 'network (no response) error';
-
     console.warn(
-      `Retrying ${error.config?.method} request to ${error.config?.url} in ${delayInSeconds}s due to ${errorDescription}.`
+      `Retrying request to ${error.config?.url} in ${delayInSeconds}s due to ${
+        error.response?.status ?? 'unknown'
+      } error.`,
+      {
+        method: error.config?.method,
+        ...(retryCount && { retryCount }),
+        ...(requestId && { requestId }),
+      }
     );
 
     return delay;
@@ -86,4 +83,5 @@ axiosRetry(axiosClient, {
     );
   },
 });
+
 export { axiosClient };

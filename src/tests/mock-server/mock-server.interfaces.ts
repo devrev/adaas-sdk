@@ -12,6 +12,8 @@ export interface RetryConfig {
   errorStatus?: number;
   /** Optional error response body to send as JSON during failures */
   errorBody?: unknown;
+  /** Optional headers to send with the error response */
+  headers?: Record<string, string>;
 }
 
 /**
@@ -26,6 +28,8 @@ export interface RouteConfig {
   status: number;
   /** Optional response body to send as JSON */
   body?: unknown;
+  /** Optional headers to send with the response */
+  headers?: Record<string, string>;
   /** Optional retry configuration for simulating failures before success */
   retry?: RetryConfig;
 }

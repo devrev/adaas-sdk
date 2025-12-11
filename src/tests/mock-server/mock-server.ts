@@ -64,6 +64,9 @@ export class MockServer {
    * Sets up routes for the mock server.
    */
   private setupRoutes(): void {
+    // TEST ENDPOINT
+    this.app.get('/test-endpoint', this.routeHandler('GET', '/test-endpoint'));
+
     // CALLBACK URL
     this.app.post('/callback_url', this.routeHandler('POST', '/callback_url'));
 
@@ -193,11 +196,12 @@ export class MockServer {
    * @param config.retry - Optional retry configuration for simulating failures before success
    */
   public setRoute(config: RouteConfig): void {
-    const { path, method, status, body, retry } = config;
+    const { path, method, status, body, retry, headers } = config;
     const key = this.getRouteKey(method, path);
 
-    // Initialize request count for this route if retry is configured
-    if (retry && !this.requestCounts.has(key)) {
+    // Reset request count for this route if retry is configured
+    // This ensures a clean state each time setRoute is called
+    if (retry) {
       this.requestCounts.set(key, 0);
     }
 
@@ -209,6 +213,11 @@ export class MockServer {
 
         if (currentCount < failureCount) {
           this.requestCounts.set(key, currentCount + 1);
+
+          if (retry.headers) {
+            res.set(retry.headers);
+          }
+
           if (retry.errorBody !== undefined) {
             res.status(errorStatus).json(retry.errorBody);
           } else {
@@ -216,6 +225,11 @@ export class MockServer {
           }
         } else {
           this.requestCounts.set(key, currentCount + 1);
+
+          if (headers) {
+            res.set(headers);
+          }
+
           if (body !== undefined) {
             res.status(status).json(body);
           } else {
@@ -223,6 +237,10 @@ export class MockServer {
           }
         }
       } else {
+        if (headers) {
+          res.set(headers);
+        }
+
         if (body !== undefined) {
           res.status(status).json(body);
         } else {
@@ -234,10 +252,12 @@ export class MockServer {
 
   /**
    * Resets all custom route handlers, restoring all default handlers.
+   * Also clears request tracking data.
    */
   public resetRoutes(): void {
     this.routeHandlers.clear();
     this.requestCounts.clear();
+    this.requests = [];
   }
 
   /**
@@ -249,5 +269,31 @@ export class MockServer {
       return undefined;
     }
     return this.requests[this.requests.length - 1];
+  }
+
+  /**
+   * Gets the number of requests made to a specific endpoint.
+   * @param method - The HTTP method (e.g., 'GET', 'POST')
+   * @param path - The route path (e.g., '/test-endpoint', '/callback_url')
+   * @returns The number of requests made to the endpoint
+   */
+  public getRequestCount(method: string, path: string): number {
+    return this.getRequests(method, path).length;
+  }
+
+  /**
+   * Gets all requests made to a specific endpoint.
+   * @param method - The HTTP method (e.g., 'GET', 'POST')
+   * @param path - The route path (e.g., '/test-endpoint', '/callback_url')
+   * @returns An array of RequestInfo objects for the endpoint
+   */
+  public getRequests(method: string, path: string): RequestInfo[] {
+    // Remove query parameters for comparison
+    const pathWithoutQuery = path.split('?')[0];
+    return this.requests.filter(
+      (req) =>
+        req.method.toUpperCase() === method.toUpperCase() &&
+        req.url.split('?')[0] === pathWithoutQuery
+    );
   }
 }
