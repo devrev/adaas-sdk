@@ -16,11 +16,9 @@ describe('Internal Axios Client', () => {
       status: 400,
     });
 
-    try {
-      await axiosClient.get(mockServer.baseUrl + '/test-endpoint');
-    } catch (_error) {
-      // Ignore error because we expect it to be thrown
-    }
+    await expect(
+      axiosClient.get(mockServer.baseUrl + '/test-endpoint')
+    ).rejects.toThrow();
 
     expect(mockServer.getRequestCount('GET', '/test-endpoint')).toBe(1);
   });
@@ -126,11 +124,9 @@ describe('Internal Axios Client', () => {
       },
     });
 
-    try {
-      await axiosClient.get(mockServer.baseUrl + '/test-endpoint');
-    } catch (_error) {
-      // Ignore error because we expect it to be thrown
-    }
+    await expect(
+      axiosClient.get(mockServer.baseUrl + '/test-endpoint')
+    ).rejects.toThrow();
 
     expect(mockServer.getRequestCount('GET', '/test-endpoint')).toBe(1);
   });
@@ -163,11 +159,9 @@ describe('Internal Axios Client', () => {
       },
     });
 
-    try {
-      await axiosClient.get(mockServer.baseUrl + '/test-endpoint');
-    } catch (_error) {
-      // Ignore error because we expect it to be thrown
-    }
+    await expect(
+      axiosClient.get(mockServer.baseUrl + '/test-endpoint')
+    ).rejects.toThrow();
 
     expect(mockServer.getRequestCount('GET', '/test-endpoint')).toBe(1);
   });
@@ -184,11 +178,9 @@ describe('Internal Axios Client', () => {
       },
     });
 
-    try {
-      await axiosClient.get(mockServer.baseUrl + '/test-endpoint');
-    } catch (_error) {
-      // Ignore error because we expect it to be thrown
-    }
+    await expect(
+      axiosClient.get(mockServer.baseUrl + '/test-endpoint')
+    ).rejects.toThrow();
 
     expect(mockServer.getRequestCount('GET', '/test-endpoint')).toBe(1);
   });
