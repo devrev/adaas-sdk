@@ -31,7 +31,7 @@ axiosRetry(axiosClient, {
       } error.`,
       {
         method: error.config?.method,
-        ...(retryCount !== undefined && { retryCount }),
+        ...(retryCount && { retryCount }),
         ...(requestId && { requestId }),
       }
     );

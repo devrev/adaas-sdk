@@ -278,13 +278,7 @@ export class MockServer {
    * @returns The number of requests made to the endpoint
    */
   public getRequestCount(method: string, path: string): number {
-    // Remove query parameters for comparison
-    const pathWithoutQuery = path.split('?')[0];
-    return this.requests.filter(
-      (req) =>
-        req.method.toUpperCase() === method.toUpperCase() &&
-        req.url.split('?')[0] === pathWithoutQuery
-    ).length;
+    return this.getRequests(method, path).length;
   }
 
   /**
