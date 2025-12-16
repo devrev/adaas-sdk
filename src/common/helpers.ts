@@ -106,6 +106,35 @@ export function getTimeoutErrorEventType(eventType: EventType): {
   }
 }
 
+export function getNoScriptEventType(eventType: EventType) {
+  switch (eventType) {
+    case EventType.StartDeletingExtractorState:
+      return {
+        eventType: ExtractorEventType.ExtractorStateDeletionDone,
+      };
+    case EventType.StartDeletingExtractorAttachmentsState:
+      return {
+        eventType: ExtractorEventType.ExtractorAttachmentsStateDeletionDone,
+      };
+    case EventType.StartDeletingLoaderState:
+      return {
+        eventType: LoaderEventType.LoaderStateDeletionDone,
+      };
+    case EventType.StartDeletingLoaderAttachmentState:
+      return {
+        eventType: LoaderEventType.LoaderAttachmentStateDeletionDone,
+      };
+    default:
+      console.error(
+        'Event type not recognized in getNoScriptEventType function: ' +
+          eventType
+      );
+      return {
+        eventType: LoaderEventType.UnknownEventType,
+      };
+  }
+}
+
 export function getSyncDirection({ event }: { event: AirdropEvent }) {
   return event.payload.event_context.mode;
 }

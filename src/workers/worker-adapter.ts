@@ -47,6 +47,7 @@ import {
 } from '../types/workers';
 import { Uploader } from '../uploader/uploader';
 import { Artifact, SsorAttachment } from '../uploader/uploader.interfaces';
+import { translateOutgoingEventType } from '../common/event-type-translation';
 
 export function createWorkerAdapter<ConnectorState>({
   event,
@@ -196,6 +197,8 @@ export class WorkerAdapter<ConnectorState> {
     newEventType: ExtractorEventType | LoaderEventType,
     data?: EventData
   ): Promise<void> {
+    newEventType = translateOutgoingEventType(newEventType);
+
     if (this.hasWorkerEmitted) {
       console.warn(
         `Trying to emit event with event type: ${newEventType}. Ignoring emit request because it has already been emitted.`
