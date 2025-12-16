@@ -54,6 +54,7 @@
     "yargs": "^17.7.2"
   },
   "files": [
-    "dist"
+    "dist/**/*",
+    "!dist/tests/**/*"
   ]
 }
