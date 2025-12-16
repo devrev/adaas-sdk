@@ -80,7 +80,7 @@ export class Logger extends Console {
   logFn(
     message: string,
     level: LogLevel,
-    isSdkLog: boolean = this.getSdkLogFlag()
+    isSdkLog: boolean = getSdkLogContextValue(true)
   ): void {
     if (this.options?.isLocalDevelopment) {
       this.originalConsole[level](message);
@@ -96,22 +96,6 @@ export class Logger extends Console {
   }
 
   /**
-   * Determines if a log call originated from SDK code.
-   *
-   * Uses AsyncLocalStorage context set by runWithUserLogContext/runWithSdkLogContext.
-   * All SDK entry points and public methods are wrapped with runWithSdkLogContext,
-   * and user code runs inside runWithUserLogContext, so the context should always be set.
-   *
-   * Defaults to true (SDK log) if no context is set, which should only happen
-   * in edge cases or during testing.
-   */
-  private getSdkLogFlag(): boolean {
-    // Default to SDK log (true) if context is not set
-    const contextValue = getSdkLogContextValue(true);
-    return contextValue;
-  }
-
-  /**
    * Stringifies and logs arguments to the appropriate destination.
    * On main thread, converts arguments to strings and calls logFn.
    * In worker threads, forwards stringified arguments to the main thread for processing.
@@ -123,20 +107,18 @@ export class Logger extends Console {
   private stringifyAndLog(
     args: unknown[],
     level: LogLevel,
-    sdkOverride?: boolean
   ): void {
     let stringifiedArgs = args.map((arg) => this.valueToString(arg)).join(' ');
     stringifiedArgs = this.truncateMessage(stringifiedArgs);
 
-    const isSdkLogFlag =
-      typeof sdkOverride === 'boolean' ? sdkOverride : this.getSdkLogFlag();
+    const isSdkLog = getSdkLogContextValue(true);
 
     if (isMainThread) {
-      this.logFn(stringifiedArgs, level, isSdkLogFlag);
+      this.logFn(stringifiedArgs, level, isSdkLog);
     } else {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: { stringifiedArgs, level, is_sdk_log: isSdkLogFlag },
+        payload: { stringifiedArgs, level, is_sdk_log: isSdkLog },
       });
     }
   }

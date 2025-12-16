@@ -251,7 +251,6 @@ export class Spawn {
         const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
         const isSdkLog = message.payload?.is_sdk_log ?? false;
-        // Args are already sanitized in the worker thread, skip double sanitization
         this.logger.logFn(stringifiedArgs, level, isSdkLog);
       }
 

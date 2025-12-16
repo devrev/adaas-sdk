@@ -134,5 +134,4 @@ dist
 
 
 src/tests/backwards-compatibility/temp/
-src/tests/backwards-compatibility/report/
-extracted_files/
+src/tests/backwards-compatibility/report/extracted_files/
