@@ -54,6 +54,13 @@ export const STATEFUL_EVENT_TYPES = [
   ...STATEFUL_LOADING_EVENT_TYPES,
 ];
 
+export const DELETE_EVENT_TYPES = [
+  EventType.StartDeletingExtractorState,
+  EventType.StartDeletingExtractorAttachmentsState,
+  EventType.StartDeletingLoaderState,
+  EventType.StartDeletingLoaderAttachmentState,
+];
+
 export const ARTIFACT_BATCH_SIZE = 2000;
 export const MAX_DEVREV_ARTIFACT_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
 export const MAX_DEVREV_FILENAME_LENGTH = 256;

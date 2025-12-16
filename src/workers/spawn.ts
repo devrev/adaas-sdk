@@ -22,6 +22,7 @@ import {
   DEFAULT_LAMBDA_TIMEOUT,
   HARD_TIMEOUT_MULTIPLIER,
   MEMORY_LOG_INTERVAL,
+  DELETE_EVENT_TYPES,
 } from '../common/constants';
 import { LogLevel } from '../logger/logger.interfaces';
 import { createWorker } from './create-worker';
@@ -71,38 +72,32 @@ export async function spawn<ConnectorState>({
   options,
   baseWorkerPath,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
-  // Translates incoming event type for backwards compatibility
-  // This allows the SDK to accept both old and new event type formats
+  // Translate incoming event type for backwards compatibility. This allows the
+  // SDK to accept both old and new event type formats. Then update the event with the translated event type.
   const originalEventType = event.payload.event_type;
   const translatedEventType = translateIncomingEventType(
     event.payload.event_type as string
   );
-
-  // Update the event with the translated event type
   event.payload.event_type = translatedEventType;
+
+  // Read the command line arguments to check if the local flag is passed.
+  const argv = await yargs(hideBin(process.argv)).argv;
+  if (argv._.includes('local') && options) {
+    options.isLocalDevelopment = true;
+  }
+
+  const originalConsole = console;
+  // eslint-disable-next-line no-global-assign
+  console = new Logger({ event, options });
 
   if (translatedEventType !== originalEventType) {
     console.log(
       `Event type translated from ${originalEventType} to ${translatedEventType}.`
     );
   }
-
   if (options?.isLocalDevelopment) {
     console.log('Snap-in is running in local development mode.');
   }
-
-  // read the command line arguments to check if the local flag is passed
-  const argv = await yargs(hideBin(process.argv)).argv;
-  if (argv._.includes('local')) {
-    options = {
-      ...(options || {}),
-      isLocalDevelopment: true,
-    };
-  }
-
-  const originalConsole = console;
-  // eslint-disable-next-line no-global-assign
-  console = new Logger({ event, options });
 
   let script = null;
   if (workerPath != null) {
@@ -122,6 +117,7 @@ export async function spawn<ConnectorState>({
     });
   }
 
+  // If a script is found for the event type, spawn a new worker.
   if (script) {
     try {
       const worker = await createWorker<ConnectorState>({
@@ -147,59 +143,60 @@ export async function spawn<ConnectorState>({
       console = originalConsole;
       return Promise.reject(error);
     }
-  } else {
-    // If no script is found for the delete event type, return `Done`
+  }
+  // If the script is not found and the event type is a delete event type, emit a done event.
+  else if (DELETE_EVENT_TYPES.includes(event.payload.event_type)) {
     switch (event.payload.event_type) {
       case EventType.StartDeletingExtractorAttachmentsState:
         await emit({
           event,
           eventType: ExtractorEventType.ExtractorAttachmentsStateDeletionDone,
         });
-        return;
+        break;
       case EventType.StartDeletingLoaderAttachmentState:
         await emit({
           event,
           eventType: LoaderEventType.LoaderAttachmentStateDeletionDone,
         });
-        return;
+        break;
       case EventType.StartDeletingExtractorState:
         await emit({
           event,
           eventType: ExtractorEventType.ExtractorStateDeletionDone,
         });
-        return;
+        break;
       case EventType.StartDeletingLoaderState:
         await emit({
           event,
           eventType: LoaderEventType.LoaderStateDeletionDone,
         });
-        return;
+        break;
     }
 
+    // eslint-disable-next-line no-global-assign
+    console = originalConsole;
+    return Promise.resolve();
+  }
+
+  // If the script is not found and the event type is not a delete event type, emit an unknown event.
+  else {
     console.error(
-      'Script was not found for event type: ' + event.payload.event_type + '.'
+      `Script was not found for event type: ${event.payload.event_type}.`
     );
 
-    try {
-      await emit({
-        event,
-        eventType: ExtractorEventType.UnknownEventType,
-        data: {
-          error: {
-            message:
-              'Unrecognized event type in spawn ' +
-              event.payload.event_type +
-              '.',
-          },
+    await emit({
+      event,
+      eventType: ExtractorEventType.UnknownEventType,
+      data: {
+        error: {
+          message: `Unrecognized event type in spawn ${event.payload.event_type}.`,
         },
-      });
-    } catch (error) {
-      console.error('Error while emitting event.', serializeError(error));
-      return Promise.reject(error);
-    } finally {
-      // eslint-disable-next-line no-global-assign
-      console = originalConsole;
-    }
+      },
+    });
+
+    // eslint-disable-next-line no-global-assign
+    console = originalConsole;
+    return Promise.reject();
   }
 }
 
