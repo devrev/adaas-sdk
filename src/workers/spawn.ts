@@ -3,13 +3,13 @@ import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../common/control-protocol';
 import { translateIncomingEventType } from '../common/event-type-translation';
-import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
-import { Logger, serializeError } from '../logger/logger';
 import {
-  AirdropEvent,
-  EventType,
-  ExtractorEventType,
-} from '../types/extraction';
+  getMemoryUsage,
+  getTimeoutErrorEventType,
+  getNoScriptEventType,
+} from '../common/helpers';
+import { Logger, serializeError } from '../logger/logger';
+import { AirdropEvent, EventType } from '../types/extraction';
 import {
   GetWorkerPathInterface,
   SpawnFactoryInterface,
@@ -22,11 +22,9 @@ import {
   DEFAULT_LAMBDA_TIMEOUT,
   HARD_TIMEOUT_MULTIPLIER,
   MEMORY_LOG_INTERVAL,
-  DELETE_EVENT_TYPES,
 } from '../common/constants';
 import { LogLevel } from '../logger/logger.interfaces';
 import { createWorker } from './create-worker';
-import { LoaderEventType } from '../types';
 
 function getWorkerPath({
   event,
@@ -139,64 +137,22 @@ export async function spawn<ConnectorState>({
       });
     } catch (error) {
       console.error('Worker error while processing task', error);
+
       // eslint-disable-next-line no-global-assign
       console = originalConsole;
       return Promise.reject(error);
     }
-  }
-  // If the script is not found and the event type is a delete event type, emit a done event.
-  else if (DELETE_EVENT_TYPES.includes(event.payload.event_type)) {
-    switch (event.payload.event_type) {
-      case EventType.StartDeletingExtractorAttachmentsState:
-        await emit({
-          event,
-          eventType: ExtractorEventType.ExtractorAttachmentsStateDeletionDone,
-        });
-        break;
-      case EventType.StartDeletingLoaderAttachmentState:
-        await emit({
-          event,
-          eventType: LoaderEventType.LoaderAttachmentStateDeletionDone,
-        });
-        break;
-      case EventType.StartDeletingExtractorState:
-        await emit({
-          event,
-          eventType: ExtractorEventType.ExtractorStateDeletionDone,
-        });
-        break;
-      case EventType.StartDeletingLoaderState:
-        await emit({
-          event,
-          eventType: LoaderEventType.LoaderStateDeletionDone,
-        });
-        break;
-    }
-
-    // eslint-disable-next-line no-global-assign
-    console = originalConsole;
-    return Promise.resolve();
-  }
-
-  // If the script is not found and the event type is not a delete event type, emit an unknown event.
-  else {
-    console.error(
-      `Script was not found for event type: ${event.payload.event_type}.`
-    );
+  } else {
+    const { eventType } = getNoScriptEventType(event.payload.event_type);
 
     await emit({
       event,
-      eventType: ExtractorEventType.UnknownEventType,
-      data: {
-        error: {
-          message: `Unrecognized event type in spawn ${event.payload.event_type}.`,
-        },
-      },
+      eventType,
     });
 
     // eslint-disable-next-line no-global-assign
     console = originalConsole;
-    return Promise.reject();
+    return Promise.resolve();
   }
 }
 
