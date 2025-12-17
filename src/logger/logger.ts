@@ -118,7 +118,7 @@ export class Logger extends Console {
     } else {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: { stringifiedArgs, level, is_sdk_log: isSdkLog },
+        payload: { stringifiedArgs, level, isSdkLog },
       });
     }
   }

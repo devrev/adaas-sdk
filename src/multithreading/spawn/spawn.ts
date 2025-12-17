@@ -250,7 +250,7 @@ export class Spawn {
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
         const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
-        const isSdkLog = message.payload?.is_sdk_log ?? false;
+        const isSdkLog = message.payload?.isSdkLog ?? false;
         this.logger.logFn(stringifiedArgs, level, isSdkLog);
       }
 
