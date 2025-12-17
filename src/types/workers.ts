@@ -71,6 +71,8 @@ export interface SpawnInterface {
 export interface SpawnFactoryInterface<ConnectorState> {
   event: AirdropEvent;
   initialState: ConnectorState;
+
+  /** @deprecated Remove getWorkerPath function and use baseWorkerPath: __dirname instead of workerPath */
   workerPath?: string;
   options?: WorkerAdapterOptions;
   initialDomainMapping?: InitialDomainMapping;
