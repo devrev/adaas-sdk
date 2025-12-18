@@ -162,17 +162,17 @@ export enum LoaderEventType {
   /**
    * @deprecated Use AttachmentsLoadingProgress instead (note: singular changed to plural)
    */
-  AttachmentsLoadingProgress = 'ATTACHMENTS_LOADING_PROGRESS',
+  AttachmentsLoadingProgress = 'ATTACHMENT_LOADING_PROGRESS',
   /**
    * @deprecated Use AttachmentsLoadingDelayed instead (note: singular changed to plural)
    */
-  AttachmentsLoadingDelayed = 'ATTACHMENTS_LOADING_DELAYED',
+  AttachmentsLoadingDelayed = 'ATTACHMENT_LOADING_DELAYED',
   /**
    * @deprecated Use AttachmentsLoadingDone instead (note: singular changed to plural)
    */
-  AttachmentsLoadingDone = 'ATTACHMENTS_LOADING_DONE',
+  AttachmentsLoadingDone = 'ATTACHMENT_LOADING_DONE',
   /**
    * @deprecated Use AttachmentsLoadingError instead (note: singular changed to plural)
    */
-  AttachmentsLoadingError = 'ATTACHMENTS_LOADING_ERROR',
+  AttachmentsLoadingError = 'ATTACHMENT_LOADING_ERROR',
 }
