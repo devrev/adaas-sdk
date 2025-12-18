@@ -128,14 +128,6 @@ export function translateLoaderEventType(
   const mapping: Record<string, LoaderEventType> = {
     // Old string values -> New enum members
     [LoaderEventType.DataLoadingDelay]: LoaderEventType.DataLoadingDelayed,
-    [LoaderEventType.AttachmentLoadingProgress]:
-      LoaderEventType.AttachmentsLoadingProgress,
-    [LoaderEventType.AttachmentLoadingDelayed]:
-      LoaderEventType.AttachmentsLoadingDelayed,
-    [LoaderEventType.AttachmentLoadingDone]:
-      LoaderEventType.AttachmentsLoadingDone,
-    [LoaderEventType.AttachmentLoadingError]:
-      LoaderEventType.AttachmentsLoadingError,
   };
 
   // If there's a mapping, use it; otherwise return original (already new)
