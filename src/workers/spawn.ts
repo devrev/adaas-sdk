@@ -48,11 +48,11 @@ function getWorkerPath({
       break;
     case EventType.StartLoadingData:
     case EventType.ContinueLoadingData:
-      path = '/workers/data-loading';
+      path = '/workers/load-data';
       break;
     case EventType.StartLoadingAttachments:
     case EventType.ContinueLoadingAttachments:
-      path = '/workers/attachments-loading';
+      path = '/workers/load-attachments';
       break;
   }
 
