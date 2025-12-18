@@ -46,6 +46,14 @@ function getWorkerPath({
     case EventType.ContinueExtractingAttachments:
       path = '/workers/attachments-extraction';
       break;
+    case EventType.StartLoadingData:
+    case EventType.ContinueLoadingData:
+      path = '/workers/load-data';
+      break;
+    case EventType.StartLoadingAttachments:
+    case EventType.ContinueLoadingAttachments:
+      path = '/workers/load-attachments';
+      break;
   }
 
   return path ? workerBasePath + path : null;

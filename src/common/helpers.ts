@@ -86,7 +86,7 @@ export function getTimeoutErrorEventType(eventType: EventType): {
     case EventType.StartLoadingAttachments:
     case EventType.ContinueLoadingAttachments:
       return {
-        eventType: LoaderEventType.AttachmentsLoadingError,
+        eventType: LoaderEventType.AttachmentLoadingError,
       };
 
     // Deleting loader attachment state
