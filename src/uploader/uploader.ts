@@ -1,15 +1,19 @@
+import { AxiosResponse } from 'axios';
 import FormData from 'form-data';
-import fs, { promises as fsPromises } from 'fs';
 import { jsonl } from 'js-jsonl';
-import zlib from 'zlib';
 import { axiosClient } from '../http/axios-client-internal';
 
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
 import { truncateFilename } from '../common/helpers';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
-
-import { AxiosResponse } from 'axios';
 import { serializeError } from '../logger/logger';
+
+import {
+  compressGzip,
+  decompressGzip,
+  downloadToLocal,
+  parseJsonl,
+} from './uploader.helpers';
 import {
   Artifact,
   ArtifactToUpload,
@@ -45,10 +49,10 @@ export class Uploader {
     fetchedObjects: object[] | object
   ): Promise<UploadResponse> {
     if (this.isLocalDevelopment) {
-      await this.downloadToLocal(itemType, fetchedObjects);
+      await downloadToLocal(itemType, fetchedObjects);
     }
     // Compress the fetched objects to a gzipped jsonl object
-    const file = this.compressGzip(jsonl.stringify(fetchedObjects));
+    const file = compressGzip(jsonl.stringify(fetchedObjects));
     if (!file) {
       return {
         error: new Error('Error while compressing jsonl object.'),
@@ -284,7 +288,7 @@ export class Uploader {
     }
 
     // Decompress the gzipped jsonl object
-    const jsonlObject = this.decompressGzip(gzippedJsonlObject);
+    const jsonlObject = decompressGzip(gzippedJsonlObject);
     if (!jsonlObject) {
       return {
         error: new Error('Error while decompressing gzipped jsonl object.'),
@@ -292,7 +296,7 @@ export class Uploader {
     }
 
     // Parse the jsonl object to get the attachment metadata
-    const jsonObject = this.parseJsonl(jsonlObject) as NormalizedAttachment[];
+    const jsonObject = parseJsonl(jsonlObject) as NormalizedAttachment[];
     if (!jsonObject) {
       return {
         error: new Error('Error while parsing jsonl object.'),
@@ -353,47 +357,6 @@ export class Uploader {
   }
 
   /**
-   * Compresses a JSONL string using gzip compression.
-   * @param {string} jsonlObject - The JSONL string to compress
-   * @returns {Buffer | void} The compressed buffer or undefined on error
-   */
-  private compressGzip(jsonlObject: string): Buffer | void {
-    try {
-      return zlib.gzipSync(jsonlObject);
-    } catch (error) {
-      console.error('Error while compressing jsonl object.', error);
-    }
-  }
-
-  /**
-   * Decompresses a gzipped buffer to a JSONL string.
-   * @param {Buffer} gzippedJsonlObject - The gzipped buffer to decompress
-   * @returns {string | void} The decompressed JSONL string or undefined on error
-   */
-  private decompressGzip(gzippedJsonlObject: Buffer): string | void {
-    try {
-      const jsonlObject = zlib.gunzipSync(gzippedJsonlObject);
-      return jsonlObject.toString();
-    } catch (error) {
-      console.error('Error while decompressing gzipped jsonl object.', error);
-    }
-  }
-
-  /**
-   * Parses a JSONL string into an array of objects.
-   * @param {string} jsonlObject - The JSONL string to parse
-   * @returns {object[] | null} The parsed array of objects or null on error
-   */
-  private parseJsonl(jsonlObject: string): object[] | null {
-    try {
-      return jsonl.parse(jsonlObject);
-    } catch (error) {
-      console.error('Error while parsing jsonl object.', error);
-    }
-    return null;
-  }
-
-  /**
    * Retrieves and parses JSON objects from an artifact by artifact ID.
    * @param {object} param0 - Configuration object
    * @param {string} param0.artifactId - The artifact ID to download and parse
@@ -418,7 +381,7 @@ export class Uploader {
     }
 
     if (isGzipped) {
-      const decompressedArtifact = this.decompressGzip(artifact);
+      const decompressedArtifact = decompressGzip(artifact);
       if (!decompressedArtifact) {
         return;
       }
@@ -429,44 +392,5 @@ export class Uploader {
 
     const jsonlObject = Buffer.from(artifact).toString('utf-8');
     return jsonl.parse(jsonlObject);
-  }
-
-  /**
-   * Downloads fetched objects to the local file system (for local development).
-   * @param {string} itemType - The type of items being downloaded
-   * @param {object | object[]} fetchedObjects - The objects to write to file
-   * @returns {Promise<void>} Resolves when the file is written or rejects on error
-   */
-  private async downloadToLocal(
-    itemType: string,
-    fetchedObjects: object | object[]
-  ) {
-    console.log(`Downloading ${itemType} to local file system.`);
-    try {
-      if (!fs.existsSync('extracted_files')) {
-        fs.mkdirSync('extracted_files');
-      }
-
-      const timestamp = new Date().getTime();
-      const filePath = `extracted_files/extractor_${itemType}_${timestamp}.${
-        itemType === 'external_domain_metadata' ? 'json' : 'jsonl'
-      }`;
-      const fileHandle = await fsPromises.open(filePath, 'w');
-      let objArray = [];
-      if (!Array.isArray(fetchedObjects)) {
-        objArray.push(fetchedObjects);
-      } else {
-        objArray = fetchedObjects;
-      }
-      for (const jsonObject of objArray) {
-        const jsonLine = JSON.stringify(jsonObject) + '\n';
-        await fileHandle.write(jsonLine);
-      }
-      await fileHandle.close();
-      console.log('Data successfully written to', filePath);
-    } catch (error) {
-      console.error('Error writing data to file.', error);
-      return Promise.reject(error);
-    }
   }
 }
