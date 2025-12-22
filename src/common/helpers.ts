@@ -3,217 +3,14 @@ import * as path from 'path';
 import * as v8 from 'v8';
 
 import {
-  AirdropEvent,
-  EventType,
-  ExtractorEventType,
-} from '../types/extraction';
-import {
-  ActionType,
-  FileToLoad,
-  LoaderEventType,
-  LoaderReport,
-  StatsFileObject,
-} from '../types/loading';
-import {
   MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
   MAX_DEVREV_FILENAME_LENGTH,
 } from './constants';
 
-export function getTimeoutErrorEventType(eventType: EventType): {
-  eventType: ExtractorEventType | LoaderEventType;
-} {
-  switch (eventType) {
-    // Metadata extraction (handles both old and new enum members)
-    case EventType.StartExtractingMetadata:
-    case EventType.ExtractionMetadataStart:
-      return {
-        eventType: ExtractorEventType.MetadataExtractionError,
-      };
-
-    // Data extraction (handles both old and new enum members)
-    case EventType.StartExtractingData:
-    case EventType.ContinueExtractingData:
-    case EventType.ExtractionDataStart:
-    case EventType.ExtractionDataContinue:
-      return {
-        eventType: ExtractorEventType.DataExtractionError,
-      };
-
-    // Data deletion (handles both old and new enum members)
-    case EventType.StartDeletingExtractorState:
-    case EventType.ExtractionDataDelete:
-      return {
-        eventType: ExtractorEventType.ExtractorStateDeletionError,
-      };
-
-    // Attachments extraction (handles both old and new enum members)
-    case EventType.StartExtractingAttachments:
-    case EventType.ContinueExtractingAttachments:
-    case EventType.ExtractionAttachmentsStart:
-    case EventType.ExtractionAttachmentsContinue:
-      return {
-        eventType: ExtractorEventType.AttachmentExtractionError,
-      };
-
-    // Attachments deletion (handles both old and new enum members)
-    case EventType.StartDeletingExtractorAttachmentsState:
-    case EventType.ExtractionAttachmentsDelete:
-      return {
-        eventType: ExtractorEventType.ExtractorAttachmentsStateDeletionError,
-      };
-
-    // External sync units (handles both old and new enum members)
-    case EventType.StartExtractingExternalSyncUnits:
-    case EventType.ExtractionExternalSyncUnitsStart:
-      return {
-        eventType: ExtractorEventType.ExternalSyncUnitExtractionError,
-      };
-
-    // Loading data
-    case EventType.StartLoadingData:
-    case EventType.ContinueLoadingData:
-      return {
-        eventType: LoaderEventType.DataLoadingError,
-      };
-
-    // Deleting loader state
-    case EventType.StartDeletingLoaderState:
-      return {
-        eventType: LoaderEventType.LoaderStateDeletionError,
-      };
-
-    // Loading attachments
-    case EventType.StartLoadingAttachments:
-    case EventType.ContinueLoadingAttachments:
-      return {
-        eventType: LoaderEventType.AttachmentLoadingError,
-      };
-
-    // Deleting loader attachment state
-    case EventType.StartDeletingLoaderAttachmentState:
-      return {
-        eventType: LoaderEventType.LoaderAttachmentStateDeletionError,
-      };
-
-    default:
-      console.error(
-        'Event type not recognized in getTimeoutErrorEventType function: ' +
-          eventType
-      );
-      return {
-        eventType: LoaderEventType.UnknownEventType,
-      };
-  }
-}
-
-export function getNoScriptEventType(eventType: EventType) {
-  switch (eventType) {
-    case EventType.StartDeletingExtractorState:
-      return {
-        eventType: ExtractorEventType.ExtractorStateDeletionDone,
-      };
-    case EventType.StartDeletingExtractorAttachmentsState:
-      return {
-        eventType: ExtractorEventType.ExtractorAttachmentsStateDeletionDone,
-      };
-    case EventType.StartDeletingLoaderState:
-      return {
-        eventType: LoaderEventType.LoaderStateDeletionDone,
-      };
-    case EventType.StartDeletingLoaderAttachmentState:
-      return {
-        eventType: LoaderEventType.LoaderAttachmentStateDeletionDone,
-      };
-    default:
-      console.error(
-        'Event type not recognized in getNoScriptEventType function: ' +
-          eventType
-      );
-      return {
-        eventType: LoaderEventType.UnknownEventType,
-      };
-  }
-}
-
-export function getSyncDirection({ event }: { event: AirdropEvent }) {
-  return event.payload.event_context.mode;
-}
-
-export function getFilesToLoad({
-  supportedItemTypes,
-  statsFile,
-}: {
-  supportedItemTypes: string[];
-  statsFile: StatsFileObject[];
-}): FileToLoad[] {
-  const filesToLoad = [];
-
-  if (supportedItemTypes.length === 0 || statsFile.length === 0) {
-    return [];
-  }
-
-  const filteredStatsFile = statsFile.filter((file) =>
-    supportedItemTypes.includes(file.item_type)
-  );
-
-  const orderedFiles = filteredStatsFile.sort((a, b) => {
-    const aIndex = supportedItemTypes.indexOf(a.item_type);
-    const bIndex = supportedItemTypes.indexOf(b.item_type);
-
-    return aIndex - bIndex;
-  });
-
-  for (const file of orderedFiles) {
-    filesToLoad.push({
-      id: file.id,
-      file_name: file.file_name,
-      itemType: file.item_type,
-      count: parseInt(file.count),
-      completed: false,
-      lineToProcess: 0,
-    });
-  }
-
-  return filesToLoad;
-}
-
-export function addReportToLoaderReport({
-  loaderReports,
-  report,
-}: {
-  loaderReports: LoaderReport[];
-  report: LoaderReport;
-}): LoaderReport[] {
-  const existingReport = loaderReports.find(
-    (loaderReport) => loaderReport.item_type === report.item_type
-  );
-
-  if (existingReport) {
-    existingReport[ActionType.CREATED] = existingReport[ActionType.CREATED]
-      ? report[ActionType.CREATED]
-        ? existingReport[ActionType.CREATED] + report[ActionType.CREATED]
-        : existingReport[ActionType.CREATED]
-      : report[ActionType.CREATED];
-
-    existingReport[ActionType.UPDATED] = existingReport[ActionType.UPDATED]
-      ? report[ActionType.UPDATED]
-        ? existingReport[ActionType.UPDATED] + report[ActionType.UPDATED]
-        : existingReport[ActionType.UPDATED]
-      : report[ActionType.UPDATED];
-
-    existingReport[ActionType.FAILED] = existingReport[ActionType.FAILED]
-      ? report[ActionType.FAILED]
-        ? existingReport[ActionType.FAILED] + report[ActionType.FAILED]
-        : existingReport[ActionType.FAILED]
-      : report[ActionType.FAILED];
-  } else {
-    loaderReports.push(report);
-  }
-
-  return loaderReports;
-}
-
-// read adaas library version from package.json
+/**
+ * Gets the library version from the package.json file.
+ * @returns {string} The library version
+ */
 export function getLibraryVersion() {
   try {
     const version = JSON.parse(
@@ -233,11 +30,21 @@ export function getLibraryVersion() {
   }
 }
 
+/**
+ * Sleeps for a given number of milliseconds.
+ * @param {number} ms - The number of milliseconds to sleep
+ * @returns {Promise<void>} A promise that resolves after the given number of milliseconds
+ */
 export async function sleep(ms: number) {
   console.log(`Sleeping for ${ms}ms.`);
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Truncates a filename if it exceeds the maximum allowed length.
+ * @param {string} filename - The filename to truncate
+ * @returns {string} The truncated filename
+ */
 export function truncateFilename(filename: string): string {
   // If the filename is already within the limit, return it as is.
   if (filename.length <= MAX_DEVREV_FILENAME_LENGTH) {
@@ -259,6 +66,16 @@ export function truncateFilename(filename: string): string {
   return `${truncatedFilename}...${extension}`;
 }
 
+/**
+ * MemoryInfo is an interface that represents the memory usage information.
+ * @interface MemoryInfo
+ * @property {string} rssUsedMB - The RSS used in MB
+ * @property {string} rssUsedPercent - The RSS used percentage
+ * @property {string} heapUsedPercent - The heap used percentage
+ * @property {string} externalMB - The external memory used in MB
+ * @property {string} arrayBuffersMB - The array buffers memory used in MB
+ * @property {string} formattedMessage - The formatted message
+ */
 export interface MemoryInfo {
   rssUsedMB: string;
   rssUsedPercent: string; // Critical for OOM detection
@@ -268,6 +85,10 @@ export interface MemoryInfo {
   formattedMessage: string;
 }
 
+/**
+ * Gets the memory usage information.
+ * @returns {MemoryInfo} The memory usage information
+ */
 export function getMemoryUsage(): MemoryInfo {
   try {
     const memUsage = process.memoryUsage();

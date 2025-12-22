@@ -4,7 +4,7 @@ import {
   NormalizedAttachment,
   ProcessAttachmentReturnType,
 } from '../types';
-import { WorkerAdapter } from '../workers/worker-adapter';
+import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 
 export class AttachmentsStreamingPool<ConnectorState> {

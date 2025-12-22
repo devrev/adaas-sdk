@@ -1,5 +1,5 @@
 import { ItemTypeToLoad, StatsFileObject } from '../types/loading';
-import { getFilesToLoad } from './helpers';
+import { getFilesToLoad } from '../multithreading/worker-adapter/worker-adapter.helpers';
 
 describe(getFilesToLoad.name, () => {
   let statsFile: StatsFileObject[];

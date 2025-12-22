@@ -1,7 +1,7 @@
 import { Worker } from 'worker_threads';
 
 import { State } from '../state/state';
-import { WorkerAdapter } from '../workers/worker-adapter';
+import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 
 import { AirdropEvent, EventType, ExtractorEventType } from './extraction';
 
