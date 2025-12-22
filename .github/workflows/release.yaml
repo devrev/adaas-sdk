@@ -1,5 +1,3 @@
-# Heavily borrowed from https://dev.to/superface/automate-npm-publishing-with-github-actions-proper-changelog-and-release-notes-2pii
-
 name: Release package
 run-name: "Release ${{ inputs.release-type }} by ${{ github.actor }}${{ inputs.dry-run && ' --dry-run' || '' }}"
 
@@ -21,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
 
     steps:
       # Checkout project repository
@@ -70,6 +70,7 @@ jobs:
 
       # Get latest published version and show target release
       - name: Get latest published version and show target release
+        id: version
         run: |
           # Get the latest version including prereleases
           LATEST_VERSION=$(npm view @devrev/ts-adaas versions --json 2>/dev/null | jq -r '.[-1]' || echo "0.0.0")
@@ -98,6 +99,7 @@ jobs:
 
           echo "Target release version: $NEW_VERSION"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       # Set release tag based on release type
       - name: Set release tag
@@ -122,7 +124,15 @@ jobs:
           git commit -m "chore: release ${{ env.NEW_VERSION }}"
           git tag ${{ env.NEW_VERSION }}
 
-      # Push repository changes
+      # Publish version
+      - name: Publish
+        run: |
+          npm publish --verbose --access public --tag ${{ env.RELEASE_TAG }} ${{ env.DRY_RUN }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_NPM_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry-run != 'false' && '--dry-run' || ' '}}
+
+      # Push repository changes (only after successful npm publish)
       - name: Push changes to repository
         if: ${{ github.event.inputs.dry-run == 'false' }}
         env:
@@ -130,22 +140,27 @@ jobs:
         run: |
           git push origin && git push --tags
 
+  # Separate job for generating release notes (can be re-run independently if it fails)
+  generate-release-notes:
+    runs-on: ubuntu-latest
+    needs: release
+    if: ${{ github.event.inputs.dry-run == 'false' && github.event.inputs.release-type != 'beta' }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       # Documentation on config options https://github.com/softprops/action-gh-release
       - name: Update GitHub release documentation
-        if: ${{ github.event.inputs.dry-run == 'false' && github.event.inputs.release-type != 'beta' }}
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.NEW_VERSION }}
-          name: ${{ env.NEW_VERSION }}
+          tag_name: ${{ needs.release.outputs.new_version }}
+          name: ${{ needs.release.outputs.new_version }}
           generate_release_notes: true
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GH_SVC_TOKEN }}
-
-      # Publish version to public repository
-      - name: Publish
-        run: |
-          npm publish --verbose --access public --tag ${{ env.RELEASE_TAG }} ${{ env.DRY_RUN }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_NPM_TOKEN }}
-          DRY_RUN: ${{ github.event.inputs.dry-run != 'false' && '--dry-run' || ' '}}
