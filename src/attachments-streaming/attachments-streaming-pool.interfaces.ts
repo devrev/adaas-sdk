@@ -2,7 +2,7 @@ import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
 } from '../types';
-import { WorkerAdapter } from '../workers/worker-adapter';
+import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 
 export interface AttachmentsStreamingPoolParams<ConnectorState> {
   adapter: WorkerAdapter<ConnectorState>;

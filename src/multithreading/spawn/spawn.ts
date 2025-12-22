@@ -1,30 +1,30 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import { emit } from '../common/control-protocol';
-import { translateIncomingEventType } from '../common/event-type-translation';
-import {
-  getMemoryUsage,
-  getTimeoutErrorEventType,
-  getNoScriptEventType,
-} from '../common/helpers';
-import { Logger, serializeError } from '../logger/logger';
-import { AirdropEvent, EventType } from '../types/extraction';
+import { emit } from '../../common/control-protocol';
+import { translateIncomingEventType } from '../../common/event-type-translation';
+import { getMemoryUsage } from '../../common/helpers';
+import { Logger, serializeError } from '../../logger/logger';
+import { AirdropEvent, EventType } from '../../types/extraction';
 import {
   GetWorkerPathInterface,
   SpawnFactoryInterface,
   SpawnInterface,
   WorkerEvent,
   WorkerMessageSubject,
-} from '../types/workers';
+} from '../../types/workers';
 
 import {
   DEFAULT_LAMBDA_TIMEOUT,
   HARD_TIMEOUT_MULTIPLIER,
   MEMORY_LOG_INTERVAL,
-} from '../common/constants';
-import { LogLevel } from '../logger/logger.interfaces';
-import { createWorker } from './create-worker';
+} from '../../common/constants';
+import { LogLevel } from '../../logger/logger.interfaces';
+import { createWorker } from '../create-worker';
+import {
+  getTimeoutErrorEventType,
+  getNoScriptEventType,
+} from './spawn.helpers';
 
 function getWorkerPath({
   event,

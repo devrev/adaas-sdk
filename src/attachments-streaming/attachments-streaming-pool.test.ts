@@ -3,7 +3,7 @@ import {
   NormalizedAttachment,
   ProcessAttachmentReturnType,
 } from 'types';
-import { WorkerAdapter } from '../workers/worker-adapter';
+import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import { AttachmentsStreamingPool } from './attachments-streaming-pool';
 
 // Mock types

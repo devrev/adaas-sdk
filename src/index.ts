@@ -8,9 +8,9 @@ export * from './types';
 
 export * from './common/install-initial-domain-mapping';
 
-export { processTask } from './workers/process-task';
-export { spawn } from './workers/spawn';
-export { WorkerAdapter } from './workers/worker-adapter';
+export { processTask } from './multithreading/process-task';
+export { spawn } from './multithreading/spawn/spawn';
+export { WorkerAdapter } from './multithreading/worker-adapter/worker-adapter';
 
 export * from './types/workers';
 
