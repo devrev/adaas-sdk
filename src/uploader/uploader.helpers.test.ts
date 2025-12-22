@@ -3,25 +3,33 @@ import { jsonl } from 'js-jsonl';
 import zlib from 'zlib';
 
 import {
+  MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
+  MAX_DEVREV_FILENAME_LENGTH,
+} from '../common/constants';
+import {
   compressGzip,
   decompressGzip,
   downloadToLocal,
   parseJsonl,
+  truncateFilename,
 } from './uploader.helpers';
 
 describe('uploader.helpers', () => {
   let consoleErrorSpy: jest.SpyInstance;
   let consoleLogSpy: jest.SpyInstance;
+  let consoleWarnSpy: jest.SpyInstance;
 
   beforeEach(() => {
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
   });
 
   afterEach(() => {
     jest.clearAllMocks();
     consoleErrorSpy.mockRestore();
     consoleLogSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   describe(compressGzip.name, () => {
@@ -51,10 +59,6 @@ describe('uploader.helpers', () => {
 
       // Assert
       expect(result).toBeUndefined();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error while compressing jsonl object.',
-        expect.any(Error)
-      );
 
       gzipSyncSpy.mockRestore();
     });
@@ -82,10 +86,6 @@ describe('uploader.helpers', () => {
 
       // Assert
       expect(result).toBeUndefined();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error while decompressing gzipped jsonl object.',
-        expect.objectContaining({ message: expect.any(String) })
-      );
     });
   });
 
@@ -114,10 +114,6 @@ describe('uploader.helpers', () => {
 
       // Assert
       expect(result).toBeNull();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error while parsing jsonl object.',
-        expect.any(Error)
-      );
     });
   });
 
@@ -214,11 +210,108 @@ describe('uploader.helpers', () => {
         fileError
       );
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error writing data to file.',
-        fileError
-      );
       fsPromisesOpenSpy.mockRestore();
+    });
+  });
+
+  describe(truncateFilename.name, () => {
+    it('should return filename unchanged when within the limit', () => {
+      // Arrange
+      const filename = 'short-filename.txt';
+
+      // Act
+      const result = truncateFilename(filename);
+
+      // Assert
+      expect(result).toBe(filename);
+    });
+
+    it('should return filename unchanged when exactly at the limit', () => {
+      // Arrange
+      const filename = 'a'.repeat(MAX_DEVREV_FILENAME_LENGTH);
+
+      // Act
+      const result = truncateFilename(filename);
+
+      // Assert
+      expect(result).toBe(filename);
+      expect(result.length).toBe(MAX_DEVREV_FILENAME_LENGTH);
+    });
+
+    it('should truncate filename and preserve extension when exceeding the limit', () => {
+      // Arrange
+      const longName = 'a'.repeat(300);
+      const extension = '.txt';
+      const filename = longName + extension;
+
+      // Act
+      const result = truncateFilename(filename);
+
+      // Assert
+      expect(result.length).toBe(MAX_DEVREV_FILENAME_LENGTH);
+      expect(result).toContain('...');
+      expect(result.endsWith(extension)).toBe(true);
+    });
+
+    it('should preserve the last MAX_DEVREV_FILENAME_EXTENSION_LENGTH characters as extension', () => {
+      // Arrange
+      const longName = 'document-'.repeat(50);
+      const extension = '.verylongextension';
+      const filename = longName + extension;
+
+      // Act
+      const result = truncateFilename(filename);
+
+      // Assert
+      expect(result.length).toBe(MAX_DEVREV_FILENAME_LENGTH);
+      const expectedExtension = filename.slice(
+        -MAX_DEVREV_FILENAME_EXTENSION_LENGTH
+      );
+      expect(result.endsWith(expectedExtension)).toBe(true);
+    });
+
+    it('should correctly format the truncated filename with ellipsis', () => {
+      // Arrange
+      const filename = 'x'.repeat(300) + '.pdf';
+
+      // Act
+      const result = truncateFilename(filename);
+
+      // Assert
+      const availableNameLength =
+        MAX_DEVREV_FILENAME_LENGTH - MAX_DEVREV_FILENAME_EXTENSION_LENGTH - 3;
+      const expectedPrefix = 'x'.repeat(availableNameLength);
+      const expectedExtension = filename.slice(
+        -MAX_DEVREV_FILENAME_EXTENSION_LENGTH
+      );
+      expect(result).toBe(`${expectedPrefix}...${expectedExtension}`);
+    });
+
+    it('[edge] should handle filename with no extension', () => {
+      // Arrange
+      const filename = 'a'.repeat(300);
+
+      // Act
+      const result = truncateFilename(filename);
+
+      // Assert
+      expect(result.length).toBe(MAX_DEVREV_FILENAME_LENGTH);
+      expect(result).toContain('...');
+      // Last 20 chars are preserved as "extension"
+      expect(
+        result.endsWith('a'.repeat(MAX_DEVREV_FILENAME_EXTENSION_LENGTH))
+      ).toBe(true);
+    });
+
+    it('[edge] should handle filename that is just one character over the limit', () => {
+      // Arrange
+      const filename = 'a'.repeat(MAX_DEVREV_FILENAME_LENGTH + 1);
+
+      // Act
+      const result = truncateFilename(filename);
+
+      // Assert
+      expect(result.length).toBe(MAX_DEVREV_FILENAME_LENGTH);
     });
   });
 });

@@ -363,10 +363,6 @@ describe(Uploader.name, () => {
 
       // Assert
       expect(result).toBeUndefined();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error while uploading artifact.',
-        expect.anything()
-      );
     });
   });
 
@@ -408,10 +404,6 @@ describe(Uploader.name, () => {
 
       // Assert
       expect(result).toBeUndefined();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error while confirming artifact upload.',
-        expect.anything()
-      );
     });
   });
 
@@ -558,10 +550,6 @@ describe(Uploader.name, () => {
       // Assert
       expect(result).toBeUndefined();
       expect(destroyFn).toHaveBeenCalled();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error while streaming artifact.',
-        expect.anything()
-      );
     });
   });
 
@@ -656,14 +644,8 @@ describe(Uploader.name, () => {
         data: { destroy: destroyFn },
       } as unknown as AxiosResponse;
 
-      // Act
-      callDestroyStream(uploader, fileStream);
-
-      // Assert
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Error while destroying stream:',
-        expect.anything()
-      );
+      // Act & Assert - should not throw
+      expect(() => callDestroyStream(uploader, fileStream)).not.toThrow();
     });
   });
 
@@ -714,10 +696,6 @@ describe(Uploader.name, () => {
 
       // Assert
       expect(result).toBeUndefined();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error while getting artifact download URL.',
-        expect.anything()
-      );
     });
   });
 

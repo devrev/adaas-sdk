@@ -2,6 +2,11 @@ import fs, { promises as fsPromises } from 'fs';
 import { jsonl } from 'js-jsonl';
 import zlib from 'zlib';
 
+import {
+  MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
+  MAX_DEVREV_FILENAME_LENGTH,
+} from '../common/constants';
+
 /**
  * Compresses a JSONL string using gzip compression.
  * @param {string} jsonlObject - The JSONL string to compress
@@ -80,4 +85,30 @@ export async function downloadToLocal(
     console.error('Error writing data to file.', error);
     return Promise.reject(error);
   }
+}
+
+/**
+ * Truncates a filename if it exceeds the maximum allowed length.
+ * @param {string} filename - The filename to truncate
+ * @returns {string} The truncated filename
+ */
+export function truncateFilename(filename: string): string {
+  // If the filename is already within the limit, return it as is.
+  if (filename.length <= MAX_DEVREV_FILENAME_LENGTH) {
+    return filename;
+  }
+
+  console.warn(
+    `Filename length exceeds the maximum limit of ${MAX_DEVREV_FILENAME_LENGTH} characters. Truncating filename.`
+  );
+
+  const extension = filename.slice(-MAX_DEVREV_FILENAME_EXTENSION_LENGTH);
+  // Calculate how many characters are available for the name part after accounting for the extension and "..."
+  const availableNameLength =
+    MAX_DEVREV_FILENAME_LENGTH - MAX_DEVREV_FILENAME_EXTENSION_LENGTH - 3; // -3 for "..."
+
+  // Truncate the name part and add an ellipsis
+  const truncatedFilename = filename.slice(0, availableNameLength);
+
+  return `${truncatedFilename}...${extension}`;
 }

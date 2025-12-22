@@ -4,7 +4,6 @@ import { jsonl } from 'js-jsonl';
 import { axiosClient } from '../http/axios-client-internal';
 
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
-import { truncateFilename } from '../common/helpers';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { serializeError } from '../logger/logger';
 
@@ -13,6 +12,7 @@ import {
   decompressGzip,
   downloadToLocal,
   parseJsonl,
+  truncateFilename,
 } from './uploader.helpers';
 import {
   Artifact,
