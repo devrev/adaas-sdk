@@ -1,3 +1,24 @@
+# This workflow is used to release a new version of @devrev/ts-adaas package to
+# npm registry and generate release notes using softprops/action-gh-release
+# action. It consists of two jobs:
+#
+# - release:
+# 1. User runs the "Release package" workflow manually via the GitHub Actions UI
+# 2. Checks if the user is authorized to run the workflow (only codeowners listed in .github/CODEOWNERS can run the workflow)
+# 3. Checks if the branch is the main branch (production releases can only be
+#    made from the main branch, beta releases can be made from any branch)
+# 4. Gets the latest published version from npm and update package.json if
+#    versions don't match. Calculates and shows the target release version based
+#    on release type (patch, minor, beta).
+# 6. Sets the release tag based on the release type
+# 7. Runs tests
+# 8. Commits package.json and package-lock.json changes and creates a tag
+# 9. Publishes the version to npm
+# 10. Pushes the changes to the repository
+#
+# - generate-release-notes:
+# 1. Generates release notes using softprops/action-gh-release action and updates the GitHub release documentation
+#
 name: Release package
 run-name: "Release ${{ inputs.release-type }} by ${{ github.actor }}${{ inputs.dry-run && ' --dry-run' || '' }}"
 
@@ -23,14 +44,11 @@ jobs:
       new_version: ${{ steps.version.outputs.new_version }}
 
     steps:
-      # Checkout project repository
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_SVC_TOKEN }}
-
-      # Check if user is authorized to run this workflow
       - name: Check authorization
         run: |
           # Extract individual users from CODEOWNERS
@@ -43,7 +61,6 @@ jobs:
             exit 1
           fi
 
-      # Check branch restriction for non-beta releases
       - name: Check branch for production releases
         if: github.event.inputs.release-type != 'beta'
         run: |
@@ -54,7 +71,6 @@ jobs:
             exit 1
           fi
 
-      # Setup Node.js environment
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -68,7 +84,6 @@ jobs:
           git config --global user.email "svc-devrev-sdk@devrev.ai"
           git config --global user.name "svc-devrev-sdk"
 
-      # Get latest published version and show target release
       - name: Get latest published version and show target release
         id: version
         run: |
@@ -101,7 +116,6 @@ jobs:
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-      # Set release tag based on release type
       - name: Set release tag
         run: |
           if [[ "${{ github.event.inputs.release-type }}" == "beta" ]]; then
@@ -110,21 +124,18 @@ jobs:
             echo "RELEASE_TAG=latest" >> $GITHUB_ENV
           fi
 
-      # Run tests
       - name: Run tests
         run: |
           npm ci
           npm run build
           npm run test
 
-      # Commit changes
       - name: Commit package.json and package-lock.json changes and create tag
         run: |
           git add "package.json" "package-lock.json"
           git commit -m "chore: release ${{ env.NEW_VERSION }}"
           git tag ${{ env.NEW_VERSION }}
 
-      # Publish version
       - name: Publish
         run: |
           npm publish --verbose --access public --tag ${{ env.RELEASE_TAG }} ${{ env.DRY_RUN }}
@@ -140,7 +151,6 @@ jobs:
         run: |
           git push origin && git push --tags
 
-  # Separate job for generating release notes (can be re-run independently if it fails)
   generate-release-notes:
     runs-on: ubuntu-latest
     needs: release
