@@ -10,7 +10,10 @@ import { AirdropEvent, EventType } from '../types/extraction';
 import { ArtifactToUpload } from '../uploader/uploader.interfaces';
 
 import { mockServer } from './jest.setup';
-import { CreateEventInterface } from './test-helpers.interfaces';
+import {
+  CreateEventInterface,
+  CreateFileStreamOptions,
+} from './test-helpers.interfaces';
 
 export function createEvent({
   eventType = EventType.StartExtractingData,
@@ -188,24 +191,6 @@ export function createDownloadUrlResponse(
  */
 export function createFileBuffer(content = 'test file content'): Buffer {
   return Buffer.from(content);
-}
-
-/**
- * Options for creating a file stream response.
- */
-export interface CreateFileStreamOptions {
-  /** File content as Buffer or string (default: 'test file content') */
-  content?: Buffer | string;
-  /** Override content-length header (auto-calculated from content if not provided) */
-  contentLength?: number;
-  /** Set to false to omit content-length header (for testing missing header scenarios) */
-  includeContentLength?: boolean;
-  /** Optional filename for metadata */
-  filename?: string;
-  /** Optional MIME type (default: 'application/octet-stream') */
-  mimeType?: string;
-  /** Optional custom destroy function for testing stream cleanup */
-  destroyFn?: () => void;
 }
 
 /**
