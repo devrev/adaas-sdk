@@ -1,18 +1,19 @@
 import { AxiosResponse } from 'axios';
+import { Readable } from 'stream';
 
 import {
   Item,
   NormalizedAttachment,
   NormalizedItem,
 } from '../repo/repo.interfaces';
-import { AirdropEvent } from '../types/extraction';
+import { AirdropEvent, EventType } from '../types/extraction';
 import { ArtifactToUpload } from '../uploader/uploader.interfaces';
 
 import { mockServer } from './jest.setup';
 import { CreateEventInterface } from './test-helpers.interfaces';
 
 export function createEvent({
-  eventType,
+  eventType = EventType.StartExtractingData,
   externalSyncUnits = [],
   progress,
   error,
@@ -21,7 +22,7 @@ export function createEvent({
   payloadOverrides = {},
   eventContextOverrides = {},
   executionMetadataOverrides = {},
-}: CreateEventInterface): AirdropEvent {
+}: CreateEventInterface = {}): AirdropEvent {
   const defaultEventContext = {
     callback_url: `${mockServer.baseUrl}/callback_url`,
     dev_org: 'test_dev_org',
@@ -187,4 +188,102 @@ export function createDownloadUrlResponse(
  */
 export function createFileBuffer(content = 'test file content'): Buffer {
   return Buffer.from(content);
+}
+
+/**
+ * Options for creating a file stream response.
+ */
+export interface CreateFileStreamOptions {
+  /** File content as Buffer or string (default: 'test file content') */
+  content?: Buffer | string;
+  /** Override content-length header (auto-calculated from content if not provided) */
+  contentLength?: number;
+  /** Set to false to omit content-length header (for testing missing header scenarios) */
+  includeContentLength?: boolean;
+  /** Optional filename for metadata */
+  filename?: string;
+  /** Optional MIME type (default: 'application/octet-stream') */
+  mimeType?: string;
+  /** Optional custom destroy function for testing stream cleanup */
+  destroyFn?: () => void;
+}
+
+/**
+ * Creates an AxiosResponse-like object with a Readable stream for testing file streaming operations.
+ * Useful for testing upload/download flows that work with streamed file data.
+ */
+export function createFileStream(
+  options: CreateFileStreamOptions = {}
+): AxiosResponse {
+  const {
+    content = 'test file content',
+    contentLength,
+    includeContentLength = true,
+    filename,
+    mimeType = 'application/octet-stream',
+    destroyFn = () => {},
+  } = options;
+
+  const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content);
+
+  const readable = new Readable({
+    read() {
+      this.push(buffer);
+      this.push(null);
+    },
+  });
+  readable.destroy = destroyFn as typeof readable.destroy;
+
+  const headers: Record<string, string | number> = {
+    'content-type': mimeType,
+  };
+
+  if (includeContentLength) {
+    headers['content-length'] = contentLength ?? buffer.length;
+  }
+
+  if (filename) {
+    headers['content-disposition'] = `attachment; filename="${filename}"`;
+  }
+
+  return {
+    data: readable,
+    headers,
+    status: 200,
+    statusText: 'OK',
+    config: {},
+  } as unknown as AxiosResponse;
+}
+
+/**
+ * Calls a private method on an instance.
+ * Use with a type parameter to get the specific method signature.
+ *
+ * @example
+ * type MyClassPrivate = { privateMethod: (x: number) => string };
+ * const fn = callPrivateMethod<MyClassPrivate, 'privateMethod'>(instance, 'privateMethod');
+ * const result = fn(42);
+ */
+export function callPrivateMethod<
+  TPrivateMethods,
+  K extends keyof TPrivateMethods
+>(instance: object, methodName: K): TPrivateMethods[K] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (instance as any)[methodName].bind(instance);
+}
+
+/**
+ * Spies on a private method of an instance.
+ *
+ * @example
+ * type MyClassPrivate = { privateMethod: (x: number) => string };
+ * const spy = spyOnPrivateMethod<MyClassPrivate>(instance, 'privateMethod');
+ * spy.mockResolvedValueOnce('mocked');
+ */
+export function spyOnPrivateMethod<TPrivateMethods>(
+  instance: object,
+  methodName: keyof TPrivateMethods
+): jest.SpyInstance {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return jest.spyOn(instance as any, methodName as string);
 }

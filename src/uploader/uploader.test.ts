@@ -1,18 +1,19 @@
 import { AxiosResponse } from 'axios';
 import FormData from 'form-data';
 import { jsonl } from 'js-jsonl';
-import { Readable } from 'stream';
 import zlib from 'zlib';
 
 import { axiosClient } from '../http/axios-client-internal';
 import {
+  callPrivateMethod,
   createArtifact,
   createAxiosResponse,
   createDownloadUrlResponse,
   createEvent,
   createFileBuffer,
+  createFileStream,
+  spyOnPrivateMethod,
 } from '../tests/test-helpers';
-import { EventType } from '../types';
 
 import { compressGzip, downloadToLocal } from './uploader.helpers';
 import { ArtifactToUpload } from './uploader.interfaces';
@@ -29,8 +30,17 @@ const mockedAxiosClient = jest.mocked(axiosClient);
 const mockedDownloadToLocal = jest.mocked(downloadToLocal);
 const mockedCompressGzip = jest.mocked(compressGzip);
 
+/**
+ * Type definition for private Uploader methods that need testing.
+ * This provides type safety when testing private methods.
+ */
+type UploaderPrivateMethods = {
+  destroyStream: (fileStream: AxiosResponse) => void;
+  getArtifactDownloadUrl: (artifactId: string) => Promise<string | void>;
+};
+
 describe(Uploader.name, () => {
-  const mockEvent = createEvent({ eventType: EventType.StartExtractingData });
+  const mockEvent = createEvent();
   let uploader: Uploader;
 
   beforeEach(() => {
@@ -115,16 +125,13 @@ describe(Uploader.name, () => {
       );
     });
 
-    it('[edge] should return error when getArtifactUploadUrl fails', async () => {
+    it('should return error when getArtifactUploadUrl fails', async () => {
       // Arrange
       const itemType = 'tasks';
       const fetchedObjects = [{ id: 1 }];
 
       mockedAxiosClient.get.mockRejectedValueOnce(
-        createAxiosResponse({
-          status: 500,
-          statusText: 'Internal Server Error',
-        })
+        new Error('Get artifact upload URL failed')
       );
 
       // Act
@@ -135,7 +142,7 @@ describe(Uploader.name, () => {
       expect(result.artifact).toBeUndefined();
     });
 
-    it('[edge] should return error when uploadArtifact fails', async () => {
+    it('should return error when uploadArtifact fails', async () => {
       // Arrange
       const itemType = 'tasks';
       const fetchedObjects = [{ id: 1 }];
@@ -143,7 +150,9 @@ describe(Uploader.name, () => {
       mockedAxiosClient.get.mockResolvedValueOnce(
         mockArtifactUploadUrlResponse
       );
-      mockedAxiosClient.post.mockRejectedValueOnce(new Error('Upload error'));
+      mockedAxiosClient.post.mockRejectedValueOnce(
+        new Error('Upload artifact failed')
+      );
 
       // Act
       const result = await uploader.upload(itemType, fetchedObjects);
@@ -153,7 +162,7 @@ describe(Uploader.name, () => {
       expect(result.artifact).toBeUndefined();
     });
 
-    it('[edge] should return error when confirmArtifactUpload fails', async () => {
+    it('should return error when confirmArtifactUpload fails', async () => {
       // Arrange
       const itemType = 'tasks';
       const fetchedObjects = [{ id: 1 }];
@@ -163,7 +172,7 @@ describe(Uploader.name, () => {
       );
       mockedAxiosClient.post
         .mockResolvedValueOnce(createAxiosResponse())
-        .mockRejectedValueOnce(new Error('Confirm error'));
+        .mockRejectedValueOnce(new Error('Confirm artifact upload failed'));
 
       // Act
       const result = await uploader.upload(itemType, fetchedObjects);
@@ -173,7 +182,7 @@ describe(Uploader.name, () => {
       expect(result.artifact).toBeUndefined();
     });
 
-    it('[edge] should return error when compression fails', async () => {
+    it('should return error when compression fails', async () => {
       // Arrange
       const itemType = 'tasks';
       const fetchedObjects = [{ id: 1 }];
@@ -221,12 +230,14 @@ describe(Uploader.name, () => {
       );
     });
 
-    it('[edge] should return undefined when API call fails', async () => {
+    it('should return undefined when API call fails', async () => {
       // Arrange
       const filename = 'test-file.jsonl.gz';
       const fileType = 'application/x-gzip';
 
-      mockedAxiosClient.get.mockRejectedValueOnce(new Error('API call failed'));
+      mockedAxiosClient.get.mockRejectedValueOnce(
+        new Error('Get artifact upload URL failed')
+      );
 
       // Act
       const result = await uploader.getArtifactUploadUrl(filename, fileType);
@@ -285,12 +296,14 @@ describe(Uploader.name, () => {
       appendSpy.mockRestore();
     });
 
-    it('[edge] should return undefined when upload fails', async () => {
+    it('should return undefined when upload fails', async () => {
       // Arrange
       const artifact = createArtifact();
       const file = createFileBuffer();
 
-      mockedAxiosClient.post.mockRejectedValueOnce(new Error('Upload failed'));
+      mockedAxiosClient.post.mockRejectedValueOnce(
+        new Error('Upload artifact failed')
+      );
 
       // Act
       const result = await uploader.uploadArtifact(artifact, file);
@@ -322,7 +335,7 @@ describe(Uploader.name, () => {
       );
     });
 
-    it('[edge] should return undefined when confirmation fails', async () => {
+    it('should return undefined when confirmation fails', async () => {
       // Arrange
       const artifactId = 'art_123';
 
@@ -339,33 +352,12 @@ describe(Uploader.name, () => {
   });
 
   describe(Uploader.prototype.streamArtifact.name, () => {
-    const createMockFileStream = (
-      options: { contentLength?: string; destroyFn?: jest.Mock } = {}
-    ): AxiosResponse => {
-      const { contentLength, destroyFn = jest.fn() } = options;
-      const readable = new Readable({
-        read() {
-          this.push('test data');
-          this.push(null);
-        },
-      });
-      readable.destroy = destroyFn;
-
-      return {
-        data: readable,
-        headers: contentLength ? { 'content-length': contentLength } : {},
-        status: 200,
-        statusText: 'OK',
-        config: {},
-      } as unknown as AxiosResponse;
-    };
-
     it('should return response when streaming file to upload URL', async () => {
       // Arrange
       const artifact = createArtifact();
       const destroyFn = jest.fn();
-      const fileStream = createMockFileStream({
-        contentLength: '1024',
+      const fileStream = createFileStream({
+        contentLength: 1024,
         destroyFn,
       });
       const mockResponse = createAxiosResponse();
@@ -397,7 +389,7 @@ describe(Uploader.name, () => {
         upload_url: 'https://s3.example.com/upload',
         form_data: formDataFields,
       } as unknown as ArtifactToUpload;
-      const fileStream = createMockFileStream({ contentLength: '1024' });
+      const fileStream = createFileStream({ contentLength: 1024 });
       const appendSpy = jest.spyOn(FormData.prototype, 'append');
 
       mockedAxiosClient.post.mockResolvedValueOnce({ status: 200 });
@@ -415,7 +407,7 @@ describe(Uploader.name, () => {
     it('should use validateStatus that accepts 2xx and 3xx status codes', async () => {
       // Arrange
       const artifact = createArtifact();
-      const fileStream = createMockFileStream({ contentLength: '1024' });
+      const fileStream = createFileStream({ contentLength: 1024 });
 
       mockedAxiosClient.post.mockResolvedValueOnce(createAxiosResponse());
 
@@ -442,7 +434,7 @@ describe(Uploader.name, () => {
     it('should set Content-Length header when missing from file stream', async () => {
       // Arrange
       const artifact = createArtifact();
-      const fileStream = createMockFileStream();
+      const fileStream = createFileStream({ includeContentLength: false });
 
       mockedAxiosClient.post.mockResolvedValueOnce(createAxiosResponse());
 
@@ -450,7 +442,7 @@ describe(Uploader.name, () => {
       await uploader.streamArtifact(artifact, fileStream);
 
       // Assert
-      expect(axiosClient.post).toHaveBeenCalledWith(
+      expect(mockedAxiosClient.post).toHaveBeenCalledWith(
         artifact.upload_url,
         expect.any(FormData),
         expect.objectContaining({
@@ -461,11 +453,11 @@ describe(Uploader.name, () => {
       );
     });
 
-    it('[edge] should destroy stream and return undefined when streaming fails', async () => {
+    it('should destroy stream and return undefined when streaming fails', async () => {
       // Arrange
       const artifact = createArtifact();
       const destroyFn = jest.fn();
-      const fileStream = createMockFileStream({ destroyFn });
+      const fileStream = createFileStream({ destroyFn });
 
       mockedAxiosClient.post.mockRejectedValueOnce(
         new Error('Streaming failed')
@@ -480,24 +472,20 @@ describe(Uploader.name, () => {
     });
   });
 
-  describe('destroyStream', () => {
-    const callDestroyStream = (
-      uploaderInstance: Uploader,
-      fileStream: AxiosResponse
-    ) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (uploaderInstance as any)['destroyStream'](fileStream);
-    };
-
+  describe('Uploader.destroyStream', () => {
     it('should call destroy when stream has destroy method', () => {
       // Arrange
+      const destroyStream = callPrivateMethod<
+        UploaderPrivateMethods,
+        'destroyStream'
+      >(uploader, 'destroyStream');
       const destroyFn = jest.fn();
       const fileStream = {
         data: { destroy: destroyFn },
       } as unknown as AxiosResponse;
 
       // Act
-      callDestroyStream(uploader, fileStream);
+      destroyStream(fileStream);
 
       // Assert
       expect(destroyFn).toHaveBeenCalled();
@@ -505,13 +493,17 @@ describe(Uploader.name, () => {
 
     it('should call close when stream has close but no destroy method', () => {
       // Arrange
+      const destroyStream = callPrivateMethod<
+        UploaderPrivateMethods,
+        'destroyStream'
+      >(uploader, 'destroyStream');
       const closeFn = jest.fn();
       const fileStream = {
         data: { close: closeFn },
       } as unknown as AxiosResponse;
 
       // Act
-      callDestroyStream(uploader, fileStream);
+      destroyStream(fileStream);
 
       // Assert
       expect(closeFn).toHaveBeenCalled();
@@ -519,6 +511,10 @@ describe(Uploader.name, () => {
 
     it('should prefer destroy over close when both are available', () => {
       // Arrange
+      const destroyStream = callPrivateMethod<
+        UploaderPrivateMethods,
+        'destroyStream'
+      >(uploader, 'destroyStream');
       const destroyFn = jest.fn();
       const closeFn = jest.fn();
       const fileStream = {
@@ -526,7 +522,7 @@ describe(Uploader.name, () => {
       } as unknown as AxiosResponse;
 
       // Act
-      callDestroyStream(uploader, fileStream);
+      destroyStream(fileStream);
 
       // Assert
       expect(destroyFn).toHaveBeenCalled();
@@ -535,16 +531,24 @@ describe(Uploader.name, () => {
 
     it('[edge] should handle stream with no destroy or close methods', () => {
       // Arrange
+      const destroyStream = callPrivateMethod<
+        UploaderPrivateMethods,
+        'destroyStream'
+      >(uploader, 'destroyStream');
       const fileStream = {
         data: {},
       } as unknown as AxiosResponse;
 
       // Act & Assert - should not throw
-      expect(() => callDestroyStream(uploader, fileStream)).not.toThrow();
+      expect(() => destroyStream(fileStream)).not.toThrow();
     });
 
     it('[edge] should handle null/undefined data gracefully', () => {
       // Arrange
+      const destroyStream = callPrivateMethod<
+        UploaderPrivateMethods,
+        'destroyStream'
+      >(uploader, 'destroyStream');
       const fileStreamNullData = {
         data: null,
       } as unknown as AxiosResponse;
@@ -554,16 +558,16 @@ describe(Uploader.name, () => {
       } as unknown as AxiosResponse;
 
       // Act & Assert - should not throw
-      expect(() =>
-        callDestroyStream(uploader, fileStreamNullData)
-      ).not.toThrow();
-      expect(() =>
-        callDestroyStream(uploader, fileStreamUndefinedData)
-      ).not.toThrow();
+      expect(() => destroyStream(fileStreamNullData)).not.toThrow();
+      expect(() => destroyStream(fileStreamUndefinedData)).not.toThrow();
     });
 
     it('[edge] should warn when destroy throws an error', () => {
       // Arrange
+      const destroyStream = callPrivateMethod<
+        UploaderPrivateMethods,
+        'destroyStream'
+      >(uploader, 'destroyStream');
       const destroyFn = jest.fn().mockImplementation(() => {
         throw new Error('Destroy failed');
       });
@@ -572,21 +576,17 @@ describe(Uploader.name, () => {
       } as unknown as AxiosResponse;
 
       // Act & Assert - should not throw
-      expect(() => callDestroyStream(uploader, fileStream)).not.toThrow();
+      expect(() => destroyStream(fileStream)).not.toThrow();
     });
   });
 
-  describe('getArtifactDownloadUrl', () => {
-    const callGetArtifactDownloadUrl = (
-      uploaderInstance: Uploader,
-      artifactId: string
-    ) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (uploaderInstance as any)['getArtifactDownloadUrl'](artifactId);
-    };
-
+  describe('Uploader.getArtifactDownloadUrl', () => {
     it('should return download URL when API call succeeds', async () => {
       // Arrange
+      const getArtifactDownloadUrl = callPrivateMethod<
+        UploaderPrivateMethods,
+        'getArtifactDownloadUrl'
+      >(uploader, 'getArtifactDownloadUrl');
       const artifactId = 'art_123';
       const expectedDownloadUrl = 'https://s3.example.com/download/art_123';
 
@@ -595,7 +595,7 @@ describe(Uploader.name, () => {
       });
 
       // Act
-      const result = await callGetArtifactDownloadUrl(uploader, artifactId);
+      const result = await getArtifactDownloadUrl(artifactId);
 
       // Assert
       expect(result).toBe(expectedDownloadUrl);
@@ -609,14 +609,18 @@ describe(Uploader.name, () => {
       );
     });
 
-    it('[edge] should return undefined when API call fails', async () => {
+    it('should return undefined when API call fails', async () => {
       // Arrange
+      const getArtifactDownloadUrl = callPrivateMethod<
+        UploaderPrivateMethods,
+        'getArtifactDownloadUrl'
+      >(uploader, 'getArtifactDownloadUrl');
       const artifactId = 'art_123';
 
       mockedAxiosClient.get.mockRejectedValueOnce(new Error('API error'));
 
       // Act
-      const result = await callGetArtifactDownloadUrl(uploader, artifactId);
+      const result = await getArtifactDownloadUrl(artifactId);
 
       // Assert
       expect(result).toBeUndefined();
@@ -648,13 +652,13 @@ describe(Uploader.name, () => {
       expect(result.error).toBeUndefined();
     });
 
-    it('[edge] should return error when getArtifactDownloadUrl fails', async () => {
+    it('should return error when getArtifactDownloadUrl fails', async () => {
       // Arrange
       const artifactId = 'art_123';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      jest
-        .spyOn(uploader as any, 'getArtifactDownloadUrl')
-        .mockResolvedValueOnce(undefined);
+      spyOnPrivateMethod<UploaderPrivateMethods>(
+        uploader,
+        'getArtifactDownloadUrl'
+      ).mockResolvedValueOnce(undefined);
 
       // Act
       const result = await uploader.getAttachmentsFromArtifactId({
@@ -666,7 +670,7 @@ describe(Uploader.name, () => {
       expect(result.attachments).toBeUndefined();
     });
 
-    it('[edge] should return error when downloadArtifact fails', async () => {
+    it('should return error when downloadArtifact fails', async () => {
       // Arrange
       const artifactId = 'art_123';
       mockedAxiosClient.get.mockResolvedValueOnce(createDownloadUrlResponse());
@@ -682,7 +686,7 @@ describe(Uploader.name, () => {
       expect(result.attachments).toBeUndefined();
     });
 
-    it('[edge] should return error when decompression fails', async () => {
+    it('should return error when decompression fails', async () => {
       // Arrange
       const artifactId = 'art_123';
       mockedAxiosClient.get.mockResolvedValueOnce(createDownloadUrlResponse());
@@ -700,7 +704,7 @@ describe(Uploader.name, () => {
       expect(result.attachments).toBeUndefined();
     });
 
-    it('[edge] should return error when JSONL parsing fails', async () => {
+    it('should return error when JSONL parsing fails', async () => {
       // Arrange
       const artifactId = 'art_123';
       const gzippedInvalidJsonl = zlib.gzipSync('not valid jsonl {{{');
@@ -770,10 +774,10 @@ describe(Uploader.name, () => {
     it('[edge] should return undefined when getArtifactDownloadUrl fails', async () => {
       // Arrange
       const artifactId = 'art_123';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      jest
-        .spyOn(uploader as any, 'getArtifactDownloadUrl')
-        .mockResolvedValueOnce(undefined);
+      spyOnPrivateMethod<UploaderPrivateMethods>(
+        uploader,
+        'getArtifactDownloadUrl'
+      ).mockResolvedValueOnce(undefined);
 
       // Act
       const result = await uploader.getJsonObjectByArtifactId({ artifactId });

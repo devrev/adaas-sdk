@@ -195,6 +195,30 @@ describe('uploader.helpers', () => {
       fsPromisesOpenSpy.mockRestore();
     });
 
+    it('should use .json extension when itemType is external_domain_metadata', async () => {
+      // Arrange
+      const itemType = 'external_domain_metadata';
+      const fetchedObject = { domain: 'example.com' };
+      mockExistsSync.mockReturnValueOnce(true);
+      const mockFileHandle = {
+        write: jest.fn().mockResolvedValue(undefined),
+        close: jest.fn().mockResolvedValue(undefined),
+      };
+      const fsPromisesOpenSpy = jest
+        .spyOn(require('fs').promises, 'open')
+        .mockResolvedValueOnce(mockFileHandle);
+
+      // Act
+      await downloadToLocal(itemType, fetchedObject);
+
+      // Assert
+      expect(fsPromisesOpenSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/extractor_external_domain_metadata_\d+\.json$/),
+        'w'
+      );
+      fsPromisesOpenSpy.mockRestore();
+    });
+
     it('[edge] should reject and log error when file operations fail', async () => {
       // Arrange
       const itemType = 'tasks';

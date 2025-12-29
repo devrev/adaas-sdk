@@ -7,7 +7,7 @@ import {
 } from '../types/extraction';
 
 export interface CreateEventInterface {
-  eventType: EventType;
+  eventType?: EventType;
   externalSyncUnits?: ExternalSyncUnit[];
   progress?: number;
   error?: ErrorRecord;
