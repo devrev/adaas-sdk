@@ -4,7 +4,8 @@
 #
 # - release:
 # 1. User runs the "Release package" workflow manually via the GitHub Actions UI
-# 2. Checks if the user is authorized to run the workflow (only codeowners listed in .github/CODEOWNERS can run the workflow)
+# 2. Checks if the user is authorized to run the workflow (only codeowners
+#    listed in .github/CODEOWNERS can run the workflow)
 # 3. Checks if the branch is the main branch (production releases can only be
 #    made from the main branch, beta releases can be made from any branch)
 # 4. Gets the latest published version from npm and update package.json if
@@ -17,8 +18,9 @@
 # 10. Pushes the changes to the repository
 #
 # - generate-release-notes:
-# 1. Generates release notes using softprops/action-gh-release action and updates the GitHub release documentation
-#
+# 1. Generates release notes using softprops/action-gh-release action and updates
+#    the GitHub release documentation
+
 name: Release package
 run-name: "Release ${{ inputs.release-type }} by ${{ github.actor }}${{ inputs.dry-run && ' --dry-run' || '' }}"
 
