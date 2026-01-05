@@ -16,6 +16,7 @@ import {
   UploadResponse,
   UploaderFactoryInterface,
 } from './uploader.interfaces';
+import { AxiosErrorResponse } from 'logger/logger.interfaces';
 
 export class Uploader {
   private isLocalDevelopment?: boolean;
@@ -83,9 +84,9 @@ export class Uploader {
     const confirmArtifactUploadResponse = await this.confirmArtifactUpload(
       preparedArtifact.artifact_id
     );
-    if (!confirmArtifactUploadResponse) {
+    if (confirmArtifactUploadResponse.isError) {
       return {
-        error: new Error('Error while confirming artifact upload.'),
+        error: new Error('Error while confirming artifact upload.' + confirmArtifactUploadResponse.error),
       };
     }
 
@@ -184,8 +185,8 @@ export class Uploader {
           ...formData.getHeaders(),
           ...(!fileStream.headers['content-length']
             ? {
-                'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
-              }
+              'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
+            }
             : {}),
         },
         // Prevents buffering of the response in the memory
@@ -209,7 +210,7 @@ export class Uploader {
    */
   async confirmArtifactUpload(
     artifactId: string
-  ): Promise<AxiosResponse | void> {
+  ): Promise<{ isError: boolean, response: AxiosResponse | undefined, error: AxiosErrorResponse | undefined }> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.confirm-upload`;
     try {
       const response = await axiosClient.post(
@@ -224,12 +225,9 @@ export class Uploader {
           },
         }
       );
-      return response;
+      return { isError: false, response, error: undefined };
     } catch (error) {
-      console.error(
-        'Error while confirming artifact upload.',
-        serializeError(error)
-      );
+      return { isError: true, error: serializeError(error), response: undefined };
     }
   }
 
@@ -448,9 +446,8 @@ export class Uploader {
       }
 
       const timestamp = new Date().getTime();
-      const filePath = `extracted_files/extractor_${itemType}_${timestamp}.${
-        itemType === 'external_domain_metadata' ? 'json' : 'jsonl'
-      }`;
+      const filePath = `extracted_files/extractor_${itemType}_${timestamp}.${itemType === 'external_domain_metadata' ? 'json' : 'jsonl'
+        }`;
       const fileHandle = await fsPromises.open(filePath, 'w');
       let objArray = [];
       if (!Array.isArray(fetchedObjects)) {
