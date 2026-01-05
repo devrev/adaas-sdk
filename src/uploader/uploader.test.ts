@@ -819,4 +819,22 @@ describe(Uploader.name, () => {
       expect(result).toBeUndefined();
     });
   });
+
+  it('[edge] should handle error codes when confirming artifact upload', async () => {
+    // Mock successful response for getArtifactUploadUrl
+    (axiosClient.get as jest.Mock).mockResolvedValueOnce(
+      getArtifactUploadUrlMockResponse
+    );
+    // Mock successful response from uploadArtifact
+    (axiosClient.post as jest.Mock).mockResolvedValueOnce(getFailureResponse());
+    // Mock unsuccessful response from confirmArtifactUpload
+    (axiosClient.post as jest.Mock).mockResolvedValueOnce({});
+
+    const entity = 'entity';
+    const fetchedObjects = [{ key: 'value' }];
+    const uploadResponse = await uploader.upload(entity, fetchedObjects);
+
+    expect(uploadResponse.error).toBeInstanceOf(Error);
+    expect(uploadResponse.error?.message).toBeDefined();
+  });
 });
