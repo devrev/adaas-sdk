@@ -26,6 +26,17 @@ const getSuccessResponse = (): AxiosResponse =>
     config: {},
   } as AxiosResponse);
 
+const getFailureResponse = (): AxiosResponse =>
+  ({
+    data: {
+      message: 'Not found',
+    },
+    status: 404,
+    statusText: 'NOT FOUND',
+    headers: {},
+    config: {},
+  } as AxiosResponse);
+
 const getArtifactUploadUrlMockResponse = {
   data: {
     artifact_id: 'mockArtifactId',
@@ -105,6 +116,24 @@ describe(Uploader.name, () => {
     (axiosClient.post as jest.Mock).mockResolvedValueOnce(getSuccessResponse());
     // Mock unsuccessful response from confirmArtifactUpload
     (axiosClient.post as jest.Mock).mockResolvedValueOnce(undefined);
+
+    const entity = 'entity';
+    const fetchedObjects = [{ key: 'value' }];
+    const uploadResponse = await uploader.upload(entity, fetchedObjects);
+
+    expect(uploadResponse.error).toBeInstanceOf(Error);
+    expect(uploadResponse.error?.message).toBeDefined();
+  });
+
+  it('[edge] should handle error codes when confirming artifact upload', async () => {
+    // Mock successful response for getArtifactUploadUrl
+    (axiosClient.get as jest.Mock).mockResolvedValueOnce(
+      getArtifactUploadUrlMockResponse
+    );
+    // Mock successful response from uploadArtifact
+    (axiosClient.post as jest.Mock).mockResolvedValueOnce(getFailureResponse());
+    // Mock unsuccessful response from confirmArtifactUpload
+    (axiosClient.post as jest.Mock).mockResolvedValueOnce({});
 
     const entity = 'entity';
     const fetchedObjects = [{ key: 'value' }];
