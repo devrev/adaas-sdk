@@ -90,7 +90,10 @@ export class Uploader {
     );
     if (confirmArtifactUploadResponse.isError) {
       return {
-        error: new Error('Error while confirming artifact upload. ' + JSON.stringify(confirmArtifactUploadResponse.error)),
+        error: new Error(
+          'Error while confirming artifact upload. ' +
+            JSON.stringify(confirmArtifactUploadResponse.error)
+        ),
       };
     }
 
@@ -189,8 +192,8 @@ export class Uploader {
           ...formData.getHeaders(),
           ...(!fileStream.headers['content-length']
             ? {
-              'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
-            }
+                'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
+              }
             : {}),
         },
         // Prevents buffering of the response in the memory
@@ -212,9 +215,11 @@ export class Uploader {
    * @param {string} artifactId - The ID of the artifact to confirm
    * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
    */
-  async confirmArtifactUpload(
-    artifactId: string
-  ): Promise<{ isError: boolean, response?: AxiosResponse, error?: AxiosErrorResponse | Error }> {
+  async confirmArtifactUpload(artifactId: string): Promise<{
+    isError: boolean;
+    response?: AxiosResponse;
+    error?: AxiosErrorResponse | Error;
+  }> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.confirm-upload`;
     try {
       const response = await axiosClient.post(
@@ -229,12 +234,18 @@ export class Uploader {
           },
         }
       );
-      
+
       // If response exists and the status is 200, return the response
-      if(response != undefined && response.status == 200) {
+      if (response != undefined && response.status == 200) {
         return { isError: false, response };
-      }else{
-        return { isError: true, error: new Error('Error while confirming artifact upload. ' + JSON.stringify(response)) };
+      } else {
+        return {
+          isError: true,
+          error: new Error(
+            'Error while confirming artifact upload. ' +
+              JSON.stringify(response)
+          ),
+        };
       }
     } catch (error) {
       return { isError: true, error: serializeError(error) };
