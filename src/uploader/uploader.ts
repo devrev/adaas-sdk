@@ -90,7 +90,7 @@ export class Uploader {
     );
     if (confirmArtifactUploadResponse.isError) {
       return {
-        error: new Error('Error while confirming artifact upload.' + confirmArtifactUploadResponse.error),
+        error: new Error('Error while confirming artifact upload. ' + JSON.stringify(confirmArtifactUploadResponse.error)),
       };
     }
 
