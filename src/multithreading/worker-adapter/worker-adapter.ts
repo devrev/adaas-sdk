@@ -770,9 +770,10 @@ export class WorkerAdapter<ConnectorState> {
       // Confirm attachment upload
       const confirmArtifactUploadResponse =
         await this.uploader.confirmArtifactUpload(preparedArtifact.artifact_id);
-      if (!confirmArtifactUploadResponse) {
+      if (confirmArtifactUploadResponse.isError) {
         console.warn(
-          'Error while confirming upload for attachment ID ' + attachment.id
+          'Error while confirming upload for attachment ID ' + attachment.id + '.',
+          confirmArtifactUploadResponse.error
         );
         return;
       }
