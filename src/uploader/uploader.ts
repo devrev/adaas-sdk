@@ -214,7 +214,7 @@ export class Uploader {
    */
   async confirmArtifactUpload(
     artifactId: string
-  ): Promise<{ isError: boolean, response: AxiosResponse | undefined, error: AxiosErrorResponse | undefined }> {
+  ): Promise<{ isError: boolean, response?: AxiosResponse, error?: AxiosErrorResponse }> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.confirm-upload`;
     try {
       const response = await axiosClient.post(
@@ -229,9 +229,9 @@ export class Uploader {
           },
         }
       );
-      return { isError: false, response, error: undefined };
+      return { isError: false, response };
     } catch (error) {
-      return { isError: true, error: serializeError(error), response: undefined };
+      return { isError: true, error: serializeError(error) };
     }
   }
 
