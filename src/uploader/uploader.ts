@@ -16,6 +16,7 @@ import {
   UploadResponse,
   UploaderFactoryInterface,
 } from './uploader.interfaces';
+import { AxiosErrorResponse } from 'logger/logger.interfaces';
 
 export class Uploader {
   private isLocalDevelopment?: boolean;
@@ -83,9 +84,12 @@ export class Uploader {
     const confirmArtifactUploadResponse = await this.confirmArtifactUpload(
       preparedArtifact.artifact_id
     );
-    if (!confirmArtifactUploadResponse) {
+    if (confirmArtifactUploadResponse.isError) {
       return {
-        error: new Error('Error while confirming artifact upload.'),
+        error: new Error(
+          'Error while confirming artifact upload. ' +
+            JSON.stringify(confirmArtifactUploadResponse.error)
+        ),
       };
     }
 
@@ -207,9 +211,11 @@ export class Uploader {
    * @param {string} artifactId - The ID of the artifact to confirm
    * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
    */
-  async confirmArtifactUpload(
-    artifactId: string
-  ): Promise<AxiosResponse | void> {
+  async confirmArtifactUpload(artifactId: string): Promise<{
+    isError: boolean;
+    response?: AxiosResponse;
+    error?: AxiosErrorResponse | Error;
+  }> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.confirm-upload`;
     try {
       const response = await axiosClient.post(
@@ -224,12 +230,21 @@ export class Uploader {
           },
         }
       );
-      return response;
+
+      // If response exists and the status is 200, return the response
+      if (response != undefined && response.status == 200) {
+        return { isError: false, response };
+      } else {
+        return {
+          isError: true,
+          error: new Error(
+            'Error while confirming artifact upload. ' +
+              JSON.stringify(response)
+          ),
+        };
+      }
     } catch (error) {
-      console.error(
-        'Error while confirming artifact upload.',
-        serializeError(error)
-      );
+      return { isError: true, error: serializeError(error) };
     }
   }
 
