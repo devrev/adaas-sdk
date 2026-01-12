@@ -217,7 +217,7 @@ export class Uploader {
    */
   async confirmArtifactUpload(artifactId: string): Promise<{
     response?: AxiosResponse;
-    error?: AxiosErrorResponse | Error;
+    error?: unknown;
   }> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.confirm-upload`;
     try {

@@ -167,11 +167,11 @@ export function getPrintableState(state: Record<string, any>): PrintableState {
  * @param error - Error to serialize
  * @returns Serialized error or original if not an Axios error
  */
-export function serializeError(error: unknown): AxiosErrorResponse {
+export function serializeError(error: unknown): unknown {
   if (isAxiosError(error)) {
     return serializeAxiosError(error);
   }
-  return error as AxiosErrorResponse;
+  return error;
 }
 
 /**
