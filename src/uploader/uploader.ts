@@ -234,8 +234,8 @@ export class Uploader {
         }
       );
 
-      // If response exists and the status is 200, return the response
-      if (response != undefined && response.status == 200) {
+      // If response exists and the status is 2xx, return the response
+      if (response?.status >= 200 && response?.status < 300) {
         return { response };
       } else {
         return {
