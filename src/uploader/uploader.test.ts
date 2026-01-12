@@ -475,10 +475,10 @@ describe(Uploader.name, () => {
   describe('Uploader.destroyStream', () => {
     it('should call destroy when stream has destroy method', () => {
       // Arrange
-      const destroyStream = callPrivateMethod<
-        UploaderPrivateMethods,
+      const destroyStream = callPrivateMethod<UploaderPrivateMethods>(
+        uploader,
         'destroyStream'
-      >(uploader, 'destroyStream');
+      );
       const destroyFn = jest.fn();
       const fileStream = {
         data: { destroy: destroyFn },
@@ -493,10 +493,10 @@ describe(Uploader.name, () => {
 
     it('should call close when stream has close but no destroy method', () => {
       // Arrange
-      const destroyStream = callPrivateMethod<
-        UploaderPrivateMethods,
+      const destroyStream = callPrivateMethod<UploaderPrivateMethods>(
+        uploader,
         'destroyStream'
-      >(uploader, 'destroyStream');
+      );
       const closeFn = jest.fn();
       const fileStream = {
         data: { close: closeFn },
@@ -511,10 +511,10 @@ describe(Uploader.name, () => {
 
     it('should prefer destroy over close when both are available', () => {
       // Arrange
-      const destroyStream = callPrivateMethod<
-        UploaderPrivateMethods,
+      const destroyStream = callPrivateMethod<UploaderPrivateMethods>(
+        uploader,
         'destroyStream'
-      >(uploader, 'destroyStream');
+      );
       const destroyFn = jest.fn();
       const closeFn = jest.fn();
       const fileStream = {
@@ -531,10 +531,10 @@ describe(Uploader.name, () => {
 
     it('[edge] should handle stream with no destroy or close methods', () => {
       // Arrange
-      const destroyStream = callPrivateMethod<
-        UploaderPrivateMethods,
+      const destroyStream = callPrivateMethod<UploaderPrivateMethods>(
+        uploader,
         'destroyStream'
-      >(uploader, 'destroyStream');
+      );
       const fileStream = {
         data: {},
       } as unknown as AxiosResponse;
@@ -545,10 +545,10 @@ describe(Uploader.name, () => {
 
     it('[edge] should handle null/undefined data gracefully', () => {
       // Arrange
-      const destroyStream = callPrivateMethod<
-        UploaderPrivateMethods,
+      const destroyStream = callPrivateMethod<UploaderPrivateMethods>(
+        uploader,
         'destroyStream'
-      >(uploader, 'destroyStream');
+      );
       const fileStreamNullData = {
         data: null,
       } as unknown as AxiosResponse;
@@ -564,10 +564,10 @@ describe(Uploader.name, () => {
 
     it('[edge] should warn when destroy throws an error', () => {
       // Arrange
-      const destroyStream = callPrivateMethod<
-        UploaderPrivateMethods,
+      const destroyStream = callPrivateMethod<UploaderPrivateMethods>(
+        uploader,
         'destroyStream'
-      >(uploader, 'destroyStream');
+      );
       const destroyFn = jest.fn().mockImplementation(() => {
         throw new Error('Destroy failed');
       });
@@ -583,10 +583,10 @@ describe(Uploader.name, () => {
   describe('Uploader.getArtifactDownloadUrl', () => {
     it('should return download URL when API call succeeds', async () => {
       // Arrange
-      const getArtifactDownloadUrl = callPrivateMethod<
-        UploaderPrivateMethods,
+      const getArtifactDownloadUrl = callPrivateMethod<UploaderPrivateMethods>(
+        uploader,
         'getArtifactDownloadUrl'
-      >(uploader, 'getArtifactDownloadUrl');
+      );
       const artifactId = 'art_123';
       const expectedDownloadUrl = 'https://s3.example.com/download/art_123';
 
@@ -611,10 +611,10 @@ describe(Uploader.name, () => {
 
     it('should return undefined when API call fails', async () => {
       // Arrange
-      const getArtifactDownloadUrl = callPrivateMethod<
-        UploaderPrivateMethods,
+      const getArtifactDownloadUrl = callPrivateMethod<UploaderPrivateMethods>(
+        uploader,
         'getArtifactDownloadUrl'
-      >(uploader, 'getArtifactDownloadUrl');
+      );
       const artifactId = 'art_123';
 
       mockedAxiosClient.get.mockRejectedValueOnce(new Error('API error'));
