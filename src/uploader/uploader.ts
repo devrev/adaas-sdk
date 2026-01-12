@@ -88,11 +88,11 @@ export class Uploader {
     const confirmArtifactUploadResponse = await this.confirmArtifactUpload(
       preparedArtifact.artifact_id
     );
-    if (confirmArtifactUploadResponse.isError) {
+    if (confirmArtifactUploadResponse.error != null) {
       return {
         error: new Error(
           'Error while confirming artifact upload. ' +
-            JSON.stringify(confirmArtifactUploadResponse.error)
+          JSON.stringify(confirmArtifactUploadResponse.error)
         ),
       };
     }
@@ -192,8 +192,8 @@ export class Uploader {
           ...formData.getHeaders(),
           ...(!fileStream.headers['content-length']
             ? {
-                'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
-              }
+              'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
+            }
             : {}),
         },
         // Prevents buffering of the response in the memory
@@ -216,7 +216,6 @@ export class Uploader {
    * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
    */
   async confirmArtifactUpload(artifactId: string): Promise<{
-    isError: boolean;
     response?: AxiosResponse;
     error?: AxiosErrorResponse | Error;
   }> {
@@ -237,18 +236,17 @@ export class Uploader {
 
       // If response exists and the status is 200, return the response
       if (response != undefined && response.status == 200) {
-        return { isError: false, response };
+        return { response };
       } else {
         return {
-          isError: true,
           error: new Error(
             'Error while confirming artifact upload. ' +
-              JSON.stringify(response)
+            JSON.stringify(response)
           ),
         };
       }
     } catch (error) {
-      return { isError: true, error: serializeError(error) };
+      return { error: serializeError(error) };
     }
   }
 
