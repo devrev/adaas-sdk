@@ -246,15 +246,17 @@ export function createFileStream(
  *
  * @example
  * type MyClassPrivate = { privateMethod: (x: number) => string };
- * const fn = callPrivateMethod<MyClassPrivate>(instance, 'privateMethod');
+ * const fn = callPrivateMethod<MyClassPrivate>()(instance, 'privateMethod');
  * const result = fn(42);
  */
-export function callPrivateMethod<
-  TPrivateMethods,
-  K extends keyof TPrivateMethods = keyof TPrivateMethods
->(instance: object, methodName: K): TPrivateMethods[K] {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (instance as any)[methodName].bind(instance);
+export function callPrivateMethod<TPrivateMethods>() {
+  return <K extends keyof TPrivateMethods>(
+    instance: object,
+    methodName: K
+  ): TPrivateMethods[K] => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (instance as any)[methodName].bind(instance);
+  };
 }
 
 /**

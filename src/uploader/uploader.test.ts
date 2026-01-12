@@ -475,7 +475,7 @@ describe(Uploader.name, () => {
   describe('Uploader.destroyStream', () => {
     it('should call destroy when stream has destroy method', () => {
       // Arrange
-      const destroyStream = callPrivateMethod<UploaderPrivateMethods>(
+      const destroyStream = callPrivateMethod<UploaderPrivateMethods>()(
         uploader,
         'destroyStream'
       );
@@ -493,7 +493,7 @@ describe(Uploader.name, () => {
 
     it('should call close when stream has close but no destroy method', () => {
       // Arrange
-      const destroyStream = callPrivateMethod<UploaderPrivateMethods>(
+      const destroyStream = callPrivateMethod<UploaderPrivateMethods>()(
         uploader,
         'destroyStream'
       );
@@ -511,7 +511,7 @@ describe(Uploader.name, () => {
 
     it('should prefer destroy over close when both are available', () => {
       // Arrange
-      const destroyStream = callPrivateMethod<UploaderPrivateMethods>(
+      const destroyStream = callPrivateMethod<UploaderPrivateMethods>()(
         uploader,
         'destroyStream'
       );
@@ -531,7 +531,7 @@ describe(Uploader.name, () => {
 
     it('[edge] should handle stream with no destroy or close methods', () => {
       // Arrange
-      const destroyStream = callPrivateMethod<UploaderPrivateMethods>(
+      const destroyStream = callPrivateMethod<UploaderPrivateMethods>()(
         uploader,
         'destroyStream'
       );
@@ -545,7 +545,7 @@ describe(Uploader.name, () => {
 
     it('[edge] should handle null/undefined data gracefully', () => {
       // Arrange
-      const destroyStream = callPrivateMethod<UploaderPrivateMethods>(
+      const destroyStream = callPrivateMethod<UploaderPrivateMethods>()(
         uploader,
         'destroyStream'
       );
@@ -564,7 +564,7 @@ describe(Uploader.name, () => {
 
     it('[edge] should warn when destroy throws an error', () => {
       // Arrange
-      const destroyStream = callPrivateMethod<UploaderPrivateMethods>(
+      const destroyStream = callPrivateMethod<UploaderPrivateMethods>()(
         uploader,
         'destroyStream'
       );
@@ -583,7 +583,7 @@ describe(Uploader.name, () => {
   describe('Uploader.getArtifactDownloadUrl', () => {
     it('should return download URL when API call succeeds', async () => {
       // Arrange
-      const getArtifactDownloadUrl = callPrivateMethod<UploaderPrivateMethods>(
+      const getArtifactDownloadUrl = callPrivateMethod<UploaderPrivateMethods>()(
         uploader,
         'getArtifactDownloadUrl'
       );
@@ -611,7 +611,7 @@ describe(Uploader.name, () => {
 
     it('should return undefined when API call fails', async () => {
       // Arrange
-      const getArtifactDownloadUrl = callPrivateMethod<UploaderPrivateMethods>(
+      const getArtifactDownloadUrl = callPrivateMethod<UploaderPrivateMethods>()(
         uploader,
         'getArtifactDownloadUrl'
       );
