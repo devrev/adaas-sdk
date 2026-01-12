@@ -88,7 +88,7 @@ export class Uploader {
     const confirmArtifactUploadResponse = await this.confirmArtifactUpload(
       preparedArtifact.artifact_id
     );
-    if (confirmArtifactUploadResponse.error != null) {
+    if (confirmArtifactUploadResponse.error) {
       return {
         error: new Error(
           'Error while confirming artifact upload. ' +
