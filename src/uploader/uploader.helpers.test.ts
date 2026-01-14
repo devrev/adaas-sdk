@@ -16,6 +16,8 @@ import {
   truncateFilename,
 } from './uploader.helpers';
 
+/* eslint-disable @typescript-eslint/no-require-imports */
+
 describe('uploader.helpers', () => {
   let consoleErrorSpy: jest.SpyInstance;
   let consoleLogSpy: jest.SpyInstance;
@@ -44,7 +46,9 @@ describe('uploader.helpers', () => {
 
       // Assert
       expect(result.response!).toBeInstanceOf(Buffer);
-      const decompressed = zlib.gunzipSync(result.response! as Buffer).toString();
+      const decompressed = zlib
+        .gunzipSync(result.response! as Buffer)
+        .toString();
       expect(decompressed).toBe(input);
     });
 

@@ -740,9 +740,10 @@ export class WorkerAdapter<ConnectorState> {
         fileSize
       );
 
-      if (!preparedArtifact) {
+      if (preparedArtifact.error) {
         console.warn(
-          `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment.`
+          `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
+            serializeError(preparedArtifact.error)
         );
         this.destroyHttpStream(httpStream);
         return;
@@ -755,13 +756,14 @@ export class WorkerAdapter<ConnectorState> {
 
       // Stream attachment
       const uploadedArtifact = await this.uploader.streamArtifact(
-        preparedArtifact,
+        preparedArtifact.response!,
         httpStream
       );
 
-      if (!uploadedArtifact) {
+      if (uploadedArtifact.error) {
         console.warn(
-          `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment.`
+          `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
+            serializeError(uploadedArtifact.error)
         );
         this.destroyHttpStream(httpStream);
         return;
@@ -769,7 +771,9 @@ export class WorkerAdapter<ConnectorState> {
 
       // Confirm attachment upload
       const confirmArtifactUploadResponse =
-        await this.uploader.confirmArtifactUpload(preparedArtifact.artifact_id);
+        await this.uploader.confirmArtifactUpload(
+          preparedArtifact.response!.artifact_id
+        );
       if (confirmArtifactUploadResponse.error) {
         console.warn(
           'Error while confirming upload for attachment ID ' +
@@ -782,7 +786,7 @@ export class WorkerAdapter<ConnectorState> {
 
       const ssorAttachment: SsorAttachment = {
         id: {
-          devrev: preparedArtifact.artifact_id,
+          devrev: preparedArtifact.response!.artifact_id,
           external: attachment.id,
         },
         parent_id: {

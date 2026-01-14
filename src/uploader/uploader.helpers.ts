@@ -26,7 +26,9 @@ export function compressGzip(jsonlObject: string): UploaderResult<Buffer> {
  * @param {Buffer} gzippedJsonlObject - The gzipped buffer to decompress
  * @returns {string | void} The decompressed JSONL string or undefined on error
  */
-export function decompressGzip(gzippedJsonlObject: Buffer): UploaderResult<string> {
+export function decompressGzip(
+  gzippedJsonlObject: Buffer
+): UploaderResult<string> {
   try {
     const jsonlObject = zlib.gunzipSync(gzippedJsonlObject);
     return { response: jsonlObject.toString() };
@@ -42,7 +44,7 @@ export function decompressGzip(gzippedJsonlObject: Buffer): UploaderResult<strin
  */
 export function parseJsonl(jsonlObject: string): UploaderResult<object[]> {
   try {
-    return {response: jsonl.parse(jsonlObject)};
+    return { response: jsonl.parse(jsonlObject) };
   } catch (error) {
     return { error };
   }
@@ -65,8 +67,9 @@ export async function downloadToLocal(
     }
 
     const timestamp = new Date().getTime();
-    const filePath = `extracted_files/extractor_${itemType}_${timestamp}.${itemType === 'external_domain_metadata' ? 'json' : 'jsonl'
-      }`;
+    const filePath = `extracted_files/extractor_${itemType}_${timestamp}.${
+      itemType === 'external_domain_metadata' ? 'json' : 'jsonl'
+    }`;
     const fileHandle = await fsPromises.open(filePath, 'w');
     let objArray = [];
     if (!Array.isArray(fetchedObjects)) {

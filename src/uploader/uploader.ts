@@ -56,7 +56,9 @@ export class Uploader {
     const file = compressGzip(jsonl.stringify(fetchedObjects));
     if (file.error) {
       return {
-        error: new Error('Error while compressing jsonl object. ' + serializeError(file.error)),
+        error: new Error(
+          'Error while compressing jsonl object. ' + serializeError(file.error)
+        ),
       };
     }
 
@@ -79,7 +81,7 @@ export class Uploader {
       preparedArtifact.response!,
       file.response!
     );
-    if (!uploadItemResponse) {
+    if (uploadItemResponse.error) {
       return {
         error: new Error('Error while uploading artifact.'),
       };
@@ -93,7 +95,7 @@ export class Uploader {
       return {
         error: new Error(
           'Error while confirming artifact upload. ' +
-          JSON.stringify(confirmArtifactUploadResponse.error)
+            JSON.stringify(confirmArtifactUploadResponse.error)
         ),
       };
     }
@@ -190,8 +192,8 @@ export class Uploader {
           ...formData.getHeaders(),
           ...(!fileStream.headers['content-length']
             ? {
-              'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
-            }
+                'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
+              }
             : {}),
         },
         // Prevents buffering of the response in the memory
@@ -238,7 +240,7 @@ export class Uploader {
         return {
           error: new Error(
             'Error while confirming artifact upload. ' +
-            JSON.stringify(response)
+              JSON.stringify(response)
           ),
         };
       }
@@ -285,15 +287,23 @@ export class Uploader {
 
     if (artifactUrl.error) {
       return {
-        error: new Error('Error while getting artifact download URL. ' + serializeError(artifactUrl.error)),
+        error: new Error(
+          'Error while getting artifact download URL. ' +
+            serializeError(artifactUrl.error)
+        ),
       };
     }
 
     // Download artifact from the URL
-    const gzippedJsonlObject = await this.downloadArtifact(artifactUrl.response!);
+    const gzippedJsonlObject = await this.downloadArtifact(
+      artifactUrl.response!
+    );
     if (gzippedJsonlObject.error) {
       return {
-        error: new Error('Error while downloading gzipped jsonl object.' + serializeError(gzippedJsonlObject.error)),
+        error: new Error(
+          'Error while downloading gzipped jsonl object.' +
+            serializeError(gzippedJsonlObject.error)
+        ),
       };
     }
 
@@ -301,7 +311,10 @@ export class Uploader {
     const jsonlObject = decompressGzip(gzippedJsonlObject.response!);
     if (jsonlObject.error) {
       return {
-        error: new Error('Error while decompressing gzipped jsonl object.' + serializeError(jsonlObject.error)),
+        error: new Error(
+          'Error while decompressing gzipped jsonl object.' +
+            serializeError(jsonlObject.error)
+        ),
       };
     }
 
@@ -309,7 +322,9 @@ export class Uploader {
     const jsonObject = parseJsonl(jsonlObject.response!);
     if (jsonObject.error) {
       return {
-        error: new Error('Error while parsing jsonl object.' + serializeError(jsonObject.error)),
+        error: new Error(
+          'Error while parsing jsonl object.' + serializeError(jsonObject.error)
+        ),
       };
     }
 
@@ -348,7 +363,9 @@ export class Uploader {
    * @param {string} artifactUrl - The URL to download the artifact from
    * @returns {Promise<Buffer | void>} The artifact file buffer or undefined on error
    */
-  private async downloadArtifact(artifactUrl: string): Promise<UploaderResult<Buffer>> {
+  private async downloadArtifact(
+    artifactUrl: string
+  ): Promise<UploaderResult<Buffer>> {
     try {
       const response = await axiosClient.get(artifactUrl, {
         responseType: 'arraybuffer',
@@ -373,28 +390,30 @@ export class Uploader {
   }: {
     artifactId: string;
     isGzipped?: boolean;
-  }): Promise<object[] | object | void> {
+  }): Promise<UploaderResult<object[] | object>> {
     const artifactUrl = await this.getArtifactDownloadUrl(artifactId);
     if (artifactUrl.error) {
-      return;
+      return { error: artifactUrl.error };
     }
 
     const artifact = await this.downloadArtifact(artifactUrl.response!);
     if (artifact.error) {
-      return;
+      return { error: artifact.error };
     }
 
     if (isGzipped) {
       const decompressedArtifact = decompressGzip(artifact.response!);
       if (decompressedArtifact.error) {
-        return;
+        return { error: decompressedArtifact.error };
       }
 
-      const jsonlObject = Buffer.from(decompressedArtifact.response!).toString('utf-8');
-      return jsonl.parse(jsonlObject);
+      const jsonlObject = Buffer.from(decompressedArtifact.response!).toString(
+        'utf-8'
+      );
+      return { response: jsonl.parse(jsonlObject) };
     }
 
     const jsonlObject = Buffer.from(artifact.response!).toString('utf-8');
-    return jsonl.parse(jsonlObject);
+    return { response: jsonl.parse(jsonlObject) };
   }
 }
