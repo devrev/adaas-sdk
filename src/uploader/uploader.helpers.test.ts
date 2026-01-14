@@ -43,8 +43,8 @@ describe('uploader.helpers', () => {
       const result = compressGzip(input);
 
       // Assert
-      expect(result).toBeInstanceOf(Buffer);
-      const decompressed = zlib.gunzipSync(result as Buffer).toString();
+      expect(result.response!).toBeInstanceOf(Buffer);
+      const decompressed = zlib.gunzipSync(result.response! as Buffer).toString();
       expect(decompressed).toBe(input);
     });
 
@@ -60,7 +60,7 @@ describe('uploader.helpers', () => {
       const result = compressGzip('test data');
 
       // Assert
-      expect(result).toBeUndefined();
+      expect(result.response).toBeUndefined();
 
       gzipSyncSpy.mockRestore();
     });
@@ -76,7 +76,7 @@ describe('uploader.helpers', () => {
       const result = decompressGzip(compressed);
 
       // Assert
-      expect(result).toBe(originalString);
+      expect(result.response!).toBe(originalString);
     });
 
     it('[edge] should return undefined and log error when decompression fails', () => {
@@ -87,7 +87,7 @@ describe('uploader.helpers', () => {
       const result = decompressGzip(invalidGzip);
 
       // Assert
-      expect(result).toBeUndefined();
+      expect(result.response).toBeUndefined();
     });
   });
 
@@ -104,7 +104,7 @@ describe('uploader.helpers', () => {
       const result = parseJsonl(jsonlString);
 
       // Assert
-      expect(result).toEqual(data);
+      expect(result.response!).toEqual(data);
     });
 
     it('[edge] should return null and log error when parsing fails', () => {
@@ -115,7 +115,7 @@ describe('uploader.helpers', () => {
       const result = parseJsonl(invalidJsonl);
 
       // Assert
-      expect(result).toBeNull();
+      expect(result.response).toBeUndefined();
     });
   });
 
