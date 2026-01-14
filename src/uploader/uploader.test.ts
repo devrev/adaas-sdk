@@ -583,10 +583,11 @@ describe(Uploader.name, () => {
   describe('Uploader.getArtifactDownloadUrl', () => {
     it('should return download URL when API call succeeds', async () => {
       // Arrange
-      const getArtifactDownloadUrl = callPrivateMethod<UploaderPrivateMethods>()(
-        uploader,
-        'getArtifactDownloadUrl'
-      );
+      const getArtifactDownloadUrl =
+        callPrivateMethod<UploaderPrivateMethods>()(
+          uploader,
+          'getArtifactDownloadUrl'
+        );
       const artifactId = 'art_123';
       const expectedDownloadUrl = 'https://s3.example.com/download/art_123';
 
@@ -611,10 +612,11 @@ describe(Uploader.name, () => {
 
     it('should return undefined when API call fails', async () => {
       // Arrange
-      const getArtifactDownloadUrl = callPrivateMethod<UploaderPrivateMethods>()(
-        uploader,
-        'getArtifactDownloadUrl'
-      );
+      const getArtifactDownloadUrl =
+        callPrivateMethod<UploaderPrivateMethods>()(
+          uploader,
+          'getArtifactDownloadUrl'
+        );
       const artifactId = 'art_123';
 
       mockedAxiosClient.get.mockRejectedValueOnce(new Error('API error'));
