@@ -1,20 +1,26 @@
 import axios, { AxiosResponse } from 'axios';
 import { parentPort } from 'node:worker_threads';
-import { AttachmentsStreamingPool } from '../attachments-streaming/attachments-streaming-pool';
+import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
 import {
   AIRDROP_DEFAULT_ITEM_TYPES,
   ALLOWED_EXTRACTION_EVENT_TYPES,
   STATELESS_EVENT_TYPES,
-} from '../common/constants';
-import { emit } from '../common/control-protocol';
-import { addReportToLoaderReport, getFilesToLoad } from '../common/helpers';
-import { serializeError } from '../logger/logger';
-import { Mappers } from '../mappers/mappers';
-import { SyncMapperRecordStatus } from '../mappers/mappers.interface';
-import { Repo } from '../repo/repo';
-import { NormalizedAttachment, RepoInterface } from '../repo/repo.interfaces';
-import { State } from '../state/state';
-import { AdapterState } from '../state/state.interfaces';
+} from '../../common/constants';
+import { emit } from '../../common/control-protocol';
+import {
+  addReportToLoaderReport,
+  getFilesToLoad,
+} from './worker-adapter.helpers';
+import { serializeError } from '../../logger/logger';
+import { Mappers } from '../../mappers/mappers';
+import { SyncMapperRecordStatus } from '../../mappers/mappers.interface';
+import { Repo } from '../../repo/repo';
+import {
+  NormalizedAttachment,
+  RepoInterface,
+} from '../../repo/repo.interfaces';
+import { State } from '../../state/state';
+import { AdapterState } from '../../state/state.interfaces';
 import {
   AirdropEvent,
   EventData,
@@ -24,7 +30,7 @@ import {
   ExtractorEventType,
   ProcessAttachmentReturnType,
   StreamAttachmentsReturnType,
-} from '../types/extraction';
+} from '../../types/extraction';
 import {
   ActionType,
   ExternalSystemAttachment,
@@ -38,16 +44,16 @@ import {
   LoadItemResponse,
   LoadItemTypesResponse,
   StatsFileObject,
-} from '../types/loading';
+} from '../../types/loading';
 import {
   WorkerAdapterInterface,
   WorkerAdapterOptions,
   WorkerMessageEmitted,
   WorkerMessageSubject,
-} from '../types/workers';
-import { Uploader } from '../uploader/uploader';
-import { Artifact, SsorAttachment } from '../uploader/uploader.interfaces';
-import { translateOutgoingEventType } from '../common/event-type-translation';
+} from '../../types/workers';
+import { Uploader } from '../../uploader/uploader';
+import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
+import { translateOutgoingEventType } from '../../common/event-type-translation';
 
 export function createWorkerAdapter<ConnectorState>({
   event,

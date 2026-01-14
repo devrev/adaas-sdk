@@ -6,7 +6,7 @@ import { ErrorRecord } from './common';
 
 import { AxiosResponse } from 'axios';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
-import { WorkerAdapter } from '../workers/worker-adapter';
+import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import { DonV2, LoaderReport, RateLimited } from './loading';
 
 /**

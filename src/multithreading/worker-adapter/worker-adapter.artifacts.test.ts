@@ -1,6 +1,6 @@
-import { State } from '../state/state';
-import { createEvent, createItems } from '../tests/test-helpers';
-import { Artifact, EventType } from '../types';
+import { State } from '../../state/state';
+import { createEvent, createItems } from '../../tests/test-helpers';
+import { Artifact, EventType } from '../../types';
 import { WorkerAdapter } from './worker-adapter';
 
 // 1. Create a mock function for the method you want to override.
@@ -17,7 +17,7 @@ const mockUpload = (itemType: string, objects: object[]) => {
 
 // 2. Mock the entire 'uploader' module.
 // The factory function () => { ... } returns the mock implementation.
-jest.mock('../uploader/uploader', () => {
+jest.mock('../../uploader/uploader', () => {
   return {
     // The mocked Uploader class
     Uploader: jest.fn().mockImplementation(() => {

@@ -7,7 +7,7 @@ import {
   WorkerEvent,
   WorkerMessageSubject,
 } from '../types/workers';
-import { WorkerAdapter } from './worker-adapter';
+import { WorkerAdapter } from './worker-adapter/worker-adapter';
 
 export function processTask<ConnectorState>({
   task,

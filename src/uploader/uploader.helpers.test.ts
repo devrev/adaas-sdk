@@ -1,4 +1,6 @@
 import fs from 'fs';
+import { promises as fsPromises } from 'fs';
+import type { FileHandle } from 'fs/promises';
 import { jsonl } from 'js-jsonl';
 import zlib from 'zlib';
 
@@ -135,9 +137,9 @@ describe('uploader.helpers', () => {
       const mockFileHandle = {
         write: jest.fn().mockResolvedValue(undefined),
         close: jest.fn().mockResolvedValue(undefined),
-      };
+      } as unknown as FileHandle;
       const fsPromisesOpenSpy = jest
-        .spyOn(require('fs').promises, 'open')
+        .spyOn(fsPromises, 'open')
         .mockResolvedValueOnce(mockFileHandle);
 
       // Act
@@ -157,9 +159,9 @@ describe('uploader.helpers', () => {
       const mockFileHandle = {
         write: jest.fn().mockResolvedValue(undefined),
         close: jest.fn().mockResolvedValue(undefined),
-      };
+      } as unknown as FileHandle;
       const fsPromisesOpenSpy = jest
-        .spyOn(require('fs').promises, 'open')
+        .spyOn(fsPromises, 'open')
         .mockResolvedValueOnce(mockFileHandle);
 
       // Act
@@ -181,9 +183,9 @@ describe('uploader.helpers', () => {
       const mockFileHandle = {
         write: jest.fn().mockResolvedValue(undefined),
         close: jest.fn().mockResolvedValue(undefined),
-      };
+      } as unknown as FileHandle;
       const fsPromisesOpenSpy = jest
-        .spyOn(require('fs').promises, 'open')
+        .spyOn(fsPromises, 'open')
         .mockResolvedValueOnce(mockFileHandle);
 
       // Act
@@ -203,9 +205,9 @@ describe('uploader.helpers', () => {
       const mockFileHandle = {
         write: jest.fn().mockResolvedValue(undefined),
         close: jest.fn().mockResolvedValue(undefined),
-      };
+      } as unknown as FileHandle;
       const fsPromisesOpenSpy = jest
-        .spyOn(require('fs').promises, 'open')
+        .spyOn(fsPromises, 'open')
         .mockResolvedValueOnce(mockFileHandle);
 
       // Act
@@ -226,7 +228,7 @@ describe('uploader.helpers', () => {
       const fileError = new Error('File write failed');
       mockExistsSync.mockReturnValueOnce(true);
       const fsPromisesOpenSpy = jest
-        .spyOn(require('fs').promises, 'open')
+        .spyOn(fsPromises, 'open')
         .mockRejectedValueOnce(fileError);
 
       // Act & Assert

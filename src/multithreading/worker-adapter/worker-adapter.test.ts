@@ -1,29 +1,29 @@
-import { AttachmentsStreamingPool } from '../attachments-streaming/attachments-streaming-pool';
-import { State } from '../state/state';
-import { createEvent } from '../tests/test-helpers';
-import { AdapterState, EventType, ExtractorEventType } from '../types';
+import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
+import { State } from '../../state/state';
+import { createEvent } from '../../tests/test-helpers';
+import { AdapterState, EventType, ExtractorEventType } from '../../types';
 import { WorkerAdapter } from './worker-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 
 // Mock dependencies
-jest.mock('../common/control-protocol', () => ({
+jest.mock('../../common/control-protocol', () => ({
   emit: jest.fn().mockResolvedValue({}),
 }));
 
 // const mockPostState = jest.spyOn(State.prototype, 'postState').mockResolvedValue(); // Mock to resolve void
 // const mockFetchState = jest.spyOn(State.prototype, 'fetchState').mockResolvedValue({}); // Mock to resolve a default state
 
-jest.mock('../mappers/mappers');
-jest.mock('../uploader/uploader');
-// jest.mock('../state/state');
-jest.mock('../repo/repo');
+jest.mock('../../mappers/mappers');
+jest.mock('../../uploader/uploader');
+// jest.mock('../../state/state');
+jest.mock('../../repo/repo');
 jest.mock('node:worker_threads', () => ({
   parentPort: {
     postMessage: jest.fn(),
   },
 }));
-jest.mock('../attachments-streaming/attachments-streaming-pool', () => {
+jest.mock('../../attachments-streaming/attachments-streaming-pool', () => {
   return {
     AttachmentsStreamingPool: jest.fn().mockImplementation(() => {
       return {
