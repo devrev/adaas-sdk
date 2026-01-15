@@ -12,7 +12,7 @@ import {
   getFilesToLoad,
 } from './worker-adapter.helpers';
 import { serializeError } from '../../logger/logger';
-import { runWithSdkLogContext } from '../logger/logger.context';
+import { runWithSdkLogContext } from '../../logger/logger.context';
 import { Mappers } from '../../mappers/mappers';
 import { SyncMapperRecordStatus } from '../../mappers/mappers.interface';
 import { Repo } from '../../repo/repo';
