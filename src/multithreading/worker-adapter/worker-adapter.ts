@@ -361,12 +361,13 @@ export class WorkerAdapter<ConnectorState> {
       }
 
       if (!fileToLoad.completed) {
-        const transformerFile = (await this.uploader.getJsonObjectByArtifactId({
-          artifactId: fileToLoad.id,
-          isGzipped: true,
-        })) as ExternalSystemItem[];
+        const { response, error: transformerFileError } =
+          await this.uploader.getJsonObjectByArtifactId({
+            artifactId: fileToLoad.id,
+            isGzipped: true,
+          });
 
-        if (!transformerFile) {
+        if (transformerFileError) {
           console.error(
             `Transformer file not found for artifact ID: ${fileToLoad.id}.`
           );
@@ -376,6 +377,8 @@ export class WorkerAdapter<ConnectorState> {
             },
           });
         }
+
+        const transformerFile = response as ExternalSystemItem[];
 
         for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
           const { report, rateLimit } = await this.loadItem({
@@ -421,11 +424,14 @@ export class WorkerAdapter<ConnectorState> {
     const statsFileArtifactId = this.event.payload.event_data?.stats_file;
 
     if (statsFileArtifactId) {
-      const statsFile = (await this.uploader.getJsonObjectByArtifactId({
-        artifactId: statsFileArtifactId,
-      })) as StatsFileObject[];
+      const { response, error: statsFileError } =
+        await this.uploader.getJsonObjectByArtifactId({
+          artifactId: statsFileArtifactId,
+        });
 
-      if (!statsFile || statsFile.length === 0) {
+      const statsFile = response as StatsFileObject[];
+
+      if (statsFileError || statsFile.length === 0) {
         return [] as FileToLoad[];
       }
 
@@ -468,12 +474,15 @@ export class WorkerAdapter<ConnectorState> {
 
     outerloop: for (const fileToLoad of filesToLoad) {
       if (!fileToLoad.completed) {
-        const transformerFile = (await this.uploader.getJsonObjectByArtifactId({
-          artifactId: fileToLoad.id,
-          isGzipped: true,
-        })) as ExternalSystemAttachment[];
+        const { response, error: transformerFileError } =
+          await this.uploader.getJsonObjectByArtifactId({
+            artifactId: fileToLoad.id,
+            isGzipped: true,
+          });
 
-        if (!transformerFile) {
+        const transformerFile = response as ExternalSystemAttachment[];
+
+        if (transformerFileError) {
           console.error(
             `Transformer file not found for artifact ID: ${fileToLoad.id}.`
           );
