@@ -53,11 +53,13 @@ export class Uploader {
       await downloadToLocal(itemType, fetchedObjects);
     }
     // Compress the fetched objects to a gzipped jsonl object
-    const file = compressGzip(jsonl.stringify(fetchedObjects));
-    if (file.error) {
+    const { response: file, error: fileError } = compressGzip(
+      jsonl.stringify(fetchedObjects)
+    );
+    if (fileError) {
       return {
         error: new Error(
-          'Error while compressing jsonl object. ' + serializeError(file.error)
+          'Error while compressing jsonl object. ' + serializeError(fileError)
         ),
       };
     }
@@ -66,43 +68,40 @@ export class Uploader {
     const fileType = 'application/x-gzip';
 
     // Get upload url
-    const preparedArtifact = await this.getArtifactUploadUrl(
-      filename,
-      fileType
-    );
-    if (preparedArtifact.error) {
+    const { error: preparedArtifactError, response: preparedArtifact } =
+      await this.getArtifactUploadUrl(filename, fileType);
+    if (preparedArtifactError) {
       return {
         error: new Error('Error while getting artifact upload URL.'),
       };
     }
 
     // Upload prepared artifact to the given url
-    const uploadItemResponse = await this.uploadArtifact(
-      preparedArtifact.response!,
-      file.response!
+    const { error: uploadItemError } = await this.uploadArtifact(
+      preparedArtifact!,
+      file!
     );
-    if (uploadItemResponse.error) {
+    if (uploadItemError) {
       return {
         error: new Error('Error while uploading artifact.'),
       };
     }
 
     // Confirm upload
-    const confirmArtifactUploadResponse = await this.confirmArtifactUpload(
-      preparedArtifact.response!.artifact_id
-    );
-    if (confirmArtifactUploadResponse.error) {
+    const { error: confirmArtifactUploadError } =
+      await this.confirmArtifactUpload(preparedArtifact!.artifact_id);
+    if (confirmArtifactUploadError) {
       return {
         error: new Error(
           'Error while confirming artifact upload. ' +
-            JSON.stringify(confirmArtifactUploadResponse.error)
+            JSON.stringify(confirmArtifactUploadError)
         ),
       };
     }
 
     // Return the artifact information to the platform
     const artifact: Artifact = {
-      id: preparedArtifact.response!.artifact_id,
+      id: preparedArtifact!.artifact_id,
       item_type: itemType,
       item_count: Array.isArray(fetchedObjects) ? fetchedObjects.length : 1,
     };
@@ -283,52 +282,56 @@ export class Uploader {
     error?: { message: string };
   }> {
     // Get the URL of the attachments metadata artifact
-    const artifactUrl = await this.getArtifactDownloadUrl(artifact);
+    const { response: artifactUrl, error: artifactUrlError } =
+      await this.getArtifactDownloadUrl(artifact);
 
-    if (artifactUrl.error) {
+    if (artifactUrlError) {
       return {
         error: new Error(
           'Error while getting artifact download URL. ' +
-            serializeError(artifactUrl.error)
+            serializeError(artifactUrlError)
         ),
       };
     }
 
     // Download artifact from the URL
-    const gzippedJsonlObject = await this.downloadArtifact(
-      artifactUrl.response!
-    );
-    if (gzippedJsonlObject.error) {
+    const { response: gzippedJsonlObject, error: gzippedJsonlObjectError } =
+      await this.downloadArtifact(artifactUrl!);
+    if (gzippedJsonlObjectError) {
       return {
         error: new Error(
           'Error while downloading gzipped jsonl object.' +
-            serializeError(gzippedJsonlObject.error)
+            serializeError(gzippedJsonlObjectError)
         ),
       };
     }
 
     // Decompress the gzipped jsonl object
-    const jsonlObject = decompressGzip(gzippedJsonlObject.response!);
-    if (jsonlObject.error) {
+    const { response: jsonlObject, error: jsonlObjectError } = decompressGzip(
+      gzippedJsonlObject!
+    );
+    if (jsonlObjectError) {
       return {
         error: new Error(
           'Error while decompressing gzipped jsonl object.' +
-            serializeError(jsonlObject.error)
+            serializeError(jsonlObjectError)
         ),
       };
     }
 
     // Parse the jsonl object to get the attachment metadata
-    const jsonObject = parseJsonl(jsonlObject.response!);
-    if (jsonObject.error) {
+    const { response: jsonObject, error: jsonObjectError } = parseJsonl(
+      jsonlObject!
+    );
+    if (jsonObjectError) {
       return {
         error: new Error(
-          'Error while parsing jsonl object.' + serializeError(jsonObject.error)
+          'Error while parsing jsonl object.' + serializeError(jsonObjectError)
         ),
       };
     }
 
-    return { attachments: jsonObject.response! as NormalizedAttachment[] };
+    return { attachments: jsonObject! as NormalizedAttachment[] };
   }
 
   /**
@@ -391,29 +394,32 @@ export class Uploader {
     artifactId: string;
     isGzipped?: boolean;
   }): Promise<UploaderResult<object[] | object>> {
-    const artifactUrl = await this.getArtifactDownloadUrl(artifactId);
-    if (artifactUrl.error) {
-      return { error: artifactUrl.error };
+    const { response: artifactUrl, error: artifactUrlError } =
+      await this.getArtifactDownloadUrl(artifactId);
+    if (artifactUrlError) {
+      return { error: artifactUrlError };
     }
 
-    const artifact = await this.downloadArtifact(artifactUrl.response!);
-    if (artifact.error) {
-      return { error: artifact.error };
+    const { response: artifact, error: artifactError } =
+      await this.downloadArtifact(artifactUrl!);
+    if (artifactError) {
+      return { error: artifactError };
     }
 
     if (isGzipped) {
-      const decompressedArtifact = decompressGzip(artifact.response!);
-      if (decompressedArtifact.error) {
-        return { error: decompressedArtifact.error };
+      const {
+        response: decompressedArtifact,
+        error: decompressedArtifactError,
+      } = decompressGzip(artifact!);
+      if (decompressedArtifactError) {
+        return { error: decompressedArtifactError };
       }
 
-      const jsonlObject = Buffer.from(decompressedArtifact.response!).toString(
-        'utf-8'
-      );
+      const jsonlObject = Buffer.from(decompressedArtifact!).toString('utf-8');
       return { response: jsonl.parse(jsonlObject) };
     }
 
-    const jsonlObject = Buffer.from(artifact.response!).toString('utf-8');
+    const jsonlObject = Buffer.from(artifact!).toString('utf-8');
     return { response: jsonl.parse(jsonlObject) };
   }
 }

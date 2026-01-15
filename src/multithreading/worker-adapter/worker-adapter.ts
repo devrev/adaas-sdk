@@ -734,16 +734,17 @@ export class WorkerAdapter<ConnectorState> {
         : undefined;
 
       // Get upload URL
-      const preparedArtifact = await this.uploader.getArtifactUploadUrl(
-        attachment.file_name,
-        fileType,
-        fileSize
-      );
+      const { error: artifactUrlError, response: artifactUrlResponse } =
+        await this.uploader.getArtifactUploadUrl(
+          attachment.file_name,
+          fileType,
+          fileSize
+        );
 
-      if (preparedArtifact.error) {
+      if (artifactUrlError) {
         console.warn(
           `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
-            serializeError(preparedArtifact.error)
+            serializeError(artifactUrlError)
         );
         this.destroyHttpStream(httpStream);
         return;
@@ -755,38 +756,36 @@ export class WorkerAdapter<ConnectorState> {
       }
 
       // Stream attachment
-      const uploadedArtifact = await this.uploader.streamArtifact(
-        preparedArtifact.response!,
-        httpStream
-      );
+      const { error: uploadedArtifactError } =
+        await this.uploader.streamArtifact(artifactUrlResponse!, httpStream);
 
-      if (uploadedArtifact.error) {
+      if (uploadedArtifactError) {
         console.warn(
           `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
-            serializeError(uploadedArtifact.error)
+            serializeError(uploadedArtifactError)
         );
         this.destroyHttpStream(httpStream);
         return;
       }
 
       // Confirm attachment upload
-      const confirmArtifactUploadResponse =
+      const { error: confirmArtifactUploadError } =
         await this.uploader.confirmArtifactUpload(
-          preparedArtifact.response!.artifact_id
+          artifactUrlResponse!.artifact_id
         );
-      if (confirmArtifactUploadResponse.error) {
+      if (confirmArtifactUploadError) {
         console.warn(
           'Error while confirming upload for attachment ID ' +
             attachment.id +
             '.',
-          JSON.stringify(confirmArtifactUploadResponse.error)
+          confirmArtifactUploadError
         );
         return;
       }
 
       const ssorAttachment: SsorAttachment = {
         id: {
-          devrev: preparedArtifact.response!.artifact_id,
+          devrev: artifactUrlResponse!.artifact_id,
           external: attachment.id,
         },
         parent_id: {

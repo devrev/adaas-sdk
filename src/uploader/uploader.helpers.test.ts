@@ -16,8 +16,6 @@ import {
   truncateFilename,
 } from './uploader.helpers';
 
-/* eslint-disable @typescript-eslint/no-require-imports */
-
 describe('uploader.helpers', () => {
   let consoleErrorSpy: jest.SpyInstance;
   let consoleLogSpy: jest.SpyInstance;
