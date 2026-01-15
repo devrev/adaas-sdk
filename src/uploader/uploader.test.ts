@@ -16,7 +16,7 @@ import {
 } from '../tests/test-helpers';
 
 import { compressGzip, downloadToLocal } from './uploader.helpers';
-import { ArtifactToUpload } from './uploader.interfaces';
+import { ArtifactToUpload, UploaderResult } from './uploader.interfaces';
 import { Uploader } from './uploader';
 
 jest.mock('../http/axios-client-internal');
@@ -36,7 +36,9 @@ const mockedCompressGzip = jest.mocked(compressGzip);
  */
 type UploaderPrivateMethods = {
   destroyStream: (fileStream: AxiosResponse) => void;
-  getArtifactDownloadUrl: (artifactId: string) => Promise<string | void>;
+  getArtifactDownloadUrl: (
+    artifactId: string
+  ) => Promise<UploaderResult<string>>;
 };
 
 describe(Uploader.name, () => {
@@ -186,7 +188,7 @@ describe(Uploader.name, () => {
       // Arrange
       const itemType = 'tasks';
       const fetchedObjects = [{ id: 1 }];
-      mockedCompressGzip.mockReturnValueOnce(undefined);
+      mockedCompressGzip.mockReturnValueOnce({ error: 'Mock error' });
 
       // Act
       const result = await uploader.upload(itemType, fetchedObjects);
@@ -217,7 +219,7 @@ describe(Uploader.name, () => {
       );
 
       // Assert
-      expect(result).toEqual(expectedArtifact);
+      expect(result.response).toEqual(expectedArtifact);
       expect(mockedAxiosClient.get).toHaveBeenCalledWith(
         expect.stringContaining('/internal/airdrop.artifacts.upload-url'),
         expect.objectContaining({
@@ -243,7 +245,8 @@ describe(Uploader.name, () => {
       const result = await uploader.getArtifactUploadUrl(filename, fileType);
 
       // Assert
-      expect(result).toBeUndefined();
+      expect(result.response).toBeUndefined();
+      expect(result.error).toBeInstanceOf(Error);
       expect(mockedAxiosClient.get).toHaveBeenCalled();
     });
   });
@@ -261,7 +264,7 @@ describe(Uploader.name, () => {
       const result = await uploader.uploadArtifact(artifact, file);
 
       // Assert
-      expect(result).toBe(mockResponse);
+      expect(result.response).toBe(mockResponse);
       expect(mockedAxiosClient.post).toHaveBeenCalledWith(
         artifact.upload_url,
         expect.any(FormData),
@@ -309,7 +312,8 @@ describe(Uploader.name, () => {
       const result = await uploader.uploadArtifact(artifact, file);
 
       // Assert
-      expect(result).toBeUndefined();
+      expect(result.response).toBeUndefined();
+      expect(result.error).toBeInstanceOf(Error);
     });
   });
 
@@ -325,7 +329,7 @@ describe(Uploader.name, () => {
       const result = await uploader.confirmArtifactUpload(artifactId);
 
       // Assert
-      expect(result).toBe(mockResponse);
+      expect(result.response).toBe(mockResponse);
       expect(mockedAxiosClient.post).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
@@ -347,7 +351,8 @@ describe(Uploader.name, () => {
       const result = await uploader.confirmArtifactUpload(artifactId);
 
       // Assert
-      expect(result).toBeUndefined();
+      expect(result.response).toBeUndefined();
+      expect(result.error).toBeInstanceOf(Error);
     });
   });
 
@@ -368,7 +373,7 @@ describe(Uploader.name, () => {
       const result = await uploader.streamArtifact(artifact, fileStream);
 
       // Assert
-      expect(result).toBe(mockResponse);
+      expect(result.response).toBe(mockResponse);
       expect(axiosClient.post).toHaveBeenCalledWith(
         artifact.upload_url,
         expect.any(FormData),
@@ -467,7 +472,8 @@ describe(Uploader.name, () => {
       const result = await uploader.streamArtifact(artifact, fileStream);
 
       // Assert
-      expect(result).toBeUndefined();
+      expect(result.response).toBeUndefined();
+      expect(result.error).toBeInstanceOf(Error);
       expect(destroyFn).toHaveBeenCalled();
     });
   });
@@ -599,7 +605,8 @@ describe(Uploader.name, () => {
       const result = await getArtifactDownloadUrl(artifactId);
 
       // Assert
-      expect(result).toBe(expectedDownloadUrl);
+      expect(result.response).toBe(expectedDownloadUrl);
+      expect(result.error).toBeUndefined();
       expect(mockedAxiosClient.get).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
@@ -625,7 +632,8 @@ describe(Uploader.name, () => {
       const result = await getArtifactDownloadUrl(artifactId);
 
       // Assert
-      expect(result).toBeUndefined();
+      expect(result.response).toBeUndefined();
+      expect(result.error).toBeInstanceOf(Error);
     });
   });
 
@@ -660,7 +668,7 @@ describe(Uploader.name, () => {
       spyOnPrivateMethod<UploaderPrivateMethods>(
         uploader,
         'getArtifactDownloadUrl'
-      ).mockResolvedValueOnce(undefined);
+      ).mockResolvedValueOnce({ error: new Error('API error') });
 
       // Act
       const result = await uploader.getAttachmentsFromArtifactId({
@@ -747,7 +755,7 @@ describe(Uploader.name, () => {
       });
 
       // Assert
-      expect(result).toEqual(mockData);
+      expect(result.response).toEqual(mockData);
     });
 
     it('should return parsed data when downloading gzipped artifact', async () => {
@@ -770,25 +778,26 @@ describe(Uploader.name, () => {
       });
 
       // Assert
-      expect(result).toEqual(mockData);
+      expect(result.response).toEqual(mockData);
     });
 
-    it('[edge] should return undefined when getArtifactDownloadUrl fails', async () => {
+    it('[edge] should return error when getArtifactDownloadUrl fails', async () => {
       // Arrange
       const artifactId = 'art_123';
       spyOnPrivateMethod<UploaderPrivateMethods>(
         uploader,
         'getArtifactDownloadUrl'
-      ).mockResolvedValueOnce(undefined);
+      ).mockResolvedValueOnce({ error: new Error('API error') });
 
       // Act
       const result = await uploader.getJsonObjectByArtifactId({ artifactId });
 
       // Assert
-      expect(result).toBeUndefined();
+      expect(result.response).toBeUndefined();
+      expect(result.error).toBeInstanceOf(Error);
     });
 
-    it('[edge] should return undefined when downloadArtifact fails', async () => {
+    it('[edge] should return error when downloadArtifact fails', async () => {
       // Arrange
       const artifactId = 'art_123';
       mockedAxiosClient.get.mockResolvedValueOnce(createDownloadUrlResponse());
@@ -798,10 +807,11 @@ describe(Uploader.name, () => {
       const result = await uploader.getJsonObjectByArtifactId({ artifactId });
 
       // Assert
-      expect(result).toBeUndefined();
+      expect(result.response).toBeUndefined();
+      expect(result.error).toBeInstanceOf(Error);
     });
 
-    it('[edge] should return undefined when decompression fails for gzipped artifact', async () => {
+    it('[edge] should return error when decompression fails for gzipped artifact', async () => {
       // Arrange
       const artifactId = 'art_123';
       mockedAxiosClient.get.mockResolvedValueOnce(createDownloadUrlResponse());
@@ -816,7 +826,8 @@ describe(Uploader.name, () => {
       });
 
       // Assert
-      expect(result).toBeUndefined();
+      expect(result.response).toBeUndefined();
+      expect(result.error).toBeDefined();
     });
   });
 });

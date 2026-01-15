@@ -361,12 +361,13 @@ export class WorkerAdapter<ConnectorState> {
       }
 
       if (!fileToLoad.completed) {
-        const transformerFile = (await this.uploader.getJsonObjectByArtifactId({
-          artifactId: fileToLoad.id,
-          isGzipped: true,
-        })) as ExternalSystemItem[];
+        const { response, error: transformerFileError } =
+          await this.uploader.getJsonObjectByArtifactId({
+            artifactId: fileToLoad.id,
+            isGzipped: true,
+          });
 
-        if (!transformerFile) {
+        if (transformerFileError) {
           console.error(
             `Transformer file not found for artifact ID: ${fileToLoad.id}.`
           );
@@ -376,6 +377,8 @@ export class WorkerAdapter<ConnectorState> {
             },
           });
         }
+
+        const transformerFile = response as ExternalSystemItem[];
 
         for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
           const { report, rateLimit } = await this.loadItem({
@@ -421,11 +424,14 @@ export class WorkerAdapter<ConnectorState> {
     const statsFileArtifactId = this.event.payload.event_data?.stats_file;
 
     if (statsFileArtifactId) {
-      const statsFile = (await this.uploader.getJsonObjectByArtifactId({
-        artifactId: statsFileArtifactId,
-      })) as StatsFileObject[];
+      const { response, error: statsFileError } =
+        await this.uploader.getJsonObjectByArtifactId({
+          artifactId: statsFileArtifactId,
+        });
 
-      if (!statsFile || statsFile.length === 0) {
+      const statsFile = response as StatsFileObject[];
+
+      if (statsFileError || statsFile.length === 0) {
         return [] as FileToLoad[];
       }
 
@@ -468,12 +474,15 @@ export class WorkerAdapter<ConnectorState> {
 
     outerloop: for (const fileToLoad of filesToLoad) {
       if (!fileToLoad.completed) {
-        const transformerFile = (await this.uploader.getJsonObjectByArtifactId({
-          artifactId: fileToLoad.id,
-          isGzipped: true,
-        })) as ExternalSystemAttachment[];
+        const { response, error: transformerFileError } =
+          await this.uploader.getJsonObjectByArtifactId({
+            artifactId: fileToLoad.id,
+            isGzipped: true,
+          });
 
-        if (!transformerFile) {
+        const transformerFile = response as ExternalSystemAttachment[];
+
+        if (transformerFileError) {
           console.error(
             `Transformer file not found for artifact ID: ${fileToLoad.id}.`
           );
@@ -734,15 +743,17 @@ export class WorkerAdapter<ConnectorState> {
         : undefined;
 
       // Get upload URL
-      const preparedArtifact = await this.uploader.getArtifactUploadUrl(
-        attachment.file_name,
-        fileType,
-        fileSize
-      );
+      const { error: artifactUrlError, response: artifactUrlResponse } =
+        await this.uploader.getArtifactUploadUrl(
+          attachment.file_name,
+          fileType,
+          fileSize
+        );
 
-      if (!preparedArtifact) {
+      if (artifactUrlError) {
         console.warn(
-          `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment.`
+          `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
+            serializeError(artifactUrlError)
         );
         this.destroyHttpStream(httpStream);
         return;
@@ -754,32 +765,36 @@ export class WorkerAdapter<ConnectorState> {
       }
 
       // Stream attachment
-      const uploadedArtifact = await this.uploader.streamArtifact(
-        preparedArtifact,
-        httpStream
-      );
+      const { error: uploadedArtifactError } =
+        await this.uploader.streamArtifact(artifactUrlResponse!, httpStream);
 
-      if (!uploadedArtifact) {
+      if (uploadedArtifactError) {
         console.warn(
-          `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment.`
+          `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
+            serializeError(uploadedArtifactError)
         );
         this.destroyHttpStream(httpStream);
         return;
       }
 
       // Confirm attachment upload
-      const confirmArtifactUploadResponse =
-        await this.uploader.confirmArtifactUpload(preparedArtifact.artifact_id);
-      if (!confirmArtifactUploadResponse) {
+      const { error: confirmArtifactUploadError } =
+        await this.uploader.confirmArtifactUpload(
+          artifactUrlResponse!.artifact_id
+        );
+      if (confirmArtifactUploadError) {
         console.warn(
-          'Error while confirming upload for attachment ID ' + attachment.id
+          'Error while confirming upload for attachment ID ' +
+            attachment.id +
+            '.',
+          confirmArtifactUploadError
         );
         return;
       }
 
       const ssorAttachment: SsorAttachment = {
         id: {
-          devrev: preparedArtifact.artifact_id,
+          devrev: artifactUrlResponse!.artifact_id,
           external: attachment.id,
         },
         parent_id: {

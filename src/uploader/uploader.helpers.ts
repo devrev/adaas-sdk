@@ -6,17 +6,18 @@ import {
   MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
   MAX_DEVREV_FILENAME_LENGTH,
 } from '../common/constants';
+import { UploaderResult } from './uploader.interfaces';
 
 /**
  * Compresses a JSONL string using gzip compression.
  * @param {string} jsonlObject - The JSONL string to compress
  * @returns {Buffer | void} The compressed buffer or undefined on error
  */
-export function compressGzip(jsonlObject: string): Buffer | void {
+export function compressGzip(jsonlObject: string): UploaderResult<Buffer> {
   try {
-    return zlib.gzipSync(jsonlObject);
+    return { response: zlib.gzipSync(jsonlObject) };
   } catch (error) {
-    console.error('Error while compressing jsonl object.', error);
+    return { error };
   }
 }
 
@@ -25,12 +26,14 @@ export function compressGzip(jsonlObject: string): Buffer | void {
  * @param {Buffer} gzippedJsonlObject - The gzipped buffer to decompress
  * @returns {string | void} The decompressed JSONL string or undefined on error
  */
-export function decompressGzip(gzippedJsonlObject: Buffer): string | void {
+export function decompressGzip(
+  gzippedJsonlObject: Buffer
+): UploaderResult<string> {
   try {
     const jsonlObject = zlib.gunzipSync(gzippedJsonlObject);
-    return jsonlObject.toString();
+    return { response: jsonlObject.toString() };
   } catch (error) {
-    console.error('Error while decompressing gzipped jsonl object.', error);
+    return { error };
   }
 }
 
@@ -39,13 +42,12 @@ export function decompressGzip(gzippedJsonlObject: Buffer): string | void {
  * @param {string} jsonlObject - The JSONL string to parse
  * @returns {object[] | null} The parsed array of objects or null on error
  */
-export function parseJsonl(jsonlObject: string): object[] | null {
+export function parseJsonl(jsonlObject: string): UploaderResult<object[]> {
   try {
-    return jsonl.parse(jsonlObject);
+    return { response: jsonl.parse(jsonlObject) };
   } catch (error) {
-    console.error('Error while parsing jsonl object.', error);
+    return { error };
   }
-  return null;
 }
 
 /**
