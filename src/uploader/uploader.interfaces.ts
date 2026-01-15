@@ -8,6 +8,10 @@ export interface UploaderFactoryInterface {
   options?: WorkerAdapterOptions;
 }
 
+/**
+ * Generic result type for uploader operations that can either succeed with a response or fail with an error.
+ * @template T The type of the successful response data
+ */
 export interface UploaderResult<T> {
   response?: T;
   error?: unknown;
