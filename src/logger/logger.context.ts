@@ -56,7 +56,7 @@ export function runWithUserLogContext<T>(fn: () => T): T {
  * ```typescript
  * await runWithSdkLogContext(async () => {
  *   console.log('SDK internal log');     // is_sdk_log: true
- *   await runWithUserLogContext(async () => {
+ *   runWithUserLogContext(() => {
  *     console.log('User handler log');   // is_sdk_log: false
  *   });
  *   console.log('Back to SDK log');      // is_sdk_log: true
