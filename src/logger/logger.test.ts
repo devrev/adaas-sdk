@@ -15,11 +15,15 @@ const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
 const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation();
 const mockConsoleError = jest.spyOn(console, 'error').mockImplementation();
 
-// Mock worker_threads
-jest.mock('node:worker_threads', () => ({
-  isMainThread: true,
-  parentPort: null,
-}));
+// Mock worker_threads for main-thread specific behavior but keep actual Worker implementation
+jest.mock('node:worker_threads', () => {
+  const actual = jest.requireActual('node:worker_threads');
+  return {
+    ...actual,
+    isMainThread: true,
+    parentPort: null,
+  };
+});
 
 describe(Logger.name, () => {
   let mockEvent: AirdropEvent;
@@ -29,7 +33,7 @@ describe(Logger.name, () => {
     jest.clearAllMocks();
 
     mockEvent = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventType.StartExtractingData,
       eventContextOverrides: {
         dev_org: 'DEV-test',
         dev_org_id: 'DEV-test-id',
@@ -67,6 +71,7 @@ describe(Logger.name, () => {
     expect(tags).toEqual({
       ...mockEvent.payload.event_context,
       sdk_version: LIBRARY_VERSION,
+      is_sdk_log: true,
     });
   });
 
@@ -84,6 +89,7 @@ describe(Logger.name, () => {
         message,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
+        is_sdk_log: true,
       })
     );
   });
@@ -103,6 +109,7 @@ describe(Logger.name, () => {
         message: expectedMessage,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
+        is_sdk_log: true,
       })
     );
   });
@@ -123,6 +130,7 @@ describe(Logger.name, () => {
         message: `${text} ${expectedDataMessage}`,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
+        is_sdk_log: true,
       })
     );
   });
@@ -144,6 +152,7 @@ describe(Logger.name, () => {
         message: `${text1} ${expectedDataMessage} ${text2}`,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
+        is_sdk_log: true,
       })
     );
   });
@@ -347,6 +356,7 @@ describe(Logger.name, () => {
     const logObject = JSON.parse(callArgs);
     expect(logObject.message).toBe('');
     expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
+    expect(logObject.is_sdk_log).toBe(true);
   });
 
   it('[edge] should handle null and undefined values in log arguments', () => {

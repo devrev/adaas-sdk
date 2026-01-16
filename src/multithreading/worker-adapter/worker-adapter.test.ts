@@ -47,7 +47,7 @@ describe(WorkerAdapter.name, () => {
     jest.clearAllMocks();
 
     // Create mock objects
-    mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+    mockEvent = createEvent({ eventType: EventType.StartExtractingData });
 
     const initialState: AdapterState<TestState> = {
       attachments: { completed: false },
@@ -511,11 +511,11 @@ describe(WorkerAdapter.name, () => {
         .mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
-      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
-      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
@@ -529,15 +529,15 @@ describe(WorkerAdapter.name, () => {
         .mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
-      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
-      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
-      await adapter.emit(ExtractorEventType.ExtractionMetadataDone, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
@@ -551,7 +551,7 @@ describe(WorkerAdapter.name, () => {
         .mockRejectedValue(new Error('postState error'));
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
-      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
@@ -566,7 +566,7 @@ describe(WorkerAdapter.name, () => {
         .fn()
         .mockRejectedValue(new Error('uploadAllRepos error'));
 
-      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
