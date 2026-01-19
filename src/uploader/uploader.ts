@@ -1,20 +1,25 @@
+import { AxiosResponse } from 'axios';
 import FormData from 'form-data';
-import fs, { promises as fsPromises } from 'fs';
 import { jsonl } from 'js-jsonl';
-import zlib from 'zlib';
 import { axiosClient } from '../http/axios-client-internal';
 
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
-import { truncateFilename } from '../common/helpers';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
-
-import { AxiosResponse } from 'axios';
 import { serializeError } from '../logger/logger';
+
+import {
+  compressGzip,
+  decompressGzip,
+  downloadToLocal,
+  parseJsonl,
+  truncateFilename,
+} from './uploader.helpers';
 import {
   Artifact,
   ArtifactToUpload,
   UploadResponse,
   UploaderFactoryInterface,
+  UploaderResult,
 } from './uploader.interfaces';
 
 export class Uploader {
@@ -45,53 +50,58 @@ export class Uploader {
     fetchedObjects: object[] | object
   ): Promise<UploadResponse> {
     if (this.isLocalDevelopment) {
-      await this.downloadToLocal(itemType, fetchedObjects);
+      await downloadToLocal(itemType, fetchedObjects);
     }
     // Compress the fetched objects to a gzipped jsonl object
-    const file = this.compressGzip(jsonl.stringify(fetchedObjects));
-    if (!file) {
+    const { response: file, error: fileError } = compressGzip(
+      jsonl.stringify(fetchedObjects)
+    );
+    if (fileError) {
       return {
-        error: new Error('Error while compressing jsonl object.'),
+        error: new Error(
+          'Error while compressing jsonl object. ' + serializeError(fileError)
+        ),
       };
     }
+
     const filename = itemType + '.jsonl.gz';
     const fileType = 'application/x-gzip';
 
     // Get upload url
-    const preparedArtifact = await this.getArtifactUploadUrl(
-      filename,
-      fileType
-    );
-    if (!preparedArtifact) {
+    const { error: preparedArtifactError, response: preparedArtifact } =
+      await this.getArtifactUploadUrl(filename, fileType);
+    if (preparedArtifactError) {
       return {
         error: new Error('Error while getting artifact upload URL.'),
       };
     }
 
     // Upload prepared artifact to the given url
-    const uploadItemResponse = await this.uploadArtifact(
-      preparedArtifact,
-      file
+    const { error: uploadItemError } = await this.uploadArtifact(
+      preparedArtifact!,
+      file!
     );
-    if (!uploadItemResponse) {
+    if (uploadItemError) {
       return {
         error: new Error('Error while uploading artifact.'),
       };
     }
 
     // Confirm upload
-    const confirmArtifactUploadResponse = await this.confirmArtifactUpload(
-      preparedArtifact.artifact_id
-    );
-    if (!confirmArtifactUploadResponse) {
+    const { error: confirmArtifactUploadError } =
+      await this.confirmArtifactUpload(preparedArtifact!.artifact_id);
+    if (confirmArtifactUploadError) {
       return {
-        error: new Error('Error while confirming artifact upload.'),
+        error: new Error(
+          'Error while confirming artifact upload. ' +
+            JSON.stringify(confirmArtifactUploadError)
+        ),
       };
     }
 
     // Return the artifact information to the platform
     const artifact: Artifact = {
-      id: preparedArtifact.artifact_id,
+      id: preparedArtifact!.artifact_id,
       item_type: itemType,
       item_count: Array.isArray(fetchedObjects) ? fetchedObjects.length : 1,
     };
@@ -110,7 +120,7 @@ export class Uploader {
     filename: string,
     fileType: string,
     fileSize?: number
-  ): Promise<ArtifactToUpload | void> {
+  ): Promise<UploaderResult<ArtifactToUpload>> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.upload-url`;
 
     try {
@@ -125,12 +135,9 @@ export class Uploader {
           file_size: fileSize,
         },
       });
-      return response.data;
+      return { response: response.data };
     } catch (error) {
-      console.error(
-        'Error while getting artifact upload URL.',
-        serializeError(error)
-      );
+      return { error };
     }
   }
 
@@ -143,7 +150,7 @@ export class Uploader {
   async uploadArtifact(
     artifact: ArtifactToUpload,
     file: Buffer
-  ): Promise<AxiosResponse | void> {
+  ): Promise<UploaderResult<AxiosResponse>> {
     const formData = new FormData();
     for (const field in artifact.form_data) {
       formData.append(field, artifact.form_data[field]);
@@ -156,9 +163,9 @@ export class Uploader {
           ...formData.getHeaders(),
         },
       });
-      return response;
+      return { response };
     } catch (error) {
-      console.error('Error while uploading artifact.', serializeError(error));
+      return { error };
     }
   }
 
@@ -171,7 +178,7 @@ export class Uploader {
   async streamArtifact(
     artifact: ArtifactToUpload,
     fileStream: AxiosResponse
-  ): Promise<AxiosResponse | void> {
+  ): Promise<UploaderResult<AxiosResponse>> {
     const formData = new FormData();
     for (const field in artifact.form_data) {
       formData.append(field, artifact.form_data[field]);
@@ -194,11 +201,10 @@ export class Uploader {
         validateStatus: (status) => status >= 200 && status < 400,
       });
       this.destroyStream(fileStream);
-      return response;
+      return { response };
     } catch (error) {
-      console.error('Error while streaming artifact.', serializeError(error));
       this.destroyStream(fileStream);
-      return;
+      return { error };
     }
   }
 
@@ -207,9 +213,10 @@ export class Uploader {
    * @param {string} artifactId - The ID of the artifact to confirm
    * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
    */
-  async confirmArtifactUpload(
-    artifactId: string
-  ): Promise<AxiosResponse | void> {
+  async confirmArtifactUpload(artifactId: string): Promise<{
+    response?: AxiosResponse;
+    error?: unknown;
+  }> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.confirm-upload`;
     try {
       const response = await axiosClient.post(
@@ -224,12 +231,20 @@ export class Uploader {
           },
         }
       );
-      return response;
+
+      // If response exists and the status is 2xx, return the response
+      if (response?.status >= 200 && response?.status < 300) {
+        return { response };
+      } else {
+        return {
+          error: new Error(
+            'Error while confirming artifact upload. ' +
+              JSON.stringify(response)
+          ),
+        };
+      }
     } catch (error) {
-      console.error(
-        'Error while confirming artifact upload.',
-        serializeError(error)
-      );
+      return { error: serializeError(error) };
     }
   }
 
@@ -267,39 +282,56 @@ export class Uploader {
     error?: { message: string };
   }> {
     // Get the URL of the attachments metadata artifact
-    const artifactUrl = await this.getArtifactDownloadUrl(artifact);
+    const { response: artifactUrl, error: artifactUrlError } =
+      await this.getArtifactDownloadUrl(artifact);
 
-    if (!artifactUrl) {
+    if (artifactUrlError) {
       return {
-        error: new Error('Error while getting artifact download URL.'),
+        error: new Error(
+          'Error while getting artifact download URL. ' +
+            serializeError(artifactUrlError)
+        ),
       };
     }
 
     // Download artifact from the URL
-    const gzippedJsonlObject = await this.downloadArtifact(artifactUrl);
-    if (!gzippedJsonlObject) {
+    const { response: gzippedJsonlObject, error: gzippedJsonlObjectError } =
+      await this.downloadArtifact(artifactUrl!);
+    if (gzippedJsonlObjectError) {
       return {
-        error: new Error('Error while downloading gzipped jsonl object.'),
+        error: new Error(
+          'Error while downloading gzipped jsonl object.' +
+            serializeError(gzippedJsonlObjectError)
+        ),
       };
     }
 
     // Decompress the gzipped jsonl object
-    const jsonlObject = this.decompressGzip(gzippedJsonlObject);
-    if (!jsonlObject) {
+    const { response: jsonlObject, error: jsonlObjectError } = decompressGzip(
+      gzippedJsonlObject!
+    );
+    if (jsonlObjectError) {
       return {
-        error: new Error('Error while decompressing gzipped jsonl object.'),
+        error: new Error(
+          'Error while decompressing gzipped jsonl object.' +
+            serializeError(jsonlObjectError)
+        ),
       };
     }
 
     // Parse the jsonl object to get the attachment metadata
-    const jsonObject = this.parseJsonl(jsonlObject) as NormalizedAttachment[];
-    if (!jsonObject) {
+    const { response: jsonObject, error: jsonObjectError } = parseJsonl(
+      jsonlObject!
+    );
+    if (jsonObjectError) {
       return {
-        error: new Error('Error while parsing jsonl object.'),
+        error: new Error(
+          'Error while parsing jsonl object.' + serializeError(jsonObjectError)
+        ),
       };
     }
 
-    return { attachments: jsonObject };
+    return { attachments: jsonObject! as NormalizedAttachment[] };
   }
 
   /**
@@ -309,7 +341,7 @@ export class Uploader {
    */
   private async getArtifactDownloadUrl(
     artifactId: string
-  ): Promise<string | void> {
+  ): Promise<UploaderResult<string>> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.download-url`;
 
     try {
@@ -323,12 +355,9 @@ export class Uploader {
         },
       });
 
-      return response.data.download_url;
+      return { response: response.data.download_url };
     } catch (error) {
-      console.error(
-        'Error while getting artifact download URL.',
-        serializeError(error)
-      );
+      return { error };
     }
   }
 
@@ -337,60 +366,18 @@ export class Uploader {
    * @param {string} artifactUrl - The URL to download the artifact from
    * @returns {Promise<Buffer | void>} The artifact file buffer or undefined on error
    */
-  private async downloadArtifact(artifactUrl: string): Promise<Buffer | void> {
+  private async downloadArtifact(
+    artifactUrl: string
+  ): Promise<UploaderResult<Buffer>> {
     try {
       const response = await axiosClient.get(artifactUrl, {
         responseType: 'arraybuffer',
       });
 
-      return response.data;
+      return { response: response.data };
     } catch (error) {
-      console.error(
-        'Error while downloading artifact from URL.',
-        serializeError(error)
-      );
+      return { error };
     }
-  }
-
-  /**
-   * Compresses a JSONL string using gzip compression.
-   * @param {string} jsonlObject - The JSONL string to compress
-   * @returns {Buffer | void} The compressed buffer or undefined on error
-   */
-  private compressGzip(jsonlObject: string): Buffer | void {
-    try {
-      return zlib.gzipSync(jsonlObject);
-    } catch (error) {
-      console.error('Error while compressing jsonl object.', error);
-    }
-  }
-
-  /**
-   * Decompresses a gzipped buffer to a JSONL string.
-   * @param {Buffer} gzippedJsonlObject - The gzipped buffer to decompress
-   * @returns {string | void} The decompressed JSONL string or undefined on error
-   */
-  private decompressGzip(gzippedJsonlObject: Buffer): string | void {
-    try {
-      const jsonlObject = zlib.gunzipSync(gzippedJsonlObject);
-      return jsonlObject.toString();
-    } catch (error) {
-      console.error('Error while decompressing gzipped jsonl object.', error);
-    }
-  }
-
-  /**
-   * Parses a JSONL string into an array of objects.
-   * @param {string} jsonlObject - The JSONL string to parse
-   * @returns {object[] | null} The parsed array of objects or null on error
-   */
-  private parseJsonl(jsonlObject: string): object[] | null {
-    try {
-      return jsonl.parse(jsonlObject);
-    } catch (error) {
-      console.error('Error while parsing jsonl object.', error);
-    }
-    return null;
   }
 
   /**
@@ -406,67 +393,33 @@ export class Uploader {
   }: {
     artifactId: string;
     isGzipped?: boolean;
-  }): Promise<object[] | object | void> {
-    const artifactUrl = await this.getArtifactDownloadUrl(artifactId);
-    if (!artifactUrl) {
-      return;
+  }): Promise<UploaderResult<object[] | object>> {
+    const { response: artifactUrl, error: artifactUrlError } =
+      await this.getArtifactDownloadUrl(artifactId);
+    if (artifactUrlError) {
+      return { error: artifactUrlError };
     }
 
-    const artifact = await this.downloadArtifact(artifactUrl);
-    if (!artifact) {
-      return;
+    const { response: artifact, error: artifactError } =
+      await this.downloadArtifact(artifactUrl!);
+    if (artifactError) {
+      return { error: artifactError };
     }
 
     if (isGzipped) {
-      const decompressedArtifact = this.decompressGzip(artifact);
-      if (!decompressedArtifact) {
-        return;
+      const {
+        response: decompressedArtifact,
+        error: decompressedArtifactError,
+      } = decompressGzip(artifact!);
+      if (decompressedArtifactError) {
+        return { error: decompressedArtifactError };
       }
 
-      const jsonlObject = Buffer.from(decompressedArtifact).toString('utf-8');
-      return jsonl.parse(jsonlObject);
+      const jsonlObject = Buffer.from(decompressedArtifact!).toString('utf-8');
+      return { response: jsonl.parse(jsonlObject) };
     }
 
-    const jsonlObject = Buffer.from(artifact).toString('utf-8');
-    return jsonl.parse(jsonlObject);
-  }
-
-  /**
-   * Downloads fetched objects to the local file system (for local development).
-   * @param {string} itemType - The type of items being downloaded
-   * @param {object | object[]} fetchedObjects - The objects to write to file
-   * @returns {Promise<void>} Resolves when the file is written or rejects on error
-   */
-  private async downloadToLocal(
-    itemType: string,
-    fetchedObjects: object | object[]
-  ) {
-    console.log(`Downloading ${itemType} to local file system.`);
-    try {
-      if (!fs.existsSync('extracted_files')) {
-        fs.mkdirSync('extracted_files');
-      }
-
-      const timestamp = new Date().getTime();
-      const filePath = `extracted_files/extractor_${itemType}_${timestamp}.${
-        itemType === 'external_domain_metadata' ? 'json' : 'jsonl'
-      }`;
-      const fileHandle = await fsPromises.open(filePath, 'w');
-      let objArray = [];
-      if (!Array.isArray(fetchedObjects)) {
-        objArray.push(fetchedObjects);
-      } else {
-        objArray = fetchedObjects;
-      }
-      for (const jsonObject of objArray) {
-        const jsonLine = JSON.stringify(jsonObject) + '\n';
-        await fileHandle.write(jsonLine);
-      }
-      await fileHandle.close();
-      console.log('Data successfully written to', filePath);
-    } catch (error) {
-      console.error('Error writing data to file.', error);
-      return Promise.reject(error);
-    }
+    const jsonlObject = Buffer.from(artifact!).toString('utf-8');
+    return { response: jsonl.parse(jsonlObject) };
   }
 }

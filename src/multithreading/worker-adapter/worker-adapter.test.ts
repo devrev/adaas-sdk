@@ -1,29 +1,29 @@
-import { AttachmentsStreamingPool } from '../attachments-streaming/attachments-streaming-pool';
-import { State } from '../state/state';
-import { createEvent } from '../tests/test-helpers';
-import { AdapterState, EventType, ExtractorEventType } from '../types';
+import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
+import { State } from '../../state/state';
+import { createEvent } from '../../tests/test-helpers';
+import { AdapterState, EventType, ExtractorEventType } from '../../types';
 import { WorkerAdapter } from './worker-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 
 // Mock dependencies
-jest.mock('../common/control-protocol', () => ({
+jest.mock('../../common/control-protocol', () => ({
   emit: jest.fn().mockResolvedValue({}),
 }));
 
 // const mockPostState = jest.spyOn(State.prototype, 'postState').mockResolvedValue(); // Mock to resolve void
 // const mockFetchState = jest.spyOn(State.prototype, 'fetchState').mockResolvedValue({}); // Mock to resolve a default state
 
-jest.mock('../mappers/mappers');
-jest.mock('../uploader/uploader');
-// jest.mock('../state/state');
-jest.mock('../repo/repo');
+jest.mock('../../mappers/mappers');
+jest.mock('../../uploader/uploader');
+// jest.mock('../../state/state');
+jest.mock('../../repo/repo');
 jest.mock('node:worker_threads', () => ({
   parentPort: {
     postMessage: jest.fn(),
   },
 }));
-jest.mock('../attachments-streaming/attachments-streaming-pool', () => {
+jest.mock('../../attachments-streaming/attachments-streaming-pool', () => {
   return {
     AttachmentsStreamingPool: jest.fn().mockImplementation(() => {
       return {
@@ -47,7 +47,7 @@ describe(WorkerAdapter.name, () => {
     jest.clearAllMocks();
 
     // Create mock objects
-    mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+    mockEvent = createEvent({ eventType: EventType.StartExtractingData });
 
     const initialState: AdapterState<TestState> = {
       attachments: { completed: false },
@@ -511,11 +511,11 @@ describe(WorkerAdapter.name, () => {
         .mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
-      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
-      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
@@ -529,15 +529,15 @@ describe(WorkerAdapter.name, () => {
         .mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
-      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
-      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
-      await adapter.emit(ExtractorEventType.ExtractionMetadataDone, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
@@ -551,7 +551,7 @@ describe(WorkerAdapter.name, () => {
         .mockRejectedValue(new Error('postState error'));
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
-      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });
@@ -566,7 +566,7 @@ describe(WorkerAdapter.name, () => {
         .fn()
         .mockRejectedValue(new Error('uploadAllRepos error'));
 
-      await adapter.emit(ExtractorEventType.ExtractionMetadataError, {
+      await adapter.emit(ExtractorEventType.MetadataExtractionError, {
         reports: [],
         processed_files: [],
       });

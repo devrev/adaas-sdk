@@ -1,31 +1,30 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import { emit } from '../common/control-protocol';
-import { translateIncomingEventType } from '../common/event-type-translation';
-import { getMemoryUsage, getTimeoutErrorEventType } from '../common/helpers';
-import { Logger, serializeError } from '../logger/logger';
-import {
-  AirdropEvent,
-  EventType,
-  ExtractorEventType,
-} from '../types/extraction';
+import { emit } from '../../common/control-protocol';
+import { translateIncomingEventType } from '../../common/event-type-translation';
+import { getMemoryUsage } from '../../common/helpers';
+import { Logger, serializeError } from '../../logger/logger';
+import { AirdropEvent, EventType } from '../../types/extraction';
 import {
   GetWorkerPathInterface,
   SpawnFactoryInterface,
   SpawnInterface,
   WorkerEvent,
   WorkerMessageSubject,
-} from '../types/workers';
+} from '../../types/workers';
 
 import {
   DEFAULT_LAMBDA_TIMEOUT,
   HARD_TIMEOUT_MULTIPLIER,
   MEMORY_LOG_INTERVAL,
-} from '../common/constants';
-import { LogLevel } from '../logger/logger.interfaces';
-import { createWorker } from './create-worker';
-import { LoaderEventType } from '../types';
+} from '../../common/constants';
+import { LogLevel } from '../../logger/logger.interfaces';
+import { createWorker } from '../create-worker';
+import {
+  getTimeoutErrorEventType,
+  getNoScriptEventType,
+} from './spawn.helpers';
 
 function getWorkerPath({
   event,
@@ -47,6 +46,14 @@ function getWorkerPath({
     case EventType.ContinueExtractingAttachments:
       path = '/workers/attachments-extraction';
       break;
+    case EventType.StartLoadingData:
+    case EventType.ContinueLoadingData:
+      path = '/workers/load-data';
+      break;
+    case EventType.StartLoadingAttachments:
+    case EventType.ContinueLoadingAttachments:
+      path = '/workers/load-attachments';
+      break;
   }
 
   return path ? workerBasePath + path : null;
@@ -60,7 +67,8 @@ function getWorkerPath({
  * @param {SpawnFactoryInterface} options - The options to create a new instance of Spawn class
  * @param {AirdropEvent} options.event - The event object received from the platform
  * @param {object} options.initialState - The initial state of the adapter
- * @param {string} options.workerPath - The path to the worker file
+ * @param {string} [options.workerPath] Remove getWorkerPath function and use baseWorkerPath: __dirname instead of workerPath
+ * @param {string} [options.baseWorkerPath] - The base path for the worker files, usually `__dirname`
  * @returns {Promise<Spawn>} - A new instance of Spawn class
  */
 export async function spawn<ConnectorState>({
@@ -71,27 +79,15 @@ export async function spawn<ConnectorState>({
   options,
   baseWorkerPath,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
-  // Translates incoming event type for backwards compatibility
-  // This allows the SDK to accept both old and new event type formats
+  // Translate incoming event type for backwards compatibility. This allows the
+  // SDK to accept both old and new event type formats. Then update the event with the translated event type.
   const originalEventType = event.payload.event_type;
   const translatedEventType = translateIncomingEventType(
     event.payload.event_type as string
   );
-
-  // Update the event with the translated event type
   event.payload.event_type = translatedEventType;
 
-  if (translatedEventType !== originalEventType) {
-    console.log(
-      `Event type translated from ${originalEventType} to ${translatedEventType}.`
-    );
-  }
-
-  if (options?.isLocalDevelopment) {
-    console.log('Snap-in is running in local development mode.');
-  }
-
-  // read the command line arguments to check if the local flag is passed
+  // Read the command line arguments to check if the local flag is passed.
   const argv = await yargs(hideBin(process.argv)).argv;
   if (argv._.includes('local')) {
     options = {
@@ -103,6 +99,15 @@ export async function spawn<ConnectorState>({
   const originalConsole = console;
   // eslint-disable-next-line no-global-assign
   console = new Logger({ event, options });
+
+  if (translatedEventType !== originalEventType) {
+    console.log(
+      `Event type translated from ${originalEventType} to ${translatedEventType}.`
+    );
+  }
+  if (options?.isLocalDevelopment) {
+    console.log('Snap-in is running in local development mode.');
+  }
 
   let script = null;
   if (workerPath != null) {
@@ -122,6 +127,7 @@ export async function spawn<ConnectorState>({
     });
   }
 
+  // If a script is found for the event type, spawn a new worker.
   if (script) {
     try {
       const worker = await createWorker<ConnectorState>({
@@ -143,63 +149,22 @@ export async function spawn<ConnectorState>({
       });
     } catch (error) {
       console.error('Worker error while processing task', error);
+
       // eslint-disable-next-line no-global-assign
       console = originalConsole;
       return Promise.reject(error);
     }
   } else {
-    // If no script is found for the delete event type, return `Done`
-    switch (event.payload.event_type) {
-      case EventType.StartDeletingExtractorAttachmentsState:
-        await emit({
-          event,
-          eventType: ExtractorEventType.ExtractorAttachmentsStateDeletionDone,
-        });
-        return;
-      case EventType.StartDeletingLoaderAttachmentState:
-        await emit({
-          event,
-          eventType: LoaderEventType.LoaderAttachmentStateDeletionDone,
-        });
-        return;
-      case EventType.StartDeletingExtractorState:
-        await emit({
-          event,
-          eventType: ExtractorEventType.ExtractorStateDeletionDone,
-        });
-        return;
-      case EventType.StartDeletingLoaderState:
-        await emit({
-          event,
-          eventType: LoaderEventType.LoaderStateDeletionDone,
-        });
-        return;
-    }
+    const { eventType } = getNoScriptEventType(event.payload.event_type);
 
-    console.error(
-      'Script was not found for event type: ' + event.payload.event_type + '.'
-    );
+    await emit({
+      event,
+      eventType,
+    });
 
-    try {
-      await emit({
-        event,
-        eventType: ExtractorEventType.UnknownEventType,
-        data: {
-          error: {
-            message:
-              'Unrecognized event type in spawn ' +
-              event.payload.event_type +
-              '.',
-          },
-        },
-      });
-    } catch (error) {
-      console.error('Error while emitting event.', serializeError(error));
-      return Promise.reject(error);
-    } finally {
-      // eslint-disable-next-line no-global-assign
-      console = originalConsole;
-    }
+    // eslint-disable-next-line no-global-assign
+    console = originalConsole;
+    return Promise.resolve();
   }
 }
 
@@ -285,7 +250,8 @@ export class Spawn {
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
         const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
-        this.logger.logFn(stringifiedArgs, level);
+        const isSdkLog = message.payload?.isSdkLog ?? false;
+        this.logger.logFn(stringifiedArgs, level, isSdkLog);
       }
 
       // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.

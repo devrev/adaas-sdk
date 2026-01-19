@@ -1,6 +1,6 @@
 {
   "name": "@devrev/ts-adaas",
-  "version": "1.13.1",
+  "version": "1.13.4-beta.4",
   "description": "Typescript library containing the ADaaS(AirDrop as a Service) control protocol.",
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -54,6 +54,7 @@
     "yargs": "^17.7.2"
   },
   "files": [
-    "dist"
+    "dist/**/*",
+    "!dist/tests/**/*"
   ]
 }

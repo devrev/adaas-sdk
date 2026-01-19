@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 import { STATELESS_EVENT_TYPES } from '../common/constants';
-import { getSyncDirection } from '../common/helpers';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
 import { axiosClient } from '../http/axios-client-internal';
 import { getPrintableState, serializeError } from '../logger/logger';
@@ -91,7 +90,7 @@ export class State<ConnectorState> {
 
   constructor({ event, initialState }: StateInterface<ConnectorState>) {
     this.initialSdkState =
-      getSyncDirection({ event }) === SyncMode.LOADING
+      event.payload.event_context.mode === SyncMode.LOADING
         ? loadingSdkState
         : extractionSdkState;
     this._state = {
