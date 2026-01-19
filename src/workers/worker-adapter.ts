@@ -159,6 +159,8 @@ export class WorkerAdapter<ConnectorState> {
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
+          // The newLength only contains the length of the artifacts. The remaining 20% of the quota
+          // Should account for other fields.
           const newLength = Buffer.byteLength(JSON.stringify(artifact), 'utf8');
 
           // We need to store artifacts ids in state for later use when streaming attachments
@@ -179,7 +181,6 @@ export class WorkerAdapter<ConnectorState> {
             console.log(
               '[SIZE_LIMIT] Artifact size threshold exceeded. Setting timeout flag for early exit.'
             );
-            this.currentLength = 0;
 
             // Set timeout flag to trigger onTimeout after task completes
             // The onTimeout function is responsible for emitting the progress event
