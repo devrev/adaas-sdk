@@ -8,6 +8,10 @@ import {
 } from '../../common/constants';
 import { emit } from '../../common/control-protocol';
 import {
+  EVENT_SIZE_THRESHOLD_BYTES,
+  pruneEventData,
+} from '../../common/event-size-monitor';
+import {
   addReportToLoaderReport,
   getFilesToLoad,
 } from './worker-adapter.helpers';
@@ -99,6 +103,12 @@ export class WorkerAdapter<ConnectorState> {
   private _mappers: Mappers;
   private uploader: Uploader;
 
+  /**
+   * Cumulative byte length of uploaded artifacts for size limit tracking.
+   * @private
+   */
+  private currentLength: number = 0;
+
   constructor({
     event,
     adapterState,
@@ -157,11 +167,32 @@ export class WorkerAdapter<ConnectorState> {
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
+          // Calculate size of artifact metadata (id, item_type, item_count) that goes in SQS message
+          const artifactMetadataSize = Buffer.byteLength(JSON.stringify(artifact), 'utf8');
+
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AIRDROP_DEFAULT_ITEM_TYPES.ATTACHMENTS) {
             this.state.toDevRev?.attachmentsMetadata.artifactIds.push(
               artifact.id
             );
+          }
+
+          this.currentLength += artifactMetadataSize;
+
+          // Check for size limit
+          // Checking the byte lengths of the artifacts, because these are entries inside the artifacts array, additional fields are only added once.
+          if (
+            this.currentLength > EVENT_SIZE_THRESHOLD_BYTES &&
+            !this.isTimeout
+          ) {
+            console.log(
+              '[SIZE_LIMIT] Artifact size threshold exceeded. Setting timeout flag for early exit.'
+            );
+
+            // Set timeout flag to trigger onTimeout after task completes
+            // The onTimeout function is responsible for emitting the progress event
+            // This is consistent with the soft timeout behavior from parent
+            this.handleTimeout();
           }
         },
         options: this.options,
@@ -261,11 +292,14 @@ export class WorkerAdapter<ConnectorState> {
       }
 
       try {
+        // Always prune error messages to make them shorter before emit
+        const prunedData = pruneEventData(data);
+
         await emit({
           eventType: newEventType,
           event: this.event,
           data: {
-            ...data,
+            ...prunedData,
             ...(ALLOWED_EXTRACTION_EVENT_TYPES.includes(
               this.event.payload.event_type
             )

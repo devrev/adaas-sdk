@@ -1,73 +1,52 @@
 import { EventType, ExtractorEventType } from '../../types/extraction';
-import { MockServer } from '../mock-server';
+import { mockServer } from '../jest.setup';
 import { createEvent } from '../test-helpers';
 import run from './size-limit-extraction';
 
 // Increase timeout for this test since we're doing many uploads
-jest.setTimeout(120000);
+jest.setTimeout(60000);
 
 describe('size-limit-1: SQS size limit early exit', () => {
-  let mockServer: MockServer;
-
-  beforeAll(async () => {
-    mockServer = new MockServer(3002);
-    await mockServer.start();
-  });
-
-  afterAll(async () => {
-    if (mockServer) {
-      await mockServer.stop();
-    }
-  });
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockServer.clearRequests();
-  });
-
   it('should emit progress event when size limit is exceeded during data extraction', async () => {
-    const baseUrl = mockServer.getBaseUrl();
     const event = createEvent({
       eventType: EventType.StartExtractingData,
-      eventContextOverrides: {
-        callback_url: `${baseUrl}/internal/airdrop.external-extractor.message`,
-        worker_data_url: `${baseUrl}/internal/airdrop.external-worker`,
-      },
-      executionMetadataOverrides: {
-        devrev_endpoint: `${baseUrl}`,
-      },
     });
 
     await run([event], __dirname + '/size-limit-1');
 
-    const requests = mockServer.getRequests();
+    const lastRequest = mockServer.getLastRequest();
+    expect(lastRequest?.url).toContain('/callback_url');
+    expect(lastRequest?.method).toBe('POST');
 
-    // Find all emit requests to the callback URL
-    const emitRequests = requests.filter(
-      (r) =>
-        r.url.includes('airdrop.external-extractor.message') &&
-        r.method === 'POST'
+    const body = lastRequest?.body as {
+      event_type: string;
+      event_data?: { artifacts?: Array<{ id: string; item_type: string; item_count: number }> };
+    };
+
+    expect(body.event_type).toBe(ExtractorEventType.DataExtractionProgress);
+
+    // Verify that artifacts array is included and contains the expected number of artifacts
+    expect(body.event_data?.artifacts).toBeDefined();
+    expect(Array.isArray(body.event_data?.artifacts)).toBe(true);
+
+    // All 3000 items should be uploaded (size limit triggers during upload but doesn't stop the current push)
+    // The key is that we emit PROGRESS instead of DONE when size limit is exceeded
+    const artifactsCount = body.event_data?.artifacts?.length || 0;
+    expect(artifactsCount).toBe(3000);
+
+    // Verify that each artifact only contains metadata (id, item_type, item_count)
+    // This is what gets included in the SQS message - NOT the actual file contents
+    const firstArtifact = body.event_data?.artifacts?.[0];
+    expect(firstArtifact).toHaveProperty('id');
+    expect(firstArtifact).toHaveProperty('item_type');
+    expect(firstArtifact).toHaveProperty('item_count');
+    expect(Object.keys(firstArtifact || {}).length).toBe(3);
+
+    // Verify the total size of all artifact metadata exceeds the 160KB threshold
+    const totalArtifactsSize = Buffer.byteLength(
+      JSON.stringify(body.event_data?.artifacts),
+      'utf8'
     );
-
-    // There should be one emit - the progress event from size limit
-    expect(emitRequests.length).toBe(1);
-
-    // The last emit should be a progress event (from size limit trigger or onTimeout)
-    const lastEmit = emitRequests[emitRequests.length - 1];
-    expect(lastEmit.body.event_type).toBe(
-      ExtractorEventType.DataExtractionProgress
-    );
-
-    // Verify that artifacts were uploaded (proving data was being processed)
-    const artifactUploadRequests = requests.filter((r) =>
-      r.url.includes('artifacts.upload-url')
-    );
-    expect(artifactUploadRequests.length).toBeGreaterThan(0);
-
-    // Verify state was saved (worker data endpoint was called)
-    const workerDataRequests = requests.filter(
-      (r) => r.url.includes('airdrop.external-worker') && r.method === 'POST'
-    );
-    expect(workerDataRequests.length).toBeGreaterThan(0);
+    expect(totalArtifactsSize).toBeGreaterThan(160000); // 160KB threshold
   });
 });

@@ -1,13 +1,12 @@
 import { ExtractorEventType, processTask } from '../../index';
 
 /**
- * Test worker that generates many items to trigger the SQS size limit.
+ * Test worker that generates items to trigger the SQS size limit.
  *
  * The size limit is 160KB (80% of 200KB max).
- * Each artifact metadata object is ~80 bytes when serialized.
- * With batch size of 1, each item triggers one upload.
- * To hit 160KB, we need ~2000 uploads (160000 / 80 = 2000).
- * We generate 2500 items to ensure we hit the limit.
+ * With batch size 1, each item creates 1 artifact.
+ * Each artifact metadata is ~56 bytes (id, item_type, item_count).
+ * We need ~2857 artifacts to reach 160KB, so generating 3000 items.
  */
 processTask({
   task: async ({ adapter }) => {
@@ -28,13 +27,17 @@ processTask({
       return;
     }
 
-    // Generate 2500 items - with batch size of 1, this creates 2500 uploads
-    // Each artifact metadata is ~80 bytes, so 2500 * 80 = 200KB > 160KB threshold
+    // Generate 3000 items with batch size 1 = 3000 artifacts
+    // Each artifact metadata is ~55 bytes (id, item_type, item_count)
+    // 3000 * 55 = 165KB > 160KB threshold
     const items = [];
-    for (let i = 0; i < 2500; i++) {
+    for (let i = 0; i < 3000; i++) {
       items.push({
         id: `item-${i}`,
-        data: { value: i },
+        name: `Item ${i}`,
+        data: {
+          value: i,
+        },
       });
     }
 
