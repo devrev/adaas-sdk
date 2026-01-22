@@ -103,8 +103,14 @@ export class AttachmentsStreamingPool<ConnectorState> {
 
       if (
         this.adapter.state.toDevRev &&
-        this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList?.includes(
-          attachment.id
+        this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList?.some(
+          (it) => {
+            const comp = {
+              id: attachment.id,
+              parent_id: attachment.parent_id,
+            };
+            return it.id == comp.id && it.parent_id == comp.parent_id;
+          }
         )
       ) {
         continue; // Skip if the attachment ID is already processed
@@ -137,7 +143,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
             ?.lastProcessedAttachmentsIdsList
         ) {
           this.adapter.state.toDevRev?.attachmentsMetadata.lastProcessedAttachmentsIdsList.push(
-            attachment.id
+            { id: attachment.id, parent_id: attachment.parent_id }
           );
         }
 
