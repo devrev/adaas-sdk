@@ -123,6 +123,12 @@ export class Uploader {
   ): Promise<UploaderResult<ArtifactToUpload>> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.upload-url`;
 
+    if (fileSize != null && fileSize! <= 0) {
+      return {
+        error: new Error('File size is 0 or less. '),
+      };
+    }
+
     try {
       const response = await axiosClient.get(url, {
         headers: {
