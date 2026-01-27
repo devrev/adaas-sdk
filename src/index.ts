@@ -8,7 +8,7 @@ export * from './types';
 
 export * from './common/install-initial-domain-mapping';
 
-export { CommonError } from './common/errors';
+export { ExtractionCommonError } from './common/errors';
 
 export { processTask } from './multithreading/process-task';
 export { spawn } from './multithreading/spawn/spawn';
