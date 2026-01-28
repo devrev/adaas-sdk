@@ -167,7 +167,7 @@ export class WorkerAdapter<ConnectorState> {
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
-          // Calculate size of artifact metadata (id, item_type, item_count) that goes in SQS message
+          // Calculate size of the entire artifact object that goes in the SQS message
           const artifactMetadataSize = Buffer.byteLength(JSON.stringify(artifact), 'utf8');
 
           // We need to store artifacts ids in state for later use when streaming attachments
@@ -179,8 +179,12 @@ export class WorkerAdapter<ConnectorState> {
 
           this.currentLength += artifactMetadataSize;
 
-          // Check for size limit
-          // Checking the byte lengths of the artifacts, because these are entries inside the artifacts array, additional fields are only added once.
+          // Check for size limit.
+          // Here we only track the cumulative byte length of individual artifact entries
+          // (objects inside the artifacts array). Any other fields that may exist on the
+          // enclosing event payload (for example, top-level metadata that is not repeated
+          // per artifact) are added only once and therefore do not grow with the number of
+          // artifacts, so they are not included in this per-artifact size calculation.
           if (
             this.currentLength > EVENT_SIZE_THRESHOLD_BYTES &&
             !this.isTimeout

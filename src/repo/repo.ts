@@ -19,7 +19,7 @@ export class Repo {
   private items: (NormalizedItem | NormalizedAttachment | Item)[];
   private normalize?: (item: Item) => NormalizedItem | NormalizedAttachment;
   private uploader: Uploader;
-  private onUpload: (artifact: Artifact, dataSize?: number) => void;
+  private onUpload: (artifact: Artifact) => void;
   private options?: WorkerAdapterOptions;
   public uploadedArtifacts: Artifact[];
 

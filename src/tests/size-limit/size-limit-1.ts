@@ -5,7 +5,7 @@ import { ExtractorEventType, processTask } from '../../index';
  *
  * The size limit is 160KB (80% of 200KB max).
  * With batch size 1, each item creates 1 artifact.
- * Each artifact metadata is ~56 bytes (id, item_type, item_count).
+ * Each artifact metadata is ~55 bytes (id, item_type, item_count).
  * We need ~2857 artifacts to reach 160KB, so generating 3000 items.
  */
 processTask({
