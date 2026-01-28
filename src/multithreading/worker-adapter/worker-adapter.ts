@@ -424,8 +424,7 @@ export class WorkerAdapter<ConnectorState> {
             });
           }
 
-          const transformerFile =
-            response as ExternalSystemItem[];
+          const transformerFile = response as ExternalSystemItem[];
 
           for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
             const { report, rateLimit } = await this.loadItem({
@@ -531,8 +530,7 @@ export class WorkerAdapter<ConnectorState> {
               isGzipped: true,
             });
 
-          const transformerFile =
-            response as ExternalSystemAttachment[];
+          const transformerFile = response as ExternalSystemAttachment[];
 
           if (transformerFileError) {
             console.error(
