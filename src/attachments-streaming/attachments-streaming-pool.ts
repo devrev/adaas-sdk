@@ -7,12 +7,19 @@ import {
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 
+type FailedAttachment = {
+  id: string;
+  file_extension: string;
+  size?: number;
+};
+
 export class AttachmentsStreamingPool<ConnectorState> {
   private adapter: WorkerAdapter<ConnectorState>;
   private attachments: NormalizedAttachment[];
   private batchSize: number;
   private delay: number | undefined;
   private stream: ExternalSystemAttachmentStreamingFunction;
+  private failedAttachments: FailedAttachment[] = [];
 
   private totalProcessedCount: number = 0;
   private readonly PROGRESS_REPORT_INTERVAL = 50;
@@ -71,6 +78,9 @@ export class AttachmentsStreamingPool<ConnectorState> {
     // Wait for all promises to complete
     await Promise.all(initialPromises);
 
+    // Print all failed attachments
+    this.print_failed_attachments(this.failedAttachments);
+
     if (this.delay) {
       return { delay: this.delay };
     }
@@ -127,6 +137,11 @@ export class AttachmentsStreamingPool<ConnectorState> {
             `Skipping attachment with ID ${attachment.id} due to error returned by the stream function`,
             response.error
           );
+          this.failedAttachments.push({
+            id: attachment.id,
+            file_extension: attachment.file_name.split('.').pop() || '',
+          });
+
           await this.updateProgress();
           continue;
         }
@@ -148,8 +163,22 @@ export class AttachmentsStreamingPool<ConnectorState> {
           error
         );
 
+        this.failedAttachments.push({
+          id: attachment.id,
+          file_extension: attachment.file_name.split('.').pop() || '',
+        });
+
         await this.updateProgress();
       }
+    }
+  }
+
+  print_failed_attachments(failedAttachments: FailedAttachment[]) {
+    if (failedAttachments.length > 0) {
+      console.warn(
+        `Failed to process ${failedAttachments.length} attachments: `,
+        failedAttachments
+      );
     }
   }
 }

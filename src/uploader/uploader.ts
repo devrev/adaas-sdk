@@ -59,7 +59,8 @@ export class Uploader {
     if (fileError) {
       return {
         error: new Error(
-          'Error while compressing jsonl object. ' + serializeError(fileError)
+          'Error while compressing jsonl object. ' +
+            JSON.stringify(serializeError(fileError))
         ),
       };
     }
@@ -122,6 +123,12 @@ export class Uploader {
     fileSize?: number
   ): Promise<UploaderResult<ArtifactToUpload>> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.upload-url`;
+
+    if (fileSize != null && fileSize! <= 0) {
+      return {
+        error: new Error('File size is 0 or less. '),
+      };
+    }
 
     try {
       const response = await axiosClient.get(url, {
@@ -289,7 +296,7 @@ export class Uploader {
       return {
         error: new Error(
           'Error while getting artifact download URL. ' +
-            serializeError(artifactUrlError)
+            JSON.stringify(serializeError(artifactUrlError))
         ),
       };
     }
@@ -300,8 +307,8 @@ export class Uploader {
     if (gzippedJsonlObjectError) {
       return {
         error: new Error(
-          'Error while downloading gzipped jsonl object.' +
-            serializeError(gzippedJsonlObjectError)
+          'Error while downloading gzipped jsonl object. ' +
+            JSON.stringify(serializeError(gzippedJsonlObjectError))
         ),
       };
     }
@@ -313,8 +320,8 @@ export class Uploader {
     if (jsonlObjectError) {
       return {
         error: new Error(
-          'Error while decompressing gzipped jsonl object.' +
-            serializeError(jsonlObjectError)
+          'Error while decompressing gzipped jsonl object. ' +
+            JSON.stringify(serializeError(jsonlObjectError))
         ),
       };
     }
@@ -326,7 +333,8 @@ export class Uploader {
     if (jsonObjectError) {
       return {
         error: new Error(
-          'Error while parsing jsonl object.' + serializeError(jsonObjectError)
+          'Error while parsing jsonl object. ' +
+            JSON.stringify(serializeError(jsonObjectError))
         ),
       };
     }

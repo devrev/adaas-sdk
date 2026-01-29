@@ -249,6 +249,23 @@ describe(Uploader.name, () => {
       expect(result.error).toBeInstanceOf(Error);
       expect(mockedAxiosClient.get).toHaveBeenCalled();
     });
+
+    it('should return error during upload, as it has size of zero', async () => {
+      // Arrange
+      const filename = 'test-file.jsonl.gz';
+      const fileType = 'application/x-gzip';
+      const fileSize = 0;
+
+      // Act
+      const result = await uploader.getArtifactUploadUrl(
+        filename,
+        fileType,
+        fileSize
+      );
+
+      // Assert
+      expect(result.error).toBeInstanceOf(Error);
+    });
   });
 
   describe(Uploader.prototype.uploadArtifact.name, () => {
