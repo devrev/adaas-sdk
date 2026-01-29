@@ -175,6 +175,84 @@ describe(AttachmentsStreamingPool.name, () => {
 
       expect(result).toEqual({ delay: 5000 });
     });
+
+    it('should handle all attachments failing with different file types and sizes', async () => {
+      const largeAttachments: NormalizedAttachment[] = [
+        {
+          id: 'attachment-image',
+          url: 'https://example.com/photo.jpg',
+          file_name: 'photo.jpg',
+          parent_id: 'parent-1',
+        },
+        {
+          id: 'attachment-pdf',
+          url: 'https://example.com/document.pdf',
+          file_name: 'document.pdf',
+          parent_id: 'parent-2',
+        },
+        {
+          id: 'attachment-video',
+          url: 'https://example.com/video.mp4',
+          file_name: 'video.mp4',
+          parent_id: 'parent-3',
+        },
+      ];
+
+      const imageError = new Error('Image upload failed: File too large');
+      const pdfError = new Error('PDF upload failed: Unsupported format');
+      const videoError = new Error('Video upload failed: Network error');
+
+      mockAdapter.processAttachment
+        .mockRejectedValueOnce(imageError)
+        .mockRejectedValueOnce(pdfError)
+        .mockRejectedValueOnce(videoError);
+
+      const warnSpy = jest.spyOn(console, 'warn');
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: largeAttachments,
+        stream: mockStream,
+      });
+
+      await pool.streamAll();
+
+      expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
+      // Each attachment generates 2 warnings: one for the error, one for the failed attachments summary
+      // Since there are 3 parallel workers (one per attachment), each logs its own failed attachment
+      expect(warnSpy).toHaveBeenCalledTimes(4);
+
+      // Verify that each attachment error was logged
+      expect(warnSpy).toHaveBeenCalledWith(
+        'Skipping attachment with ID attachment-image due to error in processAttachment function',
+        imageError
+      );
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        'Skipping attachment with ID attachment-pdf due to error in processAttachment function',
+        pdfError
+      );
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        'Skipping attachment with ID attachment-video due to error in processAttachment function',
+        videoError
+      );
+
+      // Verify that failed attachments summaries were logged (one per worker)
+      expect(warnSpy).toHaveBeenCalledWith(
+        'Failed to process 3 attachments: ',
+        [
+          { id: 'attachment-image', file_extension: 'jpg' },
+          { id: 'attachment-pdf', file_extension: 'pdf' },
+          { id: 'attachment-video', file_extension: 'mp4' },
+        ]
+      );
+
+      expect(
+        mockAdapter.state.toDevRev!.attachmentsMetadata
+          .lastProcessedAttachmentsIdsList
+      ).toEqual([]);
+    });
   });
 
   describe(AttachmentsStreamingPool.prototype.startPoolStreaming.name, () => {

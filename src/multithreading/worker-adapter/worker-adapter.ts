@@ -777,12 +777,22 @@ export class WorkerAdapter<ConnectorState> {
             serializeError(artifactUrlError)
           );
           this.destroyHttpStream(httpStream);
-          return;
+          return {
+            error: {
+              message: 'Failed to get artifactUrl.',
+              fileSize: fileSize,
+            },
+          };
         }
 
         if (this.isTimeout) {
           this.destroyHttpStream(httpStream);
-          return;
+          return {
+            error: {
+              message: 'Timeout while streaming artifact.',
+              fileSize: fileSize,
+            },
+          };
         }
 
         // Stream attachment
@@ -795,7 +805,12 @@ export class WorkerAdapter<ConnectorState> {
             serializeError(uploadedArtifactError)
           );
           this.destroyHttpStream(httpStream);
-          return;
+          return {
+            error: {
+              message: 'Failed to upload artifact.',
+              fileSize: fileSize,
+            },
+          };
         }
 
         // Confirm attachment upload
@@ -808,7 +823,12 @@ export class WorkerAdapter<ConnectorState> {
             `Error while confirming upload for attachment ID ${attachment.id}.`,
             confirmArtifactUploadError
           );
-          return;
+          return {
+            error: {
+              message: 'Failed to confirm artifact upload.',
+              fileSize: fileSize,
+            },
+          };
         }
 
         const ssorAttachment: SsorAttachment = {
