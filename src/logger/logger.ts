@@ -104,10 +104,7 @@ export class Logger extends Console {
    * @param args - Values to log (will be stringified and truncated if needed)
    * @param level - Log level (info, warn, error)
    */
-  private stringifyAndLog(
-    args: unknown[],
-    level: LogLevel,
-  ): void {
+  private stringifyAndLog(args: unknown[], level: LogLevel): void {
     let stringifiedArgs = args.map((arg) => this.valueToString(arg)).join(' ');
     stringifiedArgs = this.truncateMessage(stringifiedArgs);
 
