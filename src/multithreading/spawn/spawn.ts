@@ -120,7 +120,7 @@ export async function spawn<ConnectorState>({
     script =
       baseWorkerPath +
       options.workerPathOverrides[translatedEventType as EventType];
-  } else {
+  } else if (baseWorkerPath != null) {
     script = getWorkerPath({
       event,
       workerBasePath: baseWorkerPath ?? __dirname,
