@@ -430,9 +430,13 @@ export interface StreamAttachmentsResponse {
 export type ProcessAttachmentReturnType =
   | {
       delay?: number;
-      error?: { message: string; fileSize?: number };
+      error?: { message: string };
     }
-  | undefined;
+  | undefined
+  | {
+      delay?: number;
+      error?: { message: string; fileSize?: number };
+    };
 
 export type StreamAttachmentsReturnType =
   | {
