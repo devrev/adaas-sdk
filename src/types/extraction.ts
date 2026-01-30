@@ -432,11 +432,7 @@ export type ProcessAttachmentReturnType =
       delay?: number;
       error?: { message: string };
     }
-  | undefined
-  | {
-      delay?: number;
-      error?: { message: string; fileSize?: number };
-    };
+  | undefined;
 
 export type StreamAttachmentsReturnType =
   | {

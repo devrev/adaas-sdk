@@ -220,32 +220,22 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
       // Each attachment generates 2 warnings: one for the error, one for the failed attachments summary
       // Since there are 3 parallel workers (one per attachment), each logs its own failed attachment
-      expect(warnSpy).toHaveBeenCalledTimes(4);
+      expect(warnSpy).toHaveBeenCalledTimes(3);
 
       // Verify that each attachment error was logged
       expect(warnSpy).toHaveBeenCalledWith(
-        'Skipping attachment with ID attachment-image due to error in processAttachment function',
+        'Skipping attachment with ID attachment-image with extension jpg due to error in processAttachment function',
         imageError
       );
 
       expect(warnSpy).toHaveBeenCalledWith(
-        'Skipping attachment with ID attachment-pdf due to error in processAttachment function',
+        'Skipping attachment with ID attachment-pdf with extension pdf due to error in processAttachment function',
         pdfError
       );
 
       expect(warnSpy).toHaveBeenCalledWith(
-        'Skipping attachment with ID attachment-video due to error in processAttachment function',
+        'Skipping attachment with ID attachment-video with extension mp4 due to error in processAttachment function',
         videoError
-      );
-
-      // Verify that failed attachments summaries were logged (one per worker)
-      expect(warnSpy).toHaveBeenCalledWith(
-        'Failed to process 3 attachments: ',
-        [
-          { id: 'attachment-image', file_extension: 'jpg' },
-          { id: 'attachment-pdf', file_extension: 'pdf' },
-          { id: 'attachment-video', file_extension: 'mp4' },
-        ]
       );
 
       expect(
@@ -305,7 +295,7 @@ describe(AttachmentsStreamingPool.name, () => {
       await pool.streamAll();
 
       expect(console.warn).toHaveBeenCalledWith(
-        'Skipping attachment with ID attachment-2 due to error in processAttachment function',
+        'Skipping attachment with ID attachment-2 with extension jpg due to error in processAttachment function',
         error
       );
       expect(

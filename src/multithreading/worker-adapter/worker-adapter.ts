@@ -772,14 +772,12 @@ export class WorkerAdapter<ConnectorState> {
           );
 
         if (artifactUrlError) {
-          console.warn(
-            `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment.`,
-            serializeError(artifactUrlError)
-          );
           this.destroyHttpStream(httpStream);
           return {
             error: {
-              message: 'Failed to get artifactUrl.',
+              message:
+                `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
+                JSON.stringify(serializeError(artifactUrlError)),
               fileSize: fileSize,
             },
           };
@@ -800,14 +798,12 @@ export class WorkerAdapter<ConnectorState> {
           await this.uploader.streamArtifact(artifactUrlResponse!, httpStream);
 
         if (uploadedArtifactError) {
-          console.warn(
-            `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment.`,
-            serializeError(uploadedArtifactError)
-          );
           this.destroyHttpStream(httpStream);
           return {
             error: {
-              message: 'Failed to upload artifact.',
+              message:
+                `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
+                JSON.stringify(serializeError(uploadedArtifactError)),
               fileSize: fileSize,
             },
           };
@@ -819,13 +815,11 @@ export class WorkerAdapter<ConnectorState> {
             artifactUrlResponse!.artifact_id
           );
         if (confirmArtifactUploadError) {
-          console.warn(
-            `Error while confirming upload for attachment ID ${attachment.id}.`,
-            confirmArtifactUploadError
-          );
           return {
             error: {
-              message: 'Failed to confirm artifact upload.',
+              message:
+                `Error while confirming upload for attachment ID ${attachment.id}. ` +
+                JSON.stringify(confirmArtifactUploadError),
               fileSize: fileSize,
             },
           };
