@@ -21,14 +21,14 @@ export interface ToDevRev {
   attachmentsMetadata: {
     artifactIds: string[];
     lastProcessed: number;
-    lastProcessedAttachmentsIdsList?: UploadedAttachment[];
+    lastProcessedAttachmentsIdsList?: ProcessedAttachment[];
   };
 }
 
 /**
  * Attachment structure, that stores both attachment id and its parent_id for deduplication on the SDK side.
  */
-export interface UploadedAttachment {
+export interface ProcessedAttachment {
   id: string;
   parent_id: string;
 }
