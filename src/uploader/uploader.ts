@@ -128,7 +128,7 @@ export class Uploader {
 
     if (fileSize != null && fileSize! <= 0) {
       return {
-        error: new Error('File size is 0 or less.'),
+        error: 'File size is 0 or less.',
       };
     }
 

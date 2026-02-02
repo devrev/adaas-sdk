@@ -264,7 +264,7 @@ describe(Uploader.name, () => {
       );
 
       // Assert
-      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error).toBeDefined();
     });
   });
 
