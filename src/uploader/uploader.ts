@@ -73,7 +73,9 @@ export class Uploader {
       await this.getArtifactUploadUrl(filename, fileType);
     if (preparedArtifactError) {
       return {
-        error: new Error('Error while getting artifact upload URL.'),
+        error: new Error(
+          'Error while getting artifact upload URL: ' + preparedArtifactError
+        ),
       };
     }
 
@@ -126,7 +128,7 @@ export class Uploader {
 
     if (fileSize != null && fileSize! <= 0) {
       return {
-        error: new Error('File size is 0 or less. '),
+        error: new Error('File size is 0 or less.'),
       };
     }
 
