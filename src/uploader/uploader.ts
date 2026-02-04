@@ -74,7 +74,8 @@ export class Uploader {
     if (preparedArtifactError) {
       return {
         error: new Error(
-          'Error while getting artifact upload URL: ' + preparedArtifactError
+          'Error while getting artifact upload URL: ' +
+            JSON.stringify(serializeError(preparedArtifactError))
         ),
       };
     }
@@ -128,7 +129,7 @@ export class Uploader {
 
     if (fileSize != null && fileSize! <= 0) {
       return {
-        error: 'File size is 0 or less.',
+        error: new Error('File size is 0 or less.'),
       };
     }
 

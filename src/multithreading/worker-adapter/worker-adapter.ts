@@ -775,7 +775,11 @@ export class WorkerAdapter<ConnectorState> {
           this.destroyHttpStream(httpStream);
           return {
             error: {
-              message: `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment. ${artifactUrlError}`,
+              message: `Error while preparing artifact for attachment ID ${
+                attachment.id
+              }. Skipping attachment. ${JSON.stringify(
+                serializeError(artifactUrlError)
+              )}`,
               fileSize: fileSize,
             },
           };
