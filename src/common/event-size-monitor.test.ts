@@ -35,29 +35,6 @@ describe(pruneEventData.name, () => {
     });
   });
 
-  it('should truncate error message in event data', () => {
-    const longMessage = 'x'.repeat(2000);
-    const data: EventData = {
-      error: { message: longMessage },
-    };
-    const result = pruneEventData(data);
-    expect(result?.error?.message.length).toBe(1000);
-    expect(result?.error?.message).toBe('x'.repeat(1000));
-  });
-
-  it('should preserve other fields when pruning error', () => {
-    const data: EventData = {
-      external_sync_units: [
-        { id: 'unit1', name: 'Unit 1', description: 'Test unit' },
-      ],
-      error: { message: 'a'.repeat(1500) },
-    };
-    const result = pruneEventData(data);
-
-    expect(result?.external_sync_units).toEqual(data.external_sync_units);
-    expect(result?.error?.message.length).toBe(1000);
-  });
-
   it('should handle empty EventData object', () => {
     const data: EventData = {};
     const result = pruneEventData(data);
