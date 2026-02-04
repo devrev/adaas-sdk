@@ -7,7 +7,7 @@ import { isMainThread, parentPort } from 'node:worker_threads';
 import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 
-import { INSPECT_OPTIONS, MAX_LOG_STRING_LENGTH } from './logger.constants';
+import { INSPECT_OPTIONS } from './logger.constants';
 import { getSdkLogContextValue } from './logger.context';
 import {
   AxiosErrorResponse,
@@ -17,6 +17,7 @@ import {
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
+import { truncateMessage } from '../common/helpers';
 
 /**
  * Custom logger that extends Node.js Console with context-aware logging.
@@ -49,22 +50,6 @@ export class Logger extends Console {
       return value;
     }
     return inspect(value, INSPECT_OPTIONS);
-  }
-
-  /**
-   * Truncates a message if it exceeds the maximum allowed length.
-   * Adds a suffix indicating how many characters were omitted.
-   *
-   * @param message - The message to truncate
-   * @returns Truncated message or original if within limits
-   */
-  private truncateMessage(message: string): string {
-    if (message.length > MAX_LOG_STRING_LENGTH) {
-      return `${message.substring(0, MAX_LOG_STRING_LENGTH)}... ${
-        message.length - MAX_LOG_STRING_LENGTH
-      } more characters`;
-    }
-    return message;
   }
 
   /**
@@ -106,7 +91,7 @@ export class Logger extends Console {
    */
   private stringifyAndLog(args: unknown[], level: LogLevel): void {
     let stringifiedArgs = args.map((arg) => this.valueToString(arg)).join(' ');
-    stringifiedArgs = this.truncateMessage(stringifiedArgs);
+    stringifiedArgs = truncateMessage(stringifiedArgs);
 
     const isSdkLog = getSdkLogContextValue(true);
 

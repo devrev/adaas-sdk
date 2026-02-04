@@ -1,10 +1,8 @@
-import { ErrorRecord } from '../types/common';
 import { EventData } from '../types/extraction';
 import {
   EVENT_SIZE_THRESHOLD_BYTES,
   MAX_EVENT_SIZE_BYTES,
   pruneEventData,
-  truncateErrorMessage,
 } from './event-size-monitor';
 
 describe('event-size-monitor constants', () => {
@@ -15,63 +13,6 @@ describe('event-size-monitor constants', () => {
   it('should have EVENT_SIZE_THRESHOLD_BYTES set to 80% of MAX_EVENT_SIZE_BYTES', () => {
     expect(EVENT_SIZE_THRESHOLD_BYTES).toBe(Math.floor(200_000 * 0.8));
     expect(EVENT_SIZE_THRESHOLD_BYTES).toBe(160_000);
-  });
-});
-
-describe(truncateErrorMessage.name, () => {
-  it('should return undefined when error is undefined', () => {
-    const result = truncateErrorMessage(undefined);
-    expect(result).toBeUndefined();
-  });
-
-  it('should return error with empty message when error.message is undefined', () => {
-    const error = {} as ErrorRecord;
-    const result = truncateErrorMessage(error);
-    expect(result).toEqual({ message: '' });
-  });
-
-  it('should return error unchanged when message is shorter than maxLength', () => {
-    const error: ErrorRecord = { message: 'Short error message' };
-    const result = truncateErrorMessage(error);
-    expect(result).toEqual({ message: 'Short error message' });
-  });
-
-  it('should truncate message to default 1000 characters', () => {
-    const longMessage = 'a'.repeat(1500);
-    const error: ErrorRecord = { message: longMessage };
-    const result = truncateErrorMessage(error);
-    expect(result?.message.length).toBe(1000);
-    expect(result?.message).toBe('a'.repeat(1000));
-  });
-
-  it('should truncate message to custom maxLength', () => {
-    const longMessage = 'a'.repeat(500);
-    const error: ErrorRecord = { message: longMessage };
-    const result = truncateErrorMessage(error, 100);
-    expect(result?.message.length).toBe(100);
-    expect(result?.message).toBe('a'.repeat(100));
-  });
-
-  it('should handle message exactly at maxLength boundary', () => {
-    const exactMessage = 'b'.repeat(1000);
-    const error: ErrorRecord = { message: exactMessage };
-    const result = truncateErrorMessage(error);
-    expect(result?.message.length).toBe(1000);
-    expect(result?.message).toBe(exactMessage);
-  });
-
-  it('should handle empty message string', () => {
-    const error: ErrorRecord = { message: '' };
-    const result = truncateErrorMessage(error);
-    expect(result).toEqual({ message: '' });
-  });
-
-  it('should preserve special characters when truncating', () => {
-    const specialMessage = '🔥'.repeat(600) + 'abc';
-    const error: ErrorRecord = { message: specialMessage };
-    const result = truncateErrorMessage(error, 10);
-    // Note: substring works on code units, not graphemes
-    expect(result?.message.length).toBe(10);
   });
 });
 
