@@ -107,7 +107,7 @@ export class WorkerAdapter<ConnectorState> {
    * Cumulative byte length of uploaded artifacts for size limit tracking.
    * @private
    */
-  private currentLength: number = 0;
+  private currentEventDataLength: number = 0;
 
   constructor({
     event,
@@ -168,7 +168,10 @@ export class WorkerAdapter<ConnectorState> {
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
           // Calculate size of the entire artifact object that goes in the SQS message
-          const artifactMetadataSize = Buffer.byteLength(JSON.stringify(artifact), 'utf8');
+          const artifactMetadataSize = Buffer.byteLength(
+            JSON.stringify(artifact),
+            'utf8'
+          );
 
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AIRDROP_DEFAULT_ITEM_TYPES.ATTACHMENTS) {
@@ -177,7 +180,7 @@ export class WorkerAdapter<ConnectorState> {
             );
           }
 
-          this.currentLength += artifactMetadataSize;
+          this.currentEventDataLength += artifactMetadataSize;
 
           // Check for size limit.
           // Here we only track the cumulative byte length of individual artifact entries
@@ -186,7 +189,7 @@ export class WorkerAdapter<ConnectorState> {
           // per artifact) are added only once and therefore do not grow with the number of
           // artifacts, so they are not included in this per-artifact size calculation.
           if (
-            this.currentLength > EVENT_SIZE_THRESHOLD_BYTES &&
+            this.currentEventDataLength > EVENT_SIZE_THRESHOLD_BYTES &&
             !this.isTimeout
           ) {
             console.log(
