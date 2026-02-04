@@ -8,10 +8,6 @@ import {
 } from '../../common/constants';
 import { emit } from '../../common/control-protocol';
 import {
-  EVENT_SIZE_THRESHOLD_BYTES,
-  pruneEventData,
-} from '../../common/event-size-monitor';
-import {
   addReportToLoaderReport,
   getFilesToLoad,
 } from './worker-adapter.helpers';
@@ -59,6 +55,12 @@ import {
 import { Uploader } from '../../uploader/uploader';
 import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
 import { translateOutgoingEventType } from '../../common/event-type-translation';
+import { truncateMessage } from '../../common/helpers';
+
+// Max SQS message size is 250KB, we want to leave some room for the other data in the message
+const MAX_EVENT_SIZE_BYTES = 200_000;
+// We want to leave some room for the other data in the message and process the rest of queued messages
+const EVENT_SIZE_THRESHOLD_BYTES = Math.floor(MAX_EVENT_SIZE_BYTES * 0.8);
 
 export function createWorkerAdapter<ConnectorState>({
   event,
@@ -300,13 +302,15 @@ export class WorkerAdapter<ConnectorState> {
 
       try {
         // Always prune error messages to make them shorter before emit
-        const prunedData = pruneEventData(data);
+        if (data?.error?.message) {
+          data.error.message = truncateMessage(data.error.message);
+        }
 
         await emit({
           eventType: newEventType,
           event: this.event,
           data: {
-            ...prunedData,
+            ...data,
             ...(ALLOWED_EXTRACTION_EVENT_TYPES.includes(
               this.event.payload.event_type
             )
