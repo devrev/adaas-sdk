@@ -104,13 +104,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
       if (
         this.adapter.state.toDevRev &&
         this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList?.some(
-          (it) => {
-            const comp = {
-              id: attachment.id,
-              parent_id: attachment.parent_id,
-            };
-            return it.id == comp.id && it.parent_id == comp.parent_id;
-          }
+          (it) => it.id == attachment.id && it.parent_id == attachment.parent_id
         )
       ) {
         continue; // Skip if the attachment ID is already processed
