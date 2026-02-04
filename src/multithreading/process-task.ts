@@ -48,18 +48,14 @@ export function processTask<ConnectorState>({
               options,
             });
 
-            let onTimeoutExecuted = false;
-
             parentPort.on(
               WorkerEvent.WorkerMessage,
               (message) =>
                 void (async () => {
                   await runWithSdkLogContext(async () => {
                     if (
-                      message.subject === WorkerMessageSubject.WorkerMessageExit &&
-                      !onTimeoutExecuted
+                      message.subject === WorkerMessageSubject.WorkerMessageExit
                     ) {
-                      onTimeoutExecuted = true;
                       console.log(
                         'Worker received message to gracefully exit. Setting isTimeout flag and executing onTimeout function.'
                       );
@@ -80,10 +76,9 @@ export function processTask<ConnectorState>({
             await runWithUserLogContext(async () => task({ adapter }));
 
             // If size limit was triggered during task, call onTimeout for cleanup
-            if (adapter.isTimeout && !onTimeoutExecuted) {
-              onTimeoutExecuted = true;
-              console.log(
-                '[SIZE_LIMIT] Size limit detected during data collection. Executing onTimeout function for cleanup.'
+            if (adapter.isTimeout) {
+              console.warn(
+                'Size limit detected during data collection. Executing onTimeout function for cleanup.'
               );
               await runWithUserLogContext(async () => onTimeout({ adapter }));
             }

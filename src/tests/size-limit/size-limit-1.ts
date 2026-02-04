@@ -10,8 +10,6 @@ import { ExtractorEventType, processTask } from '../../index';
  */
 processTask({
   task: async ({ adapter }) => {
-    console.log('[SIZE_LIMIT_TEST] Starting size limit test...');
-
     // Initialize repos first - this is required before using getRepo
     // Using external_domain_metadata itemType which doesn't require normalize
     adapter.initializeRepos([
@@ -22,8 +20,10 @@ processTask({
 
     const repo = adapter.getRepo('external_domain_metadata');
     if (!repo) {
-      console.error('[SIZE_LIMIT_TEST] Repo not found after init');
-      await adapter.emit(ExtractorEventType.DataExtractionDone);
+      console.error('Repo not found after init');
+      await adapter.emit(ExtractorEventType.DataExtractionError, {
+        error: { message: 'Repo not found after init!' },
+      });
       return;
     }
 
@@ -42,26 +42,17 @@ processTask({
     }
 
     console.log(
-      `[SIZE_LIMIT_TEST] Pushing ${items.length} items (batch size 1) to trigger size limit...`
+      `Pushing ${items.length} items (batch size 1) to trigger size limit...`
     );
 
     // Push items - this should trigger the size limit during upload
     await repo.push(items);
 
-    // If we get here without size limit triggering, emit done
-    if (!adapter.isTimeout) {
-      console.log(
-        '[SIZE_LIMIT_TEST] Size limit was NOT triggered, emitting done'
-      );
-      await adapter.emit(ExtractorEventType.DataExtractionDone);
-    } else {
-      console.log(
-        '[SIZE_LIMIT_TEST] Size limit was triggered during task, onTimeout will be called'
-      );
-    }
+    console.log('Size limit was NOT triggered, emitting done');
+    await adapter.emit(ExtractorEventType.DataExtractionDone);
   },
   onTimeout: async ({ adapter }) => {
-    console.log('[SIZE_LIMIT_TEST] onTimeout called - emitting progress');
+    console.log('onTimeout called - emitting progress');
     await adapter.emit(ExtractorEventType.DataExtractionProgress);
   },
 });

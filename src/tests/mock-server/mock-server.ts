@@ -301,12 +301,4 @@ export class MockServer {
         req.url.split('?')[0] === pathWithoutQuery
     );
   }
-
-  /**
-   * Gets all requests made to the server across all endpoints.
-   * @returns An array of all RequestInfo objects
-   */
-  public getAllRequests(): RequestInfo[] {
-    return [...this.requests];
-  }
 }

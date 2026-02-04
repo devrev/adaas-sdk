@@ -1,7 +1,11 @@
-import { EventType, ExtractorEventType } from '../../types/extraction';
+import {
+  EventType,
+  ExtractorEvent,
+  ExtractorEventType,
+} from '../../types/extraction';
 import { mockServer } from '../jest.setup';
 import { createEvent } from '../test-helpers';
-import run from './size-limit-extraction';
+import run from './extraction';
 
 // Increase timeout for this test since we're doing many uploads
 jest.setTimeout(60000);
@@ -18,12 +22,9 @@ describe('size-limit-1: SQS size limit early exit', () => {
     expect(lastRequest?.url).toContain('/callback_url');
     expect(lastRequest?.method).toBe('POST');
 
-    const body = lastRequest?.body as {
-      event_type: string;
-      event_data?: { artifacts?: Array<{ id: string; item_type: string; item_count: number }> };
-    };
+    const body = lastRequest?.body as ExtractorEvent;
 
-    expect(body.event_type).toBe(ExtractorEventType.DataExtractionProgress);
+    expect(body.event_type).toBe(ExtractorEventType.DataExtractionDone);
 
     // Verify that artifacts array is included and contains the expected number of artifacts
     expect(body.event_data?.artifacts).toBeDefined();

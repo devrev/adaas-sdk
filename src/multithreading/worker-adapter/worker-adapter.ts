@@ -184,18 +184,12 @@ export class WorkerAdapter<ConnectorState> {
 
           this.currentEventDataLength += artifactMetadataSize;
 
-          // Check for size limit.
-          // Here we only track the cumulative byte length of individual artifact entries
-          // (objects inside the artifacts array). Any other fields that may exist on the
-          // enclosing event payload (for example, top-level metadata that is not repeated
-          // per artifact) are added only once and therefore do not grow with the number of
-          // artifacts, so they are not included in this per-artifact size calculation.
           if (
             this.currentEventDataLength > EVENT_SIZE_THRESHOLD_BYTES &&
             !this.isTimeout
           ) {
-            console.log(
-              '[SIZE_LIMIT] Artifact size threshold exceeded. Setting timeout flag for early exit.'
+            console.warn(
+              'Artifact size threshold exceeded. Setting timeout flag for early exit.'
             );
 
             // Set timeout flag to trigger onTimeout after task completes
