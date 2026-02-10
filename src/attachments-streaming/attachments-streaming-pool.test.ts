@@ -190,6 +190,17 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const result = await pool.streamAll();
 
+      expect(
+        mockAdapter.state.toDevRev?.attachmentsMetadata
+          .lastProcessedAttachmentsIdsList
+      ).toEqual([
+        { id: 'attachment-1', parent_id: '' },
+        { id: 'attachment-2', parent_id: '' },
+        { id: 'attachment-1', parent_id: 'parent-1' },
+        { id: 'attachment-2', parent_id: 'parent-2' },
+        { id: 'attachment-3', parent_id: 'parent-3' },
+      ]);
+
       expect(result).toEqual({});
     });
   });

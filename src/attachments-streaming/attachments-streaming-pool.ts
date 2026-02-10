@@ -40,6 +40,12 @@ export class AttachmentsStreamingPool<ConnectorState> {
     }
   }
 
+  /**
+   * Migrates processed attachments from the legacy string[] format to the new ProcessedAttachment[] format.
+   *
+   * @param attachments - The attachments list to migrate (either string[] or ProcessedAttachment[])
+   * @returns Migrated array of ProcessedAttachment objects, or empty array if input is invalid
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private migrateProcessedAttachments(attachments: any): ProcessedAttachment[] {
     // Handle null/undefined
