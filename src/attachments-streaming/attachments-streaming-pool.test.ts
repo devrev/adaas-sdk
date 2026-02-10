@@ -175,6 +175,26 @@ describe(AttachmentsStreamingPool.name, () => {
 
       expect(result).toEqual({ delay: 5000 });
     });
+
+    it('should resume attachment extraction if it encounters old ids', async () => {
+      // Test migration from old string[] format to new ProcessedAttachment[] format
+      // Using 'as any' because we're intentionally testing legacy data format
+      mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
+        ['attachment-1', 'attachment-2'] as any;
+
+      const delayResponse: ProcessAttachmentReturnType = { delay: 5000 };
+      mockAdapter.processAttachment.mockResolvedValue(delayResponse);
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: mockAttachments,
+        stream: mockStream,
+      });
+
+      const result = await pool.streamAll();
+
+      expect(result).toEqual({ delay: 5000 });
+    });
   });
 
   describe(AttachmentsStreamingPool.prototype.startPoolStreaming.name, () => {
