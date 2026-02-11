@@ -85,17 +85,19 @@ jobs:
           echo "Current package.json version: $CURRENT_VERSION"
 
           if [ -n "$LATEST_BETA" ]; then
-            # If there's a published beta, sync to it first
+            # If there's a published beta, sync to it first and bump
             if [ "$CURRENT_VERSION" != "$LATEST_BETA" ]; then
               echo "Syncing package.json version to latest published beta version"
               npm --no-git-tag-version version $LATEST_BETA --allow-same-version
             fi
+            # Bump the prerelease version
+            NEW_VERSION=$(npm --no-git-tag-version --preid=beta version prerelease)
           else
-            echo "No published beta version found, using package.json version"
+            # No published beta - use the version from package.json as-is (first release)
+            echo "No published beta version found, using package.json version for first release"
+            NEW_VERSION="v$CURRENT_VERSION"
           fi
 
-          # Bump the prerelease version
-          NEW_VERSION=$(npm --no-git-tag-version --preid=beta version prerelease)
           echo "Target release version: $NEW_VERSION"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
