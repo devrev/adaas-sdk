@@ -1,7 +1,7 @@
 {
-  "name": "@devrev/ts-adaas",
-  "version": "1.15.0",
-  "description": "Typescript library containing the ADaaS(AirDrop as a Service) control protocol.",
+  "name": "@devrev/airsync-sdk",
+  "version": "2.0.0-beta.0",
+  "description": "TypeScript SDK for building AirSync snap-ins on the DevRev platform.",
   "type": "commonjs",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
