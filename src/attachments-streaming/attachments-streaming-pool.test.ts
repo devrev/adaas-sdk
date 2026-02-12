@@ -176,6 +176,34 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(result).toEqual({ delay: 5000 });
     });
 
+    it('should resume attachment extraction if it encounters old ids', async () => {
+      // Test migration from old string[] format to new ProcessedAttachment[] format
+      // Using 'as any' because we're intentionally testing legacy data format
+      mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
+        ['attachment-1', 'attachment-2'] as any;
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: mockAttachments,
+        stream: mockStream,
+      });
+
+      const result = await pool.streamAll();
+
+      expect(
+        mockAdapter.state.toDevRev?.attachmentsMetadata
+          .lastProcessedAttachmentsIdsList
+      ).toEqual([
+        { id: 'attachment-1', parent_id: '' },
+        { id: 'attachment-2', parent_id: '' },
+        { id: 'attachment-1', parent_id: 'parent-1' },
+        { id: 'attachment-2', parent_id: 'parent-2' },
+        { id: 'attachment-3', parent_id: 'parent-3' },
+      ]);
+
+      expect(result).toEqual({});
+    });
+
     it('should handle all attachments failing with different file types and sizes', async () => {
       const largeAttachments: NormalizedAttachment[] = [
         {
@@ -248,7 +276,7 @@ describe(AttachmentsStreamingPool.name, () => {
   describe(AttachmentsStreamingPool.prototype.startPoolStreaming.name, () => {
     it('should skip already processed attachments', async () => {
       mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
-        ['attachment-1'];
+        [{ id: 'attachment-1', parent_id: 'parent-1' }];
       mockAdapter.processAttachment.mockResolvedValue({});
 
       const pool = new AttachmentsStreamingPool({
@@ -276,7 +304,11 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(
         mockAdapter.state.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
-      ).toEqual(['attachment-1', 'attachment-2', 'attachment-3']);
+      ).toEqual([
+        { id: 'attachment-1', parent_id: 'parent-1' },
+        { id: 'attachment-2', parent_id: 'parent-2' },
+        { id: 'attachment-3', parent_id: 'parent-3' },
+      ]);
     });
 
     it('should handle processing errors gracefully', async () => {
@@ -301,7 +333,16 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(
         mockAdapter.state.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
-      ).toEqual(['attachment-1', 'attachment-3']);
+      ).toEqual([
+        {
+          id: 'attachment-1',
+          parent_id: 'parent-1',
+        },
+        {
+          id: 'attachment-3',
+          parent_id: 'parent-3',
+        },
+      ]);
     });
 
     it('should stop processing when rate limit delay is encountered', async () => {
@@ -322,7 +363,10 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(
         mockAdapter.state.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
-      ).toEqual(['attachment-1', 'attachment-3']);
+      ).toEqual([
+        { id: 'attachment-1', parent_id: 'parent-1' },
+        { id: 'attachment-3', parent_id: 'parent-3' },
+      ]);
     });
 
     it('should pass correct parameters to processAttachment', async () => {
@@ -371,6 +415,28 @@ describe(AttachmentsStreamingPool.name, () => {
     await pool.streamAll();
 
     expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
+  });
+
+  it('[edge] should upload attachments with same id, but different parent_id', async () => {
+    mockAdapter.processAttachment.mockResolvedValue({});
+
+    mockAttachments.push({
+      id: 'attachment-1',
+      url: 'http://example.com/file5.jpg',
+      file_name: 'file5.jpg',
+      parent_id: 'parent-4',
+    });
+
+    const pool = new AttachmentsStreamingPool({
+      adapter: mockAdapter,
+      attachments: mockAttachments,
+      batchSize: 1,
+      stream: mockStream,
+    });
+
+    await pool.streamAll();
+
+    expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(4);
   });
 
   it('[edge] should handle batch size of 1', async () => {
