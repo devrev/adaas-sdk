@@ -607,7 +607,8 @@ export class WorkerAdapter<ConnectorState> {
             return {
               error: {
                 message:
-                  'Failed to update sync mapper record' + serializeError(error),
+                  'Failed to update sync mapper record' +
+                  JSON.stringify(serializeError(error)),
               },
             };
           }
@@ -689,7 +690,7 @@ export class WorkerAdapter<ConnectorState> {
                   error: {
                     message:
                       'Failed to create sync mapper record. ' +
-                      serializeError(error),
+                      JSON.stringify(serializeError(error)),
                   },
                 };
               }
@@ -731,7 +732,8 @@ export class WorkerAdapter<ConnectorState> {
         return {
           error: {
             message:
-              'Failed to get sync mapper record. ' + serializeError(error),
+              'Failed to get sync mapper record. ' +
+              JSON.stringify(serializeError(error)),
           },
         };
       }
@@ -770,17 +772,27 @@ export class WorkerAdapter<ConnectorState> {
           );
 
         if (artifactUrlError) {
-          console.warn(
-            `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
-              serializeError(artifactUrlError)
-          );
           this.destroyHttpStream(httpStream);
-          return;
+          return {
+            error: {
+              message: `Error while preparing artifact for attachment ID ${
+                attachment.id
+              }. Skipping attachment. ${JSON.stringify(
+                serializeError(artifactUrlError)
+              )}`,
+              fileSize: fileSize,
+            },
+          };
         }
 
         if (this.isTimeout) {
           this.destroyHttpStream(httpStream);
-          return;
+          return {
+            error: {
+              message: 'Timeout while streaming artifact.',
+              fileSize: fileSize,
+            },
+          };
         }
 
         // Stream attachment
@@ -788,12 +800,15 @@ export class WorkerAdapter<ConnectorState> {
           await this.uploader.streamArtifact(artifactUrlResponse!, httpStream);
 
         if (uploadedArtifactError) {
-          console.warn(
-            `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
-              serializeError(uploadedArtifactError)
-          );
           this.destroyHttpStream(httpStream);
-          return;
+          return {
+            error: {
+              message:
+                `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
+                JSON.stringify(serializeError(uploadedArtifactError)),
+              fileSize: fileSize,
+            },
+          };
         }
 
         // Confirm attachment upload
@@ -802,13 +817,14 @@ export class WorkerAdapter<ConnectorState> {
             artifactUrlResponse!.artifact_id
           );
         if (confirmArtifactUploadError) {
-          console.warn(
-            'Error while confirming upload for attachment ID ' +
-              attachment.id +
-              '.',
-            confirmArtifactUploadError
-          );
-          return;
+          return {
+            error: {
+              message:
+                `Error while confirming upload for attachment ID ${attachment.id}. ` +
+                JSON.stringify(confirmArtifactUploadError),
+              fileSize: fileSize,
+            },
+          };
         }
 
         const ssorAttachment: SsorAttachment = {

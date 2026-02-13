@@ -160,10 +160,25 @@ export class AttachmentsStreamingPool<ConnectorState> {
         }
 
         if (response?.error) {
-          console.warn(
-            `Skipping attachment with ID ${attachment.id} due to error returned by the stream function`,
-            response.error
-          );
+          const fileExtension = attachment.file_name.split('.').pop() || '';
+
+          const { message, fileSize } = response.error as {
+            message: string;
+            fileSize?: number;
+          };
+
+          if (fileSize != null) {
+            console.warn(
+              `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} and size ${fileSize} due to error returned by the stream function`,
+              message
+            );
+          } else {
+            console.warn(
+              `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} due to error returned by the stream function`,
+              message
+            );
+          }
+
           await this.updateProgress();
           continue;
         }
@@ -180,8 +195,10 @@ export class AttachmentsStreamingPool<ConnectorState> {
 
         await this.updateProgress();
       } catch (error) {
+        const fileExtension = attachment.file_name.split('.').pop() || '';
+
         console.warn(
-          `Skipping attachment with ID ${attachment.id} due to error in processAttachment function`,
+          `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} due to error in processAttachment function`,
           error
         );
 
