@@ -39,7 +39,8 @@ export class MockServer {
     return new Promise((resolve) => {
       this.server = this.app.listen(this.internalPort, () => {
         // Get the actual port assigned by the OS (important for port 0 = dynamic allocation)
-        const actualPort = (this.server?.address() as { port: number } | null)?.port;
+        const actualPort = (this.server?.address() as { port: number } | null)
+          ?.port;
         if (actualPort) {
           this.port = actualPort;
           this.baseUrl = `http://localhost:${this.port}`;
