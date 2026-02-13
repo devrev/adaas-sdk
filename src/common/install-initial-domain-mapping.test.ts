@@ -48,7 +48,8 @@ describe(installInitialDomainMapping.name, () => {
     },
   };
 
-  const mockEndpoint = 'http://localhost:3001';
+  // Use the endpoint from the event to support dynamic ports in parallel tests
+  const mockEndpoint = mockEvent.execution_metadata.devrev_endpoint;
   const mockToken = 'test_token';
 
   // After each test, clear all mocks to prevent state from leaking.

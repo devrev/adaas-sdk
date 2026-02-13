@@ -18,13 +18,15 @@ import {
 export class MockServer {
   private app: Express;
   private server: Server | null = null;
-  public readonly port: number;
-  public readonly baseUrl: string;
+  private internalPort: number;
+  public port: number;
+  public baseUrl: string;
   private routeHandlers: RouteHandlers = new Map();
   private requests: RequestInfo[] = [];
   private requestCounts: RequestCounts = new Map();
 
   constructor(port: number = DEFAULT_MOCK_SERVER_PORT) {
+    this.internalPort = port;
     this.port = port;
     this.baseUrl = `http://localhost:${this.port}`;
     this.app = express();
@@ -35,7 +37,13 @@ export class MockServer {
 
   public async start(): Promise<void> {
     return new Promise((resolve) => {
-      this.server = this.app.listen(this.port, () => {
+      this.server = this.app.listen(this.internalPort, () => {
+        // Get the actual port assigned by the OS (important for port 0 = dynamic allocation)
+        const actualPort = (this.server?.address() as { port: number } | null)?.port;
+        if (actualPort) {
+          this.port = actualPort;
+          this.baseUrl = `http://localhost:${this.port}`;
+        }
         console.log(`Mock server running on http://localhost:${this.port}.`);
         resolve();
       });
