@@ -55,6 +55,12 @@ import {
 import { Uploader } from '../../uploader/uploader';
 import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
 import { translateOutgoingEventType } from '../../common/event-type-translation';
+import { truncateMessage } from '../../common/helpers';
+
+// Max SQS message size is 250KB, we want to leave some room for the other data in the message
+const MAX_EVENT_SIZE_BYTES = 200_000;
+// We want to leave some room for the other data in the message and process the rest of queued messages
+const EVENT_SIZE_THRESHOLD_BYTES = Math.floor(MAX_EVENT_SIZE_BYTES * 0.8);
 
 export function createWorkerAdapter<ConnectorState>({
   event,
@@ -98,6 +104,12 @@ export class WorkerAdapter<ConnectorState> {
   private _processedFiles: string[];
   private _mappers: Mappers;
   private uploader: Uploader;
+
+  /**
+   * Cumulative byte length of uploaded artifacts for size limit tracking.
+   * @private
+   */
+  private currentEventDataLength: number = 0;
 
   constructor({
     event,
@@ -157,11 +169,33 @@ export class WorkerAdapter<ConnectorState> {
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
+          // Calculate size of the entire artifact object that goes in the SQS message
+          const artifactMetadataSize = Buffer.byteLength(
+            JSON.stringify(artifact),
+            'utf8'
+          );
+
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AIRDROP_DEFAULT_ITEM_TYPES.ATTACHMENTS) {
             this.state.toDevRev?.attachmentsMetadata.artifactIds.push(
               artifact.id
             );
+          }
+
+          this.currentEventDataLength += artifactMetadataSize;
+
+          if (
+            this.currentEventDataLength > EVENT_SIZE_THRESHOLD_BYTES &&
+            !this.isTimeout
+          ) {
+            console.warn(
+              'Artifact size threshold exceeded. Setting timeout flag for early exit.'
+            );
+
+            // Set timeout flag to trigger onTimeout after task completes
+            // The onTimeout function is responsible for emitting the progress event
+            // This is consistent with the soft timeout behavior from parent
+            this.handleTimeout();
           }
         },
         options: this.options,
@@ -261,6 +295,11 @@ export class WorkerAdapter<ConnectorState> {
       }
 
       try {
+        // Always prune error messages to make them shorter before emit
+        if (data?.error?.message) {
+          data.error.message = truncateMessage(data.error.message);
+        }
+
         await emit({
           eventType: newEventType,
           event: this.event,
