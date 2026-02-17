@@ -183,6 +183,11 @@ export class AttachmentsStreamingPool<ConnectorState> {
           continue;
         }
 
+        // If response is `undefined`, we have hit the timeout in the adapter.
+        if (!response) {
+          continue;
+        }
+
         // No rate limiting, process normally
         if (
           this.adapter.state.toDevRev?.attachmentsMetadata

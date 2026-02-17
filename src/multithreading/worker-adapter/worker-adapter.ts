@@ -787,12 +787,7 @@ export class WorkerAdapter<ConnectorState> {
 
         if (this.isTimeout) {
           this.destroyHttpStream(httpStream);
-          return {
-            error: {
-              message: 'Timeout while streaming artifact.',
-              fileSize: fileSize,
-            },
-          };
+          return undefined;
         }
 
         // Stream attachment
