@@ -61,6 +61,7 @@ export function processTask<ConnectorState>({
                       );
 
                       adapter.handleTimeout();
+                      adapter.beginOnTimeoutPhase();
                       await runWithUserLogContext(async () =>
                         onTimeout({ adapter })
                       );
@@ -80,6 +81,7 @@ export function processTask<ConnectorState>({
               console.warn(
                 'Size limit detected during data collection. Executing onTimeout function for cleanup.'
               );
+              adapter.beginOnTimeoutPhase();
               await runWithUserLogContext(async () => onTimeout({ adapter }));
             }
 

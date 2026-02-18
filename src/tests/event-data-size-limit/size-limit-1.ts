@@ -10,7 +10,6 @@ import { ExtractorEventType, processTask } from '../../index';
  */
 processTask({
   task: async ({ adapter }) => {
-    // Initialize repos first - this is required before using getRepo
     // Using external_domain_metadata itemType which doesn't require normalize
     adapter.initializeRepos([
       {

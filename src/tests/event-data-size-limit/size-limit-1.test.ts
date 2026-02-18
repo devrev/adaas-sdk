@@ -24,14 +24,14 @@ describe('size-limit-1: SQS size limit early exit', () => {
 
     const body = lastRequest?.body as ExtractorEvent;
 
-    expect(body.event_type).toBe(ExtractorEventType.DataExtractionDone);
+    expect(body.event_type).toBe(ExtractorEventType.DataExtractionProgress);
 
     // Verify that artifacts array is included and contains the expected number of artifacts
     expect(body.event_data?.artifacts).toBeDefined();
     expect(Array.isArray(body.event_data?.artifacts)).toBe(true);
 
     // All 3000 items should be uploaded (size limit triggers during upload but doesn't stop the current push)
-    // The key is that we emit PROGRESS instead of DONE when size limit is exceeded
+    // The task's emit(Done) is blocked because isTimeout is true, and onTimeout emits Progress instead
     const artifactsCount = body.event_data?.artifacts?.length || 0;
     expect(artifactsCount).toBe(3000);
 

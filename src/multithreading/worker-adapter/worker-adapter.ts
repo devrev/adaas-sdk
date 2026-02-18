@@ -93,6 +93,7 @@ export class WorkerAdapter<ConnectorState> {
   readonly event: AirdropEvent;
   readonly options?: WorkerAdapterOptions;
   isTimeout: boolean;
+  private _isOnTimeoutPhase: boolean;
 
   private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];
@@ -122,6 +123,7 @@ export class WorkerAdapter<ConnectorState> {
     this._artifacts = [];
     this.hasWorkerEmitted = false;
     this.isTimeout = false;
+    this._isOnTimeoutPhase = false;
 
     // Loader
     this.loaderReports = [];
@@ -189,12 +191,9 @@ export class WorkerAdapter<ConnectorState> {
             !this.isTimeout
           ) {
             console.warn(
-              'Artifact size threshold exceeded. Setting timeout flag for early exit.'
+              'Event data size limit reached. Remaining data will be synced in the next cycle.'
             );
 
-            // Set timeout flag to trigger onTimeout after task completes
-            // The onTimeout function is responsible for emitting the progress event
-            // This is consistent with the soft timeout behavior from parent
             this.handleTimeout();
           }
         },
@@ -248,6 +247,13 @@ export class WorkerAdapter<ConnectorState> {
       if (this.hasWorkerEmitted) {
         console.warn(
           `Trying to emit event with event type: ${newEventType}. Ignoring emit request because it has already been emitted.`
+        );
+        return;
+      }
+
+      if (this.isTimeout && !this._isOnTimeoutPhase) {
+        console.warn(
+          `Skipping emit of ${newEventType} because size limit was reached. The onTimeout function will handle the final emit.`
         );
         return;
       }
@@ -343,6 +349,10 @@ export class WorkerAdapter<ConnectorState> {
 
   handleTimeout() {
     this.isTimeout = true;
+  }
+
+  beginOnTimeoutPhase() {
+    this._isOnTimeoutPhase = true;
   }
 
   async loadItemTypes({
