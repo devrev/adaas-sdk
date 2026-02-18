@@ -1,5 +1,9 @@
 import { createEvent } from './test-helpers';
-import { EventType, ExtractionTimeDirection, InitialSyncScope } from '../types/extraction';
+import {
+  EventType,
+  ExtractionTimeDirection,
+  InitialSyncScope,
+} from '../types/extraction';
 
 describe('Control Protocol - Reconciliation Mode', () => {
   describe('ExtractionTimeDirection enum values', () => {
@@ -31,8 +35,12 @@ describe('Control Protocol - Reconciliation Mode', () => {
       });
 
       expect(event.payload.event_context).toBeDefined();
-      expect(event.payload.event_context.extraction_time_direction).toBeUndefined();
-      expect(event.payload.event_context.extraction_range_start).toBeUndefined();
+      expect(
+        event.payload.event_context.extraction_time_direction
+      ).toBeUndefined();
+      expect(
+        event.payload.event_context.extraction_range_start
+      ).toBeUndefined();
       expect(event.payload.event_context.extraction_range_end).toBeUndefined();
     });
 
@@ -46,9 +54,13 @@ describe('Control Protocol - Reconciliation Mode', () => {
         },
       });
 
-      expect(event.payload.event_context.extract_from).toBe('2024-01-01T00:00:00Z');
+      expect(event.payload.event_context.extract_from).toBe(
+        '2024-01-01T00:00:00Z'
+      );
       expect(event.payload.event_context.reset_extract_from).toBe(true);
-      expect(event.payload.event_context.initial_sync_scope).toBe(InitialSyncScope.TIME_SCOPED);
+      expect(event.payload.event_context.initial_sync_scope).toBe(
+        InitialSyncScope.TIME_SCOPED
+      );
     });
   });
 
@@ -106,7 +118,9 @@ describe('Control Protocol - Reconciliation Mode', () => {
       expect(event.payload.event_context.extraction_time_direction).toBe(
         ExtractionTimeDirection.FORWARD
       );
-      expect(event.payload.event_context.extraction_range_start).toBeUndefined();
+      expect(
+        event.payload.event_context.extraction_range_start
+      ).toBeUndefined();
       expect(event.payload.event_context.extraction_range_end).toBeUndefined();
     });
 
@@ -121,7 +135,9 @@ describe('Control Protocol - Reconciliation Mode', () => {
       expect(event.payload.event_context.extraction_time_direction).toBe(
         ExtractionTimeDirection.BACKWARD
       );
-      expect(event.payload.event_context.extraction_range_start).toBeUndefined();
+      expect(
+        event.payload.event_context.extraction_range_start
+      ).toBeUndefined();
       expect(event.payload.event_context.extraction_range_end).toBeUndefined();
     });
   });
@@ -150,15 +166,15 @@ describe('Control Protocol - Reconciliation Mode', () => {
         },
       });
 
-      expect(reconciliationEvent.payload.event_context.extraction_time_direction).toBe(
-        ExtractionTimeDirection.RECONCILIATION
-      );
-      expect(reconciliationEvent.payload.event_context.extraction_range_start).toBe(
-        '2024-01-01T00:00:00Z'
-      );
-      expect(reconciliationEvent.payload.event_context.extraction_range_end).toBe(
-        '2024-03-31T23:59:59Z'
-      );
+      expect(
+        reconciliationEvent.payload.event_context.extraction_time_direction
+      ).toBe(ExtractionTimeDirection.RECONCILIATION);
+      expect(
+        reconciliationEvent.payload.event_context.extraction_range_start
+      ).toBe('2024-01-01T00:00:00Z');
+      expect(
+        reconciliationEvent.payload.event_context.extraction_range_end
+      ).toBe('2024-03-31T23:59:59Z');
     });
 
     it('Scenario: Connector bug caused data loss, reconcile affected period', () => {
@@ -171,15 +187,15 @@ describe('Control Protocol - Reconciliation Mode', () => {
         },
       });
 
-      expect(bugReconciliationEvent.payload.event_context.extraction_time_direction).toBe(
-        ExtractionTimeDirection.RECONCILIATION
-      );
-      expect(bugReconciliationEvent.payload.event_context.extraction_range_start).toBe(
-        '2024-02-15T00:00:00Z'
-      );
-      expect(bugReconciliationEvent.payload.event_context.extraction_range_end).toBe(
-        '2024-02-20T23:59:59Z'
-      );
+      expect(
+        bugReconciliationEvent.payload.event_context.extraction_time_direction
+      ).toBe(ExtractionTimeDirection.RECONCILIATION);
+      expect(
+        bugReconciliationEvent.payload.event_context.extraction_range_start
+      ).toBe('2024-02-15T00:00:00Z');
+      expect(
+        bugReconciliationEvent.payload.event_context.extraction_range_end
+      ).toBe('2024-02-20T23:59:59Z');
     });
 
     it('Scenario: Regular periodic forward sync (incremental)', () => {
@@ -190,12 +206,16 @@ describe('Control Protocol - Reconciliation Mode', () => {
         },
       });
 
-      expect(periodicEvent.payload.event_context.extraction_time_direction).toBe(
-        ExtractionTimeDirection.FORWARD
-      );
+      expect(
+        periodicEvent.payload.event_context.extraction_time_direction
+      ).toBe(ExtractionTimeDirection.FORWARD);
       // Forward incremental syncs don't have range fields
-      expect(periodicEvent.payload.event_context.extraction_range_start).toBeUndefined();
-      expect(periodicEvent.payload.event_context.extraction_range_end).toBeUndefined();
+      expect(
+        periodicEvent.payload.event_context.extraction_range_start
+      ).toBeUndefined();
+      expect(
+        periodicEvent.payload.event_context.extraction_range_end
+      ).toBeUndefined();
     });
   });
 
@@ -226,10 +246,12 @@ describe('Control Protocol - Reconciliation Mode', () => {
         },
       });
 
-      expect(eventWithOnlyStart.payload.event_context.extraction_range_start).toBe(
-        '2024-01-01T00:00:00Z'
-      );
-      expect(eventWithOnlyStart.payload.event_context.extraction_range_end).toBeUndefined();
+      expect(
+        eventWithOnlyStart.payload.event_context.extraction_range_start
+      ).toBe('2024-01-01T00:00:00Z');
+      expect(
+        eventWithOnlyStart.payload.event_context.extraction_range_end
+      ).toBeUndefined();
 
       const eventWithOnlyEnd = createEvent({
         eventType: EventType.StartExtractingData,
@@ -241,7 +263,9 @@ describe('Control Protocol - Reconciliation Mode', () => {
       expect(eventWithOnlyEnd.payload.event_context.extraction_range_end).toBe(
         '2024-01-31T23:59:59Z'
       );
-      expect(eventWithOnlyEnd.payload.event_context.extraction_range_start).toBeUndefined();
+      expect(
+        eventWithOnlyEnd.payload.event_context.extraction_range_start
+      ).toBeUndefined();
     });
 
     it('should work with all extraction event types', () => {
@@ -279,9 +303,15 @@ describe('Control Protocol - Reconciliation Mode', () => {
         },
       });
 
-      expect(event.payload.event_context).toHaveProperty('extraction_range_start');
-      expect(event.payload.event_context).toHaveProperty('extraction_range_end');
-      expect(event.payload.event_context).toHaveProperty('extraction_time_direction');
+      expect(event.payload.event_context).toHaveProperty(
+        'extraction_range_start'
+      );
+      expect(event.payload.event_context).toHaveProperty(
+        'extraction_range_end'
+      );
+      expect(event.payload.event_context).toHaveProperty(
+        'extraction_time_direction'
+      );
 
       const payloadKeys = Object.keys(event.payload);
       expect(payloadKeys).not.toContain('extraction_range_start');
