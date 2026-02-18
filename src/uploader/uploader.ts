@@ -60,7 +60,7 @@ export class Uploader {
       return {
         error: new Error(
           'Error while compressing jsonl object. ' +
-            JSON.stringify(serializeError(fileError))
+            serializeError(fileError)
         ),
       };
     }
@@ -75,7 +75,7 @@ export class Uploader {
       return {
         error: new Error(
           'Error while getting artifact upload URL: ' +
-            JSON.stringify(serializeError(preparedArtifactError))
+            serializeError(preparedArtifactError)
         ),
       };
     }
@@ -249,12 +249,12 @@ export class Uploader {
         return {
           error: new Error(
             'Error while confirming artifact upload. ' +
-              JSON.stringify(response)
+              serializeError(response)
           ),
         };
       }
     } catch (error) {
-      return { error: serializeError(error) };
+      return { error: error };
     }
   }
 
@@ -299,7 +299,7 @@ export class Uploader {
       return {
         error: new Error(
           'Error while getting artifact download URL. ' +
-            JSON.stringify(serializeError(artifactUrlError))
+            serializeError(artifactUrlError)
         ),
       };
     }
@@ -311,7 +311,7 @@ export class Uploader {
       return {
         error: new Error(
           'Error while downloading gzipped jsonl object. ' +
-            JSON.stringify(serializeError(gzippedJsonlObjectError))
+            serializeError(gzippedJsonlObjectError)
         ),
       };
     }
@@ -324,7 +324,7 @@ export class Uploader {
       return {
         error: new Error(
           'Error while decompressing gzipped jsonl object. ' +
-            JSON.stringify(serializeError(jsonlObjectError))
+            serializeError(jsonlObjectError)
         ),
       };
     }
@@ -337,7 +337,7 @@ export class Uploader {
       return {
         error: new Error(
           'Error while parsing jsonl object. ' +
-            JSON.stringify(serializeError(jsonObjectError))
+            serializeError(jsonObjectError)
         ),
       };
     }

@@ -608,7 +608,7 @@ export class WorkerAdapter<ConnectorState> {
               error: {
                 message:
                   'Failed to update sync mapper record' +
-                  JSON.stringify(serializeError(error)),
+                  serializeError(error),
               },
             };
           }
@@ -690,7 +690,7 @@ export class WorkerAdapter<ConnectorState> {
                   error: {
                     message:
                       'Failed to create sync mapper record. ' +
-                      JSON.stringify(serializeError(error)),
+                      serializeError(error),
                   },
                 };
               }
@@ -733,7 +733,7 @@ export class WorkerAdapter<ConnectorState> {
           error: {
             message:
               'Failed to get sync mapper record. ' +
-              JSON.stringify(serializeError(error)),
+              serializeError(error),
           },
         };
       }
@@ -800,7 +800,7 @@ export class WorkerAdapter<ConnectorState> {
             error: {
               message:
                 `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
-                JSON.stringify(serializeError(uploadedArtifactError)),
+                serializeError(uploadedArtifactError),
               fileSize: fileSize,
             },
           };
@@ -816,7 +816,7 @@ export class WorkerAdapter<ConnectorState> {
             error: {
               message:
                 `Error while confirming upload for attachment ID ${attachment.id}. ` +
-                JSON.stringify(confirmArtifactUploadError),
+                serializeError(confirmArtifactUploadError),
               fileSize: fileSize,
             },
           };
