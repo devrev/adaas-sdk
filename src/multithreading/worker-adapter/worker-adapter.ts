@@ -607,8 +607,7 @@ export class WorkerAdapter<ConnectorState> {
             return {
               error: {
                 message:
-                  'Failed to update sync mapper record' +
-                  serializeError(error),
+                  'Failed to update sync mapper record' + serializeError(error),
               },
             };
           }
@@ -732,8 +731,7 @@ export class WorkerAdapter<ConnectorState> {
         return {
           error: {
             message:
-              'Failed to get sync mapper record. ' +
-              serializeError(error),
+              'Failed to get sync mapper record. ' + serializeError(error),
           },
         };
       }

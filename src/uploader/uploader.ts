@@ -59,8 +59,7 @@ export class Uploader {
     if (fileError) {
       return {
         error: new Error(
-          'Error while compressing jsonl object. ' +
-            serializeError(fileError)
+          'Error while compressing jsonl object. ' + serializeError(fileError)
         ),
       };
     }
@@ -336,8 +335,7 @@ export class Uploader {
     if (jsonObjectError) {
       return {
         error: new Error(
-          'Error while parsing jsonl object. ' +
-            serializeError(jsonObjectError)
+          'Error while parsing jsonl object. ' + serializeError(jsonObjectError)
         ),
       };
     }

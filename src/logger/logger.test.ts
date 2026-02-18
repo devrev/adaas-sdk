@@ -4,7 +4,12 @@ import { LIBRARY_VERSION } from '../common/constants';
 import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
-import { getPrintableState, Logger, serializeAxiosError, serializeError } from './logger';
+import {
+  getPrintableState,
+  Logger,
+  serializeAxiosError,
+  serializeError,
+} from './logger';
 import {
   INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
   MAX_LOG_STRING_LENGTH,
