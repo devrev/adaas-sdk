@@ -1,9 +1,14 @@
 import { createEvent } from '../tests/test-helpers';
-import { EventContext, EventType, InitialSyncScope } from './extraction';
+import {
+  EventContext,
+  EventType,
+  InitialSyncScope,
+  ExtractionTimeDirection,
+} from './extraction';
 
 // Test the EventContext interface and related extraction types
 describe('ExtractionTypes', () => {
-  const baseEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+  const baseEvent = createEvent({ eventType: EventType.StartExtractingData });
 
   it('should create event context without optional fields', () => {
     const event = { ...baseEvent };
@@ -100,14 +105,14 @@ describe('ExtractionTypes', () => {
 
   it('[edge] should handle explicit boolean values for reset_extract_from', () => {
     const eventWithTrue = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventType.StartExtractingData,
       eventContextOverrides: {
         reset_extract_from: true,
       },
     });
 
     const eventWithFalse = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventType.StartExtractingData,
       eventContextOverrides: {
         reset_extract_from: false,
       },
@@ -121,5 +126,30 @@ describe('ExtractionTypes', () => {
     expect(typeof eventWithFalse.payload.event_context.reset_extract_from).toBe(
       'boolean'
     );
+  });
+
+  describe('ExtractionTimeDirection enum', () => {
+    it('should have backward value', () => {
+      expect(ExtractionTimeDirection.BACKWARD).toBeDefined();
+      expect(ExtractionTimeDirection.BACKWARD).toBe('backward');
+    });
+
+    it('should have forward value', () => {
+      expect(ExtractionTimeDirection.FORWARD).toBeDefined();
+      expect(ExtractionTimeDirection.FORWARD).toBe('forward');
+    });
+
+    it('should have reconciliation value', () => {
+      expect(ExtractionTimeDirection.RECONCILIATION).toBeDefined();
+      expect(ExtractionTimeDirection.RECONCILIATION).toBe('reconciliation');
+    });
+
+    it('should have exactly three values', () => {
+      const values = Object.values(ExtractionTimeDirection);
+      expect(values.length).toBe(3);
+      expect(values).toContain('backward');
+      expect(values).toContain('forward');
+      expect(values).toContain('reconciliation');
+    });
   });
 });

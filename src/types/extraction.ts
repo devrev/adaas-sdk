@@ -194,6 +194,18 @@ export enum InitialSyncScope {
 }
 
 /**
+ * ExtractionTimeDirection is an enum that defines the direction of extraction.
+ * - BACKWARD: Extract data going backward in time from a bound
+ * - FORWARD: Extract data going forward in time incrementally
+ * - RECONCILIATION: Extract data for a specific bounded time range
+ */
+export enum ExtractionTimeDirection {
+  BACKWARD = 'backward',
+  FORWARD = 'forward',
+  RECONCILIATION = 'reconciliation',
+}
+
+/**
  * EventContextIn is an interface that defines the structure of the input event context that is sent to the external extractor from ADaaS.
  * @deprecated
  */
@@ -275,6 +287,9 @@ export interface EventContext {
    * @deprecated reset_extraction is deprecated and should not be used. Use reset_extract_from instead.
    */
   reset_extraction?: boolean;
+  /**
+   * @deprecated reset_extract_from is deprecated. Use extraction_time_direction with reconciliation mode and extraction_range_start/extraction_range_end instead for more granular control over data re-extraction. See migration guide in releases.
+   */
   reset_extract_from?: boolean;
   run_id: string;
   sequence_version: string;
@@ -296,6 +311,21 @@ export interface EventContext {
    */
   uuid: string;
   worker_data_url: string;
+  /**
+   * Direction of extraction (backward, forward, or reconciliation).
+   * Used to control whether the sync extracts historical data, incremental data, or a specific time range.
+   */
+  extraction_time_direction?: ExtractionTimeDirection;
+  /**
+   * Start timestamp of the reconciliation range (ISO 8601 format).
+   * Only used when extraction_time_direction is set to reconciliation.
+   */
+  extraction_range_start?: string;
+  /**
+   * End timestamp of the reconciliation range (ISO 8601 format).
+   * Only used when extraction_time_direction is set to reconciliation.
+   */
+  extraction_range_end?: string;
 }
 
 /**

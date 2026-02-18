@@ -26,8 +26,10 @@ export {
   ExternalSystemAttachmentStreamingParams,
   ExternalSystemAttachmentStreamingResponse,
   ExtractionMode,
+  ExtractionTimeDirection,
   ExtractorEvent,
   ExtractorEventType,
+  InitialSyncScope,
   ProcessAttachmentReturnType,
 } from './extraction';
 

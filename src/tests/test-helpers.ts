@@ -274,3 +274,92 @@ export function spyOnPrivateMethod<TPrivateMethods>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return jest.spyOn(instance as any, methodName as string);
 }
+
+/**
+ * Creates a test item with a specific timestamp for reconciliation testing.
+ * Use this to create items that fall within or outside specific date ranges.
+ */
+export function createItemWithTimestamp(
+  id: number,
+  timestamp: string | Date
+): Item {
+  const date =
+    typeof timestamp === 'string' ? timestamp : timestamp.toISOString();
+  return {
+    id,
+    created_at: date,
+    updated_at: date,
+    name: `item_${id}_${new Date(date).getTime()}`,
+  };
+}
+
+/**
+ * Creates multiple test items within a date range for reconciliation testing.
+ * Useful for creating test data spanning specific periods (e.g., Jan 2024 data).
+ *
+ * @param count - Number of items to create
+ * @param rangeStart - Start of date range (ISO 8601 string or Date)
+ * @param rangeEnd - End of date range (ISO 8601 string or Date)
+ */
+export function createItemsInDateRange(
+  count: number,
+  rangeStart: string | Date,
+  rangeEnd: string | Date
+): Item[] {
+  const startTime =
+    typeof rangeStart === 'string'
+      ? new Date(rangeStart).getTime()
+      : rangeStart.getTime();
+  const endTime =
+    typeof rangeEnd === 'string'
+      ? new Date(rangeEnd).getTime()
+      : rangeEnd.getTime();
+
+  const items: Item[] = [];
+  const interval = (endTime - startTime) / count;
+
+  for (let i = 0; i < count; i++) {
+    const timestamp = new Date(startTime + i * interval);
+    items.push(createItemWithTimestamp(i, timestamp));
+  }
+
+  return items;
+}
+
+/**
+ * Checks if an item's timestamp falls within a date range.
+ * Used to verify reconciliation extracted the correct items.
+ */
+export function isItemInDateRange(
+  item: Item,
+  rangeStart: string | Date,
+  rangeEnd: string | Date
+): boolean {
+  const itemTime = new Date(item.created_at).getTime();
+  const startTime =
+    typeof rangeStart === 'string'
+      ? new Date(rangeStart).getTime()
+      : rangeStart.getTime();
+  const endTime =
+    typeof rangeEnd === 'string'
+      ? new Date(rangeEnd).getTime()
+      : rangeEnd.getTime();
+
+  return itemTime >= startTime && itemTime <= endTime;
+}
+
+/**
+ * Filters items to only those within a date range.
+ * Used in dummy connectors to simulate reconciliation extraction.
+ */
+export function filterItemsByDateRange(
+  items: Item[],
+  rangeStart: string | Date | null | undefined,
+  rangeEnd: string | Date | null | undefined
+): Item[] {
+  if (!rangeStart || !rangeEnd) {
+    return items;
+  }
+
+  return items.filter((item) => isItemInDateRange(item, rangeStart, rangeEnd));
+}
