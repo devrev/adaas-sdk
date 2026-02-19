@@ -1,0 +1,128 @@
+# This workflow is used to release beta versions of @devrev/airsync-sdk package
+# to npm registry. It can only be run from the v2 branch and only releases beta
+# versions.
+#
+# - release:
+# 1. User runs the "Release v2 Beta" workflow manually via the GitHub Actions UI.
+# 2. Checks if the user is authorized to run the workflow (only codeowners
+#    listed in .github/CODEOWNERS can run the workflow).
+# 3. Checks if the branch is the v2 branch (v2 beta releases can only be made
+#    from the v2 branch).
+# 4. Gets the latest published beta version from npm and updates package.json if
+#    versions don't match. Bumps the prerelease version.
+# 5. Runs tests.
+# 6. Commits package.json and package-lock.json changes and creates a tag.
+# 7. Publishes the version to npm with the beta tag.
+# 8. Pushes the changes to the repository.
+
+name: Release v2 Beta
+run-name: "Release v2 beta by ${{ github.actor }}${{ inputs.dry-run && ' --dry-run' || '' }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Dry Run - skip commit and publish"
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/v2'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check branch
+        run: |
+          if [ "${{ github.ref_name }}" != "v2" ]; then
+            echo "ERROR: v2 beta releases can only be made from the v2 branch"
+            echo "Current branch: ${{ github.ref_name }}"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_SVC_TOKEN }}
+
+      - name: Check authorization
+        run: |
+          # Extract individual users from CODEOWNERS
+          AUTHORIZED_USERS=$(grep -o '@[a-zA-Z0-9_-]*[^/]' .github/CODEOWNERS | grep -v '@devrev/' | sed 's/@//' | tr '\n' ' ')
+
+          # Check if current actor is authorized
+          if ! echo "$AUTHORIZED_USERS" | grep -q "\b${{ github.actor }}\b"; then
+            echo "ERROR: User ${{ github.actor }} is not authorized to run this workflow"
+            echo "Only users listed in .github/CODEOWNERS can run this workflow"
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          registry-url: https://registry.npmjs.org/
+          node-version: "18.x"
+          scope: "@devrev"
+          token: ${{ secrets.NPMJS_NPM_TOKEN }}
+
+      - name: Git configuration
+        run: |
+          git config --global user.email "svc-devrev-sdk@devrev.ai"
+          git config --global user.name "svc-devrev-sdk"
+
+      - name: Get latest published beta version and bump
+        id: version
+        run: |
+          # Get the latest beta version from npm
+          LATEST_BETA=$(npm view @devrev/airsync-sdk dist-tags.beta 2>/dev/null || echo "")
+          echo "Latest published beta version: $LATEST_BETA"
+
+          # Get current package.json version
+          CURRENT_VERSION=$(cat package.json | jq -r '.version')
+          echo "Current package.json version: $CURRENT_VERSION"
+
+          if [ -n "$LATEST_BETA" ]; then
+            # If there's a published beta, sync to it first
+            if [ "$CURRENT_VERSION" != "$LATEST_BETA" ]; then
+              echo "Syncing package.json version to latest published beta version"
+              npm --no-git-tag-version version $LATEST_BETA --allow-same-version
+            fi
+          else
+            echo "No published beta version found, using package.json version"
+          fi
+
+          # Bump the prerelease version
+          NEW_VERSION=$(npm --no-git-tag-version --preid=beta version prerelease)
+          echo "Target release version: $NEW_VERSION"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Run tests
+        run: |
+          npm ci
+          npm run build
+          npm run test
+
+      - name: Commit package.json and package-lock.json changes and create tag
+        run: |
+          git add "package.json" "package-lock.json"
+          git commit -m "chore: release ${{ env.NEW_VERSION }}"
+          git tag ${{ env.NEW_VERSION }}
+
+      - name: Publish
+        run: |
+          npm publish --verbose --access public --tag beta ${{ env.DRY_RUN }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_NPM_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry-run != 'false' && '--dry-run' || ' '}}
+
+      # Push repository changes (only after successful npm publish)
+      - name: Push changes to repository
+        if: ${{ github.event.inputs.dry-run == 'false' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_SVC_TOKEN }}
+        run: |
+          git push origin && git push --tags
