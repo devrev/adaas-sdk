@@ -167,10 +167,14 @@ export class AttachmentsStreamingPool<ConnectorState> {
             fileSize?: number;
           };
 
-            console.warn(
-              `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} ${fileSize ? `and ${fileSize}` : ""} due to error returned by the stream function`,
-              message
-            );
+          console.warn(
+            `Skipping attachment with ID ${
+              attachment.id
+            } with extension ${fileExtension} ${
+              fileSize ? `and ${fileSize}` : ''
+            } due to error returned by the stream function`,
+            message
+          );
           await this.updateProgress();
           continue;
         }

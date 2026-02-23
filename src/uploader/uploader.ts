@@ -58,9 +58,11 @@ export class Uploader {
     );
     if (fileError) {
       return {
-        error: new Error(
-          'Error while compressing jsonl object. ' + serializeError(fileError)
-        ),
+        error: {
+          message:
+            'Error while compressing jsonl object. ' +
+            serializeError(fileError),
+        },
       };
     }
 
@@ -72,10 +74,11 @@ export class Uploader {
       await this.getArtifactUploadUrl(filename, fileType);
     if (preparedArtifactError) {
       return {
-        error: new Error(
-          'Error while getting artifact upload URL: ' +
-            serializeError(preparedArtifactError)
-        ),
+        error: {
+          message:
+            'Error while getting artifact upload URL: ' +
+            serializeError(preparedArtifactError),
+        },
       };
     }
 
@@ -86,7 +89,7 @@ export class Uploader {
     );
     if (uploadItemError) {
       return {
-        error: new Error('Error while uploading artifact.'),
+        error: { message: 'Error while uploading artifact.' },
       };
     }
 
@@ -95,10 +98,11 @@ export class Uploader {
       await this.confirmArtifactUpload(preparedArtifact!.artifact_id);
     if (confirmArtifactUploadError) {
       return {
-        error: new Error(
-          'Error while confirming artifact upload. ' +
-            JSON.stringify(confirmArtifactUploadError)
-        ),
+        error: {
+          message:
+            'Error while confirming artifact upload. ' +
+            JSON.stringify(confirmArtifactUploadError),
+        },
       };
     }
 
@@ -126,9 +130,9 @@ export class Uploader {
   ): Promise<UploaderResult<ArtifactToUpload>> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.upload-url`;
 
-    if (fileSize != null && fileSize! <= 0) {
+    if (fileSize! <= 0) {
       return {
-        error: new Error('File size is 0 or less.'),
+        error: { message: 'File size is 0 or less.' },
       };
     }
 
@@ -246,10 +250,11 @@ export class Uploader {
         return { response };
       } else {
         return {
-          error: new Error(
-            'Error while confirming artifact upload. ' +
-              serializeError(response)
-          ),
+          error: {
+            message:
+              'Error while confirming artifact upload. ' +
+              serializeError(response),
+          },
         };
       }
     } catch (error) {
@@ -296,10 +301,11 @@ export class Uploader {
 
     if (artifactUrlError) {
       return {
-        error: new Error(
-          'Error while getting artifact download URL. ' +
-            serializeError(artifactUrlError)
-        ),
+        error: {
+          message:
+            'Error while getting artifact download URL. ' +
+            serializeError(artifactUrlError),
+        },
       };
     }
 
@@ -308,10 +314,11 @@ export class Uploader {
       await this.downloadArtifact(artifactUrl!);
     if (gzippedJsonlObjectError) {
       return {
-        error: new Error(
-          'Error while downloading gzipped jsonl object. ' +
-            serializeError(gzippedJsonlObjectError)
-        ),
+        error: {
+          message:
+            'Error while downloading gzipped jsonl object. ' +
+            serializeError(gzippedJsonlObjectError),
+        },
       };
     }
 
@@ -321,10 +328,11 @@ export class Uploader {
     );
     if (jsonlObjectError) {
       return {
-        error: new Error(
-          'Error while decompressing gzipped jsonl object. ' +
-            serializeError(jsonlObjectError)
-        ),
+        error: {
+          message:
+            'Error while decompressing gzipped jsonl object. ' +
+            serializeError(jsonlObjectError),
+        },
       };
     }
 
@@ -334,9 +342,11 @@ export class Uploader {
     );
     if (jsonObjectError) {
       return {
-        error: new Error(
-          'Error while parsing jsonl object. ' + serializeError(jsonObjectError)
-        ),
+        error: {
+          message:
+            'Error while parsing jsonl object. ' +
+            serializeError(jsonObjectError),
+        },
       };
     }
 

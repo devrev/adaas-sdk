@@ -775,9 +775,7 @@ export class WorkerAdapter<ConnectorState> {
             error: {
               message: `Error while preparing artifact for attachment ID ${
                 attachment.id
-              }. Skipping attachment. ${JSON.stringify(
-                serializeError(artifactUrlError)
-              )}`,
+              }. Skipping attachment. ${serializeError(artifactUrlError)}`,
               fileSize: fileSize,
             },
           };
