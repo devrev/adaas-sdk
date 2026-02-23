@@ -22,6 +22,7 @@ export class Repo {
   private onUpload: (artifact: Artifact) => void;
   private options?: WorkerAdapterOptions;
   public uploadedArtifacts: Artifact[];
+  private locked = false;
 
   constructor({
     event,
@@ -41,6 +42,10 @@ export class Repo {
 
   getItems(): (NormalizedItem | NormalizedAttachment | Item)[] {
     return this.items;
+  }
+
+  lock() {
+    this.locked = true;
   }
 
   async upload(
@@ -83,6 +88,10 @@ export class Repo {
   }
 
   async push(items: Item[]): Promise<boolean> {
+    if (this.locked) {
+      return true;
+    }
+
     let recordsToPush: (NormalizedItem | NormalizedAttachment | Item)[];
 
     if (!items || items.length === 0) {

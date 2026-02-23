@@ -184,6 +184,7 @@ export class WorkerAdapter<ConnectorState> {
 
   async postState() {
     return runWithSdkLogContext(async () => {
+      if (this.isTimeout) return;
       await this.adapterState.postState();
     });
   }
@@ -210,6 +211,8 @@ export class WorkerAdapter<ConnectorState> {
   ): Promise<void> {
     return runWithSdkLogContext(async () => {
       newEventType = translateOutgoingEventType(newEventType);
+
+      if (this.isTimeout) return;
 
       if (this.hasWorkerEmitted) {
         console.warn(
@@ -304,6 +307,9 @@ export class WorkerAdapter<ConnectorState> {
 
   handleTimeout() {
     this.isTimeout = true;
+    for (const repo of this.repos) {
+      repo.lock();
+    }
   }
 
   async loadItemTypes({

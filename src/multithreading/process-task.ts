@@ -48,31 +48,30 @@ export function processTask<ConnectorState>({
               options,
             });
 
-            parentPort.on(
-              WorkerEvent.WorkerMessage,
-              (message) =>
+            parentPort.on(WorkerEvent.WorkerMessage, (message) => {
+              if (message.subject === WorkerMessageSubject.WorkerMessageExit) {
                 void (async () => {
                   await runWithSdkLogContext(async () => {
-                    if (
-                      message.subject === WorkerMessageSubject.WorkerMessageExit
-                    ) {
-                      console.log(
-                        'Worker received message to gracefully exit. Setting isTimeout flag and executing onTimeout function.'
-                      );
+                    console.log(
+                      'Worker received timeout signal. Locking adapter and executing onTimeout.'
+                    );
+                    adapter.handleTimeout();
 
-                      adapter.handleTimeout();
-                      await runWithUserLogContext(async () =>
-                        onTimeout({ adapter })
-                      );
+                    adapter.isTimeout = false;
+                    await runWithUserLogContext(async () =>
+                      onTimeout({ adapter })
+                    );
+                    adapter.isTimeout = true;
 
-                      console.log(
-                        'Finished executing onTimeout function. Exiting worker.'
-                      );
-                      process.exit(0);
-                    }
+                    console.log(
+                      'Finished executing onTimeout function. Exiting worker.'
+                    );
+                    process.exit(0);
                   });
-                })()
-            );
+                })();
+              }
+            });
+
             await runWithUserLogContext(async () => task({ adapter }));
             process.exit(0);
           }
