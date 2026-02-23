@@ -7,6 +7,7 @@ import {
   STATELESS_EVENT_TYPES,
 } from '../../common/constants';
 import { emit } from '../../common/control-protocol';
+import { createReadOnlyProxy } from '../../common/read-only-proxy';
 import {
   addReportToLoaderReport,
   getFilesToLoad,
@@ -125,6 +126,9 @@ export class WorkerAdapter<ConnectorState> {
   }
 
   get state(): AdapterState<ConnectorState> {
+    if (this.isTimeout) {
+      return createReadOnlyProxy(this.adapterState.state);
+    }
     return this.adapterState.state;
   }
 

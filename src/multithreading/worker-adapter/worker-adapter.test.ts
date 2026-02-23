@@ -474,6 +474,146 @@ describe(WorkerAdapter.name, () => {
     });
   });
 
+  describe('state mutation protection during timeout', () => {
+    let consoleWarnSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    });
+
+    afterEach(() => {
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should allow state modifications when isTimeout is false', () => {
+      adapter.isTimeout = false;
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: ['artifact1'],
+          lastProcessed: 5,
+          lastProcessedAttachmentsIdsList: [],
+        },
+      };
+
+      expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([
+        'artifact1',
+      ]);
+      expect(adapter.state.toDevRev.attachmentsMetadata.lastProcessed).toBe(5);
+    });
+
+    it('should prevent direct property modification when isTimeout is true', () => {
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: [],
+          lastProcessed: 0,
+          lastProcessedAttachmentsIdsList: [],
+        },
+      };
+
+      adapter.isTimeout = true;
+      adapter.state.toDevRev.attachmentsMetadata.lastProcessed = 999;
+
+      expect(adapter.state.toDevRev.attachmentsMetadata.lastProcessed).toBe(0);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Attempted to modify')
+      );
+    });
+
+    it('should prevent array push when isTimeout is true', () => {
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: ['artifact1'],
+          lastProcessed: 0,
+          lastProcessedAttachmentsIdsList: [],
+        },
+      };
+
+      adapter.isTimeout = true;
+      adapter.state.toDevRev.attachmentsMetadata.artifactIds.push('artifact2');
+
+      expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([
+        'artifact1',
+      ]);
+      expect(consoleWarnSpy).toHaveBeenCalled();
+    });
+
+    it('should prevent nested property modification when isTimeout is true', () => {
+      adapter.state.attachments = { completed: false };
+      adapter.isTimeout = true;
+
+      adapter.state.attachments.completed = true;
+
+      expect(adapter.state.attachments.completed).toBe(false);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Attempted to modify')
+      );
+    });
+
+    it('should prevent full state reassignment when isTimeout is true', () => {
+      const originalState = { ...adapter.state };
+      adapter.isTimeout = true;
+
+      adapter.state = {
+        attachments: { completed: true },
+        lastSyncStarted: 'modified',
+        lastSuccessfulSyncStarted: 'modified',
+        snapInVersionId: 'modified',
+        toDevRev: {
+          attachmentsMetadata: {
+            artifactIds: ['new'],
+            lastProcessed: 100,
+            lastProcessedAttachmentsIdsList: [],
+          },
+        },
+      };
+
+      expect(adapter.state.attachments.completed).toBe(
+        originalState.attachments.completed
+      );
+      expect(adapter.state.lastSyncStarted).toBe(originalState.lastSyncStarted);
+    });
+
+    it('should allow reading state properties when isTimeout is true', () => {
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: ['artifact1', 'artifact2'],
+          lastProcessed: 42,
+          lastProcessedAttachmentsIdsList: [],
+        },
+      };
+      adapter.state.lastSyncStarted = '2024-01-01T00:00:00Z';
+
+      adapter.isTimeout = true;
+
+      expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([
+        'artifact1',
+        'artifact2',
+      ]);
+      expect(adapter.state.toDevRev.attachmentsMetadata.lastProcessed).toBe(42);
+      expect(adapter.state.lastSyncStarted).toBe('2024-01-01T00:00:00Z');
+    });
+
+    it('should return writable state after isTimeout is set back to false', () => {
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: [],
+          lastProcessed: 0,
+          lastProcessedAttachmentsIdsList: [],
+        },
+      };
+
+      adapter.isTimeout = true;
+      adapter.state.toDevRev.attachmentsMetadata.lastProcessed = 999;
+      expect(adapter.state.toDevRev.attachmentsMetadata.lastProcessed).toBe(0);
+
+      adapter.isTimeout = false;
+      adapter.state.toDevRev.attachmentsMetadata.lastProcessed = 999;
+      expect(adapter.state.toDevRev.attachmentsMetadata.lastProcessed).toBe(
+        999
+      );
+    });
+  });
+
   describe(WorkerAdapter.prototype.emit.name, () => {
     let counter: { counter: number };
     let mockPostMessage: jest.Mock;
