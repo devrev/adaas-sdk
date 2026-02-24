@@ -8,6 +8,10 @@ processTask({
     let result = 0;
     for (let i = 0; i < 100000; i++) {
       for (let j = 0; j < 10000; j++) {
+        if (adapter.isTimeout) {
+          return;
+        }
+
         result += Math.sqrt(i * j) * Math.sin(i + j);
         result = Math.abs(result) % 1000000;
       }
