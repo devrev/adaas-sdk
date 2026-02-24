@@ -13,6 +13,25 @@ import {
 } from '../types/workers';
 import { WorkerAdapter } from './worker-adapter/worker-adapter';
 
+async function handleTimeoutMessage<ConnectorState>(
+  adapter: WorkerAdapter<ConnectorState>,
+  taskPromise: Promise<void>,
+  onTimeout: ProcessTaskInterface<ConnectorState>['onTimeout']
+): Promise<void> {
+  console.log('Timeout received. Setting flag and waiting for task to finish.');
+  adapter.handleTimeout();
+
+  try {
+    await taskPromise;
+  } catch (error) {
+    console.warn('Task error during timeout:', serializeError(error));
+  }
+
+  console.log('Task finished. Running onTimeout.');
+  await runWithUserLogContext(async () => onTimeout({ adapter }));
+  console.log('Finished executing onTimeout function. Exiting worker.');
+}
+
 export function processTask<ConnectorState>({
   task,
   onTimeout,
@@ -41,41 +60,60 @@ export function processTask<ConnectorState>({
             options,
           });
 
-          if (parentPort && workerData.event) {
-            const adapter = new WorkerAdapter<ConnectorState>({
-              event,
-              adapterState,
-              options,
+          if (!parentPort || !workerData.event) {
+            return;
+          }
+
+          const adapter = new WorkerAdapter<ConnectorState>({
+            event,
+            adapterState,
+            options,
+          });
+
+          // Track whether timeout was requested
+          let timeoutRequested = false;
+          let taskPromise: Promise<void>;
+
+          // Set up message handler BEFORE starting task
+          parentPort.on(WorkerEvent.WorkerMessage, (message) => {
+            if (message.subject !== WorkerMessageSubject.WorkerMessageExit) {
+              return;
+            }
+
+            timeoutRequested = true;
+            void runWithSdkLogContext(async () => {
+              try {
+                await handleTimeoutMessage(adapter, taskPromise, onTimeout);
+                process.exit(0);
+              } catch (err) {
+                console.error('Error in onTimeout:', serializeError(err));
+                process.exit(1);
+              }
             });
+          });
 
-            parentPort.on(
-              WorkerEvent.WorkerMessage,
-              (message) =>
-                void (async () => {
-                  await runWithSdkLogContext(async () => {
-                    if (
-                      message.subject === WorkerMessageSubject.WorkerMessageExit
-                    ) {
-                      console.log(
-                        'Worker received message to gracefully exit. Setting isTimeout flag and executing onTimeout function.'
-                      );
+          // Start task and store the promise
+          taskPromise = runWithUserLogContext(async () => task({ adapter }));
 
-                      adapter.handleTimeout();
-                      await runWithUserLogContext(async () =>
-                        onTimeout({ adapter })
-                      );
+          try {
+            await taskPromise;
+          } catch (error) {
+            // If timeout was requested, let the timeout handler finish
+            if (timeoutRequested) {
+              console.log(
+                'Task threw during timeout. Letting timeout handler finish.'
+              );
+              return;
+            }
+            throw error;
+          }
 
-                      console.log(
-                        'Finished executing onTimeout function. Exiting worker.'
-                      );
-                      process.exit(0);
-                    }
-                  });
-                })()
-            );
-            await runWithUserLogContext(async () => task({ adapter }));
+          // Task completed normally
+          if (!timeoutRequested) {
+            console.log('Finished executing task. Exiting worker.');
             process.exit(0);
           }
+          // If timeout was requested, the message handler will call process.exit
         } catch (error) {
           console.error('Error while processing task.', serializeError(error));
           process.exit(1);
