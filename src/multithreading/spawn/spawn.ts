@@ -321,10 +321,10 @@ export class Spawn {
           },
         },
       });
-
-      this.resolve();
     } catch (error) {
       console.error('Error while emitting event.', serializeError(error));
+    } finally {
+      this.resolve();
     }
   }
 }
