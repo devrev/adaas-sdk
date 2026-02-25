@@ -48,6 +48,9 @@ export function processTask<ConnectorState>({
               options,
             });
 
+            // Guard flag to prevent onTimeout from executing twice.
+            let onTimeoutExecuted = false;
+
             parentPort.on(
               WorkerEvent.WorkerMessage,
               (message) =>
@@ -56,6 +59,14 @@ export function processTask<ConnectorState>({
                     if (
                       message.subject === WorkerMessageSubject.WorkerMessageExit
                     ) {
+                      if (onTimeoutExecuted) {
+                        console.log(
+                          'Worker received exit message but onTimeout has already been executed. Exiting worker.'
+                        );
+                        process.exit(0);
+                      }
+
+                      onTimeoutExecuted = true;
                       console.log(
                         'Worker received message to gracefully exit. Setting isTimeout flag and executing onTimeout function.'
                       );
@@ -77,7 +88,8 @@ export function processTask<ConnectorState>({
             await runWithUserLogContext(async () => task({ adapter }));
 
             // If size limit was triggered during task, call onTimeout for cleanup
-            if (adapter.isTimeout) {
+            if (adapter.isTimeout && !onTimeoutExecuted) {
+              onTimeoutExecuted = true;
               console.warn(
                 'Size limit detected during data collection. Executing onTimeout function for cleanup.'
               );
