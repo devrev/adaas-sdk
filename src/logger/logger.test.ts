@@ -526,6 +526,14 @@ describe(serializeError.name, () => {
     expect(serializeError(error)).toBe('something went wrong');
   });
 
+  it('should include error name for named error types', () => {
+    const typeError = new TypeError('invalid type');
+    expect(serializeError(typeError)).toBe('TypeError: invalid type');
+
+    const rangeError = new RangeError('out of range');
+    expect(serializeError(rangeError)).toBe('RangeError: out of range');
+  });
+
   it('should return a JSON string for an Axios error', () => {
     const axiosError = {
       isAxiosError: true,
@@ -564,6 +572,23 @@ describe(serializeError.name, () => {
   it('[edge] should handle undefined without throwing', () => {
     const result = serializeError(undefined);
     expect(typeof result).toBe('string');
+  });
+
+  it('[edge] should fall back to extracting own properties for objects that stringify to empty object', () => {
+    // Simulate an error-like object with non-enumerable properties
+    // (e.g. cross-realm Error that fails instanceof check)
+    const errorLike = Object.create(null);
+    Object.defineProperty(errorLike, 'message', {
+      value: 'cross-realm error',
+      enumerable: false,
+    });
+
+    const result = serializeError(errorLike);
+    expect(typeof result).toBe('string');
+    // Should not be '{}' — that's the whole point of the fix
+    expect(result).not.toBe('{}');
+    // Should have extracted the non-enumerable 'message' property
+    expect(result).toContain('cross-realm error');
   });
 });
 

@@ -181,12 +181,37 @@ export function serializeError(error: unknown): string {
     return JSON.stringify(serializeAxiosError(error));
   }
   if (error instanceof Error) {
-    return error.message;
+    // Include error name (e.g. TypeError, RangeError) alongside message
+    // for easier debugging
+    return error.name !== 'Error'
+      ? `${error.name}: ${error.message}`
+      : error.message;
   }
   if (typeof error === 'string') {
     return error;
   }
-  return JSON.stringify(error) ?? String(error);
+
+  // JSON.stringify returns '{}' for objects with only non-enumerable properties
+  // Fall back to extracting own property names or String() coercion.
+  const stringified = JSON.stringify(error);
+  if (!stringified || stringified === '{}') {
+    if (error !== null && typeof error === 'object') {
+      const props: Record<string, unknown> = {};
+      for (const key of Object.getOwnPropertyNames(error)) {
+        props[key] = (error as Record<string, unknown>)[key];
+      }
+      const extracted = JSON.stringify(props);
+      if (extracted && extracted !== '{}') {
+        return extracted;
+      }
+    }
+    try {
+      return String(error);
+    } catch {
+      return '[Unserializable error]';
+    }
+  }
+  return stringified;
 }
 
 /**
