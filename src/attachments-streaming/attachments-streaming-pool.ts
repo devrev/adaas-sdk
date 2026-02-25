@@ -163,11 +163,11 @@ export class AttachmentsStreamingPool<ConnectorState> {
           const fileExtension = attachment.file_name.split('.').pop() || '';
 
           const fileSizeInfo = response.error.fileSize
-            ? `and ${response.error.fileSize}`
+            ? `and size ${response.error.fileSize} bytes `
             : '';
 
           console.warn(
-            `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} ${fileSizeInfo} due to error returned by the stream function`,
+            `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} ${fileSizeInfo}due to error returned by the stream function`,
             response.error.message
           );
           await this.updateProgress();

@@ -838,6 +838,7 @@ export class WorkerAdapter<ConnectorState> {
         }
 
         await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
+        return;
       }
       return {
         error: {
