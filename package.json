@@ -11,8 +11,11 @@
     "start": "ts-node src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
-    "test": "jest --forceExit --coverage --runInBand --selectProjects default --",
-    "test:backwards-compatibility": "jest --forceExit --runInBand --selectProjects backwards-compatibility --"
+    "test": "jest --forceExit --maxWorkers=50% --selectProjects default --",
+    "test:backwards-compatibility": "jest --forceExit --selectProjects backwards-compatibility --",
+    "test:timeout-handling": "jest --forceExit --selectProjects timeout-handling --",
+    "test:slow": "jest --forceExit --selectProjects slow --",
+    "test:coverage": "jest --forceExit --coverage --runInBand --"
   },
   "repository": {
     "type": "git",
