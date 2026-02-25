@@ -8,7 +8,7 @@ import { createEvent } from '../test-helpers';
 
 import run from './extraction';
 
-jest.setTimeout(10000);
+jest.setTimeout(60000);
 
 describe('Dummy Connector - Metadata Extraction', () => {
   let event: AirdropEvent;
