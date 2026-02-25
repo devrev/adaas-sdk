@@ -130,7 +130,7 @@ export class Uploader {
   ): Promise<UploaderResult<ArtifactToUpload>> {
     const url = `${this.devrevApiEndpoint}/internal/airdrop.artifacts.upload-url`;
 
-    if (fileSize! <= 0) {
+    if (fileSize !== undefined && fileSize <= 0) {
       return {
         error: { message: 'File size is 0 or less.' },
       };
@@ -258,7 +258,7 @@ export class Uploader {
         };
       }
     } catch (error) {
-      return { error: error };
+      return { error: { message: serializeError(error) } };
     }
   }
 

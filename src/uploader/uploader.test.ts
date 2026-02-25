@@ -373,7 +373,8 @@ describe(Uploader.name, () => {
 
       // Assert
       expect(result.response).toBeUndefined();
-      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error).toBeDefined();
+      expect(result.error).toHaveProperty('message');
     });
   });
 
