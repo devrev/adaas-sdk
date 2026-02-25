@@ -781,11 +781,6 @@ export class WorkerAdapter<ConnectorState> {
           };
         }
 
-        if (this.isTimeout) {
-          this.destroyHttpStream(httpStream);
-          return undefined;
-        }
-
         // Stream attachment
         const { error: uploadedArtifactError } =
           await this.uploader.streamArtifact(artifactUrlResponse!, httpStream);
@@ -844,7 +839,11 @@ export class WorkerAdapter<ConnectorState> {
 
         await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
       }
-      return;
+      return {
+        error: {
+          message: `Error while opening attachment stream. Skipping attachment.`,
+        },
+      };
     });
   }
 
