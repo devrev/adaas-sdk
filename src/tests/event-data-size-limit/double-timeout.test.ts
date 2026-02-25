@@ -7,8 +7,9 @@ import { mockServer } from '../jest.setup';
 import { createEvent } from '../test-helpers';
 import run from './extraction-with-timeout';
 
-// Increase timeout — the worker sleeps for 5s and spawn has a 3s soft timeout
-jest.setTimeout(30000);
+// Increase timeout — the worker sleeps for 20s and spawn has a 15s soft timeout.
+// The push of 3000 items can take 5-10s on CI, so total test time can be ~25s.
+jest.setTimeout(60000);
 
 describe('double-timeout: onTimeout guard prevents double execution', () => {
   it('should only emit one progress event when both size limit and real timeout trigger', async () => {

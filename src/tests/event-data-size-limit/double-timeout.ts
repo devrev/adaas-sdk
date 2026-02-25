@@ -50,9 +50,10 @@ processTask({
       'Size limit triggered. Now sleeping to allow real timeout message to arrive...'
     );
 
-    // Sleep long enough for the 3-second timeout to fire from spawn,
-    // which sends WorkerMessageExit to the worker
-    await sleep(5000);
+    // Sleep long enough for the 15-second timeout to fire from spawn,
+    // which sends WorkerMessageExit to the worker.
+    // Must be longer than the timeout value in extraction-with-timeout.ts.
+    await sleep(20000);
 
     // This emit should be blocked because isTimeout is true
     console.log('Attempting to emit Done (should be blocked by isTimeout)');
