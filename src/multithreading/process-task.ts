@@ -13,112 +13,108 @@ import {
 } from '../types/workers';
 import { WorkerAdapter } from './worker-adapter/worker-adapter';
 
-async function handleTimeoutMessage<ConnectorState>(
-  adapter: WorkerAdapter<ConnectorState>,
-  taskPromise: Promise<void>,
-  onTimeout: ProcessTaskInterface<ConnectorState>['onTimeout']
-): Promise<void> {
-  console.log('Timeout received. Setting flag and waiting for task to finish.');
-  adapter.handleTimeout();
-
-  try {
-    await taskPromise;
-  } catch (error) {
-    console.warn('Task error during timeout:', serializeError(error));
-  }
-
-  console.log('Task finished. Running onTimeout.');
-  await runWithUserLogContext(async () => onTimeout({ adapter }));
-  console.log('Finished executing onTimeout function. Exiting worker.');
-}
-
 export function processTask<ConnectorState>({
   task,
   onTimeout,
 }: ProcessTaskInterface<ConnectorState>) {
-  if (!isMainThread) {
-    void (async () => {
-      await runWithSdkLogContext(async () => {
-        try {
-          const event = workerData.event;
+  if (isMainThread) {
+    return;
+  }
 
-          // TODO: Remove when the old types are completely phased out
-          event.payload.event_type = translateIncomingEventType(
-            event.payload.event_type
-          );
+  void (async () => {
+    await runWithSdkLogContext(async () => {
+      try {
+        const event = workerData.event;
 
-          const initialState = workerData.initialState as ConnectorState;
-          const initialDomainMapping = workerData.initialDomainMapping;
-          const options = workerData.options;
-          // eslint-disable-next-line no-global-assign
-          console = new Logger({ event, options });
+        // TODO: Remove when the old types are completely phased out
+        event.payload.event_type = translateIncomingEventType(
+          event.payload.event_type
+        );
 
-          const adapterState = await createAdapterState<ConnectorState>({
-            event,
-            initialState,
-            initialDomainMapping,
-            options,
-          });
+        const initialState = workerData.initialState as ConnectorState;
+        const initialDomainMapping = workerData.initialDomainMapping;
+        const options = workerData.options;
+        // eslint-disable-next-line no-global-assign
+        console = new Logger({ event, options });
 
-          if (!parentPort || !workerData.event) {
+        const adapterState = await createAdapterState<ConnectorState>({
+          event,
+          initialState,
+          initialDomainMapping,
+          options,
+        });
+
+        const adapter = new WorkerAdapter<ConnectorState>({
+          event,
+          adapterState,
+          options,
+        });
+
+        // Timeout handling flow:
+        // The task() runs in the main flow below. Meanwhile, the parent thread may send
+        // a timeout message at any point. When that happens, the message handler signals
+        // the adapter to stop (handleTimeout), waits for task() to finish, then runs onTimeout().
+        // If task() completes before any timeout message arrives, the worker exits normally.
+        // isTimeoutReceived prevents both flows from calling process.exit.
+        let isTimeoutReceived = false;
+        let taskExecution: Promise<void>;
+        parentPort?.on(WorkerEvent.WorkerMessage, (message) => {
+          if (message.subject !== WorkerMessageSubject.WorkerMessageExit) {
             return;
           }
 
-          const adapter = new WorkerAdapter<ConnectorState>({
-            event,
-            adapterState,
-            options,
-          });
+          isTimeoutReceived = true;
 
-          // Track whether timeout was requested
-          let timeoutRequested = false;
-          let taskPromise: Promise<void>;
+          void runWithSdkLogContext(async () => {
+            try {
+              console.log('Timeout received. Waiting for the task to finish.');
+              adapter.handleTimeout();
 
-          // Set up message handler BEFORE starting task
-          parentPort.on(WorkerEvent.WorkerMessage, (message) => {
-            if (message.subject !== WorkerMessageSubject.WorkerMessageExit) {
-              return;
-            }
-
-            timeoutRequested = true;
-            void runWithSdkLogContext(async () => {
               try {
-                await handleTimeoutMessage(adapter, taskPromise, onTimeout);
-                process.exit(0);
-              } catch (err) {
-                console.error('Error in onTimeout:', serializeError(err));
-                process.exit(1);
+                await taskExecution;
+              } catch (taskError) {
+                console.warn(
+                  'Task error during timeout:',
+                  serializeError(taskError)
+                );
               }
-            });
-          });
 
-          // Start task and store the promise
-          taskPromise = runWithUserLogContext(async () => task({ adapter }));
-
-          try {
-            await taskPromise;
-          } catch (error) {
-            // If timeout was requested, let the timeout handler finish
-            if (timeoutRequested) {
-              console.log(
-                'Task threw during timeout. Letting timeout handler finish.'
+              console.log('Task finished. Running onTimeout handler.');
+              await runWithUserLogContext(async () => onTimeout({ adapter }));
+              console.log('onTimeout handler complete. Exiting worker.');
+              process.exit(0);
+            } catch (onTimeoutError) {
+              console.error(
+                'Error in onTimeout handler:',
+                serializeError(onTimeoutError)
               );
-              return;
+              process.exit(1);
             }
-            throw error;
-          }
+          });
+        });
 
-          // Task completed normally
-          if (!timeoutRequested) {
-            console.log('Finished executing task. Exiting worker.');
-            process.exit(0);
+        taskExecution = runWithUserLogContext(async () => task({ adapter }));
+
+        try {
+          await taskExecution;
+        } catch (taskError) {
+          if (isTimeoutReceived) {
+            console.log(
+              'Task threw during timeout. Letting timeout handler finish.'
+            );
+            return;
           }
-          // If timeout was requested, the message handler will call process.exit
-        } catch (error) {
-          console.error('Error while processing task.', serializeError(error));
-          process.exit(1);
+          throw taskError;
         }
-      });
-    })();
-  }
+
+        if (!isTimeoutReceived) {
+          console.log('Task completed. Exiting worker.');
+          process.exit(0);
+        }
+      } catch (error) {
+        console.error('Error while processing task.', serializeError(error));
+        process.exit(1);
+      }
+    });
+  })();
 }
