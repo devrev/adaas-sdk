@@ -4,6 +4,7 @@ import {
   EventType,
   InitialSyncScope,
   ExtractionTimeDirection,
+  TimeValueType,
 } from './extraction';
 
 // Test the EventContext interface and related extraction types
@@ -129,9 +130,9 @@ describe('ExtractionTypes', () => {
   });
 
   describe('ExtractionTimeDirection enum', () => {
-    it('should have backward value', () => {
-      expect(ExtractionTimeDirection.BACKWARD).toBeDefined();
-      expect(ExtractionTimeDirection.BACKWARD).toBe('backward');
+    it('should have historical value', () => {
+      expect(ExtractionTimeDirection.HISTORICAL).toBeDefined();
+      expect(ExtractionTimeDirection.HISTORICAL).toBe('historical');
     });
 
     it('should have forward value', () => {
@@ -139,17 +140,32 @@ describe('ExtractionTypes', () => {
       expect(ExtractionTimeDirection.FORWARD).toBe('forward');
     });
 
-    it('should have reconciliation value', () => {
-      expect(ExtractionTimeDirection.RECONCILIATION).toBeDefined();
-      expect(ExtractionTimeDirection.RECONCILIATION).toBe('reconciliation');
+    it('should have exactly two values', () => {
+      const values = Object.values(ExtractionTimeDirection);
+      expect(values.length).toBe(2);
+      expect(values).toContain('historical');
+      expect(values).toContain('forward');
+    });
+  });
+
+  describe('TimeValueType enum', () => {
+    it('should have all expected values', () => {
+      expect(TimeValueType.WORKERS_OLDEST).toBe('workers_oldest');
+      expect(TimeValueType.WORKERS_OLDEST_MINUS_WINDOW).toBe(
+        'workers_oldest_minus_window'
+      );
+      expect(TimeValueType.WORKERS_NEWEST).toBe('workers_newest');
+      expect(TimeValueType.WORKERS_NEWEST_PLUS_WINDOW).toBe(
+        'workers_newest_plus_window'
+      );
+      expect(TimeValueType.NOW).toBe('now');
+      expect(TimeValueType.ABSOLUTE).toBe('absolute');
+      expect(TimeValueType.UNBOUNDED).toBe('unbounded');
     });
 
-    it('should have exactly three values', () => {
-      const values = Object.values(ExtractionTimeDirection);
-      expect(values.length).toBe(3);
-      expect(values).toContain('backward');
-      expect(values).toContain('forward');
-      expect(values).toContain('reconciliation');
+    it('should have exactly seven values', () => {
+      const values = Object.values(TimeValueType);
+      expect(values.length).toBe(7);
     });
   });
 });

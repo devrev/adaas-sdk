@@ -14,6 +14,7 @@ export {
   AirdropMessage,
   ConnectionData,
   DomainObjectState,
+  EventContext,
   EventContextIn,
   EventContextOut,
   EventData,
@@ -31,6 +32,8 @@ export {
   ExtractorEventType,
   InitialSyncScope,
   ProcessAttachmentReturnType,
+  TimeValue,
+  TimeValueType,
 } from './extraction';
 
 // Loading

@@ -2,6 +2,7 @@ import axios from 'axios';
 
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
+import { resolveTimeValue } from '../common/time-value-resolver';
 import { axiosClient } from '../http/axios-client-internal';
 import { getPrintableState, serializeError } from '../logger/logger';
 import { SyncMode } from '../types/common';
@@ -74,6 +75,50 @@ export async function createAdapterState<ConnectorState>({
     ) {
       as.state.lastSyncStarted = new Date().toISOString();
       console.log(`Setting lastSyncStarted to ${as.state.lastSyncStarted}.`);
+    }
+
+    // Store extraction_time_direction in state and resolve extraction timestamps
+    const eventContext = event.payload.event_context;
+    if (eventContext.extraction_time_direction) {
+      as.state.extraction_time_direction =
+        eventContext.extraction_time_direction;
+      console.log(
+        `Storing extraction_time_direction: ${eventContext.extraction_time_direction}.`
+      );
+    }
+
+    if (eventContext.extraction_start_time) {
+      try {
+        eventContext.extraction_start = resolveTimeValue(
+          eventContext.extraction_start_time,
+          as.state
+        );
+        console.log(
+          `Resolved extraction_start to ${eventContext.extraction_start}.`
+        );
+      } catch (error) {
+        console.error(
+          'Failed to resolve extraction_start_time.',
+          serializeError(error)
+        );
+      }
+    }
+
+    if (eventContext.extraction_end_time) {
+      try {
+        eventContext.extraction_end = resolveTimeValue(
+          eventContext.extraction_end_time,
+          as.state
+        );
+        console.log(
+          `Resolved extraction_end to ${eventContext.extraction_end}.`
+        );
+      } catch (error) {
+        console.error(
+          'Failed to resolve extraction_end_time.',
+          serializeError(error)
+        );
+      }
     }
   }
 
