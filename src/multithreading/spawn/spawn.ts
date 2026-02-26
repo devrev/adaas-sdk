@@ -171,6 +171,7 @@ export async function spawn<ConnectorState>({
 export class Spawn {
   private event: AirdropEvent;
   private alreadyEmitted: boolean;
+  private softTimeoutSent: boolean;
   private defaultLambdaTimeout: number = DEFAULT_LAMBDA_TIMEOUT;
   private lambdaTimeout: number;
   private softTimeoutTimer: ReturnType<typeof setTimeout> | undefined;
@@ -189,6 +190,7 @@ export class Spawn {
     this.originalConsole = originalConsole || console;
     this.logger = console as Logger;
     this.alreadyEmitted = false;
+    this.softTimeoutSent = false;
     this.event = event;
     this.lambdaTimeout = options?.timeout
       ? Math.min(options.timeout, this.defaultLambdaTimeout)
@@ -202,6 +204,7 @@ export class Spawn {
           console.log(
             'SOFT TIMEOUT: Sending a message to the worker to gracefully exit.'
           );
+          this.softTimeoutSent = true;
           if (worker) {
             worker.postMessage({
               subject: WorkerMessageSubject.WorkerMessageExit,
@@ -232,16 +235,25 @@ export class Spawn {
     );
 
     // If worker exits with process.exit(code), clear the timeouts and exit from
-    // main thread.
-    worker.on(
-      WorkerEvent.WorkerExit,
-      (code: number) =>
-        void (async () => {
-          console.info('Worker exited with exit code: ' + code + '.');
-          this.clearTimeouts();
-          await this.exitFromMainThread();
-        })()
-    );
+    // main thread. When a soft timeout was sent, we use setImmediate to defer
+    // processing so that any pending WorkerMessage events (e.g.
+    // WorkerMessageEmitted from onTimeout) already queued in the event loop are
+    // handled first, preventing a race condition where exitFromMainThread sees
+    // alreadyEmitted=false and emits an error even though the worker
+    // successfully emitted an event.
+    worker.on(WorkerEvent.WorkerExit, (code: number) => {
+      const handler = async () => {
+        console.info('Worker exited with exit code: ' + code + '.');
+        this.clearTimeouts();
+        await this.exitFromMainThread();
+      };
+
+      if (this.softTimeoutSent) {
+        void setImmediate(() => void handler());
+      } else {
+        void handler();
+      }
+    });
 
     worker.on(WorkerEvent.WorkerMessage, (message) => {
       // Since logs from the worker thread are handled differently in snap-in
