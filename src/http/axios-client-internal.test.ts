@@ -57,7 +57,7 @@ describe('Internal Axios Client', () => {
     expect(mockServer.getRequestCount('GET', '/test-endpoint')).toBe(3);
   });
 
-  it('should retry once after 3 seconds when response is 429 and Retry-After header is valid value', async () => {
+  it('should retry once after delay when response is 429 and Retry-After header is valid value', async () => {
     mockServer.setRoute({
       path: '/test-endpoint',
       method: 'GET',
@@ -66,7 +66,7 @@ describe('Internal Axios Client', () => {
         failureCount: 1,
         errorStatus: 429,
         headers: {
-          'Retry-After': '3',
+          'Retry-After': '1',
         },
       },
     });
@@ -75,7 +75,7 @@ describe('Internal Axios Client', () => {
     expect(mockServer.getRequestCount('GET', '/test-endpoint')).toBe(2);
   });
 
-  it('should retry once after 3 seconds and measure time between retries when response is 429 and Retry-After header is valid value', async () => {
+  it('should retry once after delay and measure time between retries when response is 429 and Retry-After header is valid value', async () => {
     mockServer.setRoute({
       path: '/test-endpoint',
       method: 'GET',
@@ -83,7 +83,7 @@ describe('Internal Axios Client', () => {
       retry: {
         failureCount: 1,
         errorStatus: 429,
-        headers: { 'Retry-After': '3' },
+        headers: { 'Retry-After': '1' },
       },
     });
 
@@ -92,7 +92,7 @@ describe('Internal Axios Client', () => {
     const endTime = Date.now();
     const duration = endTime - startTime;
 
-    const expectedDuration = 3 * 1000;
+    const expectedDuration = 1 * 1000;
     expect(duration).toBeGreaterThanOrEqual(expectedDuration);
     expect(duration).toBeLessThan(expectedDuration + 1000);
   });
@@ -105,7 +105,7 @@ describe('Internal Axios Client', () => {
       retry: {
         failureCount: 1,
         errorStatus: 429,
-        headers: { 'retry-after': '3' },
+        headers: { 'retry-after': '1' },
       },
     });
 

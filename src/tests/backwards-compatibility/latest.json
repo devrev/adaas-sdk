@@ -1,7 +1,7 @@
 {
   "metadata": {
     "toolPackage": "@microsoft/api-extractor",
-    "toolVersion": "7.52.11",
+    "toolVersion": "7.57.5",
     "schemaVersion": 1011,
     "oldestForwardsCompatibleVersion": 1001,
     "tsdocConfig": {
@@ -113,6 +113,22 @@
         {
           "tagName": "@virtual",
           "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@jsx",
+          "syntaxKind": "block"
+        },
+        {
+          "tagName": "@jsxRuntime",
+          "syntaxKind": "block"
+        },
+        {
+          "tagName": "@jsxFrag",
+          "syntaxKind": "block"
+        },
+        {
+          "tagName": "@jsxImportSource",
+          "syntaxKind": "block"
         },
         {
           "tagName": "@betaDocumentation",
@@ -2534,7 +2550,7 @@
             {
               "kind": "PropertySignature",
               "canonicalReference": "@devrev/ts-adaas!EventData#progress:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * This field is deprecated and should not be used. Progress is now calculated on the backend.\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -2638,7 +2654,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionExternalSyncUnitsStart:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use StartExtractingExternalSyncUnits instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -2659,7 +2675,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionMetadataStart:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use StartExtractingMetadata instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -2680,7 +2696,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionDataStart:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use StartExtractingData instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -2701,7 +2717,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionDataContinue:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use ContinueExtractingData instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -2722,7 +2738,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionDataDelete:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use StartDeletingExtractorState instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -2743,7 +2759,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionAttachmentsStart:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use StartExtractingAttachments instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -2764,7 +2780,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionAttachmentsContinue:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use ContinueExtractingAttachments instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -2785,7 +2801,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!EventType.ExtractionAttachmentsDelete:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use StartDeletingExtractorAttachmentsState instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -2928,6 +2944,195 @@
               },
               "releaseTag": "Public",
               "name": "StartDeletingLoaderAttachmentState"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!EventType.UnknownEventType:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UnknownEventType = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"UNKNOWN_EVENT_TYPE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UnknownEventType"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!EventType.StartExtractingExternalSyncUnits:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "StartExtractingExternalSyncUnits = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"START_EXTRACTING_EXTERNAL_SYNC_UNITS\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "StartExtractingExternalSyncUnits"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!EventType.StartExtractingMetadata:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "StartExtractingMetadata = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"START_EXTRACTING_METADATA\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "StartExtractingMetadata"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!EventType.StartExtractingData:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "StartExtractingData = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"START_EXTRACTING_DATA\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "StartExtractingData"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!EventType.ContinueExtractingData:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ContinueExtractingData = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"CONTINUE_EXTRACTING_DATA\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ContinueExtractingData"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!EventType.StartDeletingExtractorState:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "StartDeletingExtractorState = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"START_DELETING_EXTRACTOR_STATE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "StartDeletingExtractorState"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!EventType.StartExtractingAttachments:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "StartExtractingAttachments = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"START_EXTRACTING_ATTACHMENTS\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "StartExtractingAttachments"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!EventType.ContinueExtractingAttachments:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ContinueExtractingAttachments = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"CONTINUE_EXTRACTING_ATTACHMENTS\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ContinueExtractingAttachments"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!EventType.StartDeletingExtractorAttachmentsState:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "StartDeletingExtractorAttachmentsState = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"START_DELETING_EXTRACTOR_ATTACHMENTS_STATE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "StartDeletingExtractorAttachmentsState"
             }
           ]
         },
@@ -4305,6 +4510,86 @@
         },
         {
           "kind": "Enum",
+          "canonicalReference": "@devrev/ts-adaas!ExtractionCommonError:enum",
+          "docComment": "",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare const enum ExtractionCommonError "
+            }
+          ],
+          "fileUrlPath": "src/common/errors.ts",
+          "releaseTag": "Public",
+          "name": "ExtractionCommonError",
+          "preserveMemberOrder": true,
+          "members": [
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractionCommonError.EXTERNAL_SYNC_UNIT_DELETED:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "EXTERNAL_SYNC_UNIT_DELETED = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ERROR_CODE=EXTERNAL_SYNC_UNIT_DELETED\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "EXTERNAL_SYNC_UNIT_DELETED"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractionCommonError.EXTERNAL_SYNC_UNIT_DEACTIVATED:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "EXTERNAL_SYNC_UNIT_DEACTIVATED = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ERROR_CODE=EXTERNAL_SYNC_UNIT_DEACTIVATED\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "EXTERNAL_SYNC_UNIT_DEACTIVATED"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractionCommonError.USER_DELETED:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "USER_DELETED = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ERROR_CODE=USER_DELETED\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "USER_DELETED"
+            }
+          ]
+        },
+        {
+          "kind": "Enum",
           "canonicalReference": "@devrev/ts-adaas!ExtractionMode:enum",
           "docComment": "/**\n * @deprecated\n *\n * ExtractionMode is an enum that defines the different modes of extraction that can be used by the external extractor. It can be either INITIAL or INCREMENTAL. INITIAL mode is used for the first/initial import, while INCREMENTAL mode is used for doing syncs.\n */\n",
           "excerptTokens": [
@@ -4509,7 +4794,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionExternalSyncUnitsDone:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use ExternalSyncUnitExtractionDone instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4530,7 +4815,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionExternalSyncUnitsError:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use ExternalSyncUnitExtractionError instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4551,7 +4836,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionMetadataDone:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use MetadataExtractionDone instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4572,7 +4857,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionMetadataError:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use MetadataExtractionError instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4593,7 +4878,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataProgress:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use DataExtractionProgress instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4614,7 +4899,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataDelay:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use DataExtractionDelayed instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4635,7 +4920,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataDone:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use DataExtractionDone instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4656,7 +4941,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataError:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use DataExtractionError instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4677,7 +4962,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataDeleteDone:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use ExtractorStateDeletionDone instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4698,7 +4983,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionDataDeleteError:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use ExtractorStateDeletionError instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4719,7 +5004,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsProgress:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use AttachmentExtractionProgress instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4740,7 +5025,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsDelay:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use AttachmentExtractionDelayed instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4761,7 +5046,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsDone:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use AttachmentExtractionDone instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4782,7 +5067,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsError:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use AttachmentExtractionError instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4803,7 +5088,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsDeleteDone:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use ExtractorAttachmentsStateDeletionDone instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4824,7 +5109,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractionAttachmentsDeleteError:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Use ExtractorAttachmentsStateDeletionError instead\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4862,13 +5147,349 @@
               },
               "releaseTag": "Public",
               "name": "UnknownEventType"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExternalSyncUnitExtractionDone:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExternalSyncUnitExtractionDone = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTERNAL_SYNC_UNIT_EXTRACTION_DONE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExternalSyncUnitExtractionDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExternalSyncUnitExtractionError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExternalSyncUnitExtractionError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTERNAL_SYNC_UNIT_EXTRACTION_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExternalSyncUnitExtractionError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.MetadataExtractionDone:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "MetadataExtractionDone = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"METADATA_EXTRACTION_DONE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "MetadataExtractionDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.MetadataExtractionError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "MetadataExtractionError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"METADATA_EXTRACTION_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "MetadataExtractionError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.DataExtractionProgress:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "DataExtractionProgress = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"DATA_EXTRACTION_PROGRESS\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "DataExtractionProgress"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.DataExtractionDelayed:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "DataExtractionDelayed = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"DATA_EXTRACTION_DELAYED\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "DataExtractionDelayed"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.DataExtractionDone:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "DataExtractionDone = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"DATA_EXTRACTION_DONE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "DataExtractionDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.DataExtractionError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "DataExtractionError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"DATA_EXTRACTION_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "DataExtractionError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractorStateDeletionDone:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractorStateDeletionDone = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTOR_STATE_DELETION_DONE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractorStateDeletionDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractorStateDeletionError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractorStateDeletionError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTOR_STATE_DELETION_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractorStateDeletionError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.AttachmentExtractionProgress:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "AttachmentExtractionProgress = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ATTACHMENT_EXTRACTION_PROGRESS\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "AttachmentExtractionProgress"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.AttachmentExtractionDelayed:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "AttachmentExtractionDelayed = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ATTACHMENT_EXTRACTION_DELAYED\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "AttachmentExtractionDelayed"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.AttachmentExtractionDone:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "AttachmentExtractionDone = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ATTACHMENT_EXTRACTION_DONE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "AttachmentExtractionDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.AttachmentExtractionError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "AttachmentExtractionError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ATTACHMENT_EXTRACTION_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "AttachmentExtractionError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractorAttachmentsStateDeletionDone:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractorAttachmentsStateDeletionDone = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTOR_ATTACHMENTS_STATE_DELETION_DONE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractorAttachmentsStateDeletionDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!ExtractorEventType.ExtractorAttachmentsStateDeletionError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExtractorAttachmentsStateDeletionError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"EXTRACTOR_ATTACHMENTS_STATE_DELETION_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExtractorAttachmentsStateDeletionError"
             }
           ]
         },
         {
           "kind": "Function",
           "canonicalReference": "@devrev/ts-adaas!formatAxiosError:function(1)",
-          "docComment": "/**\n * @deprecated\n */\n",
+          "docComment": "/**\n * Formats an Axios error to a printable format.\n *\n * @deprecated\n *\n * Use {@link serializeAxiosError} instead\n *\n * @param error - Axios error to format\n *\n * @returns Formatted error object\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -4928,33 +5549,6 @@
           "members": [
             {
               "kind": "PropertySignature",
-              "canonicalReference": "@devrev/ts-adaas!GetWorkerPathInterface#connectorWorkerPath:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "connectorWorkerPath?: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string | null"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isReadonly": false,
-              "isOptional": true,
-              "releaseTag": "Public",
-              "name": "connectorWorkerPath",
-              "propertyTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              }
-            },
-            {
-              "kind": "PropertySignature",
               "canonicalReference": "@devrev/ts-adaas!GetWorkerPathInterface#event:member",
               "docComment": "",
               "excerptTokens": [
@@ -4976,6 +5570,33 @@
               "isOptional": false,
               "releaseTag": "Public",
               "name": "event",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!GetWorkerPathInterface#workerBasePath:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "workerBasePath?: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string | null"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "workerBasePath",
               "propertyTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 2
@@ -5327,7 +5948,7 @@
             {
               "kind": "EnumMember",
               "canonicalReference": "@devrev/ts-adaas!LoaderEventType.DataLoadingDelay:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * This was a typo. Use DataLoadingDelayed for the corrected spelling\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -5575,6 +6196,111 @@
               },
               "releaseTag": "Public",
               "name": "UnknownEventType"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.DataLoadingDelayed:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "DataLoadingDelayed = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"DATA_LOADING_DELAYED\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "DataLoadingDelayed"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.AttachmentsLoadingProgress:member",
+              "docComment": "/**\n * @deprecated\n *\n * Use AttachmentsLoadingProgress instead (note: singular changed to plural)\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "AttachmentsLoadingProgress = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ATTACHMENT_LOADING_PROGRESS\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "AttachmentsLoadingProgress"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.AttachmentsLoadingDelayed:member",
+              "docComment": "/**\n * @deprecated\n *\n * Use AttachmentsLoadingDelayed instead (note: singular changed to plural)\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "AttachmentsLoadingDelayed = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ATTACHMENT_LOADING_DELAYED\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "AttachmentsLoadingDelayed"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.AttachmentsLoadingDone:member",
+              "docComment": "/**\n * @deprecated\n *\n * Use AttachmentsLoadingDone instead (note: singular changed to plural)\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "AttachmentsLoadingDone = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ATTACHMENT_LOADING_DONE\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "AttachmentsLoadingDone"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!LoaderEventType.AttachmentsLoadingError:member",
+              "docComment": "/**\n * @deprecated\n *\n * Use AttachmentsLoadingError instead (note: singular changed to plural)\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "AttachmentsLoadingError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ATTACHMENT_LOADING_ERROR\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "AttachmentsLoadingError"
             }
           ]
         },
@@ -5646,6 +6372,719 @@
               "propertyTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 2
+              }
+            }
+          ],
+          "extendsTokenRanges": []
+        },
+        {
+          "kind": "Interface",
+          "canonicalReference": "@devrev/ts-adaas!MappersCreateParams:interface",
+          "docComment": "/**\n * Parameters for creating a new sync mapper record.\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export interface MappersCreateParams "
+            }
+          ],
+          "fileUrlPath": "src/mappers/mappers.interface.ts",
+          "releaseTag": "Public",
+          "name": "MappersCreateParams",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersCreateParams#external_ids:member",
+              "docComment": "/**\n * Array of external system identifiers\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "external_ids: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "external_ids",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersCreateParams#external_versions:member",
+              "docComment": "/**\n * External version markers used to avoid update loops. After creating or updating the object in the external system, add its modified_date here. On subsequent extraction, the Loader skips applying the update if the modified_date is present (change originated in DevRev).\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "external_versions?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "SyncMapperRecordExternalVersion",
+                  "canonicalReference": "@devrev/ts-adaas!~SyncMapperRecordExternalVersion:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "external_versions",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersCreateParams#extra_data:member",
+              "docComment": "/**\n * Opaque data for storing additional client-specific information. Fully managed by snapin authors.\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "extra_data?: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "extra_data",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersCreateParams#input_files:member",
+              "docComment": "/**\n * Input file names where the object was encountered. Used for observability and tracking.\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "input_files?: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "input_files",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersCreateParams#secondary_ids:member",
+              "docComment": "/**\n * Optional map that labels values in `external_ids` with their usage context. Use when an external system requires different identifiers for different API calls (for example, a UUID for one endpoint and a login username for another).\n *\n * Example: external_ids: [\"2a1c...-uuid\", \"john_doe\"] secondary_ids: { \"username\": \"john_doe\" }\n *\n * Note: Values in `secondary_ids` are not indexed. If you need to look up by a secondary value (e.g., username), you must also include that value in `external_ids`.\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "secondary_ids?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Record",
+                  "canonicalReference": "!Record:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "<string, string>"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "secondary_ids",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersCreateParams#status:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "status: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "SyncMapperRecordStatus",
+                  "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordStatus:enum"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "status",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersCreateParams#sync_unit:member",
+              "docComment": "/**\n * The sync unit ID that scopes the synchronization context\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "sync_unit: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "DonV2",
+                  "canonicalReference": "@devrev/ts-adaas!~DonV2:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "sync_unit",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersCreateParams#targets:member",
+              "docComment": "/**\n * Array of DevRev entity IDs this mapping points to\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "targets: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "DonV2",
+                  "canonicalReference": "@devrev/ts-adaas!~DonV2:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "targets",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              }
+            }
+          ],
+          "extendsTokenRanges": []
+        },
+        {
+          "kind": "Interface",
+          "canonicalReference": "@devrev/ts-adaas!MappersGetByExternalIdParams:interface",
+          "docComment": "/**\n * Parameters for retrieving a sync mapper record by external system ID.\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export interface MappersGetByExternalIdParams "
+            }
+          ],
+          "fileUrlPath": "src/mappers/mappers.interface.ts",
+          "releaseTag": "Public",
+          "name": "MappersGetByExternalIdParams",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersGetByExternalIdParams#external_id:member",
+              "docComment": "/**\n * The identifier from the external system\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "external_id: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "external_id",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersGetByExternalIdParams#sync_unit:member",
+              "docComment": "/**\n * The sync unit ID that scopes the synchronization context\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "sync_unit: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "DonV2",
+                  "canonicalReference": "@devrev/ts-adaas!~DonV2:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "sync_unit",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersGetByExternalIdParams#target_type:member",
+              "docComment": "/**\n * The type of DevRev entity to look for\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "target_type: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "SyncMapperRecordTargetType",
+                  "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType:enum"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "target_type",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            }
+          ],
+          "extendsTokenRanges": []
+        },
+        {
+          "kind": "Interface",
+          "canonicalReference": "@devrev/ts-adaas!MappersGetByTargetIdParams:interface",
+          "docComment": "/**\n * Parameters for retrieving a sync mapper record by DevRev target ID.\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export interface MappersGetByTargetIdParams "
+            }
+          ],
+          "fileUrlPath": "src/mappers/mappers.interface.ts",
+          "releaseTag": "Public",
+          "name": "MappersGetByTargetIdParams",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersGetByTargetIdParams#sync_unit:member",
+              "docComment": "/**\n * The sync unit ID that scopes the synchronization context\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "sync_unit: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "DonV2",
+                  "canonicalReference": "@devrev/ts-adaas!~DonV2:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "sync_unit",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersGetByTargetIdParams#target:member",
+              "docComment": "/**\n * The DevRev entity ID to look up\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "target: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "DonV2",
+                  "canonicalReference": "@devrev/ts-adaas!~DonV2:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "target",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            }
+          ],
+          "extendsTokenRanges": []
+        },
+        {
+          "kind": "Interface",
+          "canonicalReference": "@devrev/ts-adaas!MappersUpdateParams:interface",
+          "docComment": "/**\n * Parameters for updating an existing sync mapper record.\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export interface MappersUpdateParams "
+            }
+          ],
+          "fileUrlPath": "src/mappers/mappers.interface.ts",
+          "releaseTag": "Public",
+          "name": "MappersUpdateParams",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersUpdateParams#external_ids:member",
+              "docComment": "/**\n * External system IDs to add to the existing mapping\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "external_ids: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "{\n        add: string[];\n    }"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "external_ids",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersUpdateParams#external_versions:member",
+              "docComment": "/**\n * External version markers used to avoid update loops. After creating or updating the object in the external system, add its modified_date here. On subsequent extraction, the Loader skips applying the update if the modified_date is present (change originated in DevRev).\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "external_versions?: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "{\n        add: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "SyncMapperRecordExternalVersion",
+                  "canonicalReference": "@devrev/ts-adaas!~SyncMapperRecordExternalVersion:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[];\n    }"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "external_versions",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 4
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersUpdateParams#extra_data:member",
+              "docComment": "/**\n * Opaque data for storing additional client-specific information. Fully managed by snapin authors.\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "extra_data?: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "extra_data",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersUpdateParams#id:member",
+              "docComment": "/**\n * The ID of the existing sync mapper record to update\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "id: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "DonV2",
+                  "canonicalReference": "@devrev/ts-adaas!~DonV2:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "id",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersUpdateParams#input_files:member",
+              "docComment": "/**\n * Input file names where the object was encountered. Used for observability and tracking.\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "input_files?: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "{\n        add: string[];\n    }"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "input_files",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersUpdateParams#secondary_ids:member",
+              "docComment": "/**\n * Optional map that labels values in `external_ids` with their usage context. Use when an external system requires different identifiers for different API calls (for example, a UUID for one endpoint and a login username for another).\n *\n * Example: external_ids: [\"2a1c...-uuid\", \"john_doe\"] secondary_ids: { \"username\": \"john_doe\" }\n *\n * Note: Values in `secondary_ids` are not indexed. If you need to look up by a secondary value (e.g., username), you must also include that value in `external_ids`.\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "secondary_ids?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Record",
+                  "canonicalReference": "!Record:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "<string, string>"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "secondary_ids",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersUpdateParams#status:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "status: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "SyncMapperRecordStatus",
+                  "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordStatus:enum"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "status",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersUpdateParams#sync_unit:member",
+              "docComment": "/**\n * The sync unit ID that scopes the synchronization context\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "sync_unit: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "DonV2",
+                  "canonicalReference": "@devrev/ts-adaas!~DonV2:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "sync_unit",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!MappersUpdateParams#targets:member",
+              "docComment": "/**\n * DevRev entity IDs to add to the existing mapping\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "targets: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "{\n        add: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "DonV2",
+                  "canonicalReference": "@devrev/ts-adaas!~DonV2:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[];\n    }"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "targets",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 4
               }
             }
           ],
@@ -6017,7 +7456,7 @@
           "excerptTokens": [
             {
               "kind": "Content",
-              "text": "export declare function processTask<ConnectorState>({ task, onTimeout, }: "
+              "text": "export declare function processTask<ConnectorState>(input: "
             },
             {
               "kind": "Reference",
@@ -6041,7 +7480,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "src/workers/process-task.ts",
+          "fileUrlPath": "src/multithreading/process-task.ts",
           "returnTypeTokenRange": {
             "startIndex": 4,
             "endIndex": 5
@@ -6051,6 +7490,14 @@
           "parameters": [
             {
               "parameterName": "{ task, onTimeout, }",
+              "parameterTypeTokenRange": {
+                "startIndex": 0,
+                "endIndex": 0
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "input",
               "parameterTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 3
@@ -6283,7 +7730,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@devrev/ts-adaas!serializeAxiosError:function(1)",
-          "docComment": "",
+          "docComment": "/**\n * Serializes an Axios error into a structured format with HTTP request/response details. Extracts method, URL, parameters, status code, headers, and data. Includes CORS/network failure indicator when no response is available.\n *\n * @param error - Axios error to serialize\n *\n * @returns Structured object with error details\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -6299,17 +7746,9 @@
               "text": "): "
             },
             {
-              "kind": "Content",
-              "text": "{\n    config: {\n        method: string | undefined;\n        params: any;\n        url: string | undefined;\n    };\n    isAxiosError: boolean;\n    isCorsOrNoNetworkError: boolean;\n    response: {\n        data: unknown;\n        headers: "
-            },
-            {
               "kind": "Reference",
-              "text": "RawAxiosResponseHeaders",
-              "canonicalReference": "axios!RawAxiosResponseHeaders:type"
-            },
-            {
-              "kind": "Content",
-              "text": ";\n        status: number;\n        statusText: string;\n    } | null;\n}"
+              "text": "AxiosErrorResponse",
+              "canonicalReference": "@devrev/ts-adaas!~AxiosErrorResponse:interface"
             },
             {
               "kind": "Content",
@@ -6319,7 +7758,7 @@
           "fileUrlPath": "src/logger/logger.ts",
           "returnTypeTokenRange": {
             "startIndex": 3,
-            "endIndex": 6
+            "endIndex": 4
           },
           "releaseTag": "Public",
           "overloadIndex": 1,
@@ -6338,11 +7777,11 @@
         {
           "kind": "Function",
           "canonicalReference": "@devrev/ts-adaas!spawn:function(1)",
-          "docComment": "/**\n * Creates a new instance of Spawn class. Spawn class is responsible for spawning a new worker thread and managing the lifecycle of the worker. The class provides utilities to emit control events to the platform and exit the worker gracefully. In case of lambda timeout, the class emits a lambda timeout event to the platform.\n *\n * @param options - The options to create a new instance of Spawn class\n *\n * @param event - The event object received from the platform\n *\n * @param initialState - The initial state of the adapter\n *\n * @param workerPath - The path to the worker file\n *\n * @returns {Promise<Spawn>} - A new instance of Spawn class\n */\n",
+          "docComment": "/**\n * Creates a new instance of Spawn class. Spawn class is responsible for spawning a new worker thread and managing the lifecycle of the worker. The class provides utilities to emit control events to the platform and exit the worker gracefully. In case of lambda timeout, the class emits a lambda timeout event to the platform.\n *\n * @param options - The options to create a new instance of Spawn class\n *\n * @param  - {AirdropEvent} options.event - The event object received from the platform\n *\n * @param  - {object} options.initialState - The initial state of the adapter\n *\n * @param  - {string} [options.workerPath] Remove getWorkerPath function and use baseWorkerPath: __dirname instead of workerPath\n *\n * @param  - {string} [options.baseWorkerPath] - The base path for the worker files, usually `__dirname`\n *\n * @returns {Promise<Spawn>} - A new instance of Spawn class\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
-              "text": "export declare function spawn<ConnectorState>({ event, initialState, workerPath, initialDomainMapping, options, }: "
+              "text": "export declare function spawn<ConnectorState>(input: "
             },
             {
               "kind": "Reference",
@@ -6371,7 +7810,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "src/workers/spawn.ts",
+          "fileUrlPath": "src/multithreading/spawn/spawn.ts",
           "returnTypeTokenRange": {
             "startIndex": 4,
             "endIndex": 6
@@ -6380,7 +7819,15 @@
           "overloadIndex": 1,
           "parameters": [
             {
-              "parameterName": "{ event, initialState, workerPath, initialDomainMapping, options, }",
+              "parameterName": "{ event, initialState, workerPath, initialDomainMapping, options, baseWorkerPath, }",
+              "parameterTypeTokenRange": {
+                "startIndex": 0,
+                "endIndex": 0
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "input",
               "parameterTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 3
@@ -6406,7 +7853,7 @@
         {
           "kind": "Interface",
           "canonicalReference": "@devrev/ts-adaas!SpawnFactoryInterface:interface",
-          "docComment": "/**\n * SpawnFactoryInterface is an interface for Spawn class factory. Spawn class is responsible for spawning a new worker thread and managing the lifecycle of the worker. The class provides utilities to emit control events to the platform and exit the worker gracefully. In case of lambda timeout, the class emits a lambda timeout event to the platform.  @interface SpawnFactoryInterface  @constructor\n *\n * @param event - The event object received from the platform\n *\n * @param initialState - The initial state of the adapter\n *\n * @param workerPath - The path to the worker file\n *\n * @param initialDomainMapping - The initial domain mapping\n *\n * @param options - The options to create a new instance of Spawn class\n */\n",
+          "docComment": "/**\n * SpawnFactoryInterface is an interface for Spawn class factory. Spawn class is responsible for spawning a new worker thread and managing the lifecycle of the worker. The class provides utilities to emit control events to the platform and exit the worker gracefully. In case of lambda timeout, the class emits a lambda timeout event to the platform.  @interface SpawnFactoryInterface  @constructor\n *\n * @param event - The event object received from the platform\n *\n * @param initialState - The initial state of the adapter\n *\n * @param workerPath - The path to the worker file\n *\n * @param initialDomainMapping - The initial domain mapping\n *\n * @param options - The options to create a new instance of Spawn class\n *\n * @param baseWorkerPath - The base path for the worker files, usually `__dirname`\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -6431,6 +7878,33 @@
           "name": "SpawnFactoryInterface",
           "preserveMemberOrder": false,
           "members": [
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!SpawnFactoryInterface#baseWorkerPath:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "baseWorkerPath?: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "baseWorkerPath",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
             {
               "kind": "PropertySignature",
               "canonicalReference": "@devrev/ts-adaas!SpawnFactoryInterface#event:member",
@@ -6545,7 +8019,7 @@
             {
               "kind": "PropertySignature",
               "canonicalReference": "@devrev/ts-adaas!SpawnFactoryInterface#workerPath:member",
-              "docComment": "",
+              "docComment": "/**\n * @deprecated\n *\n * Remove getWorkerPath function and use baseWorkerPath: __dirname instead of workerPath\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -6638,6 +8112,34 @@
               "isOptional": true,
               "releaseTag": "Public",
               "name": "options",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!SpawnInterface#originalConsole:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "originalConsole?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Console",
+                  "canonicalReference": "!Console:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "originalConsole",
               "propertyTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 2
@@ -6990,15 +8492,616 @@
         },
         {
           "kind": "Enum",
+          "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordStatus:enum",
+          "docComment": "/**\n * Status of a sync mapper record indicating its operational state.\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare enum SyncMapperRecordStatus "
+            }
+          ],
+          "fileUrlPath": "src/mappers/mappers.interface.ts",
+          "releaseTag": "Public",
+          "name": "SyncMapperRecordStatus",
+          "preserveMemberOrder": true,
+          "members": [
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordStatus.OPERATIONAL:member",
+              "docComment": "/**\n * The mapping is active and operational (default)\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "OPERATIONAL = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"operational\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "OPERATIONAL"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordStatus.FILTERED:member",
+              "docComment": "/**\n * The mapping was filtered out by user filter settings\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "FILTERED = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"filtered\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "FILTERED"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordStatus.IGNORED:member",
+              "docComment": "/**\n * The external object should be ignored in sync operations. Use to prevent objects from being created or updated in DevRev.\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "IGNORED = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"ignored\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "IGNORED"
+            }
+          ]
+        },
+        {
+          "kind": "Enum",
+          "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType:enum",
+          "docComment": "/**\n * Types of DevRev entities that can be targets in sync mapper records.\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare enum SyncMapperRecordTargetType "
+            }
+          ],
+          "fileUrlPath": "src/mappers/mappers.interface.ts",
+          "releaseTag": "Public",
+          "name": "SyncMapperRecordTargetType",
+          "preserveMemberOrder": true,
+          "members": [
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.ACCESS_CONTROL_ENTRY:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ACCESS_CONTROL_ENTRY = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"access_control_entry\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ACCESS_CONTROL_ENTRY"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.ACCOUNT:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ACCOUNT = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"account\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ACCOUNT"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.AIRDROP_AUTHORIZATION_POLICY:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "AIRDROP_AUTHORIZATION_POLICY = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"airdrop_authorization_policy\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "AIRDROP_AUTHORIZATION_POLICY"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.AIRDROP_FIELD_AUTHORIZATION_POLICY:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "AIRDROP_FIELD_AUTHORIZATION_POLICY = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"airdrop_field_authorization_policy\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "AIRDROP_FIELD_AUTHORIZATION_POLICY"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.AIRDROP_PLATFORM_GROUP:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "AIRDROP_PLATFORM_GROUP = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"airdrop_platform_group\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "AIRDROP_PLATFORM_GROUP"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.ARTICLE:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ARTICLE = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"article\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ARTICLE"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.ARTIFACT:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ARTIFACT = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"artifact\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ARTIFACT"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.CHAT:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "CHAT = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"chat\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "CHAT"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.CONVERSATION:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "CONVERSATION = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"conversation\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "CONVERSATION"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.CUSTOM_OBJECT:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "CUSTOM_OBJECT = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"custom_object\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "CUSTOM_OBJECT"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.DIRECTORY:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "DIRECTORY = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"directory\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "DIRECTORY"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.GROUP:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "GROUP = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"group\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "GROUP"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.INCIDENT:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "INCIDENT = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"incident\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "INCIDENT"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.LINK:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "LINK = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"link\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "LINK"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.MEETING:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "MEETING = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"meeting\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "MEETING"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.OBJECT_MEMBER:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "OBJECT_MEMBER = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"object_member\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "OBJECT_MEMBER"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.PART:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "PART = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"part\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "PART"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.REV_ORG:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "REV_ORG = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"rev_org\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "REV_ORG"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.ROLE:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ROLE = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"role\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ROLE"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.ROLE_SET:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ROLE_SET = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"role_set\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ROLE_SET"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.TAG:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "TAG = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"tag\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "TAG"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.TIMELINE_COMMENT:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "TIMELINE_COMMENT = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"timeline_comment\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "TIMELINE_COMMENT"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.USER:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "USER = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"user\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "USER"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@devrev/ts-adaas!SyncMapperRecordTargetType.WORK:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "WORK = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "\"work\""
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "WORK"
+            }
+          ]
+        },
+        {
+          "kind": "Enum",
           "canonicalReference": "@devrev/ts-adaas!SyncMode:enum",
-          "docComment": "/**\n * ExtractionMode is an enum that defines the different modes of extraction that can be used by the external extractor. It can be either INITIAL or INCREMENTAL. INITIAL mode is used for the first/initial import, while INCREMENTAL mode is used for doing syncs.\n */\n",
+          "docComment": "/**\n * SyncMode is an enum that defines the different modes of sync that can be used by the external extractor. It can be either INITIAL, INCREMENTAL or LOADING. INITIAL mode is used for the first/initial import, while INCREMENTAL mode is used for doing syncs. LOADING mode is used for loading data from DevRev to the external system.\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
               "text": "export declare enum SyncMode "
             }
           ],
-          "fileUrlPath": "src/types/extraction.ts",
+          "fileUrlPath": "src/types/common.ts",
           "releaseTag": "Public",
           "name": "SyncMode",
           "preserveMemberOrder": true,
@@ -7408,7 +9511,7 @@
               "text": "export declare class WorkerAdapter<ConnectorState> "
             }
           ],
-          "fileUrlPath": "src/workers/worker-adapter.ts",
+          "fileUrlPath": "src/multithreading/worker-adapter/worker-adapter.ts",
           "releaseTag": "Public",
           "typeParameters": [
             {
@@ -7434,7 +9537,7 @@
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "constructor({ event, adapterState, options, }: "
+                  "text": "constructor(input: "
                 },
                 {
                   "kind": "Reference",
@@ -7456,6 +9559,14 @@
               "parameters": [
                 {
                   "parameterName": "{ event, adapterState, options, }",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 0,
+                    "endIndex": 0
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "input",
                   "parameterTypeTokenRange": {
                     "startIndex": 1,
                     "endIndex": 3
@@ -7626,7 +9737,7 @@
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "getLoaderBatches({ supportedItemTypes, }: "
+                  "text": "getLoaderBatches(input: "
                 },
                 {
                   "kind": "Content",
@@ -7670,6 +9781,14 @@
               "parameters": [
                 {
                   "parameterName": "{ supportedItemTypes, }",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 0,
+                    "endIndex": 0
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "input",
                   "parameterTypeTokenRange": {
                     "startIndex": 1,
                     "endIndex": 2
@@ -7855,7 +9974,7 @@
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "loadAttachment({ item, create, }: "
+                  "text": "loadAttachment(input: "
                 },
                 {
                   "kind": "Content",
@@ -7927,6 +10046,14 @@
                 {
                   "parameterName": "{ item, create, }",
                   "parameterTypeTokenRange": {
+                    "startIndex": 0,
+                    "endIndex": 0
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "input",
+                  "parameterTypeTokenRange": {
                     "startIndex": 1,
                     "endIndex": 8
                   },
@@ -7944,7 +10071,7 @@
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "loadAttachments({ create, }: "
+                  "text": "loadAttachments(input: "
                 },
                 {
                   "kind": "Content",
@@ -8007,6 +10134,14 @@
                 {
                   "parameterName": "{ create, }",
                   "parameterTypeTokenRange": {
+                    "startIndex": 0,
+                    "endIndex": 0
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "input",
+                  "parameterTypeTokenRange": {
                     "startIndex": 1,
                     "endIndex": 6
                   },
@@ -8024,7 +10159,7 @@
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "loadItem({ item, itemTypeToLoad, }: "
+                  "text": "loadItem(input: "
                 },
                 {
                   "kind": "Content",
@@ -8087,6 +10222,14 @@
                 {
                   "parameterName": "{ item, itemTypeToLoad, }",
                   "parameterTypeTokenRange": {
+                    "startIndex": 0,
+                    "endIndex": 0
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "input",
+                  "parameterTypeTokenRange": {
                     "startIndex": 1,
                     "endIndex": 6
                   },
@@ -8104,7 +10247,7 @@
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "loadItemTypes({ itemTypesToLoad, }: "
+                  "text": "loadItemTypes(input: "
                 },
                 {
                   "kind": "Reference",
@@ -8150,6 +10293,14 @@
                 {
                   "parameterName": "{ itemTypesToLoad, }",
                   "parameterTypeTokenRange": {
+                    "startIndex": 0,
+                    "endIndex": 0
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "input",
+                  "parameterTypeTokenRange": {
                     "startIndex": 1,
                     "endIndex": 2
                   },
@@ -8159,6 +10310,37 @@
               "isOptional": false,
               "isAbstract": false,
               "name": "loadItemTypes"
+            },
+            {
+              "kind": "Property",
+              "canonicalReference": "@devrev/ts-adaas!WorkerAdapter#mappers:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "get mappers(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Mappers",
+                  "canonicalReference": "@devrev/ts-adaas!~Mappers:class"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": true,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "mappers",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
             },
             {
               "kind": "Property",
@@ -8423,7 +10605,7 @@
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "streamAttachments<NewBatch>({ stream, processors, batchSize, }: "
+                  "text": "streamAttachments<NewBatch>(input: "
                 },
                 {
                   "kind": "Content",
@@ -8507,6 +10689,14 @@
               "parameters": [
                 {
                   "parameterName": "{ stream, processors, batchSize, }",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 0,
+                    "endIndex": 0
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "input",
                   "parameterTypeTokenRange": {
                     "startIndex": 1,
                     "endIndex": 8
@@ -8679,7 +10869,7 @@
         {
           "kind": "Interface",
           "canonicalReference": "@devrev/ts-adaas!WorkerAdapterOptions:interface",
-          "docComment": "/**\n * WorkerAdapterOptions represents the options for WorkerAdapter class.  @interface WorkerAdapterOptions  @constructor\n *\n * @param isLocalDevelopment - A flag to indicate if the adapter is being used in local development\n *\n * @param timeout - The timeout for the worker thread\n *\n * @param batchSize - Maximum number of extracted items in a batch\n */\n",
+          "docComment": "/**\n * WorkerAdapterOptions represents the options for WorkerAdapter class.  @interface WorkerAdapterOptions  @constructor\n *\n * @param isLocalDevelopment - A flag to indicate if the adapter is being used in local development\n *\n * @param timeout - The timeout for the worker thread\n *\n * @param batchSize - Maximum number of extracted items in a batch\n *\n * @param workerPathOverrides - A map of event types to custom worker paths to override default worker paths\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -8767,6 +10957,34 @@
               "isOptional": true,
               "releaseTag": "Public",
               "name": "timeout",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!WorkerAdapterOptions#workerPathOverrides:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "workerPathOverrides?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "WorkerPathOverrides",
+                  "canonicalReference": "@devrev/ts-adaas!WorkerPathOverrides:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "workerPathOverrides",
               "propertyTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 2
@@ -9070,6 +11288,15 @@
             },
             {
               "kind": "Content",
+              "text": " | "
+            },
+            {
+              "kind": "Reference",
+              "text": "WorkerMessageLog",
+              "canonicalReference": "@devrev/ts-adaas!WorkerMessageLog:interface"
+            },
+            {
+              "kind": "Content",
               "text": ";"
             }
           ],
@@ -9078,7 +11305,7 @@
           "name": "WorkerMessage",
           "typeTokenRange": {
             "startIndex": 1,
-            "endIndex": 4
+            "endIndex": 6
           }
         },
         {
@@ -9219,6 +11446,88 @@
           "extendsTokenRanges": []
         },
         {
+          "kind": "Interface",
+          "canonicalReference": "@devrev/ts-adaas!WorkerMessageLog:interface",
+          "docComment": "/**\n * WorkerMessageLog interface represents the structure of the worker log message.\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export interface WorkerMessageLog "
+            }
+          ],
+          "fileUrlPath": "src/types/workers.ts",
+          "releaseTag": "Public",
+          "name": "WorkerMessageLog",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!WorkerMessageLog#payload:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "payload: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "{\n        stringifiedArgs: string;\n        level: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "LogLevel",
+                  "canonicalReference": "@devrev/ts-adaas!~LogLevel:enum"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";\n        isSdkLog?: boolean;\n    }"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "payload",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 4
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/ts-adaas!WorkerMessageLog#subject:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "subject: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "WorkerMessageSubject.WorkerMessageLog",
+                  "canonicalReference": "@devrev/ts-adaas!WorkerMessageSubject.WorkerMessageLog:member"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "subject",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            }
+          ],
+          "extendsTokenRanges": []
+        },
+        {
           "kind": "Enum",
           "canonicalReference": "@devrev/ts-adaas!WorkerMessageSubject:enum",
           "docComment": "/**\n * WorkerMessageSubject represents the handled worker message subjects.\n */\n",
@@ -9297,6 +11606,55 @@
               "name": "WorkerMessageLog"
             }
           ]
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@devrev/ts-adaas!WorkerPathOverrides:type",
+          "docComment": "/**\n * WorkerPathOverrides represents a mapping of event types to custom worker paths.\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type WorkerPathOverrides = "
+            },
+            {
+              "kind": "Reference",
+              "text": "Partial",
+              "canonicalReference": "!Partial:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "EventType",
+              "canonicalReference": "@devrev/ts-adaas!EventType:enum"
+            },
+            {
+              "kind": "Content",
+              "text": ", string>>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "src/types/workers.ts",
+          "releaseTag": "Public",
+          "name": "WorkerPathOverrides",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 7
+          }
         }
       ]
     }
