@@ -87,37 +87,20 @@ export async function createAdapterState<ConnectorState>({
       );
     }
 
-    if (eventContext.extraction_start_time) {
-      try {
-        eventContext.extraction_start = resolveTimeValue(
-          eventContext.extraction_start_time,
-          as.state
-        );
-        console.log(
-          `Resolved extraction_start to ${eventContext.extraction_start}.`
-        );
-      } catch (error) {
-        console.error(
-          'Failed to resolve extraction_start_time.',
-          serializeError(error)
-        );
-      }
-    }
+    const timeFields = [
+      { source: 'extraction_start_time', target: 'extraction_start' },
+      { source: 'extraction_end_time', target: 'extraction_end' },
+    ] as const;
 
-    if (eventContext.extraction_end_time) {
-      try {
-        eventContext.extraction_end = resolveTimeValue(
-          eventContext.extraction_end_time,
-          as.state
-        );
-        console.log(
-          `Resolved extraction_end to ${eventContext.extraction_end}.`
-        );
-      } catch (error) {
-        console.error(
-          'Failed to resolve extraction_end_time.',
-          serializeError(error)
-        );
+    for (const { source, target } of timeFields) {
+      const timeValue = eventContext[source];
+      if (timeValue) {
+        try {
+          eventContext[target] = resolveTimeValue(timeValue, as.state);
+          console.log(`Resolved ${target} to ${eventContext[target]}.`);
+        } catch (error) {
+          console.error(`Failed to resolve ${source}.`, serializeError(error));
+        }
       }
     }
   }

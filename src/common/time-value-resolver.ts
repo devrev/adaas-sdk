@@ -28,54 +28,31 @@ export function parseDuration(shorthand: string): {
 }
 
 /**
- * Subtracts a shorthand duration from a base ISO 8601 timestamp.
+ * Applies a shorthand duration to a base ISO 8601 timestamp.
  *
- * @param baseTimestamp - ISO 8601 timestamp to subtract from
+ * @param baseTimestamp - ISO 8601 timestamp to apply duration to
  * @param duration - Shorthand duration string (e.g. '7d', '2m', '1y')
- * @returns ISO 8601 timestamp with the duration subtracted
+ * @param operation - Whether to 'add' or 'subtract' the duration
+ * @returns ISO 8601 timestamp with the duration applied
  */
-export function subtractDuration(
+export function applyDuration(
   baseTimestamp: string,
-  duration: string
+  duration: string,
+  operation: 'add' | 'subtract'
 ): string {
   const { value, unit } = parseDuration(duration);
   const date = new Date(baseTimestamp);
+  const sign = operation === 'add' ? 1 : -1;
 
   switch (unit) {
     case 'd':
-      date.setUTCDate(date.getUTCDate() - value);
+      date.setUTCDate(date.getUTCDate() + sign * value);
       break;
     case 'm':
-      date.setUTCMonth(date.getUTCMonth() - value);
+      date.setUTCMonth(date.getUTCMonth() + sign * value);
       break;
     case 'y':
-      date.setUTCFullYear(date.getUTCFullYear() - value);
-      break;
-  }
-
-  return date.toISOString();
-}
-
-/**
- * Adds a shorthand duration to a base ISO 8601 timestamp.
- *
- * @param baseTimestamp - ISO 8601 timestamp to add to
- * @param duration - Shorthand duration string (e.g. '7d', '2m', '1y')
- * @returns ISO 8601 timestamp with the duration added
- */
-export function addDuration(baseTimestamp: string, duration: string): string {
-  const { value, unit } = parseDuration(duration);
-  const date = new Date(baseTimestamp);
-
-  switch (unit) {
-    case 'd':
-      date.setUTCDate(date.getUTCDate() + value);
-      break;
-    case 'm':
-      date.setUTCMonth(date.getUTCMonth() + value);
-      break;
-    case 'y':
-      date.setUTCFullYear(date.getUTCFullYear() + value);
+      date.setUTCFullYear(date.getUTCFullYear() + sign * value);
       break;
   }
 
@@ -89,15 +66,15 @@ export function addDuration(baseTimestamp: string, duration: string): string {
  * - ABSOLUTE: Returns the value directly (must be an ISO 8601 timestamp)
  * - NOW: Returns the current time as ISO 8601
  * - UNBOUNDED: Returns undefined (no bound)
- * - WORKERS_OLDEST: Returns workers_oldest from state
- * - WORKERS_NEWEST: Returns workers_newest from state
- * - WORKERS_OLDEST_MINUS_WINDOW: Subtracts duration from workers_oldest
- * - WORKERS_NEWEST_PLUS_WINDOW: Adds duration to workers_newest
+ * - WORKERS_OLDEST: Returns workers_oldest from state, or current time if not set
+ * - WORKERS_NEWEST: Returns workers_newest from state, or current time if not set
+ * - WORKERS_OLDEST_MINUS_WINDOW: Subtracts duration from workers_oldest (or current time if not set)
+ * - WORKERS_NEWEST_PLUS_WINDOW: Adds duration to workers_newest (or current time if not set)
  *
  * @param timeValue - The TimeValue to resolve
  * @param state - The current SDK state containing workers_oldest and workers_newest
  * @returns Resolved ISO 8601 timestamp string, or undefined for UNBOUNDED
- * @throws Error if required state values or TimeValue.value are missing
+ * @throws Error if required TimeValue.value is missing for ABSOLUTE or *_WINDOW types
  */
 export function resolveTimeValue(
   timeValue: TimeValue,
@@ -123,48 +100,52 @@ export function resolveTimeValue(
 
     case TimeValueType.WORKERS_OLDEST: {
       if (!state.workers_oldest) {
-        throw new Error(
-          'Cannot resolve WORKERS_OLDEST: workers_oldest is not set in state.'
+        console.log(
+          'workers_oldest not set in state, falling back to current time.'
         );
+        return new Date().toISOString();
       }
       return state.workers_oldest;
     }
 
     case TimeValueType.WORKERS_NEWEST: {
       if (!state.workers_newest) {
-        throw new Error(
-          'Cannot resolve WORKERS_NEWEST: workers_newest is not set in state.'
+        console.log(
+          'workers_newest not set in state, falling back to current time.'
         );
+        return new Date().toISOString();
       }
       return state.workers_newest;
     }
 
     case TimeValueType.WORKERS_OLDEST_MINUS_WINDOW: {
-      if (!state.workers_oldest) {
-        throw new Error(
-          'Cannot resolve WORKERS_OLDEST_MINUS_WINDOW: workers_oldest is not set in state.'
-        );
-      }
       if (!timeValue.value) {
         throw new Error(
           "TimeValue of type WORKERS_OLDEST_MINUS_WINDOW must have a value (duration, e.g. '7d', '2m')."
         );
       }
-      return subtractDuration(state.workers_oldest, timeValue.value);
+      const base = state.workers_oldest || new Date().toISOString();
+      if (!state.workers_oldest) {
+        console.log(
+          'workers_oldest not set in state, falling back to current time for WORKERS_OLDEST_MINUS_WINDOW.'
+        );
+      }
+      return applyDuration(base, timeValue.value, 'subtract');
     }
 
     case TimeValueType.WORKERS_NEWEST_PLUS_WINDOW: {
-      if (!state.workers_newest) {
-        throw new Error(
-          'Cannot resolve WORKERS_NEWEST_PLUS_WINDOW: workers_newest is not set in state.'
-        );
-      }
       if (!timeValue.value) {
         throw new Error(
           "TimeValue of type WORKERS_NEWEST_PLUS_WINDOW must have a value (duration, e.g. '7d', '2m')."
         );
       }
-      return addDuration(state.workers_newest, timeValue.value);
+      const base = state.workers_newest || new Date().toISOString();
+      if (!state.workers_newest) {
+        console.log(
+          'workers_newest not set in state, falling back to current time for WORKERS_NEWEST_PLUS_WINDOW.'
+        );
+      }
+      return applyDuration(base, timeValue.value, 'add');
     }
 
     default: {
