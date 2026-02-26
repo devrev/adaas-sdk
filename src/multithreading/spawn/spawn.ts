@@ -232,15 +232,22 @@ export class Spawn {
     );
 
     // If worker exits with process.exit(code), clear the timeouts and exit from
-    // main thread.
+    // main thread. We use setImmediate to defer processing so that any pending
+    // WorkerMessage events (e.g. WorkerMessageEmitted from onTimeout) already
+    // queued in the event loop are handled first, preventing a race condition
+    // where exitFromMainThread sees alreadyEmitted=false and emits an error
+    // even though the worker successfully emitted an event.
     worker.on(
       WorkerEvent.WorkerExit,
       (code: number) =>
-        void (async () => {
-          console.info('Worker exited with exit code: ' + code + '.');
-          this.clearTimeouts();
-          await this.exitFromMainThread();
-        })()
+        void setImmediate(
+          () =>
+            void (async () => {
+              console.info('Worker exited with exit code: ' + code + '.');
+              this.clearTimeouts();
+              await this.exitFromMainThread();
+            })()
+        )
     );
 
     worker.on(WorkerEvent.WorkerMessage, (message) => {
