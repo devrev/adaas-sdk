@@ -17,93 +17,105 @@ export function processTask<ConnectorState>({
   task,
   onTimeout,
 }: ProcessTaskInterface<ConnectorState>) {
-  if (!isMainThread) {
-    void (async () => {
-      await runWithSdkLogContext(async () => {
-        try {
-          const event = workerData.event;
+  if (isMainThread) {
+    return;
+  }
 
-          // TODO: Remove when the old types are completely phased out
-          event.payload.event_type = translateIncomingEventType(
-            event.payload.event_type
-          );
+  void (async () => {
+    await runWithSdkLogContext(async () => {
+      try {
+        const event = workerData.event;
 
-          const initialState = workerData.initialState as ConnectorState;
-          const initialDomainMapping = workerData.initialDomainMapping;
-          const options = workerData.options;
-          // eslint-disable-next-line no-global-assign
-          console = new Logger({ event, options });
+        // TODO: Remove when the old types are completely phased out
+        event.payload.event_type = translateIncomingEventType(
+          event.payload.event_type
+        );
 
-          const adapterState = await createAdapterState<ConnectorState>({
-            event,
-            initialState,
-            initialDomainMapping,
-            options,
-          });
+        const initialState = workerData.initialState as ConnectorState;
+        const initialDomainMapping = workerData.initialDomainMapping;
+        const options = workerData.options;
+        // eslint-disable-next-line no-global-assign
+        console = new Logger({ event, options });
 
-          if (parentPort && workerData.event) {
-            const adapter = new WorkerAdapter<ConnectorState>({
-              event,
-              adapterState,
-              options,
-            });
+        const adapterState = await createAdapterState<ConnectorState>({
+          event,
+          initialState,
+          initialDomainMapping,
+          options,
+        });
 
-            // Guard flag to prevent onTimeout from executing twice.
-            let onTimeoutExecuted = false;
+        const adapter = new WorkerAdapter<ConnectorState>({
+          event,
+          adapterState,
+          options,
+        });
 
-            parentPort.on(
-              WorkerEvent.WorkerMessage,
-              (message) =>
-                void (async () => {
-                  await runWithSdkLogContext(async () => {
-                    if (
-                      message.subject === WorkerMessageSubject.WorkerMessageExit
-                    ) {
-                      if (onTimeoutExecuted) {
-                        console.log(
-                          'Worker received exit message but onTimeout has already been executed. Exiting worker.'
-                        );
-                        process.exit(0);
-                      }
+        // Timeout handling flow:
+        // The task() runs in the main flow below. Meanwhile, the parent thread may send
+        // a timeout message at any point. When that happens, the message handler signals
+        // the adapter to stop (handleTimeout), waits for task() to finish, then runs onTimeout().
+        // If task() completes before any timeout message arrives, the worker exits normally.
+        // isTimeoutReceived prevents both flows from calling process.exit.
+        let isTimeoutReceived = false;
+        let taskExecution: Promise<void>;
+        parentPort?.on(WorkerEvent.WorkerMessage, (message) => {
+          if (message.subject !== WorkerMessageSubject.WorkerMessageExit) {
+            return;
+          }
 
-                      onTimeoutExecuted = true;
-                      console.log(
-                        'Worker received message to gracefully exit. Setting isTimeout flag and executing onTimeout function.'
-                      );
+          isTimeoutReceived = true;
 
-                      adapter.handleTimeout();
-                      adapter.beginOnTimeoutPhase();
-                      await runWithUserLogContext(async () =>
-                        onTimeout({ adapter })
-                      );
+          void runWithSdkLogContext(async () => {
+            try {
+              console.log('Timeout received. Waiting for the task to finish.');
+              adapter.handleTimeout();
 
-                      console.log(
-                        'Finished executing onTimeout function. Exiting worker.'
-                      );
-                      process.exit(0);
-                    }
-                  });
-                })()
-            );
-            await runWithUserLogContext(async () => task({ adapter }));
+              try {
+                await taskExecution;
+              } catch (taskError) {
+                console.warn(
+                  'Task error during timeout:',
+                  serializeError(taskError)
+                );
+              }
 
-            // If size limit was triggered during task, call onTimeout for cleanup
-            if (adapter.isTimeout && !onTimeoutExecuted) {
-              onTimeoutExecuted = true;
-              console.warn(
-                'Size limit detected during data collection. Executing onTimeout function for cleanup.'
-              );
+              console.log('Task finished. Running onTimeout handler.');
               adapter.beginOnTimeoutPhase();
               await runWithUserLogContext(async () => onTimeout({ adapter }));
+              console.log('onTimeout handler complete. Exiting worker.');
+              process.exit(0);
+            } catch (onTimeoutError) {
+              console.error(
+                'Error in onTimeout handler:',
+                serializeError(onTimeoutError)
+              );
+              process.exit(1);
             }
+          });
+        });
 
-            process.exit(0);
+        taskExecution = runWithUserLogContext(async () => task({ adapter }));
+
+        try {
+          await taskExecution;
+        } catch (taskError) {
+          if (isTimeoutReceived) {
+            console.log(
+              'Task threw during timeout. Letting timeout handler finish.'
+            );
+            return;
           }
-        } catch (error) {
-          console.error('Error while processing task.', serializeError(error));
-          process.exit(1);
+          throw taskError;
         }
-      });
-    })();
-  }
+
+        if (!isTimeoutReceived) {
+          console.log('Task completed. Exiting worker.');
+          process.exit(0);
+        }
+      } catch (error) {
+        console.error('Error while processing task.', serializeError(error));
+        process.exit(1);
+      }
+    });
+  })();
 }

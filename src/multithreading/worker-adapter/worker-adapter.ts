@@ -143,9 +143,7 @@ export class WorkerAdapter<ConnectorState> {
   }
 
   set state(value: AdapterState<ConnectorState>) {
-    if (!this.isTimeout) {
-      this.adapterState.state = value;
-    }
+    this.adapterState.state = value;
   }
 
   get reports(): LoaderReport[] {
