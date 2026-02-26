@@ -3,10 +3,26 @@
  */
 export type SchemaVersion = 'v0.2.0';
 
-/**
- * Sort order options for extraction.
- */
-export type ExtractionSortOrder = '' | 'id' | 'modified_date' | 'created_date';
+/** Key identifying a record type in the record_types map, refers_to maps, or type_keys arrays. */
+export type RecordTypeKey = string;
+
+/** Key identifying a field within a record type or struct type fields map. */
+export type FieldKey = string;
+
+/** Key identifying an enum value in EnumValue.key or stage diagram stages map keys. */
+export type EnumValueKey = string;
+
+/** Key identifying a struct type in the struct_types map. */
+export type StructTypeKey = string;
+
+/** Key identifying a record type category in the record_type_categories map. */
+export type RecordTypeCategoryKey = string;
+
+/** Key identifying a state in the stage diagram states map. */
+export type StateKey = string;
+
+/** Key identifying a stage in the stage diagram stages map. */
+export type StageKey = string;
 
 /**
  * Field type discriminator.
@@ -24,7 +40,6 @@ export type FieldType =
   | 'timestamp'
   | 'struct'
   | 'permission'
-  | 'type_key'
   | 'record_type_privilege'
   | 'field_privilege'
   | 'conditional_privilege';
@@ -37,7 +52,7 @@ export type ReferenceType = 'child' | 'parent';
 /**
  * Comparator for field conditions.
  */
-export type FieldConditionComparator = 'eq' | 'ne' | 'lt' | 'lte' | 'gt' | 'gte';
+export type FieldConditionComparator = 'eq' | 'ne';
 
 /**
  * Effect applied when a field condition is met.
@@ -86,7 +101,7 @@ export interface TextData {
  */
 export interface EnumValue {
   /** The enum value that actually occurs in the json data */
-  key: string;
+  key: EnumValueKey;
   /** The human readable name of the enum value */
   name?: string;
   description?: string;
@@ -106,7 +121,7 @@ export interface EnumData {
  */
 export interface ReferenceDetail {
   /** The field in the target record type by which it is referenced. Assumed to be the primary key if not set. */
-  by_field?: string;
+  by_field?: FieldKey;
 }
 
 /**
@@ -114,7 +129,7 @@ export interface ReferenceDetail {
  */
 export interface ReferenceData {
   /** The record types that this reference can refer to */
-  refers_to: Record<string, ReferenceDetail>;
+  refers_to: Record<RecordTypeKey, ReferenceDetail>;
   /** The parent reference refers to a record that has special ownership over the child */
   reference_type?: ReferenceType;
 }
@@ -124,7 +139,7 @@ export interface ReferenceData {
  */
 export interface TypedReferenceData {
   /** The record types that this reference can refer to */
-  refers_to: Record<string, ReferenceDetail>;
+  refers_to: Record<RecordTypeKey, ReferenceDetail>;
   /** The parent reference refers to a record that has special ownership over the child */
   reference_type?: ReferenceType;
 }
@@ -133,7 +148,7 @@ export interface TypedReferenceData {
  * Struct field data referencing a struct type.
  */
 export interface StructData {
-  key?: string;
+  key?: StructTypeKey;
 }
 
 /**
@@ -149,7 +164,7 @@ export interface PermissionData {
  */
 export interface ConditionalPrivilegeData {
   /** The possible record types or record type categories that can be targeted in conditional privilege. */
-  type_keys: string[];
+  type_keys: RecordTypeKey[];
 }
 
 /**
@@ -157,7 +172,7 @@ export interface ConditionalPrivilegeData {
  */
 export interface FieldPrivilegeData {
   /** The possible record types or record type categories that can be targeted in field privilege. */
-  type_keys: string[];
+  type_keys: RecordTypeKey[];
 }
 
 /**
@@ -165,7 +180,7 @@ export interface FieldPrivilegeData {
  */
 export interface RecordTypePrivilegeData {
   /** The possible record types or record type categories that can be targeted in record type privilege. */
-  type_keys: string[];
+  type_keys: RecordTypeKey[];
 }
 
 /**
@@ -173,27 +188,13 @@ export interface RecordTypePrivilegeData {
  */
 export interface TargetTypeKeyData {
   /** The possible record types or record type categories that can be targeted in authorization policy. */
-  type_keys: string[];
+  type_keys: RecordTypeKey[];
 }
 
 /**
  * Field reference data (currently empty, reserved for future use).
  */
 export interface FieldReferenceData {
-  [key: string]: never;
-}
-
-/**
- * Extraction data for record types.
- */
-export interface ExtractionData {
-  sort_order?: ExtractionSortOrder;
-}
-
-/**
- * Loading data (currently empty, reserved for future use).
- */
-export interface LoadingData {
   [key: string]: never;
 }
 
@@ -246,7 +247,7 @@ export interface FieldCondition {
   /** The comparator that will be used to compare the controlling field's value against the Value. */
   comparator: FieldConditionComparator;
   /** The fields that will be affected by the condition being met. */
-  affected_fields: string[];
+  affected_fields: FieldKey[];
   /** The effect that will be applied to the affected fields if the condition is met. */
   effect: FieldConditionEffect;
 }
@@ -271,7 +272,7 @@ export interface CustomLinkNames {
  */
 export interface CustomLinkData {
   /** The field that defines the link types in the system. */
-  link_type_field: string;
+  link_type_field: FieldKey;
   link_direction_names: Record<string, CustomLinkNames> | null;
 }
 
@@ -280,9 +281,9 @@ export interface CustomLinkData {
  */
 export interface CustomStage {
   /** The state this stage belongs to. Must match the ones defined in the diagram 'states' field or be one of the default options: 'open', 'in_progress', 'closed'. */
-  state?: string;
+  state?: StateKey;
   /** A list of stage names that this stage can transition to. */
-  transitions_to?: string[];
+  transitions_to?: StageKey[];
 }
 
 /**
@@ -302,13 +303,13 @@ export interface CustomState {
  */
 export interface StageDiagram {
   /** The field that represents the stage in the external system. */
-  controlling_field: string;
+  controlling_field: FieldKey;
   /** A map of the stages that should be created. Keys must match the enum values in the controlling field. */
-  stages: Record<string, CustomStage>;
+  stages: Record<StageKey, CustomStage>;
   /** The stage that the parent record type starts in when it is created. */
-  starting_stage?: string;
+  starting_stage?: StageKey;
   /** A map of the states/status categories that should be created. */
-  states?: Record<string, CustomState>;
+  states?: Record<StateKey, CustomState>;
   /** Denotes that this diagram has no explicit transitions and should be created as an 'all-to-all' diagram. */
   all_transitions_allowed?: boolean;
 }
@@ -328,11 +329,11 @@ export interface RecordTypeCategory {
  */
 export interface RecordType {
   /** The fields of the record type */
-  fields: Record<string, Field>;
+  fields: Record<FieldKey, Field>;
   /** The human readable name of the record type */
   name?: string;
   description?: string;
-  category?: string;
+  category?: RecordTypeCategoryKey;
   /** Whether the record type can be loaded (connector supports creating it in the system) */
   is_loadable?: boolean;
   /** Whether the record type sends the complete system state in every sync */
@@ -342,7 +343,7 @@ export interface RecordType {
   /** Indicates the scope of this record type */
   scope?: RecordTypeScope;
   /** Field conditions for this record type */
-  conditions?: Record<string, FieldConditions>;
+  conditions?: Record<FieldKey, FieldConditions>;
   /** Stage diagram for workflow */
   stage_diagram?: StageDiagram;
   /** Link naming data for custom links */
@@ -354,7 +355,7 @@ export interface RecordType {
  */
 export interface StructType {
   /** The fields of the struct type */
-  fields: Record<string, Field>;
+  fields: Record<FieldKey, Field>;
   /** The human readable name of the struct type */
   name?: string;
 }
@@ -364,11 +365,11 @@ export interface StructType {
  */
 export interface ExternalDomainMetadata {
   /** The record types in the domain */
-  record_types: Record<string, RecordType>;
+  record_types: Record<RecordTypeKey, RecordType>;
   /** Record type categories */
-  record_type_categories?: Record<string, RecordTypeCategory>;
+  record_type_categories?: Record<RecordTypeCategoryKey, RecordTypeCategory>;
   /** Struct types for reusable field structures */
-  struct_types?: Record<string, StructType>;
+  struct_types?: Record<StructTypeKey, StructType>;
   /** The schema version of the metadata format itself. */
   schema_version?: SchemaVersion;
 }
