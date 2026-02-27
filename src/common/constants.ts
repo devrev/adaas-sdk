@@ -59,6 +59,13 @@ export const MAX_DEVREV_ARTIFACT_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
 export const MAX_DEVREV_FILENAME_LENGTH = 256;
 export const MAX_DEVREV_FILENAME_EXTENSION_LENGTH = 20; // 20 characters for the file extension
 
+// Max SQS message size is 250KB, we want to leave some room for the other data in the message
+export const MAX_EVENT_SIZE_BYTES = 200_000;
+// We want to leave some room for the other data in the message and process the rest of queued messages
+export const EVENT_SIZE_THRESHOLD_BYTES = Math.floor(
+  MAX_EVENT_SIZE_BYTES * 0.8
+);
+
 export const AIRDROP_DEFAULT_ITEM_TYPES = {
   EXTERNAL_DOMAIN_METADATA: 'external_domain_metadata',
   ATTACHMENTS: 'attachments',

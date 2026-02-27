@@ -6,6 +6,7 @@ import {
   MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
   MAX_DEVREV_FILENAME_LENGTH,
 } from './constants';
+import { MAX_LOG_STRING_LENGTH } from '../logger/logger.constants';
 
 /**
  * Gets the library version from the package.json file.
@@ -140,4 +141,20 @@ export function getMemoryUsage(): MemoryInfo {
     console.warn('Error retrieving memory usage', err);
     throw err;
   }
+}
+
+/**
+ * Truncates a message if it exceeds the maximum allowed length.
+ * Adds a suffix indicating how many characters were omitted.
+ *
+ * @param message - The message to truncate
+ * @returns Truncated message or original if within limits
+ */
+export function truncateMessage(message: string): string {
+  if (message.length > MAX_LOG_STRING_LENGTH) {
+    return `${message.substring(0, MAX_LOG_STRING_LENGTH)}... ${
+      message.length - MAX_LOG_STRING_LENGTH
+    } more characters`;
+  }
+  return message;
 }
