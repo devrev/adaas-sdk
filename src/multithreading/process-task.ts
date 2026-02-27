@@ -50,29 +50,18 @@ export function processTask<ConnectorState>({
           options,
         });
 
-        // Start the task without awaiting so the timeout listener is registered in time.
-        // If a timeout arrives mid-task, we let the task finish, then run onTimeout
-        // (also triggered when the event data size limit is reached).
-        const taskExecution: Promise<void> = runWithUserLogContext(async () =>
-          task({ adapter })
-        );
-        parentPort?.on(WorkerEvent.WorkerMessage, async (message) => {
+        parentPort?.on(WorkerEvent.WorkerMessage, (message) => {
           if (message.subject !== WorkerMessageSubject.WorkerMessageExit) {
             return;
           }
           console.log('Timeout received. Waiting for the task to finish.');
           adapter.isTimeout = true;
-
-          await taskExecution;
-          await runWithUserLogContext(async () => onTimeout({ adapter }));
-          process.exit(0);
         });
 
-        await taskExecution;
-        if (adapter.isTimeout) {
+        await runWithUserLogContext(async () => task({ adapter }));
+        if (adapter.isTimeout && !adapter.hasWorkerEmitted) {
           await runWithUserLogContext(async () => onTimeout({ adapter }));
         }
-
         process.exit(0);
       } catch (error) {
         console.error('Error while processing task.', serializeError(error));
