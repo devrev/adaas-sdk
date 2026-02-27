@@ -194,6 +194,49 @@ export enum InitialSyncScope {
 }
 
 /**
+ * ExtractionTimeDirection is an enum that defines the direction of extraction.
+ * - HISTORICAL: Extract data going backward in time (historical import)
+ * - FORWARD: Extract data going forward in time incrementally
+ */
+export enum ExtractionTimeDirection {
+  HISTORICAL = 'historical',
+  FORWARD = 'forward',
+}
+
+/**
+ * TimeValueType is an enum that defines the type of a time value used in extraction start/end times.
+ * The platform sends these types to indicate how the extraction time should be resolved by the SDK.
+ */
+export enum TimeValueType {
+  /** Oldest timestamp from worker state */
+  WORKERS_OLDEST = 'workers_oldest',
+  /** Oldest timestamp from worker state minus a duration window */
+  WORKERS_OLDEST_MINUS_WINDOW = 'workers_oldest_minus_window',
+  /** Newest timestamp from worker state */
+  WORKERS_NEWEST = 'workers_newest',
+  /** Newest timestamp from worker state plus a duration window */
+  WORKERS_NEWEST_PLUS_WINDOW = 'workers_newest_plus_window',
+  /** Current time */
+  NOW = 'now',
+  /** User-specified absolute timestamp */
+  ABSOLUTE = 'absolute',
+  /** No bound - extract all available data */
+  UNBOUNDED = 'unbounded',
+}
+
+/**
+ * TimeValue is an interface that represents a time value used in extraction start/end times.
+ * It contains a type (which denotes how the value should be resolved) and an optional value.
+ * - For ABSOLUTE: value is an ISO 8601 timestamp
+ * - For *_WINDOW types: value is a shorthand duration (e.g. '7d', '2m', '1y')
+ * - For other types: value is not used
+ */
+export interface TimeValue {
+  type: TimeValueType;
+  value?: string;
+}
+
+/**
  * EventContextIn is an interface that defines the structure of the input event context that is sent to the external extractor from ADaaS.
  * @deprecated
  */
@@ -265,6 +308,9 @@ export interface EventContext {
   external_system_id: string;
   external_system_name: string;
   external_system_type: string;
+  /**
+   * @deprecated extract_from is deprecated. Use extraction_start and extraction_end instead, which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
+   */
   extract_from?: string;
   import_slug: string;
   initial_sync_scope?: InitialSyncScope;
@@ -272,9 +318,12 @@ export interface EventContext {
   request_id: string;
   request_id_adaas: string;
   /**
-   * @deprecated reset_extraction is deprecated and should not be used. Use reset_extract_from instead.
+   * @deprecated reset_extraction is deprecated and should not be used.
    */
   reset_extraction?: boolean;
+  /**
+   * @deprecated reset_extract_from is deprecated. Use extraction_time_direction with extraction_start_time/extraction_end_time instead for more granular control over data extraction.
+   */
   reset_extract_from?: boolean;
   run_id: string;
   sequence_version: string;
@@ -296,6 +345,33 @@ export interface EventContext {
    */
   uuid: string;
   worker_data_url: string;
+  /**
+   * Direction of extraction (historical or forward).
+   * Used to control whether the sync extracts historical data or incremental data.
+   */
+  extraction_time_direction?: ExtractionTimeDirection;
+  /**
+   * Start time value for extraction, as sent by the platform.
+   * The SDK resolves this into a concrete ISO 8601 timestamp on extraction_start.
+   */
+  extraction_start_time?: TimeValue;
+  /**
+   * End time value for extraction, as sent by the platform.
+   * The SDK resolves this into a concrete ISO 8601 timestamp on extraction_end.
+   */
+  extraction_end_time?: TimeValue;
+  /**
+   * Resolved start timestamp of extraction (ISO 8601 format).
+   * Automatically computed by the SDK from extraction_start_time and worker state.
+   * This is the field developers should read to know when to start extracting from.
+   */
+  extraction_start?: string;
+  /**
+   * Resolved end timestamp of extraction (ISO 8601 format).
+   * Automatically computed by the SDK from extraction_end_time and worker state.
+   * This is the field developers should read to know when to stop extracting at.
+   */
+  extraction_end?: string;
 }
 
 /**

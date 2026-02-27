@@ -1,9 +1,15 @@
 import { createEvent } from '../tests/test-helpers';
-import { EventContext, EventType, InitialSyncScope } from './extraction';
+import {
+  EventContext,
+  EventType,
+  InitialSyncScope,
+  ExtractionTimeDirection,
+  TimeValueType,
+} from './extraction';
 
 // Test the EventContext interface and related extraction types
 describe('ExtractionTypes', () => {
-  const baseEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+  const baseEvent = createEvent({ eventType: EventType.StartExtractingData });
 
   it('should create event context without optional fields', () => {
     const event = { ...baseEvent };
@@ -100,14 +106,14 @@ describe('ExtractionTypes', () => {
 
   it('[edge] should handle explicit boolean values for reset_extract_from', () => {
     const eventWithTrue = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventType.StartExtractingData,
       eventContextOverrides: {
         reset_extract_from: true,
       },
     });
 
     const eventWithFalse = createEvent({
-      eventType: EventType.ExtractionDataStart,
+      eventType: EventType.StartExtractingData,
       eventContextOverrides: {
         reset_extract_from: false,
       },
@@ -121,5 +127,45 @@ describe('ExtractionTypes', () => {
     expect(typeof eventWithFalse.payload.event_context.reset_extract_from).toBe(
       'boolean'
     );
+  });
+
+  describe('ExtractionTimeDirection enum', () => {
+    it('should have historical value', () => {
+      expect(ExtractionTimeDirection.HISTORICAL).toBeDefined();
+      expect(ExtractionTimeDirection.HISTORICAL).toBe('historical');
+    });
+
+    it('should have forward value', () => {
+      expect(ExtractionTimeDirection.FORWARD).toBeDefined();
+      expect(ExtractionTimeDirection.FORWARD).toBe('forward');
+    });
+
+    it('should have exactly two values', () => {
+      const values = Object.values(ExtractionTimeDirection);
+      expect(values.length).toBe(2);
+      expect(values).toContain('historical');
+      expect(values).toContain('forward');
+    });
+  });
+
+  describe('TimeValueType enum', () => {
+    it('should have all expected values', () => {
+      expect(TimeValueType.WORKERS_OLDEST).toBe('workers_oldest');
+      expect(TimeValueType.WORKERS_OLDEST_MINUS_WINDOW).toBe(
+        'workers_oldest_minus_window'
+      );
+      expect(TimeValueType.WORKERS_NEWEST).toBe('workers_newest');
+      expect(TimeValueType.WORKERS_NEWEST_PLUS_WINDOW).toBe(
+        'workers_newest_plus_window'
+      );
+      expect(TimeValueType.NOW).toBe('now');
+      expect(TimeValueType.ABSOLUTE).toBe('absolute');
+      expect(TimeValueType.UNBOUNDED).toBe('unbounded');
+    });
+
+    it('should have exactly seven values', () => {
+      const values = Object.values(TimeValueType);
+      expect(values.length).toBe(7);
+    });
   });
 });

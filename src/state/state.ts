@@ -2,6 +2,7 @@ import axios from 'axios';
 
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
+import { resolveTimeValue } from '../common/time-value-resolver';
 import { axiosClient } from '../http/axios-client-internal';
 import { getPrintableState, serializeError } from '../logger/logger';
 import { SyncMode } from '../types/common';
@@ -74,6 +75,33 @@ export async function createAdapterState<ConnectorState>({
     ) {
       as.state.lastSyncStarted = new Date().toISOString();
       console.log(`Setting lastSyncStarted to ${as.state.lastSyncStarted}.`);
+    }
+
+    // Store extraction_time_direction in state and resolve extraction timestamps
+    const eventContext = event.payload.event_context;
+    if (eventContext.extraction_time_direction) {
+      as.state.extraction_time_direction =
+        eventContext.extraction_time_direction;
+      console.log(
+        `Storing extraction_time_direction: ${eventContext.extraction_time_direction}.`
+      );
+    }
+
+    const timeFields = [
+      { source: 'extraction_start_time', target: 'extraction_start' },
+      { source: 'extraction_end_time', target: 'extraction_end' },
+    ] as const;
+
+    for (const { source, target } of timeFields) {
+      const timeValue = eventContext[source];
+      if (timeValue) {
+        try {
+          eventContext[target] = resolveTimeValue(timeValue, as.state);
+          console.log(`Resolved ${target} to ${eventContext[target]}.`);
+        } catch (error) {
+          console.error(`Failed to resolve ${source}.`, serializeError(error));
+        }
+      }
     }
   }
 

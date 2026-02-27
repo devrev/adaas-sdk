@@ -14,6 +14,7 @@ export {
   AirdropMessage,
   ConnectionData,
   DomainObjectState,
+  EventContext,
   EventContextIn,
   EventContextOut,
   EventData,
@@ -26,9 +27,13 @@ export {
   ExternalSystemAttachmentStreamingParams,
   ExternalSystemAttachmentStreamingResponse,
   ExtractionMode,
+  ExtractionTimeDirection,
   ExtractorEvent,
   ExtractorEventType,
+  InitialSyncScope,
   ProcessAttachmentReturnType,
+  TimeValue,
+  TimeValueType,
 } from './extraction';
 
 // Loading
