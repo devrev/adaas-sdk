@@ -89,7 +89,6 @@ export class WorkerAdapter<ConnectorState> {
   readonly event: AirdropEvent;
   readonly options?: WorkerAdapterOptions;
   isTimeout: boolean;
-  private _isOnTimeoutPhase: boolean;
 
   private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];
@@ -119,7 +118,6 @@ export class WorkerAdapter<ConnectorState> {
     this._artifacts = [];
     this.hasWorkerEmitted = false;
     this.isTimeout = false;
-    this._isOnTimeoutPhase = false;
 
     // Loader
     this.loaderReports = [];
@@ -245,7 +243,7 @@ export class WorkerAdapter<ConnectorState> {
         return;
       }
 
-      if (this.isTimeout && !this._isOnTimeoutPhase) {
+      if (this.isTimeout) {
         console.warn(
           `Skipping emit of ${newEventType} because size limit was reached. The onTimeout function will handle the final emit.`
         );
@@ -343,10 +341,6 @@ export class WorkerAdapter<ConnectorState> {
 
   handleTimeout() {
     this.isTimeout = true;
-  }
-
-  beginOnTimeoutPhase() {
-    this._isOnTimeoutPhase = true;
   }
 
   async loadItemTypes({

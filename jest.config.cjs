@@ -12,7 +12,7 @@ module.exports = {
         // These tests are slow (10-15s per)
         'src/tests/dummy-connector/metadata-extraction.test.ts',
         'src/http/axios-client-internal.test.ts',
-        'src/tests/event-data-size-limit/.*\.test\.ts',
+        'src/tests/event-data-size-limit/.*.test.ts',
       ],
     },
     {
@@ -33,7 +33,6 @@ module.exports = {
         '<rootDir>/src/tests/dummy-connector/metadata-extraction.test.ts',
         '<rootDir>/src/http/axios-client-internal.test.ts',
         '<rootDir>/src/tests/event-data-size-limit/size-limit-1.test.ts',
-        '<rootDir>/src/tests/event-data-size-limit/double-timeout.test.ts',
       ],
     },
   ],
