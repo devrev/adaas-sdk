@@ -89,7 +89,11 @@ export class Uploader {
     );
     if (uploadItemError) {
       return {
-        error: { message: 'Error while uploading artifact.' },
+        error: {
+          message:
+            'Error while uploading artifact: ' +
+            serializeError(uploadItemError),
+        },
       };
     }
 
@@ -101,7 +105,7 @@ export class Uploader {
         error: {
           message:
             'Error while confirming artifact upload. ' +
-            JSON.stringify(confirmArtifactUploadError),
+            serializeError(confirmArtifactUploadError),
         },
       };
     }

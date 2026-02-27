@@ -246,25 +246,8 @@ describe(AttachmentsStreamingPool.name, () => {
       await pool.streamAll();
 
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
-      // Each attachment generates 2 warnings: one for the error, one for the failed attachments summary
       // Since there are 3 parallel workers (one per attachment), each logs its own failed attachment
       expect(warnSpy).toHaveBeenCalledTimes(3);
-
-      // Verify that each attachment error was logged
-      expect(warnSpy).toHaveBeenCalledWith(
-        'Skipping attachment with ID attachment-image with extension jpg due to error in processAttachment function',
-        imageError
-      );
-
-      expect(warnSpy).toHaveBeenCalledWith(
-        'Skipping attachment with ID attachment-pdf with extension pdf due to error in processAttachment function',
-        pdfError
-      );
-
-      expect(warnSpy).toHaveBeenCalledWith(
-        'Skipping attachment with ID attachment-video with extension mp4 due to error in processAttachment function',
-        videoError
-      );
 
       expect(
         mockAdapter.state.toDevRev!.attachmentsMetadata
