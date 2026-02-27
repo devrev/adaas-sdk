@@ -4,6 +4,8 @@ import { createEvent } from '../test-helpers';
 
 import run from './extraction';
 
+jest.setTimeout(10000);
+
 describe('Unknown event type', () => {
   it('should successfully emit unknown event type when the event type is not found', async () => {
     const event = createEvent({

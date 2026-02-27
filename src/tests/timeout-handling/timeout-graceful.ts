@@ -10,7 +10,7 @@ processTask({
       }
 
       console.log('timeout-graceful iteration', i);
-      await sleep(5000);
+      await sleep(1000);
     }
 
     await adapter.emit(ExtractorEventType.DataExtractionDone);
