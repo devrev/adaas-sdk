@@ -57,7 +57,10 @@ export function processTask<ConnectorState>({
         // If task() completes before any timeout message arrives, the worker exits normally.
         // isTimeoutReceived prevents both flows from calling process.exit.
         let isTimeoutReceived = false;
-        let taskExecution: Promise<void>;
+        const taskExecution: Promise<void> = runWithUserLogContext(async () =>
+          task({ adapter })
+        );
+
         parentPort?.on(WorkerEvent.WorkerMessage, (message) => {
           if (message.subject !== WorkerMessageSubject.WorkerMessageExit) {
             return;
@@ -92,8 +95,6 @@ export function processTask<ConnectorState>({
             }
           });
         });
-
-        taskExecution = runWithUserLogContext(async () => task({ adapter }));
 
         try {
           await taskExecution;
