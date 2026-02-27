@@ -179,7 +179,9 @@ export class MockServer {
       req.path === '/internal/airdrop.artifacts.upload-url'
     ) {
       // Generate a unique artifact ID for each request
-      const artifactId = `artifact-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const artifactId = `artifact-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
       res.status(200).json({
         upload_url: `${this.baseUrl}/file-upload-url`,
         artifact_id: artifactId,

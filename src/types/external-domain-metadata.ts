@@ -62,7 +62,9 @@ export type FieldConditionEffect = 'require' | 'show';
 /**
  * Scope of a record type.
  */
-export type RecordTypeScope = 'metadata_is_system_scoped' | 'data_is_system_scoped';
+export type RecordTypeScope =
+  | 'metadata_is_system_scoped'
+  | 'data_is_system_scoped';
 
 /**
  * Collection constraints for fields that are collections of values.
