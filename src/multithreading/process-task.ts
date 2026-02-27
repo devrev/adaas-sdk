@@ -108,7 +108,19 @@ export function processTask<ConnectorState>({
         }
 
         if (!isTimeoutReceived) {
-          console.log('Task completed. Exiting worker.');
+          if (adapter.isTimeout) {
+            // Size limit (or another internal timeout) triggered
+            // adapter.isTimeout but no WorkerMessageExit was received from
+            // the parent. Run onTimeout so the worker emits a
+            // progress/continuation event before exiting.
+            console.log(
+              'Task completed with internal timeout. Running onTimeout handler.'
+            );
+            await runWithUserLogContext(async () => onTimeout({ adapter }));
+            console.log('onTimeout handler complete. Exiting worker.');
+          } else {
+            console.log('Task completed. Exiting worker.');
+          }
           process.exit(0);
         }
       } catch (error) {
