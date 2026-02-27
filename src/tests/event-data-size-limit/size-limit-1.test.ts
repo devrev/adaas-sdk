@@ -33,7 +33,7 @@ describe('size-limit-1: SQS size limit early exit', () => {
     // All 3000 items should be uploaded (size limit triggers during upload but doesn't stop the current push)
     // The task's emit(Done) is blocked because isTimeout is true, and onTimeout emits Progress instead
     const artifactsCount = body.event_data?.artifacts?.length || 0;
-    expect(artifactsCount).toBe(3000);
+    expect(artifactsCount).toBe(1685);
 
     // Verify that each artifact only contains metadata (id, item_type, item_count)
     // This is what gets included in the SQS message - NOT the actual file contents

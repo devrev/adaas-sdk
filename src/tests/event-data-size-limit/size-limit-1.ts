@@ -29,23 +29,21 @@ processTask({
     // Generate 3000 items with batch size 1 = 3000 artifacts
     // Each artifact metadata is ~55 bytes (id, item_type, item_count)
     // 3000 * 55 = 165KB > 160KB threshold
-    const items = [];
     for (let i = 0; i < 3000; i++) {
-      items.push({
-        id: `item-${i}`,
-        name: `Item ${i}`,
-        data: {
-          value: i,
+      await repo.push([
+        {
+          id: `item-${i}`,
+          name: `Item ${i}`,
+          data: {
+            value: i,
+          },
         },
-      });
+      ]);
+
+      if (adapter.isTimeout) {
+        return;
+      }
     }
-
-    console.log(
-      `Pushing ${items.length} items (batch size 1) to trigger size limit...`
-    );
-
-    // Push items - this should trigger the size limit during upload
-    await repo.push(items);
 
     console.log('Size limit was NOT triggered, emitting done');
     await adapter.emit(ExtractorEventType.DataExtractionDone);

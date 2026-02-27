@@ -183,7 +183,7 @@ export class WorkerAdapter<ConnectorState> {
             !this.isTimeout
           ) {
             console.warn(
-              'Event data size limit reached. Remaining data will be synced in the next cycle.'
+              'Event data size limit reached. Remaining data will be synced in the next lambda invocation.'
             );
 
             this.handleTimeout();
@@ -239,13 +239,6 @@ export class WorkerAdapter<ConnectorState> {
       if (this.hasWorkerEmitted) {
         console.warn(
           `Trying to emit event with event type: ${newEventType}. Ignoring emit request because it has already been emitted.`
-        );
-        return;
-      }
-
-      if (this.isTimeout) {
-        console.warn(
-          `Skipping emit of ${newEventType} because size limit was reached. The onTimeout function will handle the final emit.`
         );
         return;
       }
