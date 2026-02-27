@@ -1,6 +1,6 @@
 {
   "name": "@devrev/ts-adaas",
-  "version": "1.15.3-beta.1",
+  "version": "1.15.3-beta.4",
   "description": "Typescript library containing the ADaaS(AirDrop as a Service) control protocol.",
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -22,7 +22,7 @@
     "url": "git+https://github.com/devrev/adaas-sdk.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org"
   },
   "keywords": [],
   "author": "devrev",
@@ -36,6 +36,7 @@
     "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^8.46.0",
     "@typescript-eslint/parser": "^8.46.0",
+    "ajv": "^8.18.0",
     "eslint": "9.32.0",
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-prettier": "4.0.0",
