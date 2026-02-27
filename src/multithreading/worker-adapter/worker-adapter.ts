@@ -4,6 +4,7 @@ import { AttachmentsStreamingPool } from '../../attachments-streaming/attachment
 import {
   AIRDROP_DEFAULT_ITEM_TYPES,
   ALLOWED_EXTRACTION_EVENT_TYPES,
+  EVENT_SIZE_THRESHOLD_BYTES,
   STATELESS_EVENT_TYPES,
 } from '../../common/constants';
 import { emit } from '../../common/control-protocol';
@@ -56,11 +57,6 @@ import { Uploader } from '../../uploader/uploader';
 import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
 import { translateOutgoingEventType } from '../../common/event-type-translation';
 import { truncateMessage } from '../../common/helpers';
-
-// Max SQS message size is 250KB, we want to leave some room for the other data in the message
-const MAX_EVENT_SIZE_BYTES = 200_000;
-// We want to leave some room for the other data in the message and process the rest of queued messages
-const EVENT_SIZE_THRESHOLD_BYTES = Math.floor(MAX_EVENT_SIZE_BYTES * 0.8);
 
 export function createWorkerAdapter<ConnectorState>({
   event,
