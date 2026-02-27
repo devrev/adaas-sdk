@@ -94,18 +94,13 @@ export class WorkerAdapter<ConnectorState> {
   private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];
   private repos: Repo[] = [];
+  private currentEventDataLength: number = 0;
 
   // Loader
   private loaderReports: LoaderReport[];
   private _processedFiles: string[];
   private _mappers: Mappers;
   private uploader: Uploader;
-
-  /**
-   * Cumulative byte length of uploaded artifacts for size limit tracking.
-   * @private
-   */
-  private currentEventDataLength: number = 0;
 
   constructor({
     event,
