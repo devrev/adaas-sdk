@@ -160,9 +160,15 @@ export class AttachmentsStreamingPool<ConnectorState> {
         }
 
         if (response?.error) {
+          const fileExtension = attachment.file_name.split('.').pop() || '';
+
+          const fileSizeInfo = response.error.fileSize
+            ? `and size ${response.error.fileSize} bytes `
+            : '';
+
           console.warn(
-            `Skipping attachment with ID ${attachment.id} due to error returned by the stream function`,
-            response.error
+            `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} ${fileSizeInfo}due to error returned by the stream function`,
+            response.error.message
           );
           await this.updateProgress();
           continue;
@@ -180,8 +186,10 @@ export class AttachmentsStreamingPool<ConnectorState> {
 
         await this.updateProgress();
       } catch (error) {
+        const fileExtension = attachment.file_name.split('.').pop() || '';
+
         console.warn(
-          `Skipping attachment with ID ${attachment.id} due to error in processAttachment function`,
+          `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} due to error in processAttachment function`,
           error
         );
 
