@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       dry-run:
-        description: "Dry Run - skip commit and publish"
+        description: 'Dry Run - skip commit and publish'
         type: boolean
         default: false
 
@@ -64,8 +64,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           registry-url: https://registry.npmjs.org/
-          node-version: "18.x"
-          scope: "@devrev"
+          node-version: '18.x'
+          scope: '@devrev'
           token: ${{ secrets.NPMJS_NPM_TOKEN }}
 
       - name: Git configuration

@@ -11,15 +11,18 @@
     "start": "ts-node src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
-    "test": "jest --forceExit --coverage --runInBand --selectProjects default --",
-    "test:backwards-compatibility": "jest --forceExit --runInBand --selectProjects backwards-compatibility --"
+    "test": "jest --forceExit --maxWorkers=50% --selectProjects default --",
+    "test:backwards-compatibility": "jest --forceExit --selectProjects backwards-compatibility --",
+    "test:timeout-handling": "jest --forceExit --selectProjects timeout-handling --",
+    "test:slow": "jest --forceExit --selectProjects slow --",
+    "test:coverage": "jest --forceExit --coverage --runInBand --"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/devrev/adaas-sdk.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org"
   },
   "keywords": [],
   "author": "devrev",
@@ -33,6 +36,7 @@
     "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^8.46.0",
     "@typescript-eslint/parser": "^8.46.0",
+    "ajv": "^8.18.0",
     "eslint": "9.32.0",
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-prettier": "4.0.0",
@@ -45,7 +49,7 @@
   },
   "dependencies": {
     "@devrev/typescript-sdk": "^1.1.59",
-    "axios": "^1.12.1",
+    "axios": "^1.13.5",
     "axios-retry": "^4.5.0",
     "express": "^5.2.1",
     "form-data": "^4.0.4",

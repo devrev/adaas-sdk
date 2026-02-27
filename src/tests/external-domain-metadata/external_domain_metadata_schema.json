@@ -1,0 +1,1815 @@
+{
+ "title": "Schema of the external_domain_metadata used to describe the logical structure of the external system",
+ "required": [
+  "record_types"
+ ],
+ "additionalProperties": false,
+ "definitions": {
+  "CollectionData": {
+   "additionalProperties": false,
+   "properties": {
+    "max_length": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "min_length": {
+     "minimum": 0,
+     "type": "integer"
+    }
+   },
+   "type": "object"
+  },
+  "ConditionalPrivilegeData": {
+   "required": [
+    "type_keys"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type_keys": {
+     "description": "The possible record types or record type categories that can be targeted in conditional privilege.",
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  },
+  "CustomLinkData": {
+   "required": [
+    "link_type_field",
+    "link_direction_names"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "link_direction_names": {
+     "minLength": 1,
+     "additionalProperties": {
+      "$ref": "#/definitions/CustomLinkNames"
+     },
+     "type": [
+      "object",
+      "null"
+     ]
+    },
+    "link_type_field": {
+     "description": "The field that defines the link types in the system.",
+     "minLength": 1,
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "CustomLinkNames": {
+   "required": [
+    "forward_name",
+    "backward_name"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "backward_name": {
+     "description": "The backward name of the link",
+     "type": "string"
+    },
+    "forward_name": {
+     "description": "The forward name of the link",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "CustomStage": {
+   "additionalProperties": false,
+   "properties": {
+    "state": {
+     "description": "The state this stage belongs to. It must match the ones defined in the diagram 'states' field or it might be one of the three default options: 'open', 'in_progress' and 'closed'. If not provided, the end user might be asked.",
+     "type": "string"
+    },
+    "transitions_to": {
+     "description": "A list of stage names that this stage can transition to. The target stage must exist in the diagram.",
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  },
+  "CustomState": {
+   "required": [
+    "name"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "is_end_state": {
+     "description": "Denotes that this state is an end state.",
+     "type": "boolean"
+    },
+    "name": {
+     "description": "The human readable name of the custom state.",
+     "type": "string"
+    },
+    "ordinal": {
+     "description": "The sort order of the state.",
+     "type": "integer"
+    }
+   },
+   "type": "object"
+  },
+  "EnumData": {
+   "required": [
+    "values"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "values": {
+     "items": {
+      "$ref": "#/definitions/EnumValue"
+     },
+     "type": "array"
+    }
+   },
+   "type": [
+    "object",
+    "null"
+   ]
+  },
+  "EnumValue": {
+   "required": [
+    "key"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "description": {
+     "type": "string"
+    },
+    "is_deprecated": {
+     "description": "Deprecated enum values may still occur in the data, but should not be used in new data",
+     "type": "boolean"
+    },
+    "key": {
+     "description": "The enum value that actually occurs in the json data",
+     "type": "string"
+    },
+    "name": {
+     "description": "The human readable name of the enum value",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "ExtractionData": {
+   "additionalProperties": false,
+   "properties": {
+    "sort_order": {
+     "enum": [
+      "",
+      "id",
+      "modified_date",
+      "created_date"
+     ],
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "Field": {
+   "required": [
+    "type"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "collection": {
+     "$ref": "#/definitions/CollectionData",
+     "description": "If collection is set, the field is a 'collection' of the given type. eg a list of enum values"
+    },
+    "conditional_privilege": {
+     "$ref": "#/definitions/ConditionalPrivilegeData"
+    },
+    "default_value": {},
+    "description": {
+     "type": "string"
+    },
+    "enum": {
+     "$ref": "#/definitions/EnumData"
+    },
+    "field_privilege": {
+     "$ref": "#/definitions/FieldPrivilegeData"
+    },
+    "field_reference": {
+     "$ref": "#/definitions/FieldReferenceData"
+    },
+    "float": {
+     "$ref": "#/definitions/FloatData"
+    },
+    "int": {
+     "$ref": "#/definitions/IntData"
+    },
+    "is_identifier": {
+     "description": "is_identifier indicates that the field can be used to uniquely lookup a record. This is meant for fields that are not the primary key of the record type, for example email in a user.",
+     "type": [
+      "boolean",
+      "null"
+     ]
+    },
+    "is_indexed": {
+     "description": "indexed fields can be used for searching, sorting or filtering.",
+     "type": [
+      "boolean",
+      "null"
+     ]
+    },
+    "is_read_only": {
+     "description": "Read only fields can't be set (when creating or updating a record), but are filled in by some process in the system. eg. created_at, updated_at... External fields that are read only can only be used in forward, and devrev fields only in reverse.",
+     "type": [
+      "boolean",
+      "null"
+     ]
+    },
+    "is_required": {
+     "description": "Required fields are required in the domain model of the external system.",
+     "type": "boolean"
+    },
+    "is_write_only": {
+     "description": "Fields that are write only should only be written to. External fields that are write only are only mapped in the reverse direction, while devrev fields that are write only are only mapped in the forward direction.",
+     "type": [
+      "boolean",
+      "null"
+     ]
+    },
+    "name": {
+     "type": "string"
+    },
+    "permission": {
+     "$ref": "#/definitions/PermissionData"
+    },
+    "record_type_privilege": {
+     "$ref": "#/definitions/RecordTypePrivilegeData"
+    },
+    "reference": {
+     "$ref": "#/definitions/ReferenceData"
+    },
+    "struct": {
+     "$ref": "#/definitions/StructData"
+    },
+    "text": {
+     "$ref": "#/definitions/TextData"
+    },
+    "type": {
+     "description": "The type of the field",
+     "enum": [
+      "bool",
+      "int",
+      "float",
+      "text",
+      "rich_text",
+      "reference",
+      "typed_reference",
+      "enum",
+      "date",
+      "timestamp",
+      "struct",
+      "permission",
+      "type_key",
+      "record_type_privilege",
+      "field_privilege",
+      "conditional_privilege"
+     ],
+     "type": "string"
+    },
+    "type_key": {
+     "$ref": "#/definitions/TargetTypeKeyData"
+    },
+    "typed_reference": {
+     "$ref": "#/definitions/TypedReferenceData"
+    }
+   },
+   "type": "object",
+   "oneOf": [
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "default_value": {
+       "type": "boolean"
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "bool"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "default_value": {
+       "type": "integer"
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "$ref": "#/definitions/IntData",
+       "description": "The specifics of the field if the type is 'int'"
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "int"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "default_value": {
+       "type": "number"
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "$ref": "#/definitions/FloatData",
+       "description": "The specifics of the field if the type is 'float'"
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "float"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "default_value": {
+       "type": "string"
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "$ref": "#/definitions/TextData",
+       "description": "The specifics of the field if the type is 'text'"
+      },
+      "type": {
+       "enum": [
+        "text"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "rich_text"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type",
+      "enum"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "default_value": {
+       "type": "string"
+      },
+      "enum": {
+       "$ref": "#/definitions/EnumData",
+       "description": "The specifics of the field if the type is 'enum'"
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "enum"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type",
+      "reference"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "$ref": "#/definitions/ReferenceData",
+       "description": "The specifics of the field if the type is 'reference'"
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "reference"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type",
+      "typed_reference"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "typed_reference"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "$ref": "#/definitions/TypedReferenceData",
+       "description": "The specifics of the field if the type is 'typed_reference'"
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type",
+      "struct"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "$ref": "#/definitions/StructData",
+       "description": "The specifics of the field if the type is 'struct'"
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "struct"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "default_value": {
+       "type": "string"
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "date"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "default_value": {
+       "type": "string"
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "timestamp"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "$ref": "#/definitions/PermissionData"
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "permission"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "type_key"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "$ref": "#/definitions/TargetTypeKeyData"
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "$ref": "#/definitions/FieldReferenceData"
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "field_reference"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "$ref": "#/definitions/RecordTypePrivilegeData"
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "record_type_privilege"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "$ref": "#/definitions/FieldPrivilegeData"
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "field_privilege"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    },
+    {
+     "required": [
+      "type"
+     ],
+     "properties": {
+      "conditional_privilege": {
+       "$ref": "#/definitions/ConditionalPrivilegeData"
+      },
+      "enum": {
+       "type": "object",
+       "not": {}
+      },
+      "field_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "field_reference": {
+       "type": "object",
+       "not": {}
+      },
+      "float": {
+       "type": "object",
+       "not": {}
+      },
+      "int": {
+       "type": "object",
+       "not": {}
+      },
+      "permission": {
+       "type": "object",
+       "not": {}
+      },
+      "record_type_privilege": {
+       "type": "object",
+       "not": {}
+      },
+      "reference": {
+       "type": "object",
+       "not": {}
+      },
+      "struct": {
+       "type": "object",
+       "not": {}
+      },
+      "text": {
+       "type": "object",
+       "not": {}
+      },
+      "type": {
+       "enum": [
+        "field_privilege"
+       ],
+       "type": "string"
+      },
+      "type_key": {
+       "type": "object",
+       "not": {}
+      },
+      "typed_reference": {
+       "type": "object",
+       "not": {}
+      }
+     },
+     "type": "object"
+    }
+   ]
+  },
+  "FieldCondition": {
+   "required": [
+    "value",
+    "comparator",
+    "affected_fields",
+    "effect"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "affected_fields": {
+     "description": "The fields that will be affected by the condition being met.",
+     "items": {
+      "type": "string"
+     },
+     "minItems": 1,
+     "uniqueItems": true,
+     "type": "array"
+    },
+    "comparator": {
+     "description": "The comparator that will be used to compare the controlling field's value against the Value.",
+     "enum": [
+      "eq",
+      "ne",
+      "lt",
+      "lte",
+      "gt",
+      "gte"
+     ],
+     "type": "string"
+    },
+    "effect": {
+     "description": "The effect that will be applied to the affected fields if the condition is met.",
+     "enum": [
+      "require",
+      "show"
+     ],
+     "type": "string"
+    },
+    "value": {
+     "description": "The value of the controlling field that the will be compared against to see if the condition is met."
+    }
+   },
+   "type": "object"
+  },
+  "FieldConditions": {
+   "items": {
+    "$ref": "#/definitions/FieldCondition"
+   },
+   "type": "array"
+  },
+  "FieldPrivilegeData": {
+   "required": [
+    "type_keys"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type_keys": {
+     "description": "The possible record types or record type categories that can be targeted in field prvilege.",
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  },
+  "FieldReferenceData": {
+   "type": "object"
+  },
+  "FloatData": {
+   "additionalProperties": false,
+   "properties": {
+    "max": {
+     "type": "number"
+    },
+    "min": {
+     "type": "number"
+    }
+   },
+   "type": "object"
+  },
+  "IntData": {
+   "additionalProperties": false,
+   "properties": {
+    "max": {
+     "type": "integer"
+    },
+    "min": {
+     "type": "integer"
+    }
+   },
+   "type": "object"
+  },
+  "LoadingData": {
+   "type": "object"
+  },
+  "PermissionData": {
+   "description": "A value describing access control, associating a reference (member_id) with a role.",
+   "additionalProperties": false,
+   "properties": {
+    "member_id": {
+     "$ref": "#/definitions/ReferenceData"
+    },
+    "role": {
+     "$ref": "#/definitions/EnumData"
+    }
+   },
+   "type": "object"
+  },
+  "RecordType": {
+   "required": [
+    "fields"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "category": {
+     "type": "string"
+    },
+    "conditions": {
+     "additionalProperties": {
+      "$ref": "#/definitions/FieldConditions"
+     },
+     "type": "object"
+    },
+    "description": {
+     "type": "string"
+    },
+    "fields": {
+     "description": "The fields of the record type",
+     "additionalProperties": {
+      "$ref": "#/definitions/Field"
+     },
+     "type": "object"
+    },
+    "is_loadable": {
+     "description": "Whether the record type can be loaded: that is, whether the connector supports creating it in the system",
+     "type": "boolean"
+    },
+    "is_snapshot": {
+     "description": "Whether the record type sends the complete system state in every sync",
+     "type": "boolean"
+    },
+    "link_naming_data": {
+     "$ref": "#/definitions/CustomLinkData"
+    },
+    "name": {
+     "description": "The human readable name of the record type",
+     "type": "string"
+    },
+    "no_identifier": {
+     "description": "Denotes that the record type has no ID field, primarily used for authorization policies",
+     "type": "boolean"
+    },
+    "scope": {
+     "description": "Indicates the scope of this record type, whether it is per sync unit, or some larger unit.",
+     "enum": [
+      "metadata_is_system_scoped",
+      "data_is_system_scoped"
+     ],
+     "type": "string"
+    },
+    "stage_diagram": {
+     "$ref": "#/definitions/StageDiagram"
+    }
+   },
+   "type": "object"
+  },
+  "RecordTypeCategory": {
+   "additionalProperties": false,
+   "properties": {
+    "are_record_type_conversions_possible": {
+     "description": "Indicates whether a record can move between the record types of this category while preserving its identity",
+     "type": "boolean"
+    },
+    "name": {
+     "description": "The human readable name of the record type category",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "RecordTypePrivilegeData": {
+   "required": [
+    "type_keys"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type_keys": {
+     "description": "The possible record types or record type categories that can be targeted in record type privilege.",
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  },
+  "ReferenceData": {
+   "required": [
+    "refers_to"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "reference_type": {
+     "description": "The parent reference refers to a record that has special ownership over the child",
+     "enum": [
+      "child",
+      "parent"
+     ],
+     "type": "string"
+    },
+    "refers_to": {
+     "description": "The record types that this reference can refer to",
+     "additionalProperties": {
+      "$ref": "#/definitions/ReferenceDetail"
+     },
+     "type": "object"
+    }
+   },
+   "type": "object"
+  },
+  "ReferenceDetail": {
+   "additionalProperties": false,
+   "properties": {
+    "by_field": {
+     "description": "The field in the target record type by which it is referenced. This is assumed to be the primary key if not set",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "StageDiagram": {
+   "required": [
+    "controlling_field",
+    "stages"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "all_transitions_allowed": {
+     "description": "Denotes that this diagram has no explicit transitions from one stage to another and should be created as an 'all-to-all' diagram. If this is set to true, it is invalid to use explicitly defined transitions.",
+     "type": "boolean"
+    },
+    "controlling_field": {
+     "description": "The field that represents the stage in the external system.",
+     "minLength": 1,
+     "type": "string"
+    },
+    "stages": {
+     "description": "A map of the stages that should be created in DevRev, the key value must be the identifier of the stage. The keys must match the enum values in the controlling field, which also define the nice name, order and deprecation of the stages.",
+     "minProperties": 2,
+     "additionalProperties": {
+      "$ref": "#/definitions/CustomStage"
+     },
+     "type": "object"
+    },
+    "starting_stage": {
+     "description": "The stage that the parent record type starts in when it is created. This field is mandatory in case 'states' or stage transitions are provided. Otherwise it can be omitted and the (alphabetically) first open stage will be selected as the starting stage.",
+     "minLength": 1,
+     "type": "string"
+    },
+    "states": {
+     "description": "A map of the states/status categories that should be created in DevRev and are expected to be used in the stage diagram. If no explicit states are defined, the default states 'open', 'in_progress', 'closed' for works and 'open', 'in_progress', 'deployed', 'inactive' for parts will be used.",
+     "additionalProperties": {
+      "$ref": "#/definitions/CustomState"
+     },
+     "type": "object"
+    }
+   },
+   "type": "object"
+  },
+  "StructData": {
+   "additionalProperties": false,
+   "properties": {
+    "key": {
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "StructType": {
+   "required": [
+    "fields"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "fields": {
+     "description": "The fields of the struct type",
+     "additionalProperties": {
+      "$ref": "#/definitions/Field"
+     },
+     "type": "object"
+    },
+    "name": {
+     "description": "The human readable name of the struct type",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "TargetTypeKeyData": {
+   "required": [
+    "type_keys"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type_keys": {
+     "description": "The possible record types or record type categories that can be targeted in authorization policy.",
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  },
+  "TextData": {
+   "additionalProperties": false,
+   "properties": {
+    "max_length": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "min_length": {
+     "minimum": 0,
+     "type": "integer"
+    }
+   },
+   "type": "object"
+  },
+  "TypedReferenceData": {
+   "required": [
+    "refers_to"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "reference_type": {
+     "description": "The parent reference refers to a record that has special ownership over the child",
+     "enum": [
+      "child",
+      "parent"
+     ],
+     "type": "string"
+    },
+    "refers_to": {
+     "description": "The record types that this reference can refer to",
+     "additionalProperties": {
+      "$ref": "#/definitions/ReferenceDetail"
+     },
+     "type": "object"
+    }
+   },
+   "type": "object"
+  }
+ },
+ "properties": {
+  "record_type_categories": {
+   "additionalProperties": {
+    "$ref": "#/definitions/RecordTypeCategory"
+   },
+   "type": "object"
+  },
+  "record_types": {
+   "description": "The record types in the domain",
+   "additionalProperties": {
+    "$ref": "#/definitions/RecordType"
+   },
+   "type": "object"
+  },
+  "schema_version": {
+   "description": "The schema version of the metadata format itself.",
+   "enum": [
+    "v0.2.0"
+   ],
+   "type": "string"
+  },
+  "struct_types": {
+   "additionalProperties": {
+    "$ref": "#/definitions/StructType"
+   },
+   "type": "object"
+  }
+ },
+ "type": "object"
+}
