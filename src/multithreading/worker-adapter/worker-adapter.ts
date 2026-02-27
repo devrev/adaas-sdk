@@ -163,12 +163,6 @@ export class WorkerAdapter<ConnectorState> {
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
-          // Calculate size of the entire artifact object that goes in the SQS message
-          const artifactMetadataSize = Buffer.byteLength(
-            JSON.stringify(artifact),
-            'utf8'
-          );
-
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AIRDROP_DEFAULT_ITEM_TYPES.ATTACHMENTS) {
             this.state.toDevRev?.attachmentsMetadata.artifactIds.push(
@@ -176,17 +170,17 @@ export class WorkerAdapter<ConnectorState> {
             );
           }
 
-          this.currentEventDataLength += artifactMetadataSize;
+          // Calculate size of the entire artifact object that goes in the SQS message
+          this.currentEventDataLength += Buffer.byteLength(
+            JSON.stringify(artifact),
+            'utf8'
+          );
 
           if (
             this.currentEventDataLength > EVENT_SIZE_THRESHOLD_BYTES &&
             !this.isTimeout
           ) {
-            console.warn(
-              'Event data size limit reached. Remaining data will be synced in the next lambda invocation.'
-            );
-
-            this.handleTimeout();
+            this.isTimeout = true;
           }
         },
         options: this.options,
@@ -330,10 +324,6 @@ export class WorkerAdapter<ConnectorState> {
         throw error;
       }
     }
-  }
-
-  handleTimeout() {
-    this.isTimeout = true;
   }
 
   async loadItemTypes({
