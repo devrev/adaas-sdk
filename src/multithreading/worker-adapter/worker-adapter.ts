@@ -232,20 +232,52 @@ export class WorkerAdapter<ConnectorState> {
         return;
       }
 
-      // We want to upload all the repos before emitting the event, except for the external sync units done event
-      if (newEventType !== ExtractorEventType.ExternalSyncUnitExtractionDone) {
+      // If the event is ExternalSyncUnitExtractionDone, upload external sync units via a Repo before emitting
+      if (
+        newEventType === ExtractorEventType.ExternalSyncUnitExtractionDone &&
+        data?.external_sync_units &&
+        data.external_sync_units.length > 0
+      ) {
         console.log(
-          `Uploading all repos before emitting event with event type: ${newEventType}.`
+          `Uploading ${data.external_sync_units.length} external sync units via repo before emitting event.`
         );
 
         try {
-          await this.uploadAllRepos();
+          const externalSyncUnitsRepo = new Repo({
+            event: this.event,
+            itemType: AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_SYNC_UNITS,
+            onUpload: () => {
+              // No-op: artifacts are collected from repo.uploadedArtifacts after upload
+            },
+            options: this.options,
+          });
+
+          await externalSyncUnitsRepo.push(data.external_sync_units);
+          await externalSyncUnitsRepo.upload();
+          this.artifacts.push(...externalSyncUnitsRepo.uploadedArtifacts);
+
+          // Remove inline external_sync_units from data to avoid SQS size issues
+          delete data.external_sync_units;
         } catch (error) {
-          console.error('Error while uploading repos', error);
+          console.error('Error while uploading external sync units', error);
           parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
           this.hasWorkerEmitted = true;
           return;
         }
+      }
+
+      // Upload all repos before emitting the event
+      console.log(
+        `Uploading all repos before emitting event with event type: ${newEventType}.`
+      );
+
+      try {
+        await this.uploadAllRepos();
+      } catch (error) {
+        console.error('Error while uploading repos', error);
+        parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+        this.hasWorkerEmitted = true;
+        return;
       }
 
       // If the extraction is done, we want to save the timestamp of the last successful sync

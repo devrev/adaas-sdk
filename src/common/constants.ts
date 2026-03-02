@@ -70,6 +70,7 @@ export const AIRDROP_DEFAULT_ITEM_TYPES = {
   EXTERNAL_DOMAIN_METADATA: 'external_domain_metadata',
   ATTACHMENTS: 'attachments',
   SSOR_ATTACHMENT: 'ssor_attachment',
+  EXTERNAL_SYNC_UNITS: 'external_sync_units',
 };
 
 export const LIBRARY_VERSION = getLibraryVersion();
