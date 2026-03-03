@@ -4,6 +4,7 @@ import { AttachmentsStreamingPool } from '../../attachments-streaming/attachment
 import {
   AIRDROP_DEFAULT_ITEM_TYPES,
   ALLOWED_EXTRACTION_EVENT_TYPES,
+  EVENT_SIZE_THRESHOLD_BYTES,
   STATELESS_EVENT_TYPES,
 } from '../../common/constants';
 import { emit } from '../../common/control-protocol';
@@ -55,6 +56,7 @@ import {
 import { Uploader } from '../../uploader/uploader';
 import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
 import { translateOutgoingEventType } from '../../common/event-type-translation';
+import { truncateMessage } from '../../common/helpers';
 
 export function createWorkerAdapter<ConnectorState>({
   event,
@@ -87,11 +89,12 @@ export class WorkerAdapter<ConnectorState> {
   readonly event: AirdropEvent;
   readonly options?: WorkerAdapterOptions;
   isTimeout: boolean;
+  hasWorkerEmitted: boolean;
 
   private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];
-  private hasWorkerEmitted: boolean;
   private repos: Repo[] = [];
+  private currentEventDataLength: number = 0;
 
   // Loader
   private loaderReports: LoaderReport[];
@@ -160,6 +163,19 @@ export class WorkerAdapter<ConnectorState> {
             this.state.toDevRev?.attachmentsMetadata.artifactIds.push(
               artifact.id
             );
+          }
+
+          // Calculate size of the entire artifact object that goes in the SQS message
+          this.currentEventDataLength += Buffer.byteLength(
+            JSON.stringify(artifact),
+            'utf8'
+          );
+
+          if (
+            this.currentEventDataLength > EVENT_SIZE_THRESHOLD_BYTES &&
+            !this.isTimeout
+          ) {
+            this.isTimeout = true;
           }
         },
         options: this.options,
@@ -259,6 +275,11 @@ export class WorkerAdapter<ConnectorState> {
       }
 
       try {
+        // Always prune error messages to make them shorter before emit
+        if (data?.error?.message) {
+          data.error.message = truncateMessage(data.error.message);
+        }
+
         await emit({
           eventType: newEventType,
           event: this.event,
@@ -298,10 +319,6 @@ export class WorkerAdapter<ConnectorState> {
         throw error;
       }
     }
-  }
-
-  handleTimeout() {
-    this.isTimeout = true;
   }
 
   async loadItemTypes({
@@ -768,17 +785,15 @@ export class WorkerAdapter<ConnectorState> {
           );
 
         if (artifactUrlError) {
-          console.warn(
-            `Error while preparing artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
-              serializeError(artifactUrlError)
-          );
           this.destroyHttpStream(httpStream);
-          return;
-        }
-
-        if (this.isTimeout) {
-          this.destroyHttpStream(httpStream);
-          return;
+          return {
+            error: {
+              message: `Error while preparing artifact for attachment ID ${
+                attachment.id
+              }. Skipping attachment. ${serializeError(artifactUrlError)}`,
+              fileSize: fileSize,
+            },
+          };
         }
 
         // Stream attachment
@@ -786,12 +801,15 @@ export class WorkerAdapter<ConnectorState> {
           await this.uploader.streamArtifact(artifactUrlResponse!, httpStream);
 
         if (uploadedArtifactError) {
-          console.warn(
-            `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
-              serializeError(uploadedArtifactError)
-          );
           this.destroyHttpStream(httpStream);
-          return;
+          return {
+            error: {
+              message:
+                `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
+                serializeError(uploadedArtifactError),
+              fileSize: fileSize,
+            },
+          };
         }
 
         // Confirm attachment upload
@@ -800,13 +818,14 @@ export class WorkerAdapter<ConnectorState> {
             artifactUrlResponse!.artifact_id
           );
         if (confirmArtifactUploadError) {
-          console.warn(
-            'Error while confirming upload for attachment ID ' +
-              attachment.id +
-              '.',
-            confirmArtifactUploadError
-          );
-          return;
+          return {
+            error: {
+              message:
+                `Error while confirming upload for attachment ID ${attachment.id}. ` +
+                serializeError(confirmArtifactUploadError),
+              fileSize: fileSize,
+            },
+          };
         }
 
         const ssorAttachment: SsorAttachment = {
@@ -834,8 +853,13 @@ export class WorkerAdapter<ConnectorState> {
         }
 
         await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
+        return;
       }
-      return;
+      return {
+        error: {
+          message: `Error while opening attachment stream. Skipping attachment.`,
+        },
+      };
     });
   }
 

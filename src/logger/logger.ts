@@ -7,7 +7,7 @@ import { isMainThread, parentPort } from 'node:worker_threads';
 import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 
-import { INSPECT_OPTIONS, MAX_LOG_STRING_LENGTH } from './logger.constants';
+import { INSPECT_OPTIONS } from './logger.constants';
 import { getSdkLogContextValue } from './logger.context';
 import {
   AxiosErrorResponse,
@@ -17,6 +17,7 @@ import {
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
+import { truncateMessage } from '../common/helpers';
 
 /**
  * Custom logger that extends Node.js Console with context-aware logging.
@@ -49,22 +50,6 @@ export class Logger extends Console {
       return value;
     }
     return inspect(value, INSPECT_OPTIONS);
-  }
-
-  /**
-   * Truncates a message if it exceeds the maximum allowed length.
-   * Adds a suffix indicating how many characters were omitted.
-   *
-   * @param message - The message to truncate
-   * @returns Truncated message or original if within limits
-   */
-  private truncateMessage(message: string): string {
-    if (message.length > MAX_LOG_STRING_LENGTH) {
-      return `${message.substring(0, MAX_LOG_STRING_LENGTH)}... ${
-        message.length - MAX_LOG_STRING_LENGTH
-      } more characters`;
-    }
-    return message;
   }
 
   /**
@@ -106,7 +91,7 @@ export class Logger extends Console {
    */
   private stringifyAndLog(args: unknown[], level: LogLevel): void {
     let stringifiedArgs = args.map((arg) => this.valueToString(arg)).join(' ');
-    stringifiedArgs = this.truncateMessage(stringifiedArgs);
+    stringifiedArgs = truncateMessage(stringifiedArgs);
 
     const isSdkLog = getSdkLogContextValue(true);
 
@@ -176,11 +161,42 @@ export function getPrintableState(state: Record<string, any>): PrintableState {
  * @param error - Error to serialize
  * @returns Serialized error or original if not an Axios error
  */
-export function serializeError(error: unknown): unknown {
+export function serializeError(error: unknown): string {
   if (isAxiosError(error)) {
-    return serializeAxiosError(error);
+    return JSON.stringify(serializeAxiosError(error));
   }
-  return error;
+  if (error instanceof Error) {
+    // Include error name (e.g. TypeError, RangeError) alongside message
+    // for easier debugging
+    return error.name !== 'Error'
+      ? `${error.name}: ${error.message}`
+      : error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  // JSON.stringify returns '{}' for objects with only non-enumerable properties
+  // Fall back to extracting own property names or String() coercion.
+  const stringified = JSON.stringify(error);
+  if (!stringified || stringified === '{}') {
+    if (error !== null && typeof error === 'object') {
+      const props: Record<string, unknown> = {};
+      for (const key of Object.getOwnPropertyNames(error)) {
+        props[key] = (error as Record<string, unknown>)[key];
+      }
+      const extracted = JSON.stringify(props);
+      if (extracted && extracted !== '{}') {
+        return extracted;
+      }
+    }
+    try {
+      return String(error);
+    } catch {
+      return '[Unserializable error]';
+    }
+  }
+  return stringified;
 }
 
 /**
