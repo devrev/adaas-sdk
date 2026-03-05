@@ -1,5 +1,5 @@
 import { TimeValueType } from '../types/extraction';
-import { SdkState } from '../state/state.interfaces';
+import { SdkState, UNBOUNDED_DATE_TIME_VALUE } from '../state/state.interfaces';
 import {
   parseDuration,
   applyDuration,
@@ -135,12 +135,12 @@ describe('time-value-resolver', () => {
     });
 
     describe('UNBOUNDED type', () => {
-      it('should return undefined', () => {
+      it('should return UNBOUNDED_DATE_TIME_VALUE', () => {
         const result = resolveTimeValue(
           { type: TimeValueType.UNBOUNDED },
           baseState
         );
-        expect(result).toBeUndefined();
+        expect(result).toBe(UNBOUNDED_DATE_TIME_VALUE);
       });
     });
 
@@ -342,7 +342,7 @@ describe('time-value-resolver', () => {
           scenarioState
         );
 
-        expect(start).toBeUndefined();
+        expect(start).toBe(UNBOUNDED_DATE_TIME_VALUE);
         expect(end).toBe(FIXED_NOW);
       });
 

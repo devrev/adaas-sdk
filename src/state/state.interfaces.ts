@@ -3,6 +3,15 @@ import { AirdropEvent } from '../types/extraction';
 import { FileToLoad } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
+/**
+ * Sentinel value representing an unbounded (no limit) extraction timestamp.
+ * Used as the resolved value for TimeValueType.UNBOUNDED, stored as workers_oldest
+ * when the initial import has no lower time bound. The Unix epoch ensures that
+ * no real extraction timestamp can be earlier, preventing accidental overwrites
+ * of the boundary by subsequent syncs (e.g. reconciliation with absolute dates).
+ */
+export const UNBOUNDED_DATE_TIME_VALUE = '1970-01-01T00:00:00.000Z';
+
 export interface SdkState {
   lastSyncStarted?: string;
   lastSuccessfulSyncStarted?: string;

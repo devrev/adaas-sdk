@@ -1,5 +1,5 @@
 import { TimeValue, TimeValueType } from '../types/extraction';
-import { SdkState } from '../state/state.interfaces';
+import { SdkState, UNBOUNDED_DATE_TIME_VALUE } from '../state/state.interfaces';
 
 /**
  * Parses a shorthand duration string (e.g. '7d', '2m', '1y') into its numeric value and unit.
@@ -65,7 +65,7 @@ export function applyDuration(
  * Resolution rules:
  * - ABSOLUTE: Returns the value directly (must be an ISO 8601 timestamp)
  * - NOW: Returns the current time as ISO 8601
- * - UNBOUNDED: Returns undefined (no bound)
+ * - UNBOUNDED: Returns UNBOUNDED_DATE_TIME_VALUE ('1970-01-01T00:00:00.000Z')
  * - WORKERS_OLDEST: Returns workers_oldest from state, or current time if not set
  * - WORKERS_NEWEST: Returns workers_newest from state, or current time if not set
  * - WORKERS_OLDEST_MINUS_WINDOW: Subtracts duration from workers_oldest (or current time if not set)
@@ -73,13 +73,13 @@ export function applyDuration(
  *
  * @param timeValue - The TimeValue to resolve
  * @param state - The current SDK state containing workers_oldest and workers_newest
- * @returns Resolved ISO 8601 timestamp string, or undefined for UNBOUNDED
+ * @returns Resolved ISO 8601 timestamp string
  * @throws Error if required TimeValue.value is missing for ABSOLUTE or *_WINDOW types
  */
 export function resolveTimeValue(
   timeValue: TimeValue,
   state: SdkState
-): string | undefined {
+): string {
   switch (timeValue.type) {
     case TimeValueType.ABSOLUTE: {
       if (!timeValue.value) {
@@ -95,7 +95,7 @@ export function resolveTimeValue(
     }
 
     case TimeValueType.UNBOUNDED: {
-      return undefined;
+      return UNBOUNDED_DATE_TIME_VALUE;
     }
 
     case TimeValueType.WORKERS_OLDEST: {
