@@ -312,5 +312,95 @@ describe('time-value-resolver', () => {
         ).toThrow('Unknown TimeValueType');
       });
     });
+
+    describe('Real-world scenarios', () => {
+      const FIXED_NOW = '2026-02-26T15:30:00.000Z';
+
+      const scenarioState: SdkState = {
+        lastSyncStarted: '',
+        lastSuccessfulSyncStarted: '',
+        workers_oldest: '2024-01-01T00:00:00.000Z',
+        workers_newest: '2024-06-01T00:00:00.000Z',
+      };
+
+      beforeEach(() => {
+        jest.useFakeTimers();
+        jest.setSystemTime(new Date(FIXED_NOW));
+      });
+
+      afterEach(() => {
+        jest.useRealTimers();
+      });
+
+      it('Initial Import: UNBOUNDED start, NOW end', () => {
+        const start = resolveTimeValue(
+          { type: TimeValueType.UNBOUNDED },
+          scenarioState
+        );
+        const end = resolveTimeValue(
+          { type: TimeValueType.NOW },
+          scenarioState
+        );
+
+        expect(start).toBeUndefined();
+        expect(end).toBe(FIXED_NOW);
+      });
+
+      it('Normal Import: WORKERS_NEWEST start, NOW end', () => {
+        const start = resolveTimeValue(
+          { type: TimeValueType.WORKERS_NEWEST },
+          scenarioState
+        );
+        const end = resolveTimeValue(
+          { type: TimeValueType.NOW },
+          scenarioState
+        );
+
+        expect(start).toBe('2024-06-01T00:00:00.000Z');
+        expect(end).toBe(FIXED_NOW);
+      });
+
+      it('POC Import: ABSOLUTE start, NOW end', () => {
+        const start = resolveTimeValue(
+          { type: TimeValueType.ABSOLUTE, value: '2024-01-01T00:00:00Z' },
+          scenarioState
+        );
+        const end = resolveTimeValue(
+          { type: TimeValueType.NOW },
+          scenarioState
+        );
+
+        expect(start).toBe('2024-01-01T00:00:00Z');
+        expect(end).toBe(FIXED_NOW);
+      });
+
+      it('Computer Import: WORKERS_OLDEST_MINUS_WINDOW start, WORKERS_OLDEST end', () => {
+        const start = resolveTimeValue(
+          { type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW, value: '7d' },
+          scenarioState
+        );
+        const end = resolveTimeValue(
+          { type: TimeValueType.WORKERS_OLDEST },
+          scenarioState
+        );
+
+        expect(start).toBe('2023-12-25T00:00:00.000Z');
+        expect(end).toBe('2024-01-01T00:00:00.000Z');
+      });
+
+      it('Reconciliation: ABSOLUTE start, ABSOLUTE end', () => {
+        const start = resolveTimeValue(
+          { type: TimeValueType.ABSOLUTE, value: '2026-01-01T00:00:00Z' },
+          scenarioState
+        );
+        const end = resolveTimeValue(
+          { type: TimeValueType.ABSOLUTE, value: '2026-03-31T23:59:59Z' },
+          scenarioState
+        );
+
+        expect(start).toBe('2026-01-01T00:00:00Z');
+        expect(end).toBe('2026-03-31T23:59:59Z');
+      });
+    });
   });
 });

@@ -77,15 +77,8 @@ export async function createAdapterState<ConnectorState>({
       console.log(`Setting lastSyncStarted to ${as.state.lastSyncStarted}.`);
     }
 
-    // Store extraction_time_direction in state and resolve extraction timestamps
+    // Resolve extraction timestamps from TimeValue objects
     const eventContext = event.payload.event_context;
-    if (eventContext.extraction_time_direction) {
-      as.state.extraction_time_direction =
-        eventContext.extraction_time_direction;
-      console.log(
-        `Storing extraction_time_direction: ${eventContext.extraction_time_direction}.`
-      );
-    }
 
     const timeFields = [
       { source: 'extraction_start_time', target: 'extraction_start' },

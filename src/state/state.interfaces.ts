@@ -1,5 +1,5 @@
 import { InitialDomainMapping } from '../types/common';
-import { AirdropEvent, ExtractionTimeDirection } from '../types/extraction';
+import { AirdropEvent } from '../types/extraction';
 import { FileToLoad } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
@@ -10,8 +10,6 @@ export interface SdkState {
   workers_oldest?: string;
   /** The newest point of extraction (ISO 8601 timestamp). */
   workers_newest?: string;
-  /** The direction of extraction stored from the event context. */
-  extraction_time_direction?: ExtractionTimeDirection;
   toDevRev?: ToDevRev;
   fromDevRev?: FromDevRev;
   snapInVersionId?: string;
@@ -55,7 +53,6 @@ export const extractionSdkState = {
   lastSuccessfulSyncStarted: '',
   workers_oldest: '',
   workers_newest: '',
-  extraction_time_direction: undefined,
   snapInVersionId: '',
   toDevRev: {
     attachmentsMetadata: {
