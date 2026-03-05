@@ -1,5 +1,6 @@
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
 import { State } from '../../state/state';
+import { UNBOUNDED_DATE_TIME_VALUE } from '../../state/state.interfaces';
 import { createEvent } from '../../tests/test-helpers';
 import { AdapterState, EventType, ExtractorEventType } from '../../types';
 import { WorkerAdapter } from './worker-adapter';
@@ -571,6 +572,321 @@ describe(WorkerAdapter.name, () => {
         processed_files: [],
       });
       expect(counter.counter).toBe(1);
+    });
+  });
+
+  describe('workers_oldest / workers_newest boundary updates', () => {
+    let mockPostMessage: jest.Mock;
+
+    beforeEach(() => {
+      const workerThreads = require('node:worker_threads');
+      mockPostMessage = jest.fn();
+      if (workerThreads.parentPort) {
+        jest
+          .spyOn(workerThreads.parentPort, 'postMessage')
+          .mockImplementation(mockPostMessage);
+      } else {
+        workerThreads.parentPort = { postMessage: mockPostMessage };
+      }
+
+      adapter['adapterState'].postState = jest
+        .fn()
+        .mockResolvedValue(undefined);
+      adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    /**
+     * Helper: sets extraction_start and extraction_end on the event context,
+     * resets the emit guard so the adapter can emit again, then emits
+     * AttachmentExtractionDone.
+     */
+    async function emitDone(
+      adapterInstance: WorkerAdapter<{ attachments: { completed: boolean } }>,
+      extractionStart: string | undefined,
+      extractionEnd: string | undefined
+    ) {
+      adapterInstance.event.payload.event_context.extraction_start =
+        extractionStart;
+      adapterInstance.event.payload.event_context.extraction_end =
+        extractionEnd;
+      // Reset the emit guard so we can emit multiple times in a single test
+      adapterInstance['hasWorkerEmitted'] = false;
+
+      await adapterInstance.emit(ExtractorEventType.AttachmentExtractionDone, {
+        reports: [],
+        processed_files: [],
+      });
+    }
+
+    describe('initial import with UNBOUNDED start', () => {
+      it('should set workers_oldest to UNBOUNDED_DATE_TIME_VALUE and workers_newest to extraction end', async () => {
+        await emitDone(
+          adapter,
+          UNBOUNDED_DATE_TIME_VALUE,
+          '2025-06-01T00:00:00.000Z'
+        );
+
+        expect(adapter.state.workers_oldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
+        expect(adapter.state.workers_newest).toBe('2025-06-01T00:00:00.000Z');
+      });
+    });
+
+    describe('reconciliation after UNBOUNDED initial import', () => {
+      it('should NOT overwrite workers_oldest when reconciliation start is later than sentinel', async () => {
+        // Initial import: UNBOUNDED start, NOW end
+        await emitDone(
+          adapter,
+          UNBOUNDED_DATE_TIME_VALUE,
+          '2025-06-01T00:00:00.000Z'
+        );
+
+        // Reconciliation: absolute dates within the range
+        await emitDone(
+          adapter,
+          '2025-01-01T00:00:00.000Z',
+          '2025-03-01T00:00:00.000Z'
+        );
+
+        expect(adapter.state.workers_oldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
+        expect(adapter.state.workers_newest).toBe('2025-06-01T00:00:00.000Z');
+      });
+
+      it('should NOT overwrite workers_oldest even when reconciliation start is very early', async () => {
+        // Initial import: UNBOUNDED start, NOW end
+        await emitDone(
+          adapter,
+          UNBOUNDED_DATE_TIME_VALUE,
+          '2025-06-01T00:00:00.000Z'
+        );
+
+        // Reconciliation with a very old start date — still later than epoch
+        await emitDone(
+          adapter,
+          '1980-01-01T00:00:00.000Z',
+          '1990-01-01T00:00:00.000Z'
+        );
+
+        expect(adapter.state.workers_oldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
+        expect(adapter.state.workers_newest).toBe('2025-06-01T00:00:00.000Z');
+      });
+    });
+
+    describe('forward sync after UNBOUNDED initial import', () => {
+      it('should expand workers_newest forward while preserving workers_oldest', async () => {
+        // Initial import
+        await emitDone(
+          adapter,
+          UNBOUNDED_DATE_TIME_VALUE,
+          '2025-06-01T00:00:00.000Z'
+        );
+
+        // Forward sync: from workers_newest to now
+        await emitDone(
+          adapter,
+          '2025-06-01T00:00:00.000Z',
+          '2025-07-01T00:00:00.000Z'
+        );
+
+        expect(adapter.state.workers_oldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
+        expect(adapter.state.workers_newest).toBe('2025-07-01T00:00:00.000Z');
+      });
+    });
+
+    describe('reconciliation with end beyond current newest', () => {
+      it('should expand workers_newest when reconciliation end is later', async () => {
+        // Initial import
+        await emitDone(
+          adapter,
+          UNBOUNDED_DATE_TIME_VALUE,
+          '2025-06-01T00:00:00.000Z'
+        );
+
+        // Reconciliation with end beyond current newest
+        await emitDone(
+          adapter,
+          '2024-01-01T00:00:00.000Z',
+          '2025-08-01T00:00:00.000Z'
+        );
+
+        expect(adapter.state.workers_oldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
+        expect(adapter.state.workers_newest).toBe('2025-08-01T00:00:00.000Z');
+      });
+    });
+
+    describe('first sync with absolute dates (no UNBOUNDED)', () => {
+      it('should set both boundaries from the extraction range', async () => {
+        await emitDone(
+          adapter,
+          '2025-01-01T00:00:00.000Z',
+          '2025-03-01T00:00:00.000Z'
+        );
+
+        expect(adapter.state.workers_oldest).toBe('2025-01-01T00:00:00.000Z');
+        expect(adapter.state.workers_newest).toBe('2025-03-01T00:00:00.000Z');
+      });
+    });
+
+    describe('reconciliation after absolute initial sync', () => {
+      it('should expand workers_oldest backward when reconciliation start is earlier', async () => {
+        // Initial sync with absolute dates
+        await emitDone(
+          adapter,
+          '2025-01-01T00:00:00.000Z',
+          '2025-03-01T00:00:00.000Z'
+        );
+
+        // Reconciliation with earlier start
+        await emitDone(
+          adapter,
+          '2024-06-01T00:00:00.000Z',
+          '2025-02-01T00:00:00.000Z'
+        );
+
+        expect(adapter.state.workers_oldest).toBe('2024-06-01T00:00:00.000Z');
+        expect(adapter.state.workers_newest).toBe('2025-03-01T00:00:00.000Z');
+      });
+
+      it('should NOT change boundaries when reconciliation is within existing range', async () => {
+        // Initial sync
+        await emitDone(
+          adapter,
+          '2025-01-01T00:00:00.000Z',
+          '2025-03-01T00:00:00.000Z'
+        );
+
+        // Reconciliation entirely within existing range
+        await emitDone(
+          adapter,
+          '2025-01-15T00:00:00.000Z',
+          '2025-02-15T00:00:00.000Z'
+        );
+
+        expect(adapter.state.workers_oldest).toBe('2025-01-01T00:00:00.000Z');
+        expect(adapter.state.workers_newest).toBe('2025-03-01T00:00:00.000Z');
+      });
+
+      it('should expand both boundaries when reconciliation exceeds both', async () => {
+        // Initial sync
+        await emitDone(
+          adapter,
+          '2025-01-01T00:00:00.000Z',
+          '2025-03-01T00:00:00.000Z'
+        );
+
+        // Reconciliation exceeding both ends
+        await emitDone(
+          adapter,
+          '2024-06-01T00:00:00.000Z',
+          '2025-09-01T00:00:00.000Z'
+        );
+
+        expect(adapter.state.workers_oldest).toBe('2024-06-01T00:00:00.000Z');
+        expect(adapter.state.workers_newest).toBe('2025-09-01T00:00:00.000Z');
+      });
+    });
+
+    describe('multiple forward syncs', () => {
+      it('should progressively expand workers_newest while preserving workers_oldest', async () => {
+        // Initial import
+        await emitDone(
+          adapter,
+          UNBOUNDED_DATE_TIME_VALUE,
+          '2025-06-01T00:00:00.000Z'
+        );
+
+        // First forward sync
+        await emitDone(
+          adapter,
+          '2025-06-01T00:00:00.000Z',
+          '2025-07-01T00:00:00.000Z'
+        );
+        expect(adapter.state.workers_newest).toBe('2025-07-01T00:00:00.000Z');
+
+        // Second forward sync
+        await emitDone(
+          adapter,
+          '2025-07-01T00:00:00.000Z',
+          '2025-08-01T00:00:00.000Z'
+        );
+        expect(adapter.state.workers_newest).toBe('2025-08-01T00:00:00.000Z');
+
+        // workers_oldest should remain the sentinel throughout
+        expect(adapter.state.workers_oldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
+      });
+    });
+
+    describe('non-AttachmentExtractionDone events should NOT update boundaries', () => {
+      it('should not update boundaries on DataExtractionDone', async () => {
+        adapter.state.workers_oldest = '2025-01-01T00:00:00.000Z';
+        adapter.state.workers_newest = '2025-03-01T00:00:00.000Z';
+        adapter.event.payload.event_context.extraction_start =
+          '2024-01-01T00:00:00.000Z';
+        adapter.event.payload.event_context.extraction_end =
+          '2025-12-01T00:00:00.000Z';
+
+        await adapter.emit(ExtractorEventType.DataExtractionDone, {
+          reports: [],
+          processed_files: [],
+        });
+
+        expect(adapter.state.workers_oldest).toBe('2025-01-01T00:00:00.000Z');
+        expect(adapter.state.workers_newest).toBe('2025-03-01T00:00:00.000Z');
+      });
+
+      it('should not update boundaries on DataExtractionProgress', async () => {
+        adapter.state.workers_oldest = '2025-01-01T00:00:00.000Z';
+        adapter.state.workers_newest = '2025-03-01T00:00:00.000Z';
+        adapter.event.payload.event_context.extraction_start =
+          '2024-01-01T00:00:00.000Z';
+        adapter.event.payload.event_context.extraction_end =
+          '2025-12-01T00:00:00.000Z';
+
+        await adapter.emit(ExtractorEventType.DataExtractionProgress, {
+          reports: [],
+          processed_files: [],
+        });
+
+        expect(adapter.state.workers_oldest).toBe('2025-01-01T00:00:00.000Z');
+        expect(adapter.state.workers_newest).toBe('2025-03-01T00:00:00.000Z');
+      });
+
+      it('should not update boundaries on MetadataExtractionError', async () => {
+        adapter.state.workers_oldest = '2025-01-01T00:00:00.000Z';
+        adapter.state.workers_newest = '2025-03-01T00:00:00.000Z';
+        adapter.event.payload.event_context.extraction_start =
+          '2024-01-01T00:00:00.000Z';
+        adapter.event.payload.event_context.extraction_end =
+          '2025-12-01T00:00:00.000Z';
+
+        await adapter.emit(ExtractorEventType.MetadataExtractionError, {
+          reports: [],
+          processed_files: [],
+        });
+
+        expect(adapter.state.workers_oldest).toBe('2025-01-01T00:00:00.000Z');
+        expect(adapter.state.workers_newest).toBe('2025-03-01T00:00:00.000Z');
+      });
+
+      it('should not update boundaries on AttachmentExtractionError', async () => {
+        adapter.state.workers_oldest = '2025-01-01T00:00:00.000Z';
+        adapter.state.workers_newest = '2025-03-01T00:00:00.000Z';
+        adapter.event.payload.event_context.extraction_start =
+          '2024-01-01T00:00:00.000Z';
+        adapter.event.payload.event_context.extraction_end =
+          '2025-12-01T00:00:00.000Z';
+
+        await adapter.emit(ExtractorEventType.AttachmentExtractionError, {
+          reports: [],
+          processed_files: [],
+        });
+
+        expect(adapter.state.workers_oldest).toBe('2025-01-01T00:00:00.000Z');
+        expect(adapter.state.workers_newest).toBe('2025-03-01T00:00:00.000Z');
+      });
     });
   });
 });
