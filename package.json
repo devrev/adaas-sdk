@@ -1,6 +1,6 @@
 {
   "name": "@devrev/ts-adaas",
-  "version": "1.15.3-beta.5",
+  "version": "1.16.0",
   "description": "Typescript library containing the ADaaS(AirDrop as a Service) control protocol.",
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -28,7 +28,7 @@
   "author": "devrev",
   "license": "ISC",
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.52.11",
+    "@microsoft/api-extractor": "^7.57.6",
     "@microsoft/api-extractor-model": "^7.30.7",
     "@types/express": "^5.0.3",
     "@types/jest": "^29.5.14",
