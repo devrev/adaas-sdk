@@ -8,92 +8,145 @@ import {
 
 describe('time-value-resolver', () => {
   describe('parseDuration', () => {
-    it('should parse days', () => {
-      expect(parseDuration('7d')).toEqual({ value: 7, unit: 'd' });
-      expect(parseDuration('1d')).toEqual({ value: 1, unit: 'd' });
-      expect(parseDuration('30d')).toEqual({ value: 30, unit: 'd' });
-      expect(parseDuration('365d')).toEqual({ value: 365, unit: 'd' });
+    it('should parse nanoseconds', () => {
+      expect(parseDuration('100ns')).toEqual({ value: 100, unit: 'ns' });
+      expect(parseDuration('1ns')).toEqual({ value: 1, unit: 'ns' });
     });
 
-    it('should parse months', () => {
-      expect(parseDuration('2m')).toEqual({ value: 2, unit: 'm' });
+    it('should parse microseconds', () => {
+      expect(parseDuration('500us')).toEqual({ value: 500, unit: 'us' });
+      expect(parseDuration('500µs')).toEqual({ value: 500, unit: 'µs' });
+    });
+
+    it('should parse milliseconds', () => {
+      expect(parseDuration('250ms')).toEqual({ value: 250, unit: 'ms' });
+      expect(parseDuration('1ms')).toEqual({ value: 1, unit: 'ms' });
+    });
+
+    it('should parse seconds', () => {
+      expect(parseDuration('30s')).toEqual({ value: 30, unit: 's' });
+      expect(parseDuration('1s')).toEqual({ value: 1, unit: 's' });
+      expect(parseDuration('3600s')).toEqual({ value: 3600, unit: 's' });
+    });
+
+    it('should parse minutes', () => {
+      expect(parseDuration('5m')).toEqual({ value: 5, unit: 'm' });
       expect(parseDuration('1m')).toEqual({ value: 1, unit: 'm' });
-      expect(parseDuration('12m')).toEqual({ value: 12, unit: 'm' });
+      expect(parseDuration('60m')).toEqual({ value: 60, unit: 'm' });
     });
 
-    it('should parse years', () => {
-      expect(parseDuration('1y')).toEqual({ value: 1, unit: 'y' });
-      expect(parseDuration('5y')).toEqual({ value: 5, unit: 'y' });
+    it('should parse hours', () => {
+      expect(parseDuration('2h')).toEqual({ value: 2, unit: 'h' });
+      expect(parseDuration('24h')).toEqual({ value: 24, unit: 'h' });
+      expect(parseDuration('168h')).toEqual({ value: 168, unit: 'h' });
+    });
+
+    it('should parse fractional values', () => {
+      expect(parseDuration('1.5h')).toEqual({ value: 1.5, unit: 'h' });
+      expect(parseDuration('0.5s')).toEqual({ value: 0.5, unit: 's' });
+      expect(parseDuration('2.5m')).toEqual({ value: 2.5, unit: 'm' });
     });
 
     it('should throw on invalid format', () => {
       expect(() => parseDuration('')).toThrow('Invalid duration format');
       expect(() => parseDuration('7')).toThrow('Invalid duration format');
-      expect(() => parseDuration('d')).toThrow('Invalid duration format');
-      expect(() => parseDuration('7h')).toThrow('Invalid duration format');
-      expect(() => parseDuration('7.5d')).toThrow('Invalid duration format');
+      expect(() => parseDuration('s')).toThrow('Invalid duration format');
+      expect(() => parseDuration('7d')).toThrow('Invalid duration format');
+      expect(() => parseDuration('7y')).toThrow('Invalid duration format');
       expect(() => parseDuration('abc')).toThrow('Invalid duration format');
     });
   });
 
   describe('applyDuration', () => {
     describe('subtract', () => {
-      it('should subtract days', () => {
+      it('should subtract seconds', () => {
         const result = applyDuration(
-          '2024-01-15T00:00:00.000Z',
-          '7d',
-          'subtract'
-        );
-        expect(result).toBe('2024-01-08T00:00:00.000Z');
-      });
-
-      it('should subtract months', () => {
-        const result = applyDuration(
-          '2024-03-15T00:00:00.000Z',
-          '2m',
+          '2024-01-15T00:00:30.000Z',
+          '30s',
           'subtract'
         );
         expect(result).toBe('2024-01-15T00:00:00.000Z');
       });
 
-      it('should subtract years', () => {
+      it('should subtract minutes', () => {
         const result = applyDuration(
-          '2024-06-15T00:00:00.000Z',
-          '1y',
+          '2024-01-15T00:05:00.000Z',
+          '5m',
           'subtract'
         );
-        expect(result).toBe('2023-06-15T00:00:00.000Z');
+        expect(result).toBe('2024-01-15T00:00:00.000Z');
       });
 
-      it('should handle crossing year boundary', () => {
+      it('should subtract hours', () => {
         const result = applyDuration(
-          '2024-01-15T00:00:00.000Z',
-          '2m',
+          '2024-01-15T02:00:00.000Z',
+          '2h',
           'subtract'
         );
-        expect(result).toBe('2023-11-15T00:00:00.000Z');
+        expect(result).toBe('2024-01-15T00:00:00.000Z');
+      });
+
+      it('should subtract milliseconds', () => {
+        const result = applyDuration(
+          '2024-01-15T00:00:00.500Z',
+          '500ms',
+          'subtract'
+        );
+        expect(result).toBe('2024-01-15T00:00:00.000Z');
+      });
+
+      it('should handle crossing day boundary', () => {
+        const result = applyDuration(
+          '2024-01-15T01:00:00.000Z',
+          '2h',
+          'subtract'
+        );
+        expect(result).toBe('2024-01-14T23:00:00.000Z');
+      });
+
+      it('should subtract 168 hours (7 days equivalent)', () => {
+        const result = applyDuration(
+          '2024-01-15T00:00:00.000Z',
+          '168h',
+          'subtract'
+        );
+        expect(result).toBe('2024-01-08T00:00:00.000Z');
       });
     });
 
     describe('add', () => {
-      it('should add days', () => {
-        const result = applyDuration('2024-01-15T00:00:00.000Z', '7d', 'add');
+      it('should add seconds', () => {
+        const result = applyDuration('2024-01-15T00:00:00.000Z', '30s', 'add');
+        expect(result).toBe('2024-01-15T00:00:30.000Z');
+      });
+
+      it('should add minutes', () => {
+        const result = applyDuration('2024-01-15T00:00:00.000Z', '5m', 'add');
+        expect(result).toBe('2024-01-15T00:05:00.000Z');
+      });
+
+      it('should add hours', () => {
+        const result = applyDuration('2024-01-15T00:00:00.000Z', '2h', 'add');
+        expect(result).toBe('2024-01-15T02:00:00.000Z');
+      });
+
+      it('should add milliseconds', () => {
+        const result = applyDuration(
+          '2024-01-15T00:00:00.000Z',
+          '500ms',
+          'add'
+        );
+        expect(result).toBe('2024-01-15T00:00:00.500Z');
+      });
+
+      it('should handle crossing day boundary', () => {
+        const result = applyDuration('2024-01-15T23:00:00.000Z', '2h', 'add');
+        expect(result).toBe('2024-01-16T01:00:00.000Z');
+      });
+
+      it('should add 168 hours (7 days equivalent)', () => {
+        const result = applyDuration('2024-01-15T00:00:00.000Z', '168h', 'add');
         expect(result).toBe('2024-01-22T00:00:00.000Z');
-      });
-
-      it('should add months', () => {
-        const result = applyDuration('2024-01-15T00:00:00.000Z', '2m', 'add');
-        expect(result).toBe('2024-03-15T00:00:00.000Z');
-      });
-
-      it('should add years', () => {
-        const result = applyDuration('2024-06-15T00:00:00.000Z', '1y', 'add');
-        expect(result).toBe('2025-06-15T00:00:00.000Z');
-      });
-
-      it('should handle crossing year boundary', () => {
-        const result = applyDuration('2024-11-15T00:00:00.000Z', '2m', 'add');
-        expect(result).toBe('2025-01-15T00:00:00.000Z');
       });
     });
   });
@@ -195,22 +248,22 @@ describe('time-value-resolver', () => {
         const result = resolveTimeValue(
           {
             type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
-            value: '7d',
+            value: '168h',
           },
           baseState
         );
         expect(result).toBe('2023-12-25T00:00:00.000Z');
       });
 
-      it('should subtract months from workers_oldest', () => {
+      it('should subtract minutes from workers_oldest', () => {
         const result = resolveTimeValue(
           {
             type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
-            value: '2m',
+            value: '30m',
           },
           baseState
         );
-        expect(result).toBe('2023-11-01T00:00:00.000Z');
+        expect(result).toBe('2023-12-31T23:30:00.000Z');
       });
 
       it('should fall back to current time if workers_oldest is not set', () => {
@@ -218,18 +271,18 @@ describe('time-value-resolver', () => {
         const result = resolveTimeValue(
           {
             type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
-            value: '7d',
+            value: '2h',
           },
           { workers_oldest: '' }
         );
         const after = new Date();
 
-        // Result should be roughly now minus 7 days
+        // Result should be roughly now minus 2 hours
         const resultDate = new Date(result!);
         const expectedMin = new Date(before);
-        expectedMin.setUTCDate(expectedMin.getUTCDate() - 7);
+        expectedMin.setUTCHours(expectedMin.getUTCHours() - 2);
         const expectedMax = new Date(after);
-        expectedMax.setUTCDate(expectedMax.getUTCDate() - 7);
+        expectedMax.setUTCHours(expectedMax.getUTCHours() - 2);
 
         expect(resultDate.getTime()).toBeGreaterThanOrEqual(
           expectedMin.getTime()
@@ -252,22 +305,22 @@ describe('time-value-resolver', () => {
         const result = resolveTimeValue(
           {
             type: TimeValueType.WORKERS_NEWEST_PLUS_WINDOW,
-            value: '7d',
+            value: '168h',
           },
           baseState
         );
         expect(result).toBe('2024-06-08T00:00:00.000Z');
       });
 
-      it('should add months to workers_newest', () => {
+      it('should add minutes to workers_newest', () => {
         const result = resolveTimeValue(
           {
             type: TimeValueType.WORKERS_NEWEST_PLUS_WINDOW,
-            value: '2m',
+            value: '30m',
           },
           baseState
         );
-        expect(result).toBe('2024-08-01T00:00:00.000Z');
+        expect(result).toBe('2024-06-01T00:30:00.000Z');
       });
 
       it('should fall back to current time if workers_newest is not set', () => {
@@ -275,18 +328,18 @@ describe('time-value-resolver', () => {
         const result = resolveTimeValue(
           {
             type: TimeValueType.WORKERS_NEWEST_PLUS_WINDOW,
-            value: '7d',
+            value: '2h',
           },
           { workers_newest: '' }
         );
         const after = new Date();
 
-        // Result should be roughly now plus 7 days
+        // Result should be roughly now plus 2 hours
         const resultDate = new Date(result!);
         const expectedMin = new Date(before);
-        expectedMin.setUTCDate(expectedMin.getUTCDate() + 7);
+        expectedMin.setUTCHours(expectedMin.getUTCHours() + 2);
         const expectedMax = new Date(after);
-        expectedMax.setUTCDate(expectedMax.getUTCDate() + 7);
+        expectedMax.setUTCHours(expectedMax.getUTCHours() + 2);
 
         expect(resultDate.getTime()).toBeGreaterThanOrEqual(
           expectedMin.getTime()
@@ -376,7 +429,7 @@ describe('time-value-resolver', () => {
 
       it('Computer Import: WORKERS_OLDEST_MINUS_WINDOW start, WORKERS_OLDEST end', () => {
         const start = resolveTimeValue(
-          { type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW, value: '7d' },
+          { type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW, value: '168h' },
           scenarioState
         );
         const end = resolveTimeValue(

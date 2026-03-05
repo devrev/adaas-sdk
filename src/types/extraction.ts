@@ -228,7 +228,7 @@ export enum TimeValueType {
  * TimeValue is an interface that represents a time value used in extraction start/end times.
  * It contains a type (which denotes how the value should be resolved) and an optional value.
  * - For ABSOLUTE: value is an ISO 8601 timestamp
- * - For *_WINDOW types: value is a shorthand duration (e.g. '7d', '2m', '1y')
+ * - For *_WINDOW types: value is a Go duration string (e.g. '500ms', '30s', '5m', '2h')
  * - For other types: value is not used
  */
 export interface TimeValue {

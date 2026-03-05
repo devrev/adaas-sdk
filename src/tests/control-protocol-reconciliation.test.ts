@@ -150,7 +150,7 @@ describe('Enhanced Control Protocol', () => {
           extraction_time_direction: ExtractionTimeDirection.HISTORICAL,
           extraction_start_time: {
             type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
-            value: '7d',
+            value: '168h',
           },
           extraction_end_time: {
             type: TimeValueType.WORKERS_OLDEST,
@@ -162,7 +162,7 @@ describe('Enhanced Control Protocol', () => {
         TimeValueType.WORKERS_OLDEST_MINUS_WINDOW
       );
       expect(event.payload.event_context.extraction_start_time?.value).toBe(
-        '7d'
+        '168h'
       );
       expect(event.payload.event_context.extraction_end_time?.type).toBe(
         TimeValueType.WORKERS_OLDEST
@@ -275,7 +275,7 @@ describe('Enhanced Control Protocol', () => {
           extraction_time_direction: ExtractionTimeDirection.HISTORICAL,
           extraction_start_time: {
             type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
-            value: '2m',
+            value: '120m',
           },
           extraction_end_time: {
             type: TimeValueType.WORKERS_OLDEST,
@@ -290,7 +290,7 @@ describe('Enhanced Control Protocol', () => {
         TimeValueType.WORKERS_OLDEST_MINUS_WINDOW
       );
       expect(event.payload.event_context.extraction_start_time?.value).toBe(
-        '2m'
+        '120m'
       );
     });
   });
