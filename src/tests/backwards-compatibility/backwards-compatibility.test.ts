@@ -598,6 +598,120 @@ describe('Backwards Compatibility', () => {
           .map((member) => member.trim())
           .filter(Boolean);
 
+      /**
+       * Parse a normalized object type string (e.g. `{delay?:number;error?:{message:string};}`)
+       * into a map of property name -> { optional: boolean, type: string }.
+       *
+       * This handles nested braces so that e.g. `error?:{message:string;fileSize?:number}`
+       * is treated as a single property rather than being split at the inner semicolons.
+       */
+      const parseObjectProperties = (
+        obj: string
+      ): Map<string, { optional: boolean; type: string }> | null => {
+        const trimmed = obj.replace(/^\{/, '').replace(/\}$/, '');
+        if (!trimmed) return new Map();
+
+        const properties = new Map<
+          string,
+          { optional: boolean; type: string }
+        >();
+
+        // Walk character-by-character, tracking brace depth, to split on
+        // top-level semicolons only.
+        let depth = 0;
+        let current = '';
+        for (const ch of trimmed) {
+          if (ch === '{') depth++;
+          if (ch === '}') depth--;
+          if (ch === ';' && depth === 0) {
+            if (current.length > 0) {
+              const colonIdx = current.indexOf(':');
+              if (colonIdx === -1) return null; // not a valid property
+              let name = current.slice(0, colonIdx);
+              const type = current.slice(colonIdx + 1);
+              const optional = name.endsWith('?');
+              if (optional) name = name.slice(0, -1);
+              properties.set(name, { optional, type });
+            }
+            current = '';
+          } else {
+            current += ch;
+          }
+        }
+        // Handle trailing segment (when the text doesn't end with ';')
+        if (current.length > 0) {
+          const colonIdx = current.indexOf(':');
+          if (colonIdx !== -1) {
+            let name = current.slice(0, colonIdx);
+            const type = current.slice(colonIdx + 1);
+            const optional = name.endsWith('?');
+            if (optional) name = name.slice(0, -1);
+            properties.set(name, { optional, type });
+          }
+        }
+
+        return properties;
+      };
+
+      /**
+       * Check whether `newMember` is a backwards-compatible evolution of
+       * `currentMember`.  Both strings are normalised (whitespace stripped)
+       * object type literals.
+       *
+       * Compatible means:
+       * 1. Every property in `currentMember` still exists in `newMember`.
+       * 2. Existing properties that were in `currentMember` are structurally
+       *    compatible in `newMember` (recursively, for nested object types).
+       * 3. Properties that were optional stay optional (not promoted to required).
+       * 4. Any *new* properties in `newMember` must be optional.
+       */
+      const isObjectTypeBackwardsCompatible = (
+        currentMember: string,
+        newMember: string
+      ): boolean => {
+        if (!currentMember.startsWith('{') || !newMember.startsWith('{')) {
+          return false;
+        }
+
+        const currentProps = parseObjectProperties(currentMember);
+        const newProps = parseObjectProperties(newMember);
+
+        if (!currentProps || !newProps) return false;
+
+        // 1. Every current property must exist in new
+        for (const [name, currentProp] of currentProps) {
+          const newProp = newProps.get(name);
+          if (!newProp) return false;
+
+          // 3. Optional properties must stay optional
+          if (currentProp.optional && !newProp.optional) return false;
+
+          // 2. Property types must be compatible
+          // If both types are object types, recurse
+          if (
+            currentProp.type.startsWith('{') &&
+            newProp.type.startsWith('{')
+          ) {
+            if (
+              !isObjectTypeBackwardsCompatible(currentProp.type, newProp.type)
+            ) {
+              return false;
+            }
+          } else if (currentProp.type !== newProp.type) {
+            return false;
+          }
+        }
+
+        // 4. New properties must be optional
+        for (const [name, newProp] of newProps) {
+          if (!currentProps.has(name) && !newProp.optional) {
+            return false;
+          }
+        }
+
+        return true;
+      };
+
       for (const newType of newTypes) {
         const currentType = currentTypes.find(
           (t: ApiTypeAlias) => t.name === newType.name
@@ -615,13 +729,29 @@ describe('Backwards Compatibility', () => {
             const currentUnionMembers = getUnionMembers(
               currentType.typeExcerpt.text
             );
-            const newUnionMembers = new Set(
-              getUnionMembers(newType.typeExcerpt.text)
-            );
+            const newUnionMembers = getUnionMembers(newType.typeExcerpt.text);
+            const newUnionMembersSet = new Set(newUnionMembers);
 
             expect(!!currentUnionMembers.length).toBe(true);
             for (const member of currentUnionMembers) {
-              expect(newUnionMembers.has(member)).toBe(true);
+              // Exact match: member is unchanged
+              if (newUnionMembersSet.has(member)) {
+                continue;
+              }
+
+              // For object-type union members, check structural backwards
+              // compatibility (e.g. only optional properties were added).
+              if (member.startsWith('{')) {
+                const compatibleNewMember = newUnionMembers.find(
+                  (newMember) =>
+                    newMember.startsWith('{') &&
+                    isObjectTypeBackwardsCompatible(member, newMember)
+                );
+                expect(compatibleNewMember).toBeDefined();
+              } else {
+                // Non-object member must match exactly
+                expect(newUnionMembersSet.has(member)).toBe(true);
+              }
             }
             return;
           }

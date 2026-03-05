@@ -31,7 +31,8 @@ export class MockServer {
     this.baseUrl = `http://localhost:${this.port}`;
     this.app = express();
 
-    this.app.use(express.json());
+    // Increase limit to handle size limit tests that send large artifact arrays
+    this.app.use(express.json({ limit: '10mb' }));
     this.setupRoutes();
   }
 
@@ -177,8 +178,14 @@ export class MockServer {
       req.method === 'GET' &&
       req.path === '/internal/airdrop.artifacts.upload-url'
     ) {
+      // Generate a unique artifact ID for each request
+      const artifactId = `artifact-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
       res.status(200).json({
         upload_url: `${this.baseUrl}/file-upload-url`,
+        artifact_id: artifactId,
+        form_data: [], // Empty form_data for local development
       });
     } else {
       res.status(200).json({ success: true });

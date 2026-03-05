@@ -506,7 +506,7 @@ export interface StreamAttachmentsResponse {
 export type ProcessAttachmentReturnType =
   | {
       delay?: number;
-      error?: { message: string };
+      error?: { message: string; fileSize?: number };
     }
   | undefined;
 

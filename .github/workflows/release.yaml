@@ -42,12 +42,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     outputs:
       new_version: ${{ steps.version.outputs.new_version }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_SVC_TOKEN }}
@@ -74,12 +75,14 @@ jobs:
           fi
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           registry-url: https://registry.npmjs.org/
-          node-version: "18.x"
+          node-version: 22.14.0
           scope: "@devrev"
-          token: ${{ secrets.NPMJS_NPM_TOKEN }}
+
+      - name: Ensure npm 11.5.1+
+        run: npm install -g 'npm@>=11.5.1'
 
       - name: Git configuration
         run: |
@@ -140,9 +143,8 @@ jobs:
 
       - name: Publish
         run: |
-          npm publish --verbose --access public --tag ${{ env.RELEASE_TAG }} ${{ env.DRY_RUN }}
+          npm publish --provenance --verbose --access public --tag ${{ env.RELEASE_TAG }} ${{ env.DRY_RUN }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_NPM_TOKEN }}
           DRY_RUN: ${{ github.event.inputs.dry-run != 'false' && '--dry-run' || ' '}}
 
       # Push repository changes (only after successful npm publish)
@@ -162,7 +164,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 

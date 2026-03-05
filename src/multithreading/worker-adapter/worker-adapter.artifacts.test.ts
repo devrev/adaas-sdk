@@ -57,7 +57,7 @@ describe('Artifact ordering when artifacts overflow batch sizes in repositories'
 
   beforeEach(() => {
     // Create a fresh adapter instance for this test to avoid mocking conflicts
-    const mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+    const mockEvent = createEvent({ eventType: EventType.StartExtractingData });
     const mockAdapterState = new State<TestState>({
       event: mockEvent,
       initialState: { attachments: { completed: false } },

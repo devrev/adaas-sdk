@@ -4,7 +4,12 @@ import { LIBRARY_VERSION } from '../common/constants';
 import { createEvent } from '../tests/test-helpers';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
-import { getPrintableState, Logger, serializeAxiosError } from './logger';
+import {
+  getPrintableState,
+  Logger,
+  serializeAxiosError,
+  serializeError,
+} from './logger';
 import {
   INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
   MAX_LOG_STRING_LENGTH,
@@ -512,6 +517,78 @@ describe(getPrintableState.name, () => {
         lastItem: undefined,
       },
     });
+  });
+});
+
+describe(serializeError.name, () => {
+  it('should return the error message string for a standard Error', () => {
+    const error = new Error('something went wrong');
+    expect(serializeError(error)).toBe('something went wrong');
+  });
+
+  it('should include error name for named error types', () => {
+    const typeError = new TypeError('invalid type');
+    expect(serializeError(typeError)).toBe('TypeError: invalid type');
+
+    const rangeError = new RangeError('out of range');
+    expect(serializeError(rangeError)).toBe('RangeError: out of range');
+  });
+
+  it('should return a JSON string for an Axios error', () => {
+    const axiosError = {
+      isAxiosError: true,
+      response: {
+        status: 500,
+        statusText: 'Internal Server Error',
+        data: 'fail',
+        headers: {},
+      },
+      config: { method: 'GET', url: '/api/test', params: undefined },
+    } as unknown as AxiosError;
+    const result = serializeError(axiosError);
+    expect(typeof result).toBe('string');
+    const parsed = JSON.parse(result as string);
+    expect(parsed.isAxiosError).toBe(true);
+    expect(parsed.response.status).toBe(500);
+  });
+
+  it('should return a JSON string for a plain object', () => {
+    const obj = { code: 42, detail: 'bad input' };
+    const result = serializeError(obj);
+    expect(typeof result).toBe('string');
+    expect(JSON.parse(result as string)).toEqual(obj);
+  });
+
+  it('should return a JSON string for a string value', () => {
+    expect(serializeError('raw string error')).toBe('raw string error');
+  });
+
+  it('[edge] should handle null without throwing', () => {
+    const result = serializeError(null);
+    expect(typeof result).toBe('string');
+    expect(result).toBe('null');
+  });
+
+  it('[edge] should handle undefined without throwing', () => {
+    const result = serializeError(undefined);
+    expect(typeof result).toBe('string');
+  });
+
+  it('[edge] should fall back to extracting own properties for objects that stringify to empty object', () => {
+    // Simulate an error-like object with non-enumerable properties
+    // (e.g. cross-realm Error that fails instanceof check)
+    const errorLike = Object.create(null);
+    Object.defineProperty(errorLike, 'message', {
+      value: 'cross-realm error',
+      enumerable: false,
+    });
+
+    const result = serializeError(errorLike);
+    expect(typeof result).toBe('string');
+    // Should not be '{}' — that's the whole point of the fix
+    expect(result).not.toBe('{}');
+    // Should have extracted the non-enumerable 'message' property
+    expect(result).toContain('cross-realm error');
   });
 });
 
