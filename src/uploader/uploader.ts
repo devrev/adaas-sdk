@@ -28,12 +28,14 @@ export class Uploader {
   private devrevApiToken: string;
   private requestId: string;
   private defaultHeaders: Record<string, string>;
+  private skipConfirmation: boolean;
 
   constructor({ event, options }: UploaderFactoryInterface) {
     this.devrevApiEndpoint = event.execution_metadata.devrev_endpoint;
     this.devrevApiToken = event.context.secrets.service_account_token;
     this.requestId = event.payload.event_context.request_id;
     this.isLocalDevelopment = options?.isLocalDevelopment;
+    this.skipConfirmation = options?.skipConfirmation ?? false;
     this.defaultHeaders = {
       Authorization: `Bearer ${this.devrevApiToken}`,
     };
@@ -97,17 +99,19 @@ export class Uploader {
       };
     }
 
-    // Confirm upload
-    const { error: confirmArtifactUploadError } =
-      await this.confirmArtifactUpload(preparedArtifact!.artifact_id);
-    if (confirmArtifactUploadError) {
-      return {
-        error: {
-          message:
-            'Error while confirming artifact upload. ' +
-            serializeError(confirmArtifactUploadError),
-        },
-      };
+    if (!this.skipConfirmation) {
+      // Confirm upload
+      const { error: confirmArtifactUploadError } =
+        await this.confirmArtifactUpload(preparedArtifact!.artifact_id);
+      if (confirmArtifactUploadError) {
+        return {
+          error: {
+            message:
+              'Error while confirming artifact upload. ' +
+              JSON.stringify(confirmArtifactUploadError),
+          },
+        };
+      }
     }
 
     // Return the artifact information to the platform

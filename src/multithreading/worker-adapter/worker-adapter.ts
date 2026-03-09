@@ -249,7 +249,11 @@ export class WorkerAdapter<ConnectorState> {
             onUpload: () => {
               // No-op: artifacts are collected from repo.uploadedArtifacts after upload
             },
-            options: this.options,
+            options: {
+              ...this.options,
+              batchSize: 25000,
+              skipConfirmation: true,
+            },
           });
 
           await externalSyncUnitsRepo.push(data.external_sync_units);
