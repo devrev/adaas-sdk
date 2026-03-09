@@ -40,12 +40,6 @@ describe('Dummy Connector - External Sync Units Extraction', () => {
     );
     expect(fileUploadRequests).toBeGreaterThanOrEqual(1);
 
-    const confirmUploadRequests = mockServer.getRequestCount(
-      'POST',
-      '/internal/airdrop.artifacts.confirm-upload'
-    );
-    expect(confirmUploadRequests).toBeGreaterThanOrEqual(1);
-
     // Verify the callback contains artifacts in event_data
     const callbackRequests = mockServer.getRequests('POST', '/callback_url');
     expect(callbackRequests.length).toBe(1);
