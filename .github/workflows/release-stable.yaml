@@ -6,8 +6,8 @@
 # 2. Compares the version in package.json against the latest stable version on
 #    npm. If unchanged, the workflow skips the release.
 # 3. Runs tests.
-# 4. Publishes to npm with the "latest" tag.
-# 5. Creates a git tag and pushes it.
+# 4. Creates a git tag and pushes it.
+# 5. Publishes to npm with the "latest" tag.
 # 6. Opens a PR to merge stable back into main.
 #
 # - generate-release-notes:
@@ -77,19 +77,17 @@ jobs:
           git config --global user.email "svc-devrev-sdk@devrev.ai"
           git config --global user.name "svc-devrev-sdk"
 
-      - name: Create tag
+      - name: Create and push tag
         if: steps.version.outputs.should_release == 'true'
-        run: git tag ${{ env.NEW_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_SVC_TOKEN }}
+        run: |
+          git tag ${{ env.NEW_VERSION }}
+          git push --tags
 
       - name: Publish
         if: steps.version.outputs.should_release == 'true'
         run: npm publish --provenance --verbose --access public --tag latest
-
-      - name: Push tag
-        if: steps.version.outputs.should_release == 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_SVC_TOKEN }}
-        run: git push --tags
 
       - name: Open PR to merge stable back to main
         if: steps.version.outputs.should_release == 'true'
@@ -115,11 +113,10 @@ jobs:
           fetch-depth: 0
 
       - name: Update GitHub release documentation
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.release.outputs.new_version }}
           name: ${{ needs.release.outputs.new_version }}
           generate_release_notes: true
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_SVC_TOKEN }}
+          token: ${{ secrets.GH_SVC_TOKEN }}

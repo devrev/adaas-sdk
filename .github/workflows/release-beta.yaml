@@ -7,9 +7,9 @@
 # 1. User runs the "Release beta" workflow manually via the GitHub Actions UI.
 # 2. Blocks the stable branch (stable releases use release-stable.yaml).
 # 3. Checks if the user is authorized (only codeowners can run it).
-# 4. Resolves the package name based on the branch.
-# 5. Syncs to the latest published beta version from npm and bumps prerelease.
-# 6. Runs tests.
+# 4. Runs tests.
+# 5. Resolves the package name based on the branch.
+# 6. Syncs to the latest published beta version from npm and bumps prerelease.
 # 7. Commits version changes and creates a tag.
 # 8. Publishes to npm with the "beta" tag.
 # 9. Pushes changes to the repository.
@@ -48,7 +48,7 @@ jobs:
 
       - name: Check authorization
         run: |
-          AUTHORIZED_USERS=$(grep -o '@[a-zA-Z0-9_-]*[^/]' .github/CODEOWNERS | grep -v '@devrev/' | sed 's/@//' | tr '\n' ' ')
+          AUTHORIZED_USERS=$(tr ' ' '\n' < .github/CODEOWNERS | grep '^@' | grep -v '/' | sed 's/@//' | tr '\n' ' ')
           if ! echo "$AUTHORIZED_USERS" | grep -q "\b${{ github.actor }}\b"; then
             echo "ERROR: User ${{ github.actor }} is not authorized to run this workflow"
             echo "Only users listed in .github/CODEOWNERS can run this workflow"
@@ -69,6 +69,12 @@ jobs:
         run: |
           git config --global user.email "svc-devrev-sdk@devrev.ai"
           git config --global user.name "svc-devrev-sdk"
+
+      - name: Run tests
+        run: |
+          npm ci
+          npm run build
+          npm run test
 
       - name: Resolve package name
         run: |
@@ -94,17 +100,12 @@ jobs:
             fi
           fi
 
-          NEW_VERSION=$(npm --no-git-tag-version --preid=beta version prerelease)
+          NEW_VERSION=$(npm --no-git-tag-version --preid=beta version prerelease | sed 's/^v//')
           echo "Target release version: $NEW_VERSION"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Run tests
-        run: |
-          npm ci
-          npm run build
-          npm run test
-
       - name: Commit version changes and create tag
+        if: ${{ !inputs.dry-run }}
         run: |
           git add "package.json" "package-lock.json"
           git commit -m "chore: release ${{ env.NEW_VERSION }}"
@@ -114,10 +115,10 @@ jobs:
         run: |
           npm publish --provenance --verbose --access public --tag beta ${{ env.DRY_RUN }}
         env:
-          DRY_RUN: ${{ github.event.inputs.dry-run != 'false' && '--dry-run' || ' '}}
+          DRY_RUN: ${{ inputs.dry-run && '--dry-run' || '' }}
 
       - name: Push changes to repository
-        if: ${{ github.event.inputs.dry-run == 'false' }}
+        if: ${{ !inputs.dry-run }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_SVC_TOKEN }}
         run: |
