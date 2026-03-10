@@ -246,9 +246,7 @@ export class WorkerAdapter<ConnectorState> {
           const externalSyncUnitsRepo = new Repo({
             event: this.event,
             itemType: AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_SYNC_UNITS,
-            onUpload: () => {
-              // No-op: artifacts are collected from repo.uploadedArtifacts after upload
-            },
+            onUpload: (artifact) => this.artifacts.push(artifact),
             options: {
               ...this.options,
               batchSize: 25000,
@@ -257,8 +255,6 @@ export class WorkerAdapter<ConnectorState> {
           });
 
           await externalSyncUnitsRepo.push(data.external_sync_units);
-          await externalSyncUnitsRepo.upload();
-          this.artifacts.push(...externalSyncUnitsRepo.uploadedArtifacts);
 
           // Remove inline external_sync_units from data to avoid SQS size issues
           delete data.external_sync_units;
