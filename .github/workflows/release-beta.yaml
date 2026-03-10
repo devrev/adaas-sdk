@@ -74,10 +74,12 @@ jobs:
         run: |
           npm ci
           npm run build
-          if [ "${{ github.ref_name }}" != "v2" ]; then
+          if [ "${{ github.ref_name }}" == "v2" ]; then
+            npm run test
+          else
             npm run test:backwards-compatibility
+            npm run test:coverage
           fi
-          npm run test:coverage
 
       - name: Resolve package name
         run: |
