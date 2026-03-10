@@ -1,0 +1,131 @@
+# This workflow releases beta versions to npm. It can be triggered manually from
+# any branch except stable. The package name is resolved based on the branch:
+# v2 publishes to @devrev/airsync-sdk, all other branches publish to
+# @devrev/ts-adaas.
+#
+# - release:
+# 1. User runs the "Release beta" workflow manually via the GitHub Actions UI.
+# 2. Blocks the stable branch (stable releases use release-stable.yaml).
+# 3. Checks if the user is authorized (only codeowners can run it).
+# 4. Runs tests.
+# 5. Resolves the package name based on the branch.
+# 6. Syncs to the latest published beta version from npm and bumps prerelease.
+# 7. Commits version changes and creates a tag.
+# 8. Publishes to npm with the "beta" tag.
+# 9. Pushes changes to the repository.
+
+name: Release beta
+run-name: "Release beta by ${{ github.actor }}${{ inputs.dry-run && ' --dry-run' || '' }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Dry Run - skip commit and publish'
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Block stable branch
+        run: |
+          if [ "${{ github.ref_name }}" == "stable" ]; then
+            echo "ERROR: Beta releases cannot be made from the stable branch"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_SVC_TOKEN }}
+
+      - name: Check authorization
+        run: |
+          AUTHORIZED_USERS=$(tr ' ' '\n' < .github/CODEOWNERS | grep '^@' | grep -v '/' | sed 's/@//' | tr '\n' ' ')
+          if ! echo "$AUTHORIZED_USERS" | grep -q "\b${{ github.actor }}\b"; then
+            echo "ERROR: User ${{ github.actor }} is not authorized to run this workflow"
+            echo "Only users listed in .github/CODEOWNERS can run this workflow"
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          registry-url: https://registry.npmjs.org/
+          node-version: 22.14.0
+          scope: '@devrev'
+
+      - name: Ensure npm 11.5.1+
+        run: npm install -g 'npm@>=11.5.1'
+
+      - name: Git configuration
+        run: |
+          git config --global user.email "svc-devrev-sdk@devrev.ai"
+          git config --global user.name "svc-devrev-sdk"
+
+      - name: Run tests
+        run: |
+          npm ci
+          npm run build
+          npm run test:backwards-compatibility
+          npm run test:coverage
+
+      - name: Resolve package name
+        run: |
+          if [ "${{ github.ref_name }}" == "v2" ]; then
+            echo "PACKAGE_NAME=@devrev/airsync-sdk" >> $GITHUB_ENV
+          else
+            echo "PACKAGE_NAME=@devrev/ts-adaas" >> $GITHUB_ENV
+          fi
+
+      - name: Get latest beta version and bump
+        id: version
+        run: |
+          LATEST_BETA=$(npm view ${{ env.PACKAGE_NAME }} dist-tags.beta 2>/dev/null || echo "")
+          echo "Latest published beta version: $LATEST_BETA"
+
+          CURRENT_VERSION=$(jq -r '.version' package.json)
+          echo "Current package.json version: $CURRENT_VERSION"
+
+          if [ -n "$LATEST_BETA" ]; then
+            if [ "$CURRENT_VERSION" != "$LATEST_BETA" ]; then
+              echo "Syncing package.json version to latest published beta version"
+              npm --no-git-tag-version version $LATEST_BETA --allow-same-version
+            fi
+          fi
+
+          NEW_VERSION=$(npm --no-git-tag-version --preid=beta version prerelease | sed 's/^v//')
+          echo "Target release version: $NEW_VERSION"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Commit version changes and create tag
+        if: ${{ !inputs.dry-run }}
+        run: |
+          git add "package.json" "package-lock.json"
+          # Only commit if there are staged changes
+          if git diff --cached --quiet; then
+            echo "No changes to commit, creating tag only"
+          else
+            git commit -m "chore: release ${{ env.NEW_VERSION }}"
+          fi
+          git tag ${{ env.NEW_VERSION }}
+
+      - name: Publish
+        run: |
+          npm publish --provenance --verbose --access public --tag beta ${{ env.DRY_RUN }}
+        env:
+          DRY_RUN: ${{ inputs.dry-run && '--dry-run' || '' }}
+
+      - name: Push changes to repository
+        if: ${{ !inputs.dry-run }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_SVC_TOKEN }}
+        run: |
+          git push origin && git push --tags
