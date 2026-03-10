@@ -69,7 +69,8 @@ jobs:
         run: |
           npm ci
           npm run build
-          npm run test
+          npm run test:backwards-compatibility
+          npm run test:coverage
 
       - name: Git configuration
         if: steps.version.outputs.should_release == 'true'
