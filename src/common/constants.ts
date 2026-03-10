@@ -73,6 +73,12 @@ export const AIRDROP_DEFAULT_ITEM_TYPES = {
   EXTERNAL_SYNC_UNITS: 'external_sync_units',
 };
 
+export enum AirSyncDefaultItemTypes {
+  EXTERNAL_DOMAIN_METADATA = 'external_domain_metadata',
+  ATTACHMENTS = 'attachments',
+  EXTERNAL_SYNC_UNITS = 'external_sync_units',
+}
+
 export const LIBRARY_VERSION = getLibraryVersion();
 
 export const DEFAULT_LAMBDA_TIMEOUT = 10 * 60 * 1000; // 10 minutes

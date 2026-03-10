@@ -178,7 +178,10 @@ export class WorkerAdapter<ConnectorState> {
             this.isTimeout = true;
           }
         },
-        options: this.options,
+        options: {
+          ...this.options,
+          ...repo.overridenOptions,
+        },
       });
     });
   }
@@ -233,6 +236,7 @@ export class WorkerAdapter<ConnectorState> {
       }
 
       // If the event is ExternalSyncUnitExtractionDone, upload external sync units via a Repo before emitting
+      // TODO: Remove in v2.0.0
       if (
         newEventType === ExtractorEventType.ExternalSyncUnitExtractionDone &&
         data?.external_sync_units &&
@@ -242,28 +246,22 @@ export class WorkerAdapter<ConnectorState> {
           `Uploading ${data.external_sync_units.length} external sync units via repo before emitting event.`
         );
 
-        try {
-          const externalSyncUnitsRepo = new Repo({
-            event: this.event,
+        this.initializeRepos([
+          {
             itemType: AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_SYNC_UNITS,
-            onUpload: (artifact) => this.artifacts.push(artifact),
-            options: {
-              ...this.options,
+            overridenOptions: {
               batchSize: 25000,
               skipConfirmation: true,
             },
-          });
+          },
+        ]);
 
-          await externalSyncUnitsRepo.push(data.external_sync_units);
+        await this.getRepo(
+          AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_SYNC_UNITS
+        )?.push(data.external_sync_units);
 
-          // Remove inline external_sync_units from data to avoid SQS size issues
-          delete data.external_sync_units;
-        } catch (error) {
-          console.error('Error while uploading external sync units', error);
-          parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
-          this.hasWorkerEmitted = true;
-          return;
-        }
+        // Remove inline external_sync_units from data to avoid SQS size issues
+        delete data.external_sync_units;
       }
 
       // Upload all repos before emitting the event
