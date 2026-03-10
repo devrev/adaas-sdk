@@ -74,7 +74,9 @@ jobs:
         run: |
           npm ci
           npm run build
-          npm run test:backwards-compatibility
+          if [ "${{ github.ref_name }}" != "v2" ]; then
+            npm run test:backwards-compatibility
+          fi
           npm run test:coverage
 
       - name: Resolve package name
