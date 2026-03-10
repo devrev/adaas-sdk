@@ -74,7 +74,8 @@ jobs:
         run: |
           npm ci
           npm run build
-          npm run test
+          npm run test:backwards-compatibility
+          npm run test:coverage
 
       - name: Resolve package name
         run: |
