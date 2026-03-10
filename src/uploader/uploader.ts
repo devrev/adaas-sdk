@@ -99,6 +99,8 @@ export class Uploader {
       };
     }
 
+    // Skip confirmation for External Sync Units, as this confirmation attachments
+    // uploads to the sync, which we haven't created yet when extracting External Sync Units.
     if (!this.skipConfirmation) {
       // Confirm upload
       const { error: confirmArtifactUploadError } =
