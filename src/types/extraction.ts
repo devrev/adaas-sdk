@@ -194,16 +194,6 @@ export enum InitialSyncScope {
 }
 
 /**
- * ExtractionTimeDirection is an enum that defines the direction of extraction.
- * - HISTORICAL: Extract data going backward in time (historical import)
- * - FORWARD: Extract data going forward in time incrementally
- */
-export enum ExtractionTimeDirection {
-  HISTORICAL = 'historical',
-  FORWARD = 'forward',
-}
-
-/**
  * TimeValueType is an enum that defines the type of a time value used in extraction start/end times.
  * The platform sends these types to indicate how the extraction time should be resolved by the SDK.
  */
@@ -345,11 +335,6 @@ export interface EventContext {
    */
   uuid: string;
   worker_data_url: string;
-  /**
-   * Direction of extraction (historical or forward).
-   * Used to control whether the sync extracts historical data or incremental data.
-   */
-  extraction_time_direction?: ExtractionTimeDirection;
   /**
    * Start time value for extraction, as sent by the platform.
    * The SDK resolves this into a concrete ISO 8601 timestamp on extraction_start.

@@ -3,7 +3,6 @@ import {
   EventContext,
   EventType,
   InitialSyncScope,
-  ExtractionTimeDirection,
   TimeValueType,
 } from './extraction';
 
@@ -127,25 +126,6 @@ describe('ExtractionTypes', () => {
     expect(typeof eventWithFalse.payload.event_context.reset_extract_from).toBe(
       'boolean'
     );
-  });
-
-  describe('ExtractionTimeDirection enum', () => {
-    it('should have historical value', () => {
-      expect(ExtractionTimeDirection.HISTORICAL).toBeDefined();
-      expect(ExtractionTimeDirection.HISTORICAL).toBe('historical');
-    });
-
-    it('should have forward value', () => {
-      expect(ExtractionTimeDirection.FORWARD).toBeDefined();
-      expect(ExtractionTimeDirection.FORWARD).toBe('forward');
-    });
-
-    it('should have exactly two values', () => {
-      const values = Object.values(ExtractionTimeDirection);
-      expect(values.length).toBe(2);
-      expect(values).toContain('historical');
-      expect(values).toContain('forward');
-    });
   });
 
   describe('TimeValueType enum', () => {

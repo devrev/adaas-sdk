@@ -1,28 +1,7 @@
 import { createEvent } from './test-helpers';
-import {
-  EventType,
-  ExtractionTimeDirection,
-  TimeValueType,
-} from '../types/extraction';
+import { EventType, TimeValueType } from '../types/extraction';
 
 describe('Enhanced Control Protocol', () => {
-  describe('ExtractionTimeDirection enum values', () => {
-    it('should have the correct string value for HISTORICAL', () => {
-      expect(ExtractionTimeDirection.HISTORICAL).toBe('historical');
-    });
-
-    it('should have the correct string value for FORWARD', () => {
-      expect(ExtractionTimeDirection.FORWARD).toBe('forward');
-    });
-
-    it('should have exactly two direction values', () => {
-      const values = Object.values(ExtractionTimeDirection);
-      expect(values).toHaveLength(2);
-      expect(values).toContain('historical');
-      expect(values).toContain('forward');
-    });
-  });
-
   describe('TimeValueType enum values', () => {
     it('should have all seven values', () => {
       const values = Object.values(TimeValueType);
@@ -44,9 +23,6 @@ describe('Enhanced Control Protocol', () => {
       });
 
       expect(event.payload.event_context).toBeDefined();
-      expect(
-        event.payload.event_context.extraction_time_direction
-      ).toBeUndefined();
       expect(event.payload.event_context.extraction_start_time).toBeUndefined();
       expect(event.payload.event_context.extraction_end_time).toBeUndefined();
       expect(event.payload.event_context.extraction_start).toBeUndefined();
@@ -74,7 +50,6 @@ describe('Enhanced Control Protocol', () => {
       const event = createEvent({
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
-          extraction_time_direction: ExtractionTimeDirection.FORWARD,
           extraction_start_time: {
             type: TimeValueType.ABSOLUTE,
             value: '2024-01-01T00:00:00Z',
@@ -85,9 +60,6 @@ describe('Enhanced Control Protocol', () => {
         },
       });
 
-      expect(event.payload.event_context.extraction_time_direction).toBe(
-        ExtractionTimeDirection.FORWARD
-      );
       expect(event.payload.event_context.extraction_start_time?.type).toBe(
         TimeValueType.ABSOLUTE
       );
@@ -103,7 +75,6 @@ describe('Enhanced Control Protocol', () => {
       const event = createEvent({
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
-          extraction_time_direction: ExtractionTimeDirection.HISTORICAL,
           extraction_start_time: {
             type: TimeValueType.UNBOUNDED,
           },
@@ -113,9 +84,6 @@ describe('Enhanced Control Protocol', () => {
         },
       });
 
-      expect(event.payload.event_context.extraction_time_direction).toBe(
-        ExtractionTimeDirection.HISTORICAL
-      );
       expect(event.payload.event_context.extraction_start_time?.type).toBe(
         TimeValueType.UNBOUNDED
       );
@@ -125,7 +93,6 @@ describe('Enhanced Control Protocol', () => {
       const event = createEvent({
         eventType: EventType.ContinueExtractingData,
         eventContextOverrides: {
-          extraction_time_direction: ExtractionTimeDirection.FORWARD,
           extraction_start_time: {
             type: TimeValueType.WORKERS_NEWEST,
           },
@@ -147,7 +114,6 @@ describe('Enhanced Control Protocol', () => {
       const event = createEvent({
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
-          extraction_time_direction: ExtractionTimeDirection.HISTORICAL,
           extraction_start_time: {
             type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
             value: '168h',
@@ -175,7 +141,6 @@ describe('Enhanced Control Protocol', () => {
       const event = createEvent({
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
-          extraction_time_direction: ExtractionTimeDirection.FORWARD,
           extraction_start_time: {
             type: TimeValueType.UNBOUNDED,
           },
@@ -185,9 +150,6 @@ describe('Enhanced Control Protocol', () => {
         },
       });
 
-      expect(event.payload.event_context.extraction_time_direction).toBe(
-        ExtractionTimeDirection.FORWARD
-      );
       expect(event.payload.event_context.extraction_start_time?.type).toBe(
         TimeValueType.UNBOUNDED
       );
@@ -197,7 +159,6 @@ describe('Enhanced Control Protocol', () => {
       const event = createEvent({
         eventType: EventType.ContinueExtractingData,
         eventContextOverrides: {
-          extraction_time_direction: ExtractionTimeDirection.FORWARD,
           extraction_start_time: {
             type: TimeValueType.WORKERS_NEWEST,
           },
@@ -219,7 +180,6 @@ describe('Enhanced Control Protocol', () => {
       const event = createEvent({
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
-          extraction_time_direction: ExtractionTimeDirection.FORWARD,
           extraction_start_time: {
             type: TimeValueType.ABSOLUTE,
             value: '2024-06-01T00:00:00Z',
@@ -242,7 +202,6 @@ describe('Enhanced Control Protocol', () => {
       const event = createEvent({
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
-          extraction_time_direction: ExtractionTimeDirection.FORWARD,
           extraction_start_time: {
             type: TimeValueType.ABSOLUTE,
             value: '2024-01-01T00:00:00Z',
@@ -272,7 +231,6 @@ describe('Enhanced Control Protocol', () => {
       const event = createEvent({
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
-          extraction_time_direction: ExtractionTimeDirection.HISTORICAL,
           extraction_start_time: {
             type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
             value: '120m',
@@ -283,9 +241,6 @@ describe('Enhanced Control Protocol', () => {
         },
       });
 
-      expect(event.payload.event_context.extraction_time_direction).toBe(
-        ExtractionTimeDirection.HISTORICAL
-      );
       expect(event.payload.event_context.extraction_start_time?.type).toBe(
         TimeValueType.WORKERS_OLDEST_MINUS_WINDOW
       );
@@ -300,7 +255,6 @@ describe('Enhanced Control Protocol', () => {
       const event = createEvent({
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
-          extraction_time_direction: ExtractionTimeDirection.FORWARD,
           extraction_start_time: {
             type: TimeValueType.ABSOLUTE,
             value: '2024-02-01T00:00:00Z',
@@ -316,44 +270,11 @@ describe('Enhanced Control Protocol', () => {
         'extraction_start_time'
       );
       expect(event.payload.event_context).toHaveProperty('extraction_end_time');
-      expect(event.payload.event_context).toHaveProperty(
-        'extraction_time_direction'
-      );
 
       const payloadKeys = Object.keys(event.payload);
       expect(payloadKeys).not.toContain('extraction_start_time');
       expect(payloadKeys).not.toContain('extraction_end_time');
       expect(payloadKeys).not.toContain('extraction_time_direction');
-    });
-
-    it('should work with all extraction event types', () => {
-      const eventTypes = [
-        EventType.StartExtractingData,
-        EventType.ContinueExtractingData,
-        EventType.StartExtractingMetadata,
-        EventType.StartExtractingAttachments,
-        EventType.ContinueExtractingAttachments,
-      ];
-
-      eventTypes.forEach((eventType) => {
-        const event = createEvent({
-          eventType,
-          eventContextOverrides: {
-            extraction_time_direction: ExtractionTimeDirection.FORWARD,
-            extraction_start_time: {
-              type: TimeValueType.ABSOLUTE,
-              value: '2024-01-01T00:00:00Z',
-            },
-            extraction_end_time: {
-              type: TimeValueType.NOW,
-            },
-          },
-        });
-
-        expect(event.payload.event_context.extraction_time_direction).toBe(
-          ExtractionTimeDirection.FORWARD
-        );
-      });
     });
   });
 });
