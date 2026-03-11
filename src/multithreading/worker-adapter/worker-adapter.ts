@@ -2,9 +2,10 @@ import axios, { AxiosResponse } from 'axios';
 import { parentPort } from 'node:worker_threads';
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
 import {
-  AIRDROP_DEFAULT_ITEM_TYPES,
+  AirSyncDefaultItemTypes,
   ALLOWED_EXTRACTION_EVENT_TYPES,
   EVENT_SIZE_THRESHOLD_BYTES,
+  SSOR_ATTACHMENT,
   STATELESS_EVENT_TYPES,
 } from '../../common/constants';
 import { emit } from '../../common/control-protocol';
@@ -150,8 +151,8 @@ export class WorkerAdapter<ConnectorState> {
   initializeRepos(repos: RepoInterface[]) {
     this.repos = repos.map((repo) => {
       const shouldNormalize =
-        repo.itemType !== AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_DOMAIN_METADATA &&
-        repo.itemType !== AIRDROP_DEFAULT_ITEM_TYPES.SSOR_ATTACHMENT;
+        repo.itemType !== AirSyncDefaultItemTypes.EXTERNAL_DOMAIN_METADATA &&
+        repo.itemType !== SSOR_ATTACHMENT;
 
       return new Repo({
         event: this.event,
@@ -159,7 +160,7 @@ export class WorkerAdapter<ConnectorState> {
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
           // We need to store artifacts ids in state for later use when streaming attachments
-          if (repo.itemType === AIRDROP_DEFAULT_ITEM_TYPES.ATTACHMENTS) {
+          if (repo.itemType === AirSyncDefaultItemTypes.ATTACHMENTS) {
             this.state.toDevRev?.attachmentsMetadata.artifactIds.push(
               artifact.id
             );
@@ -248,7 +249,7 @@ export class WorkerAdapter<ConnectorState> {
 
         this.initializeRepos([
           {
-            itemType: AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_SYNC_UNITS,
+            itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
             overridenOptions: {
               batchSize: 25000,
               skipConfirmation: true,
@@ -256,9 +257,9 @@ export class WorkerAdapter<ConnectorState> {
           },
         ]);
 
-        await this.getRepo(
-          AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_SYNC_UNITS
-        )?.push(data.external_sync_units);
+        await this.getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)?.push(
+          data.external_sync_units
+        );
 
         // Remove inline external_sync_units from data to avoid SQS size issues
         delete data.external_sync_units;

@@ -1,4 +1,4 @@
-import { AIRDROP_DEFAULT_ITEM_TYPES } from '../../common/constants';
+import { AirSyncDefaultItemTypes } from '../../common/constants';
 import { State } from '../../state/state';
 import { createEvent, createItems } from '../../tests/test-helpers';
 import { Artifact, EventType } from '../../types';
@@ -190,7 +190,7 @@ describe('External sync units splitting into artifacts', () => {
 
     testAdapter.initializeRepos([
       {
-        itemType: AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_SYNC_UNITS,
+        itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
         overridenOptions: {
           batchSize: BATCH_SIZE,
           skipConfirmation: true,
@@ -199,7 +199,7 @@ describe('External sync units splitting into artifacts', () => {
     ]);
 
     const repo = testAdapter.getRepo(
-      AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_SYNC_UNITS
+      AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS
     );
     const chunkSize = 10_000;
     for (let i = 0; i < TOTAL_UNITS; i += chunkSize) {
@@ -213,7 +213,7 @@ describe('External sync units splitting into artifacts', () => {
     );
     expect(
       testAdapter.artifacts.every(
-        (a) => a.item_type === AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_SYNC_UNITS
+        (a) => a.item_type === AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS
       )
     ).toBe(true);
   });
