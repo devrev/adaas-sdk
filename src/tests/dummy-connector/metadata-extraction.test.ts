@@ -46,6 +46,31 @@ describe('Dummy Connector - Metadata Extraction', () => {
     );
   });
 
+  it('should emit metadata error event with specific IDM error message when IDM installation fails', async () => {
+    mockServer.setRoute({
+      path: '/internal/airdrop.recipe.initial-domain-mappings.install',
+      method: 'POST',
+      status: 400,
+    });
+
+    await run([event], __dirname + '/metadata-extraction');
+
+    const lastRequest = mockServer.getLastRequest();
+    expect(lastRequest?.url).toContain('/callback_url');
+    expect(lastRequest?.method).toBe('POST');
+    expect((lastRequest?.body as { event_type: string }).event_type).toBe(
+      ExtractorEventType.MetadataExtractionError
+    );
+    // Should contain the specific IDM error, not the generic fallback message
+    expect(
+      (
+        lastRequest?.body as {
+          event_data: { error: { message: string } };
+        }
+      ).event_data.error.message
+    ).toContain('Error while installing initial domain mapping');
+  });
+
   it('should retry 2 times when response is 500 and then succeed third time when response is 200', async () => {
     mockServer.setRoute({
       path: '/worker_data_url.get',

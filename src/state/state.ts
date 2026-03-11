@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { parentPort } from 'node:worker_threads';
 
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
@@ -6,6 +7,7 @@ import { axiosClient } from '../http/axios-client-internal';
 import { getPrintableState, serializeError } from '../logger/logger';
 import { SyncMode } from '../types/common';
 import { EventType } from '../types/extraction';
+import { WorkerMessageSubject } from '../types/workers';
 
 import {
   AdapterState,
@@ -59,10 +61,14 @@ export async function createAdapterState<ConnectorState>({
           );
         }
       } catch (error) {
-        console.error(
-          'Error while installing initial domain mapping.',
-          serializeError(error)
-        );
+        const errorMessage = `Error while installing initial domain mapping. ${serializeError(
+          error
+        )}`;
+        console.error(errorMessage);
+        parentPort?.postMessage({
+          subject: WorkerMessageSubject.WorkerMessageFailed,
+          payload: { message: errorMessage },
+        });
         process.exit(1);
       }
     }
@@ -146,7 +152,12 @@ export class State<ConnectorState> {
         this.state = initialAdapterState;
         await this.postState(initialAdapterState);
       } else {
-        console.error('Failed to init state.', serializeError(error));
+        const errorMessage = `Failed to init state. ${serializeError(error)}`;
+        console.error(errorMessage);
+        parentPort?.postMessage({
+          subject: WorkerMessageSubject.WorkerMessageFailed,
+          payload: { message: errorMessage },
+        });
         process.exit(1);
       }
     }
@@ -164,7 +175,14 @@ export class State<ConnectorState> {
     try {
       stringifiedState = JSON.stringify(this.state);
     } catch (error) {
-      console.error('Failed to stringify state.', serializeError(error));
+      const errorMessage = `Failed to stringify state. ${serializeError(
+        error
+      )}`;
+      console.error(errorMessage);
+      parentPort?.postMessage({
+        subject: WorkerMessageSubject.WorkerMessageFailed,
+        payload: { message: errorMessage },
+      });
       process.exit(1);
     }
 
@@ -190,7 +208,14 @@ export class State<ConnectorState> {
         getPrintableState(this.state)
       );
     } catch (error) {
-      console.error('Failed to update the state.', serializeError(error));
+      const errorMessage = `Failed to update the state. ${serializeError(
+        error
+      )}`;
+      console.error(errorMessage);
+      parentPort?.postMessage({
+        subject: WorkerMessageSubject.WorkerMessageFailed,
+        payload: { message: errorMessage },
+      });
       process.exit(1);
     }
   }
