@@ -1,4 +1,4 @@
-import { AIRDROP_DEFAULT_ITEM_TYPES } from '../common/constants';
+import { AirSyncDefaultItemTypes, SSOR_ATTACHMENT } from '../common/constants';
 import { createEvent, createItems, normalizeItem } from '../tests/test-helpers';
 import { EventType } from '../types';
 import { Repo } from './repo';
@@ -56,7 +56,7 @@ describe(Repo.name, () => {
   it('should not normalize items when item type is external_domain_metadata', async () => {
     repo = new Repo({
       event: createEvent({ eventType: EventType.ExtractionDataStart }),
-      itemType: AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_DOMAIN_METADATA,
+      itemType: AirSyncDefaultItemTypes.EXTERNAL_DOMAIN_METADATA,
       normalize,
       onUpload: jest.fn(),
       options: {},
@@ -71,7 +71,7 @@ describe(Repo.name, () => {
   it('should not normalize items when item type is ssor_attachment', async () => {
     repo = new Repo({
       event: createEvent({ eventType: EventType.ExtractionDataStart }),
-      itemType: AIRDROP_DEFAULT_ITEM_TYPES.SSOR_ATTACHMENT,
+      itemType: SSOR_ATTACHMENT,
       normalize,
       onUpload: jest.fn(),
       options: {},

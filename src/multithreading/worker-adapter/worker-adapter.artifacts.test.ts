@@ -1,6 +1,8 @@
+import { AirSyncDefaultItemTypes } from '../../common/constants';
 import { State } from '../../state/state';
 import { createEvent, createItems } from '../../tests/test-helpers';
 import { Artifact, EventType } from '../../types';
+import { ExternalSyncUnit } from '../../types/extraction';
 import { WorkerAdapter } from './worker-adapter';
 
 // 1. Create a mock function for the method you want to override.
@@ -152,5 +154,67 @@ describe('Artifact ordering when artifacts overflow batch sizes in repositories'
     expect(artifacts.length).toBe(0);
 
     expect(checkArtifactOrder(artifacts, repos)).toBe(true);
+  });
+});
+
+describe('External sync units splitting into artifacts', () => {
+  let testAdapter: WorkerAdapter<Record<string, unknown>>;
+
+  beforeEach(() => {
+    const mockEvent = createEvent({
+      eventType: EventType.StartExtractingExternalSyncUnits,
+    });
+    const mockAdapterState = new State<Record<string, unknown>>({
+      event: mockEvent,
+      initialState: {},
+    });
+
+    testAdapter = new WorkerAdapter({
+      event: mockEvent,
+      adapterState: mockAdapterState,
+    });
+  });
+
+  it('should split 125k external sync units into 5 artifacts', async () => {
+    const BATCH_SIZE = 25_000;
+    const TOTAL_UNITS = 125_000;
+
+    const externalSyncUnits: ExternalSyncUnit[] = Array.from(
+      { length: TOTAL_UNITS },
+      (_, i) => ({
+        id: String(i),
+        name: `Unit ${i}`,
+        description: `Description ${i}`,
+      })
+    );
+
+    testAdapter.initializeRepos([
+      {
+        itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
+        overridenOptions: {
+          batchSize: BATCH_SIZE,
+          skipConfirmation: true,
+        },
+      },
+    ]);
+
+    const repo = testAdapter.getRepo(
+      AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS
+    );
+    const chunkSize = 10_000;
+    for (let i = 0; i < TOTAL_UNITS; i += chunkSize) {
+      await repo?.push(externalSyncUnits.slice(i, i + chunkSize));
+    }
+
+    await testAdapter.uploadAllRepos();
+
+    expect(testAdapter.artifacts.length).toBe(
+      TOTAL_UNITS / BATCH_SIZE // 5
+    );
+    expect(
+      testAdapter.artifacts.every(
+        (a) => a.item_type === AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS
+      )
+    ).toBe(true);
   });
 });

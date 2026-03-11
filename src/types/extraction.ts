@@ -313,6 +313,10 @@ export interface ConnectionData {
  * EventData is an interface that defines the structure of the event data that is sent from the external extractor to ADaaS.
  */
 export interface EventData {
+  /**
+   * @deprecated This field is deprecated and should not be used. External sync units should be pushed to the AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS repo.
+   *
+   */
   external_sync_units?: ExternalSyncUnit[];
   /**
    * @deprecated This field is deprecated and should not be used. Progress is
