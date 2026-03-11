@@ -9,7 +9,9 @@
 # 3. Checks if the user is authorized (only codeowners can run it).
 # 4. Runs tests.
 # 5. Resolves the package name based on the branch.
-# 6. Syncs to the latest published beta version from npm and bumps prerelease.
+# 6. Fetches the latest stable and beta versions from npm. If stable is ahead
+#    of the beta base version, starts a new beta line (patch+1 of stable). If
+#    the beta base is at or ahead of stable, bumps the existing beta prerelease.
 # 7. Commits version changes and creates a tag.
 # 8. Publishes to npm with the "beta" tag.
 # 9. Pushes changes to the repository.
@@ -88,20 +90,36 @@ jobs:
       - name: Get latest beta version and bump
         id: version
         run: |
+          LATEST_STABLE=$(npm view ${{ env.PACKAGE_NAME }} dist-tags.latest 2>/dev/null || echo "0.0.0")
           LATEST_BETA=$(npm view ${{ env.PACKAGE_NAME }} dist-tags.beta 2>/dev/null || echo "")
-          echo "Latest published beta version: $LATEST_BETA"
-
           CURRENT_VERSION=$(jq -r '.version' package.json)
+
+          echo "Latest published stable version: $LATEST_STABLE"
+          echo "Latest published beta version: $LATEST_BETA"
           echo "Current package.json version: $CURRENT_VERSION"
 
           if [ -n "$LATEST_BETA" ]; then
-            if [ "$CURRENT_VERSION" != "$LATEST_BETA" ]; then
-              echo "Syncing package.json version to latest published beta version"
-              npm --no-git-tag-version version $LATEST_BETA --allow-same-version
+            BETA_BASE=$(echo "$LATEST_BETA" | sed 's/-beta\..*//')
+
+            HIGHEST=$(npx --yes semver "$LATEST_STABLE" "$BETA_BASE" | tail -1)
+            if [ "$HIGHEST" == "$LATEST_STABLE" ] && [ "$LATEST_STABLE" != "$BETA_BASE" ]; then
+              echo "Stable ($LATEST_STABLE) is ahead of beta base ($BETA_BASE). Starting new beta line."
+              NEXT_PATCH=$(npx --yes semver -i patch "$LATEST_STABLE")
+              npm --no-git-tag-version version "${NEXT_PATCH}-beta.0" --allow-same-version
+            else
+              echo "Beta base ($BETA_BASE) is at or ahead of stable ($LATEST_STABLE). Continuing beta line."
+              if [ "$CURRENT_VERSION" != "$LATEST_BETA" ]; then
+                npm --no-git-tag-version version "$LATEST_BETA" --allow-same-version
+              fi
+              npm --no-git-tag-version --preid=beta version prerelease
             fi
+          else
+            echo "No published beta found. Starting new beta line from stable."
+            NEXT_PATCH=$(npx --yes semver -i patch "$LATEST_STABLE")
+            npm --no-git-tag-version version "${NEXT_PATCH}-beta.0" --allow-same-version
           fi
 
-          NEW_VERSION=$(npm --no-git-tag-version --preid=beta version prerelease | sed 's/^v//')
+          NEW_VERSION=$(jq -r '.version' package.json)
           echo "Target release version: $NEW_VERSION"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
