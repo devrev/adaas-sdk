@@ -66,11 +66,13 @@ export const EVENT_SIZE_THRESHOLD_BYTES = Math.floor(
   MAX_EVENT_SIZE_BYTES * 0.8
 );
 
-export const AIRDROP_DEFAULT_ITEM_TYPES = {
-  EXTERNAL_DOMAIN_METADATA: 'external_domain_metadata',
-  ATTACHMENTS: 'attachments',
-  SSOR_ATTACHMENT: 'ssor_attachment',
-};
+export const SSOR_ATTACHMENT: string = 'ssor_attachment';
+
+export enum AirSyncDefaultItemTypes {
+  EXTERNAL_DOMAIN_METADATA = 'external_domain_metadata',
+  ATTACHMENTS = 'attachments',
+  EXTERNAL_SYNC_UNITS = 'external_sync_units',
+}
 
 export const LIBRARY_VERSION = getLibraryVersion();
 

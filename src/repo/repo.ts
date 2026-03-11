@@ -1,6 +1,7 @@
 import {
-  AIRDROP_DEFAULT_ITEM_TYPES,
+  AirSyncDefaultItemTypes,
   ARTIFACT_BATCH_SIZE,
+  SSOR_ATTACHMENT,
 } from '../common/constants';
 import { Item } from '../repo/repo.interfaces';
 import { ErrorRecord } from '../types/common';
@@ -93,8 +94,8 @@ export class Repo {
     // Normalize items if needed
     if (
       this.normalize &&
-      this.itemType != AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_DOMAIN_METADATA &&
-      this.itemType != AIRDROP_DEFAULT_ITEM_TYPES.SSOR_ATTACHMENT
+      this.itemType != AirSyncDefaultItemTypes.EXTERNAL_DOMAIN_METADATA &&
+      this.itemType != SSOR_ATTACHMENT
     ) {
       recordsToPush = items.map((item: Item) => this.normalize!(item));
     } else {

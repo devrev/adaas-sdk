@@ -14,6 +14,8 @@ export interface RetryConfig {
   errorBody?: unknown;
   /** Optional headers to send with the error response */
   headers?: Record<string, string>;
+  /** Optional delay in milliseconds before sending each failure response */
+  delay?: number;
 }
 
 /**
@@ -32,6 +34,8 @@ export interface RouteConfig {
   headers?: Record<string, string>;
   /** Optional retry configuration for simulating failures before success */
   retry?: RetryConfig;
+  /** Optional delay in milliseconds before sending the response */
+  delay?: number;
 }
 
 /**
