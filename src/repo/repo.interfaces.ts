@@ -9,6 +9,7 @@ import { WorkerAdapterOptions } from '../types/workers';
 export interface RepoInterface {
   itemType: string;
   normalize?: (record: object) => NormalizedItem | NormalizedAttachment;
+  overridenOptions?: WorkerAdapterOptions;
 }
 
 /**

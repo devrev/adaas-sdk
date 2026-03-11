@@ -38,6 +38,7 @@ export interface WorkerAdapterOptions {
   timeout?: number;
   batchSize?: number;
   workerPathOverrides?: WorkerPathOverrides;
+  skipConfirmation?: boolean;
 }
 
 /**
