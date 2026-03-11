@@ -212,7 +212,7 @@ export class MockServer {
    * @param config.retry - Optional retry configuration for simulating failures before success
    */
   public setRoute(config: RouteConfig): void {
-    const { path, method, status, body, retry, headers } = config;
+    const { path, method, status, body, retry, headers, delay } = config;
     const key = this.getRouteKey(method, path);
 
     // Reset request count for this route if retry is configured
@@ -222,47 +222,67 @@ export class MockServer {
     }
 
     this.routeHandlers.set(key, (req: Request, res: Response) => {
-      if (retry) {
-        const currentCount = this.requestCounts.get(key) || 0;
-        const failureCount = retry.failureCount ?? 4;
-        const errorStatus = retry.errorStatus ?? 500;
+      const sendResponse = (responseDelay?: number) => {
+        const send = () => {
+          if (retry) {
+            const currentCount = this.requestCounts.get(key) || 0;
+            const failureCount = retry.failureCount ?? 4;
+            const errorStatus = retry.errorStatus ?? 500;
 
-        if (currentCount < failureCount) {
-          this.requestCounts.set(key, currentCount + 1);
+            if (currentCount < failureCount) {
+              this.requestCounts.set(key, currentCount + 1);
 
-          if (retry.headers) {
-            res.set(retry.headers);
-          }
+              const sendFailure = () => {
+                if (retry.headers) {
+                  res.set(retry.headers);
+                }
 
-          if (retry.errorBody !== undefined) {
-            res.status(errorStatus).json(retry.errorBody);
+                if (retry.errorBody !== undefined) {
+                  res.status(errorStatus).json(retry.errorBody);
+                } else {
+                  res.status(errorStatus).send();
+                }
+              };
+
+              if (retry.delay) {
+                setTimeout(sendFailure, retry.delay);
+              } else {
+                sendFailure();
+              }
+            } else {
+              this.requestCounts.set(key, currentCount + 1);
+
+              if (headers) {
+                res.set(headers);
+              }
+
+              if (body !== undefined) {
+                res.status(status).json(body);
+              } else {
+                this.defaultRouteHandler(req, res);
+              }
+            }
           } else {
-            res.status(errorStatus).send();
+            if (headers) {
+              res.set(headers);
+            }
+
+            if (body !== undefined) {
+              res.status(status).json(body);
+            } else {
+              res.status(status).send();
+            }
           }
+        };
+
+        if (responseDelay) {
+          setTimeout(send, responseDelay);
         } else {
-          this.requestCounts.set(key, currentCount + 1);
-
-          if (headers) {
-            res.set(headers);
-          }
-
-          if (body !== undefined) {
-            res.status(status).json(body);
-          } else {
-            this.defaultRouteHandler(req, res);
-          }
+          send();
         }
-      } else {
-        if (headers) {
-          res.set(headers);
-        }
+      };
 
-        if (body !== undefined) {
-          res.status(status).json(body);
-        } else {
-          res.status(status).send();
-        }
-      }
+      sendResponse(delay);
     });
   }
 
