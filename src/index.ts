@@ -9,6 +9,7 @@ export * from './types';
 export * from './common/install-initial-domain-mapping';
 
 export { ExtractionCommonError } from './common/errors';
+export { AirSyncDefaultItemTypes } from './common/constants';
 
 export { processTask } from './multithreading/process-task';
 export { spawn } from './multithreading/spawn/spawn';
