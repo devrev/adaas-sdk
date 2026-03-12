@@ -122,6 +122,10 @@ Represents the standardized structure of an attachment after normalization in th
 
   Optional. A **string** identifying the author or creator of the attachment.
 
+- _content_type_
+
+  Optional. A **string** specifying the MIME type of the attachment (e.g. `'application/pdf'`, `'image/png'`). When provided, this takes precedence over the content type from the HTTP response header during streaming. Falls back to the HTTP `Content-Type` header, or `'application/octet-stream'` if neither is available.
+
 - _grand_parent_id_
 
   Optional. A **number** identifying a higher-level parent entity, if applicable.
@@ -135,6 +139,7 @@ const normalizedAttachment: NormalizedAttachment = {
   file_name: 'document.pdf',
   parent_id: 'task_789',
   author_id: 'user_456',
+  content_type: 'application/pdf',
   grand_parent_id: 1001,
 };
 ```
