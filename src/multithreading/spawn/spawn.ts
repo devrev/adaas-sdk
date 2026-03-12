@@ -334,9 +334,11 @@ export class Spawn {
         event: this.event,
         data: {
           error: {
-            message:
-              this.workerFailedMessage ??
-              'Worker exited the process without emitting an event. Check other logs for more information.',
+            message: `Worker exited without emitting event. ${
+              this.workerFailedMessage
+                ? `Error: ${this.workerFailedMessage}`
+                : 'Check the logs for more information.'
+            }`,
           },
         },
       });
