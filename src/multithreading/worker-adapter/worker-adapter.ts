@@ -802,7 +802,9 @@ export class WorkerAdapter<ConnectorState> {
 
       if (httpStream) {
         const fileType =
-          httpStream.headers['content-type'] || 'application/octet-stream';
+          attachment.content_type ||
+          httpStream.headers['content-type'] ||
+          'application/octet-stream';
         const fileSize = httpStream.headers['content-length']
           ? parseInt(httpStream.headers['content-length'])
           : undefined;
