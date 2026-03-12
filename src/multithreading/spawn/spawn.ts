@@ -180,6 +180,7 @@ export class Spawn {
   private resolve: (value: void | PromiseLike<void>) => void;
   private originalConsole: Console;
   private logger: Logger;
+  private workerFailedMessage: string | undefined;
   constructor({
     event,
     worker,
@@ -271,6 +272,11 @@ export class Spawn {
         console.info('Worker has emitted message to ADaaS.');
         this.alreadyEmitted = true;
       }
+
+      // If worker sends a failure message before exiting, capture it for use in the error event.
+      if (message?.subject === WorkerMessageSubject.WorkerMessageFailed) {
+        this.workerFailedMessage = message.payload?.message;
+      }
     });
 
     // Log memory usage every 30 seconds
@@ -328,8 +334,11 @@ export class Spawn {
         event: this.event,
         data: {
           error: {
-            message:
-              'Worker exited the process without emitting an event. Check other logs for more information.',
+            message: `Worker exited without emitting event. ${
+              this.workerFailedMessage
+                ? `Error: ${this.workerFailedMessage}`
+                : 'Check the logs for more information.'
+            }`,
           },
         },
       });

@@ -475,6 +475,127 @@ describe(WorkerAdapter.name, () => {
     });
   });
 
+  describe(WorkerAdapter.prototype.processAttachment.name, () => {
+    const createMockHttpStream = (headers: Record<string, string> = {}) =>
+      ({
+        headers,
+        data: { destroy: jest.fn() },
+      }) as any;
+
+    beforeEach(() => {
+      adapter.initializeRepos([{ itemType: 'ssor_attachment' }]);
+
+      const mockRepo = { push: jest.fn().mockResolvedValue(undefined) };
+      adapter.getRepo = jest.fn().mockReturnValue(mockRepo);
+    });
+
+    it('should use attachment.content_type when provided, ignoring HTTP header', async () => {
+      const mockStream = jest.fn().mockResolvedValue({
+        httpStream: createMockHttpStream({
+          'content-type': 'text/plain',
+          'content-length': '100',
+        }),
+      });
+
+      adapter['uploader'].getArtifactUploadUrl = jest
+        .fn()
+        .mockResolvedValue({
+          response: { artifact_id: 'art_1', upload_url: 'https://upload', form_data: [] },
+        });
+      adapter['uploader'].streamArtifact = jest
+        .fn()
+        .mockResolvedValue({ response: {} });
+      adapter['uploader'].confirmArtifactUpload = jest
+        .fn()
+        .mockResolvedValue({ response: {} });
+
+      const attachment = {
+        id: 'att-1',
+        url: 'https://example.com/file.pdf',
+        file_name: 'file.pdf',
+        parent_id: 'parent-1',
+        content_type: 'application/pdf',
+      };
+
+      await adapter.processAttachment(attachment, mockStream);
+
+      expect(adapter['uploader'].getArtifactUploadUrl).toHaveBeenCalledWith(
+        'file.pdf',
+        'application/pdf',
+        100
+      );
+    });
+
+    it('should use HTTP header content-type when attachment.content_type is not set', async () => {
+      const mockStream = jest.fn().mockResolvedValue({
+        httpStream: createMockHttpStream({
+          'content-type': 'image/jpeg',
+          'content-length': '200',
+        }),
+      });
+
+      adapter['uploader'].getArtifactUploadUrl = jest
+        .fn()
+        .mockResolvedValue({
+          response: { artifact_id: 'art_2', upload_url: 'https://upload', form_data: [] },
+        });
+      adapter['uploader'].streamArtifact = jest
+        .fn()
+        .mockResolvedValue({ response: {} });
+      adapter['uploader'].confirmArtifactUpload = jest
+        .fn()
+        .mockResolvedValue({ response: {} });
+
+      const attachment = {
+        id: 'att-2',
+        url: 'https://example.com/photo.jpg',
+        file_name: 'photo.jpg',
+        parent_id: 'parent-2',
+      };
+
+      await adapter.processAttachment(attachment, mockStream);
+
+      expect(adapter['uploader'].getArtifactUploadUrl).toHaveBeenCalledWith(
+        'photo.jpg',
+        'image/jpeg',
+        200
+      );
+    });
+
+    it('should fall back to application/octet-stream when neither content_type nor HTTP header is set', async () => {
+      const mockStream = jest.fn().mockResolvedValue({
+        httpStream: createMockHttpStream({}),
+      });
+
+      adapter['uploader'].getArtifactUploadUrl = jest
+        .fn()
+        .mockResolvedValue({
+          response: { artifact_id: 'art_3', upload_url: 'https://upload', form_data: [] },
+        });
+      adapter['uploader'].streamArtifact = jest
+        .fn()
+        .mockResolvedValue({ response: {} });
+      adapter['uploader'].confirmArtifactUpload = jest
+        .fn()
+        .mockResolvedValue({ response: {} });
+
+      const attachment = {
+        id: 'att-3',
+        url: 'https://example.com/file.bin',
+        file_name: 'file.bin',
+        parent_id: 'parent-3',
+      };
+
+      await adapter.processAttachment(attachment, mockStream);
+
+      expect(adapter['uploader'].getArtifactUploadUrl).toHaveBeenCalledWith(
+        'file.bin',
+        'application/octet-stream',
+        undefined
+      );
+    });
+  });
+
   describe(WorkerAdapter.prototype.emit.name, () => {
     let counter: { counter: number };
     let mockPostMessage: jest.Mock;

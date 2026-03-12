@@ -2,9 +2,10 @@ import axios, { AxiosResponse } from 'axios';
 import { parentPort } from 'node:worker_threads';
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
 import {
-  AIRDROP_DEFAULT_ITEM_TYPES,
+  AirSyncDefaultItemTypes,
   ALLOWED_EXTRACTION_EVENT_TYPES,
   EVENT_SIZE_THRESHOLD_BYTES,
+  SSOR_ATTACHMENT,
   STATELESS_EVENT_TYPES,
 } from '../../common/constants';
 import { emit } from '../../common/control-protocol';
@@ -150,8 +151,8 @@ export class WorkerAdapter<ConnectorState> {
   initializeRepos(repos: RepoInterface[]) {
     this.repos = repos.map((repo) => {
       const shouldNormalize =
-        repo.itemType !== AIRDROP_DEFAULT_ITEM_TYPES.EXTERNAL_DOMAIN_METADATA &&
-        repo.itemType !== AIRDROP_DEFAULT_ITEM_TYPES.SSOR_ATTACHMENT;
+        repo.itemType !== AirSyncDefaultItemTypes.EXTERNAL_DOMAIN_METADATA &&
+        repo.itemType !== SSOR_ATTACHMENT;
 
       return new Repo({
         event: this.event,
@@ -159,7 +160,7 @@ export class WorkerAdapter<ConnectorState> {
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
           // We need to store artifacts ids in state for later use when streaming attachments
-          if (repo.itemType === AIRDROP_DEFAULT_ITEM_TYPES.ATTACHMENTS) {
+          if (repo.itemType === AirSyncDefaultItemTypes.ATTACHMENTS) {
             this.state.toDevRev?.attachmentsMetadata.artifactIds.push(
               artifact.id
             );
@@ -178,7 +179,10 @@ export class WorkerAdapter<ConnectorState> {
             this.isTimeout = true;
           }
         },
-        options: this.options,
+        options: {
+          ...this.options,
+          ...repo.overridenOptions,
+        },
       });
     });
   }
@@ -232,20 +236,47 @@ export class WorkerAdapter<ConnectorState> {
         return;
       }
 
-      // We want to upload all the repos before emitting the event, except for the external sync units done event
-      if (newEventType !== ExtractorEventType.ExternalSyncUnitExtractionDone) {
+      // If the event is ExternalSyncUnitExtractionDone, upload external sync units via a Repo before emitting
+      // TODO: Remove in v2.0.0
+      if (
+        newEventType === ExtractorEventType.ExternalSyncUnitExtractionDone &&
+        data?.external_sync_units &&
+        data.external_sync_units.length > 0
+      ) {
         console.log(
-          `Uploading all repos before emitting event with event type: ${newEventType}.`
+          `Uploading ${data.external_sync_units.length} external sync units via repo before emitting event.`
         );
 
-        try {
-          await this.uploadAllRepos();
-        } catch (error) {
-          console.error('Error while uploading repos', error);
-          parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
-          this.hasWorkerEmitted = true;
-          return;
-        }
+        this.initializeRepos([
+          {
+            itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
+            overridenOptions: {
+              batchSize: 25000,
+              skipConfirmation: true,
+            },
+          },
+        ]);
+
+        await this.getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)?.push(
+          data.external_sync_units
+        );
+
+        // Remove inline external_sync_units from data to avoid SQS size issues
+        delete data.external_sync_units;
+      }
+
+      // Upload all repos before emitting the event
+      console.log(
+        `Uploading all repos before emitting event with event type: ${newEventType}.`
+      );
+
+      try {
+        await this.uploadAllRepos();
+      } catch (error) {
+        console.error('Error while uploading repos', error);
+        parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+        this.hasWorkerEmitted = true;
+        return;
       }
 
       // If the extraction is done, we want to save the timestamp of the last successful sync
@@ -810,7 +841,9 @@ export class WorkerAdapter<ConnectorState> {
 
       if (httpStream) {
         const fileType =
-          httpStream.headers['content-type'] || 'application/octet-stream';
+          attachment.content_type ||
+          httpStream.headers['content-type'] ||
+          'application/octet-stream';
         const fileSize = httpStream.headers['content-length']
           ? parseInt(httpStream.headers['content-length'])
           : undefined;

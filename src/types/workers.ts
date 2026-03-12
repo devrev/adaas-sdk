@@ -38,6 +38,7 @@ export interface WorkerAdapterOptions {
   timeout?: number;
   batchSize?: number;
   workerPathOverrides?: WorkerPathOverrides;
+  skipConfirmation?: boolean;
 }
 
 /**
@@ -119,6 +120,7 @@ export enum WorkerMessageSubject {
   WorkerMessageEmitted = 'emit',
   WorkerMessageExit = 'exit',
   WorkerMessageLog = 'log',
+  WorkerMessageFailed = 'failed',
 }
 
 /**
@@ -151,12 +153,23 @@ export interface WorkerMessageLog {
 }
 
 /**
+ * WorkerMessageFailed interface represents the structure of the worker failed message.
+ * Sent from the worker thread before calling process.exit(1) to convey the specific
+ * error reason to the main thread.
+ */
+export interface WorkerMessageFailed {
+  subject: WorkerMessageSubject.WorkerMessageFailed;
+  payload: { message: string };
+}
+
+/**
  * WorkerMessage represents the structure of the worker message.
  */
 export type WorkerMessage =
   | WorkerMessageEmitted
   | WorkerMessageExit
-  | WorkerMessageLog;
+  | WorkerMessageLog
+  | WorkerMessageFailed;
 
 /**
  * WorkerData represents the structure of the worker data object.

@@ -67,6 +67,14 @@ axiosRetry(axiosClient, {
       return true;
     }
 
+    // Request timeout errors (ECONNABORTED) — axios-retry explicitly excludes
+    // ECONNABORTED from isNetworkError, so we handle it here separately.
+    // Axios only produces ECONNABORTED on client-side timeouts and browser
+    // cancellations, never on server responses, so no response guard is needed.
+    else if (error.code === 'ECONNABORTED') {
+      return true;
+    }
+
     // all other errors
     else {
       return false;
