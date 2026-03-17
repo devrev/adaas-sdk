@@ -1,9 +1,9 @@
+import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
   ProcessAttachmentReturnType,
-} from 'types';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+} from '../types';
 import { AttachmentsStreamingPool } from './attachments-streaming-pool';
 
 // Mock types
@@ -461,9 +461,9 @@ describe(AttachmentsStreamingPool.name, () => {
         attachmentWithContentType,
         mockStream
       );
-      expect(
-        mockAdapter.processAttachment.mock.calls[0][0].content_type
-      ).toBe('application/pdf');
+      expect(mockAdapter.processAttachment.mock.calls[0][0].content_type).toBe(
+        'application/pdf'
+      );
     });
 
     it('should handle mixed attachments with and without content_type', async () => {
@@ -502,15 +502,15 @@ describe(AttachmentsStreamingPool.name, () => {
       await pool.streamAll();
 
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
-      expect(
-        mockAdapter.processAttachment.mock.calls[0][0].content_type
-      ).toBe('image/png');
+      expect(mockAdapter.processAttachment.mock.calls[0][0].content_type).toBe(
+        'image/png'
+      );
       expect(
         mockAdapter.processAttachment.mock.calls[1][0].content_type
       ).toBeUndefined();
-      expect(
-        mockAdapter.processAttachment.mock.calls[2][0].content_type
-      ).toBe('application/pdf');
+      expect(mockAdapter.processAttachment.mock.calls[2][0].content_type).toBe(
+        'application/pdf'
+      );
     });
 
     it('should include content_type in error log when processAttachment returns error', async () => {
