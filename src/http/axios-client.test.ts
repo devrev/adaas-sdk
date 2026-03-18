@@ -140,6 +140,40 @@ describe('isLocalUrl', () => {
         true
       );
     });
+
+    it('169.254.0.1 (link-local)', () => {
+      expect(isLocalUrl('http://169.254.0.1')).toBe(true);
+    });
+
+    it('169.254.169.254 (cloud metadata endpoint)', () => {
+      expect(isLocalUrl('http://169.254.169.254/latest/meta-data')).toBe(true);
+    });
+
+    it('169.254.255.255 (end of link-local range)', () => {
+      expect(isLocalUrl('http://169.254.255.255')).toBe(true);
+    });
+
+    it('[fe80::1] (IPv6 link-local)', () => {
+      expect(isLocalUrl('http://[fe80::1]')).toBe(true);
+    });
+
+    it('[fe80::1%25eth0] (IPv6 link-local with zone ID — unparseable, fails open)', () => {
+      // URL parser throws on zone IDs, so isLocalUrl fails open (returns false).
+      // This is acceptable since zone-scoped IPv6 URLs are not realistic customer input.
+      expect(isLocalUrl('http://[fe80::1%25eth0]')).toBe(false);
+    });
+
+    it('[fd00::1] (IPv6 unique-local)', () => {
+      expect(isLocalUrl('http://[fd00::1]')).toBe(true);
+    });
+
+    it('[fd12:3456:789a::1] (IPv6 unique-local with prefix)', () => {
+      expect(isLocalUrl('http://[fd12:3456:789a::1]/files')).toBe(true);
+    });
+
+    it('[fc00::1] (IPv6 unique-local fc00 prefix)', () => {
+      expect(isLocalUrl('http://[fc00::1]')).toBe(true);
+    });
   });
 
   describe('should return false for public/external URLs', () => {
@@ -179,6 +213,14 @@ describe('isLocalUrl', () => {
 
     it('172.32.0.1 (above private range)', () => {
       expect(isLocalUrl('http://172.32.0.1')).toBe(false);
+    });
+
+    it('169.253.0.1 (not in link-local range)', () => {
+      expect(isLocalUrl('http://169.253.0.1')).toBe(false);
+    });
+
+    it('169.255.0.1 (not in link-local range)', () => {
+      expect(isLocalUrl('http://169.255.0.1')).toBe(false);
     });
 
     it('11.0.0.1 (not in 10.x range)', () => {
@@ -379,5 +421,34 @@ describe('axiosClient retryCondition integration', () => {
 
     expect(isLocalUrl(error.config?.url)).toBe(false);
     expect(isNonRetryableConnectionError(error)).toBe(false);
+  });
+
+  it('should not retry any error to a link-local IP (cloud metadata)', () => {
+    const error = createAxiosError({
+      code: 'ECONNRESET',
+      url: 'http://169.254.169.254/latest/meta-data',
+    });
+
+    // ECONNRESET is normally retryable, but the URL is link-local
+    expect(isLocalUrl(error.config?.url)).toBe(true);
+  });
+
+  it('should not retry any error to an IPv6 link-local address', () => {
+    const error = createAxiosError({
+      code: 'ECONNREFUSED',
+      url: 'http://[fe80::1]:8080/files',
+    });
+
+    expect(isLocalUrl(error.config?.url)).toBe(true);
+    expect(isNonRetryableConnectionError(error)).toBe(true);
+  });
+
+  it('should not retry any error to an IPv6 unique-local address', () => {
+    const error = createAxiosError({
+      code: 'ETIMEDOUT',
+      url: 'http://[fd00::1]:3000/attachments',
+    });
+
+    expect(isLocalUrl(error.config?.url)).toBe(true);
   });
 });

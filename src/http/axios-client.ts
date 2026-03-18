@@ -10,7 +10,7 @@
  * 3. All 5xx server errors.
  *
  * Non-Retry Conditions:
- * 1. Requests to local/private URLs (localhost, private IPs, .local/.internal TLDs).
+ * 1. Requests to local/private URLs (localhost, private IPs, link-local, IPv6 ULA, .local/.internal TLDs).
  * 2. Definitive connection failures (ECONNREFUSED, ENOTFOUND, ENETUNREACH, EHOSTUNREACH).
  *
  * Retry Strategy:
@@ -50,7 +50,10 @@ const NON_RETRYABLE_ERROR_CODES = new Set([
  * - `localhost` (any port)
  * - IPv4 loopback range (`127.x.x.x`)
  * - IPv6 loopback (`::1`, `[::1]`)
+ * - IPv6 link-local (`fe80::/10`)
+ * - IPv6 unique-local (`fc00::/7`, i.e. `fc00::` and `fd00::` prefixes)
  * - Private IPv4 ranges (`10.x.x.x`, `172.16-31.x.x`, `192.168.x.x`)
+ * - Link-local IPv4 range (`169.254.x.x`, includes cloud metadata endpoints)
  * - `0.0.0.0`
  * - `.local` TLD (mDNS / local domain)
  * - `.internal` TLD
@@ -83,6 +86,20 @@ function isLocalUrl(url?: string): boolean {
       return true;
     }
 
+    // IPv6 link-local (fe80::/10) and unique-local (fc00::/7 covers fc00:: and fd00::)
+    // URL parser keeps brackets for IPv6, so hostname looks like "[fe80::1]".
+    // We strip brackets before checking prefixes.
+    if (hostname.startsWith('[')) {
+      const inner = hostname.slice(1, -1); // Remove [ and ]
+      if (
+        inner.startsWith('fe80:') ||
+        inner.startsWith('fc00:') ||
+        inner.startsWith('fd') // fd00::/8 is the commonly used subset of fc00::/7
+      ) {
+        return true;
+      }
+    }
+
     // .local and .internal TLDs
     if (hostname.endsWith('.local') || hostname.endsWith('.internal')) {
       return true;
@@ -112,6 +129,11 @@ function isLocalUrl(url?: string): boolean {
 
       // 172.16.0.0 – 172.31.255.255 — private
       if (a === 172 && b >= 16 && b <= 31) {
+        return true;
+      }
+
+      // 169.254.x.x — link-local (includes cloud metadata endpoints like 169.254.169.254)
+      if (a === 169 && b === 254) {
         return true;
       }
     }
