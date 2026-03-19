@@ -94,7 +94,7 @@ export function resolveTimeValue(
   state: SdkState
 ): string {
   switch (timeValue.type) {
-    case TimeValueType.ABSOLUTE: {
+    case TimeValueType.ABSOLUTE_TIME: {
       if (!timeValue.value) {
         throw new Error(
           'TimeValue of type ABSOLUTE must have a value (ISO 8601 timestamp).'
@@ -103,7 +103,7 @@ export function resolveTimeValue(
       return timeValue.value;
     }
 
-    case TimeValueType.NOW: {
+    case TimeValueType.CURRENT_TIME: {
       return new Date().toISOString();
     }
 

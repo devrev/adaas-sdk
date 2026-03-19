@@ -138,8 +138,8 @@ describe('ExtractionTypes', () => {
       expect(TimeValueType.WORKERS_NEWEST_PLUS_WINDOW).toBe(
         'workers_newest_plus_window'
       );
-      expect(TimeValueType.NOW).toBe('now');
-      expect(TimeValueType.ABSOLUTE).toBe('absolute');
+      expect(TimeValueType.CURRENT_TIME).toBe('current_time');
+      expect(TimeValueType.ABSOLUTE_TIME).toBe('absolute_time');
       expect(TimeValueType.UNBOUNDED).toBe('unbounded');
     });
 

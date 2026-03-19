@@ -207,9 +207,9 @@ export enum TimeValueType {
   /** Newest timestamp from worker state plus a duration window */
   WORKERS_NEWEST_PLUS_WINDOW = 'workers_newest_plus_window',
   /** Current time */
-  NOW = 'now',
+  CURRENT_TIME = 'current_time',
   /** User-specified absolute timestamp */
-  ABSOLUTE = 'absolute',
+  ABSOLUTE_TIME = 'absolute_time',
   /** No bound - extract all available data */
   UNBOUNDED = 'unbounded',
 }

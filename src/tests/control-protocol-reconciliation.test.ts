@@ -51,23 +51,23 @@ describe('Enhanced Control Protocol', () => {
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
           extraction_start_time: {
-            type: TimeValueType.ABSOLUTE,
+            type: TimeValueType.ABSOLUTE_TIME,
             value: '2024-01-01T00:00:00Z',
           },
           extraction_end_time: {
-            type: TimeValueType.NOW,
+            type: TimeValueType.CURRENT_TIME,
           },
         },
       });
 
       expect(event.payload.event_context.extraction_start_time?.type).toBe(
-        TimeValueType.ABSOLUTE
+        TimeValueType.ABSOLUTE_TIME
       );
       expect(event.payload.event_context.extraction_start_time?.value).toBe(
         '2024-01-01T00:00:00Z'
       );
       expect(event.payload.event_context.extraction_end_time?.type).toBe(
-        TimeValueType.NOW
+        TimeValueType.CURRENT_TIME
       );
     });
 
@@ -79,7 +79,7 @@ describe('Enhanced Control Protocol', () => {
             type: TimeValueType.UNBOUNDED,
           },
           extraction_end_time: {
-            type: TimeValueType.NOW,
+            type: TimeValueType.CURRENT_TIME,
           },
         },
       });
@@ -97,7 +97,7 @@ describe('Enhanced Control Protocol', () => {
             type: TimeValueType.WORKERS_NEWEST,
           },
           extraction_end_time: {
-            type: TimeValueType.NOW,
+            type: TimeValueType.CURRENT_TIME,
           },
         },
       });
@@ -106,7 +106,7 @@ describe('Enhanced Control Protocol', () => {
         TimeValueType.WORKERS_NEWEST
       );
       expect(event.payload.event_context.extraction_end_time?.type).toBe(
-        TimeValueType.NOW
+        TimeValueType.CURRENT_TIME
       );
     });
 
@@ -145,7 +145,7 @@ describe('Enhanced Control Protocol', () => {
             type: TimeValueType.UNBOUNDED,
           },
           extraction_end_time: {
-            type: TimeValueType.NOW,
+            type: TimeValueType.CURRENT_TIME,
           },
         },
       });
@@ -163,7 +163,7 @@ describe('Enhanced Control Protocol', () => {
             type: TimeValueType.WORKERS_NEWEST,
           },
           extraction_end_time: {
-            type: TimeValueType.NOW,
+            type: TimeValueType.CURRENT_TIME,
           },
         },
       });
@@ -172,7 +172,7 @@ describe('Enhanced Control Protocol', () => {
         TimeValueType.WORKERS_NEWEST
       );
       expect(event.payload.event_context.extraction_end_time?.type).toBe(
-        TimeValueType.NOW
+        TimeValueType.CURRENT_TIME
       );
     });
 
@@ -181,17 +181,17 @@ describe('Enhanced Control Protocol', () => {
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
           extraction_start_time: {
-            type: TimeValueType.ABSOLUTE,
+            type: TimeValueType.ABSOLUTE_TIME,
             value: '2024-06-01T00:00:00Z',
           },
           extraction_end_time: {
-            type: TimeValueType.NOW,
+            type: TimeValueType.CURRENT_TIME,
           },
         },
       });
 
       expect(event.payload.event_context.extraction_start_time?.type).toBe(
-        TimeValueType.ABSOLUTE
+        TimeValueType.ABSOLUTE_TIME
       );
       expect(event.payload.event_context.extraction_start_time?.value).toBe(
         '2024-06-01T00:00:00Z'
@@ -203,24 +203,24 @@ describe('Enhanced Control Protocol', () => {
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
           extraction_start_time: {
-            type: TimeValueType.ABSOLUTE,
+            type: TimeValueType.ABSOLUTE_TIME,
             value: '2024-01-01T00:00:00Z',
           },
           extraction_end_time: {
-            type: TimeValueType.ABSOLUTE,
+            type: TimeValueType.ABSOLUTE_TIME,
             value: '2024-03-31T23:59:59Z',
           },
         },
       });
 
       expect(event.payload.event_context.extraction_start_time?.type).toBe(
-        TimeValueType.ABSOLUTE
+        TimeValueType.ABSOLUTE_TIME
       );
       expect(event.payload.event_context.extraction_start_time?.value).toBe(
         '2024-01-01T00:00:00Z'
       );
       expect(event.payload.event_context.extraction_end_time?.type).toBe(
-        TimeValueType.ABSOLUTE
+        TimeValueType.ABSOLUTE_TIME
       );
       expect(event.payload.event_context.extraction_end_time?.value).toBe(
         '2024-03-31T23:59:59Z'
@@ -256,11 +256,11 @@ describe('Enhanced Control Protocol', () => {
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
           extraction_start_time: {
-            type: TimeValueType.ABSOLUTE,
+            type: TimeValueType.ABSOLUTE_TIME,
             value: '2024-02-01T00:00:00Z',
           },
           extraction_end_time: {
-            type: TimeValueType.ABSOLUTE,
+            type: TimeValueType.ABSOLUTE_TIME,
             value: '2024-02-29T23:59:59Z',
           },
         },

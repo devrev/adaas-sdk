@@ -159,10 +159,10 @@ describe('time-value-resolver', () => {
       workers_newest: '2024-06-01T00:00:00.000Z',
     };
 
-    describe('ABSOLUTE type', () => {
+    describe('ABSOLUTE_TIME type', () => {
       it('should return the value directly', () => {
         const result = resolveTimeValue(
-          { type: TimeValueType.ABSOLUTE, value: '2024-03-15T12:00:00Z' },
+          { type: TimeValueType.ABSOLUTE_TIME, value: '2024-03-15T12:00:00Z' },
           baseState
         );
         expect(result).toBe('2024-03-15T12:00:00Z');
@@ -170,15 +170,18 @@ describe('time-value-resolver', () => {
 
       it('should throw if value is missing', () => {
         expect(() =>
-          resolveTimeValue({ type: TimeValueType.ABSOLUTE }, baseState)
+          resolveTimeValue({ type: TimeValueType.ABSOLUTE_TIME }, baseState)
         ).toThrow('must have a value');
       });
     });
 
-    describe('NOW type', () => {
+    describe('CURRENT_TIME type', () => {
       it('should return current time as ISO string', () => {
         const before = new Date().toISOString();
-        const result = resolveTimeValue({ type: TimeValueType.NOW }, baseState);
+        const result = resolveTimeValue(
+          { type: TimeValueType.CURRENT_TIME },
+          baseState
+        );
         const after = new Date().toISOString();
 
         expect(result).toBeDefined();
@@ -385,13 +388,13 @@ describe('time-value-resolver', () => {
         jest.useRealTimers();
       });
 
-      it('Initial Import: UNBOUNDED start, NOW end', () => {
+      it('Initial Import: UNBOUNDED start, CURRENT_TIME end', () => {
         const start = resolveTimeValue(
           { type: TimeValueType.UNBOUNDED },
           scenarioState
         );
         const end = resolveTimeValue(
-          { type: TimeValueType.NOW },
+          { type: TimeValueType.CURRENT_TIME },
           scenarioState
         );
 
@@ -399,13 +402,13 @@ describe('time-value-resolver', () => {
         expect(end).toBe(FIXED_NOW);
       });
 
-      it('Normal Import: WORKERS_NEWEST start, NOW end', () => {
+      it('Normal Import: WORKERS_NEWEST start, CURRENT_TIME end', () => {
         const start = resolveTimeValue(
           { type: TimeValueType.WORKERS_NEWEST },
           scenarioState
         );
         const end = resolveTimeValue(
-          { type: TimeValueType.NOW },
+          { type: TimeValueType.CURRENT_TIME },
           scenarioState
         );
 
@@ -413,13 +416,13 @@ describe('time-value-resolver', () => {
         expect(end).toBe(FIXED_NOW);
       });
 
-      it('POC Import: ABSOLUTE start, NOW end', () => {
+      it('POC Import: ABSOLUTE_TIME start, CURRENT_TIME end', () => {
         const start = resolveTimeValue(
-          { type: TimeValueType.ABSOLUTE, value: '2024-01-01T00:00:00Z' },
+          { type: TimeValueType.ABSOLUTE_TIME, value: '2024-01-01T00:00:00Z' },
           scenarioState
         );
         const end = resolveTimeValue(
-          { type: TimeValueType.NOW },
+          { type: TimeValueType.CURRENT_TIME },
           scenarioState
         );
 
@@ -441,13 +444,13 @@ describe('time-value-resolver', () => {
         expect(end).toBe('2024-01-01T00:00:00.000Z');
       });
 
-      it('Reconciliation: ABSOLUTE start, ABSOLUTE end', () => {
+      it('Reconciliation: ABSOLUTE_TIME start, ABSOLUTE_TIME end', () => {
         const start = resolveTimeValue(
-          { type: TimeValueType.ABSOLUTE, value: '2026-01-01T00:00:00Z' },
+          { type: TimeValueType.ABSOLUTE_TIME, value: '2026-01-01T00:00:00Z' },
           scenarioState
         );
         const end = resolveTimeValue(
-          { type: TimeValueType.ABSOLUTE, value: '2026-03-31T23:59:59Z' },
+          { type: TimeValueType.ABSOLUTE_TIME, value: '2026-03-31T23:59:59Z' },
           scenarioState
         );
 
