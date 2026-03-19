@@ -10,8 +10,8 @@ describe('Enhanced Control Protocol', () => {
       expect(values).toContain('workers_oldest_minus_window');
       expect(values).toContain('workers_newest');
       expect(values).toContain('workers_newest_plus_window');
-      expect(values).toContain('now');
-      expect(values).toContain('absolute');
+      expect(values).toContain('current_time');
+      expect(values).toContain('absolute_time');
       expect(values).toContain('unbounded');
     });
   });
