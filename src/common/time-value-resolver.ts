@@ -79,15 +79,16 @@ export function applyDuration(
  * - ABSOLUTE: Returns the value directly (must be an ISO 8601 timestamp)
  * - NOW: Returns the current time as ISO 8601
  * - UNBOUNDED: Returns UNBOUNDED_DATE_TIME_VALUE ('1970-01-01T00:00:00.000Z')
- * - WORKERS_OLDEST: Returns workers_oldest from state, or current time if not set
- * - WORKERS_NEWEST: Returns workers_newest from state, or current time if not set
- * - WORKERS_OLDEST_MINUS_WINDOW: Subtracts duration from workers_oldest (or current time if not set)
- * - WORKERS_NEWEST_PLUS_WINDOW: Adds duration to workers_newest (or current time if not set)
+ * - WORKERS_OLDEST: Returns workers_oldest from state, or throws if not set
+ * - WORKERS_NEWEST: Returns workers_newest from state, or throws if not set
+ * - WORKERS_OLDEST_MINUS_WINDOW: Subtracts duration from workers_oldest, or throws if not set
+ * - WORKERS_NEWEST_PLUS_WINDOW: Adds duration to workers_newest, or throws if not set
  *
  * @param timeValue - The TimeValue to resolve
  * @param state - The current SDK state containing workers_oldest and workers_newest
  * @returns Resolved ISO 8601 timestamp string
  * @throws Error if required TimeValue.value is missing for ABSOLUTE or *_WINDOW types
+ * @throws Error if workers_oldest/workers_newest is not set in state for WORKERS_* types
  */
 export function resolveTimeValue(
   timeValue: TimeValue,
@@ -113,20 +114,18 @@ export function resolveTimeValue(
 
     case TimeValueType.WORKERS_OLDEST: {
       if (!state.workers_oldest) {
-        console.log(
-          'workers_oldest not set in state, falling back to current time.'
+        throw new Error(
+          'workers_oldest is not set in state. Cannot resolve TimeValue of type WORKERS_OLDEST without a prior extraction boundary.'
         );
-        return new Date().toISOString();
       }
       return state.workers_oldest;
     }
 
     case TimeValueType.WORKERS_NEWEST: {
       if (!state.workers_newest) {
-        console.log(
-          'workers_newest not set in state, falling back to current time.'
+        throw new Error(
+          'workers_newest is not set in state. Cannot resolve TimeValue of type WORKERS_NEWEST without a prior extraction boundary.'
         );
-        return new Date().toISOString();
       }
       return state.workers_newest;
     }
@@ -137,13 +136,12 @@ export function resolveTimeValue(
           "TimeValue of type WORKERS_OLDEST_MINUS_WINDOW must have a value (duration, e.g. '30s', '5m', '2h')."
         );
       }
-      const base = state.workers_oldest || new Date().toISOString();
       if (!state.workers_oldest) {
-        console.log(
-          'workers_oldest not set in state, falling back to current time for WORKERS_OLDEST_MINUS_WINDOW.'
+        throw new Error(
+          'workers_oldest is not set in state. Cannot resolve TimeValue of type WORKERS_OLDEST_MINUS_WINDOW without a prior extraction boundary.'
         );
       }
-      return applyDuration(base, timeValue.value, 'subtract');
+      return applyDuration(state.workers_oldest, timeValue.value, 'subtract');
     }
 
     case TimeValueType.WORKERS_NEWEST_PLUS_WINDOW: {
@@ -152,13 +150,12 @@ export function resolveTimeValue(
           "TimeValue of type WORKERS_NEWEST_PLUS_WINDOW must have a value (duration, e.g. '30s', '5m', '2h')."
         );
       }
-      const base = state.workers_newest || new Date().toISOString();
       if (!state.workers_newest) {
-        console.log(
-          'workers_newest not set in state, falling back to current time for WORKERS_NEWEST_PLUS_WINDOW.'
+        throw new Error(
+          'workers_newest is not set in state. Cannot resolve TimeValue of type WORKERS_NEWEST_PLUS_WINDOW without a prior extraction boundary.'
         );
       }
-      return applyDuration(base, timeValue.value, 'add');
+      return applyDuration(state.workers_newest, timeValue.value, 'add');
     }
 
     default: {

@@ -209,17 +209,13 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2024-01-01T00:00:00.000Z');
       });
 
-      it('should fall back to current time if workers_oldest is not set', () => {
-        const before = new Date().toISOString();
-        const result = resolveTimeValue(
-          { type: TimeValueType.WORKERS_OLDEST },
-          { workers_oldest: '' }
-        );
-        const after = new Date().toISOString();
-
-        expect(result).toBeDefined();
-        expect(result! >= before).toBe(true);
-        expect(result! <= after).toBe(true);
+      it('should throw if workers_oldest is not set', () => {
+        expect(() =>
+          resolveTimeValue(
+            { type: TimeValueType.WORKERS_OLDEST },
+            { workers_oldest: '' }
+          )
+        ).toThrow('workers_oldest is not set in state');
       });
     });
 
@@ -232,17 +228,13 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2024-06-01T00:00:00.000Z');
       });
 
-      it('should fall back to current time if workers_newest is not set', () => {
-        const before = new Date().toISOString();
-        const result = resolveTimeValue(
-          { type: TimeValueType.WORKERS_NEWEST },
-          { workers_newest: '' }
-        );
-        const after = new Date().toISOString();
-
-        expect(result).toBeDefined();
-        expect(result! >= before).toBe(true);
-        expect(result! <= after).toBe(true);
+      it('should throw if workers_newest is not set', () => {
+        expect(() =>
+          resolveTimeValue(
+            { type: TimeValueType.WORKERS_NEWEST },
+            { workers_newest: '' }
+          )
+        ).toThrow('workers_newest is not set in state');
       });
     });
 
@@ -269,28 +261,16 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2023-12-31T23:30:00.000Z');
       });
 
-      it('should fall back to current time if workers_oldest is not set', () => {
-        const before = new Date();
-        const result = resolveTimeValue(
-          {
-            type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
-            value: '2h',
-          },
-          { workers_oldest: '' }
-        );
-        const after = new Date();
-
-        // Result should be roughly now minus 2 hours
-        const resultDate = new Date(result!);
-        const expectedMin = new Date(before);
-        expectedMin.setUTCHours(expectedMin.getUTCHours() - 2);
-        const expectedMax = new Date(after);
-        expectedMax.setUTCHours(expectedMax.getUTCHours() - 2);
-
-        expect(resultDate.getTime()).toBeGreaterThanOrEqual(
-          expectedMin.getTime()
-        );
-        expect(resultDate.getTime()).toBeLessThanOrEqual(expectedMax.getTime());
+      it('should throw if workers_oldest is not set', () => {
+        expect(() =>
+          resolveTimeValue(
+            {
+              type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
+              value: '2h',
+            },
+            { workers_oldest: '' }
+          )
+        ).toThrow('workers_oldest is not set in state');
       });
 
       it('should throw if value (duration) is missing', () => {
@@ -326,28 +306,16 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2024-06-01T00:30:00.000Z');
       });
 
-      it('should fall back to current time if workers_newest is not set', () => {
-        const before = new Date();
-        const result = resolveTimeValue(
-          {
-            type: TimeValueType.WORKERS_NEWEST_PLUS_WINDOW,
-            value: '2h',
-          },
-          { workers_newest: '' }
-        );
-        const after = new Date();
-
-        // Result should be roughly now plus 2 hours
-        const resultDate = new Date(result!);
-        const expectedMin = new Date(before);
-        expectedMin.setUTCHours(expectedMin.getUTCHours() + 2);
-        const expectedMax = new Date(after);
-        expectedMax.setUTCHours(expectedMax.getUTCHours() + 2);
-
-        expect(resultDate.getTime()).toBeGreaterThanOrEqual(
-          expectedMin.getTime()
-        );
-        expect(resultDate.getTime()).toBeLessThanOrEqual(expectedMax.getTime());
+      it('should throw if workers_newest is not set', () => {
+        expect(() =>
+          resolveTimeValue(
+            {
+              type: TimeValueType.WORKERS_NEWEST_PLUS_WINDOW,
+              value: '2h',
+            },
+            { workers_newest: '' }
+          )
+        ).toThrow('workers_newest is not set in state');
       });
 
       it('should throw if value (duration) is missing', () => {
