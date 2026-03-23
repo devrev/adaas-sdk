@@ -14,6 +14,7 @@ export {
   AirdropMessage,
   ConnectionData,
   DomainObjectState,
+  EventContext,
   EventContextIn,
   EventContextOut,
   EventData,
@@ -28,7 +29,10 @@ export {
   ExtractionMode,
   ExtractorEvent,
   ExtractorEventType,
+  InitialSyncScope,
   ProcessAttachmentReturnType,
+  TimeValue,
+  TimeValueType,
 } from './extraction';
 
 // Loading
@@ -48,7 +52,10 @@ export {
 } from '../repo/repo.interfaces';
 
 // State
-export { AdapterState } from '../state/state.interfaces';
+export {
+  AdapterState,
+  UNBOUNDED_DATE_TIME_VALUE,
+} from '../state/state.interfaces';
 
 // Uploader
 export {

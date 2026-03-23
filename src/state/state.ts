@@ -3,6 +3,7 @@ import { parentPort } from 'node:worker_threads';
 
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
+import { resolveTimeValue } from '../common/time-value-resolver';
 import { axiosClient } from '../http/axios-client-internal';
 import { getPrintableState, serializeError } from '../logger/logger';
 import { SyncMode } from '../types/common';
@@ -80,6 +81,47 @@ export async function createAdapterState<ConnectorState>({
     ) {
       as.state.lastSyncStarted = new Date().toISOString();
       console.log(`Setting lastSyncStarted to ${as.state.lastSyncStarted}.`);
+    }
+
+    // Resolve extraction timestamps from TimeValue objects
+    const eventContext = event.payload.event_context;
+
+    const timeFields = [
+      { source: 'extraction_start_time', target: 'extraction_start' },
+      { source: 'extraction_end_time', target: 'extraction_end' },
+    ] as const;
+
+    for (const { source, target } of timeFields) {
+      const timeValue = eventContext[source];
+      if (timeValue) {
+        try {
+          eventContext[target] = resolveTimeValue(timeValue, as.state);
+          console.log(`Resolved ${target} to ${eventContext[target]}.`);
+        } catch (error) {
+          const errorMessage = `Failed to resolve ${source}: ${serializeError(
+            error
+          )}`;
+          console.error(errorMessage);
+          parentPort?.postMessage({
+            subject: WorkerMessageSubject.WorkerMessageFailed,
+            payload: { message: errorMessage },
+          });
+          process.exit(1);
+        }
+      }
+    }
+
+    // Validate that extraction_start is before extraction_end
+    if (eventContext.extraction_start && eventContext.extraction_end) {
+      if (eventContext.extraction_start >= eventContext.extraction_end) {
+        const errorMessage = `Invalid extraction window: extraction_start (${eventContext.extraction_start}) is not before extraction_end (${eventContext.extraction_end}). This indicates an error in the platform.`;
+        console.error(errorMessage);
+        parentPort?.postMessage({
+          subject: WorkerMessageSubject.WorkerMessageFailed,
+          payload: { message: errorMessage },
+        });
+        process.exit(1);
+      }
     }
   }
 

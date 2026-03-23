@@ -1,12 +1,12 @@
 import { sleep } from '../common/helpers';
+import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { ProcessedAttachment } from '../state/state.interfaces';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
   ProcessAttachmentReturnType,
 } from '../types';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
-import { ProcessedAttachment } from 'state/state.interfaces';
 
 export class AttachmentsStreamingPool<ConnectorState> {
   private adapter: WorkerAdapter<ConnectorState>;

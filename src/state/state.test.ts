@@ -3,7 +3,7 @@ import {
   STATELESS_EVENT_TYPES,
 } from '../common/constants';
 import { createEvent } from '../tests/test-helpers';
-import { EventType } from '../types/extraction';
+import { EventType, TimeValueType } from '../types/extraction';
 import { State, createAdapterState } from './state';
 import { extractionSdkState } from './state.interfaces';
 
@@ -298,4 +298,235 @@ describe(State.name, () => {
       expect(installInitialDomainMappingSpy).toHaveBeenCalled();
     }
   );
+
+  describe('Enhanced Control Protocol - TimeValue resolution failures', () => {
+    it('should exit the process if extraction_start_time resolution fails', async () => {
+      // Arrange: WORKERS_OLDEST type but state has no workers_oldest
+      const event = createEvent({
+        eventType: EventType.StartExtractingData,
+        eventContextOverrides: {
+          extraction_start_time: {
+            type: TimeValueType.WORKERS_OLDEST,
+          },
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+        workers_oldest: '',
+        workers_newest: '',
+      });
+      fetchStateSpy.mockResolvedValue(stringifiedState);
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      // Act & Assert
+      await expect(
+        createAdapterState({
+          event,
+          initialState: {},
+          initialDomainMapping: {},
+        })
+      ).rejects.toThrow('process.exit called');
+      expect(processExitSpy).toHaveBeenCalledWith(1);
+    });
+
+    it('should exit the process if extraction_end_time resolution fails', async () => {
+      // Arrange: WORKERS_NEWEST type but state has no workers_newest
+      const event = createEvent({
+        eventType: EventType.StartExtractingData,
+        eventContextOverrides: {
+          extraction_start_time: {
+            type: TimeValueType.UNBOUNDED,
+          },
+          extraction_end_time: {
+            type: TimeValueType.WORKERS_NEWEST,
+          },
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+        workers_oldest: '',
+        workers_newest: '',
+      });
+      fetchStateSpy.mockResolvedValue(stringifiedState);
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      // Act & Assert
+      await expect(
+        createAdapterState({
+          event,
+          initialState: {},
+          initialDomainMapping: {},
+        })
+      ).rejects.toThrow('process.exit called');
+      expect(processExitSpy).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('Enhanced Control Protocol - extraction window validation', () => {
+    it('should exit the process if extraction_start >= extraction_end', async () => {
+      // Arrange: start is after end (inverted window)
+      const event = createEvent({
+        eventType: EventType.StartExtractingData,
+        eventContextOverrides: {
+          extraction_start_time: {
+            type: TimeValueType.ABSOLUTE_TIME,
+            value: '2025-06-01T00:00:00Z',
+          },
+          extraction_end_time: {
+            type: TimeValueType.ABSOLUTE_TIME,
+            value: '2024-01-01T00:00:00Z',
+          },
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+      });
+      fetchStateSpy.mockResolvedValue(stringifiedState);
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      // Act & Assert
+      await expect(
+        createAdapterState({
+          event,
+          initialState: {},
+          initialDomainMapping: {},
+        })
+      ).rejects.toThrow('process.exit called');
+      expect(processExitSpy).toHaveBeenCalledWith(1);
+    });
+
+    it('should exit the process if extraction_start equals extraction_end', async () => {
+      // Arrange: start equals end (zero-width window)
+      const event = createEvent({
+        eventType: EventType.StartExtractingData,
+        eventContextOverrides: {
+          extraction_start_time: {
+            type: TimeValueType.ABSOLUTE_TIME,
+            value: '2024-06-01T00:00:00Z',
+          },
+          extraction_end_time: {
+            type: TimeValueType.ABSOLUTE_TIME,
+            value: '2024-06-01T00:00:00Z',
+          },
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+      });
+      fetchStateSpy.mockResolvedValue(stringifiedState);
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      // Act & Assert
+      await expect(
+        createAdapterState({
+          event,
+          initialState: {},
+          initialDomainMapping: {},
+        })
+      ).rejects.toThrow('process.exit called');
+      expect(processExitSpy).toHaveBeenCalledWith(1);
+    });
+
+    it('should not exit when extraction_start < extraction_end', async () => {
+      // Arrange: valid window
+      const event = createEvent({
+        eventType: EventType.StartExtractingData,
+        eventContextOverrides: {
+          extraction_start_time: {
+            type: TimeValueType.ABSOLUTE_TIME,
+            value: '2024-01-01T00:00:00Z',
+          },
+          extraction_end_time: {
+            type: TimeValueType.ABSOLUTE_TIME,
+            value: '2025-06-01T00:00:00Z',
+          },
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+      });
+      fetchStateSpy.mockResolvedValue(stringifiedState);
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: process.exit should NOT have been called
+      expect(processExitSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not validate when only extraction_start is set', async () => {
+      // Arrange: only start, no end
+      const event = createEvent({
+        eventType: EventType.StartExtractingData,
+        eventContextOverrides: {
+          extraction_start_time: {
+            type: TimeValueType.ABSOLUTE_TIME,
+            value: '2024-01-01T00:00:00Z',
+          },
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+      });
+      fetchStateSpy.mockResolvedValue(stringifiedState);
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: process.exit should NOT have been called
+      expect(processExitSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not exit when extraction_start is UNBOUNDED and extraction_end is a real timestamp', async () => {
+      // Arrange: UNBOUNDED start (epoch) with a real ABSOLUTE end timestamp
+      const event = createEvent({
+        eventType: EventType.StartExtractingData,
+        eventContextOverrides: {
+          extraction_start_time: {
+            type: TimeValueType.UNBOUNDED,
+          },
+          extraction_end_time: {
+            type: TimeValueType.ABSOLUTE_TIME,
+            value: '2025-06-01T00:00:00Z',
+          },
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+      });
+      fetchStateSpy.mockResolvedValue(stringifiedState);
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: process.exit should NOT have been called
+      expect(processExitSpy).not.toHaveBeenCalled();
+    });
+  });
 });
