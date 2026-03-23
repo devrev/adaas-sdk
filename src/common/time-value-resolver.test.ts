@@ -160,18 +160,46 @@ describe('time-value-resolver', () => {
     };
 
     describe('ABSOLUTE_TIME type', () => {
-      it('should return the value directly', () => {
+      it('should return the value normalized to ISO 8601', () => {
         const result = resolveTimeValue(
           { type: TimeValueType.ABSOLUTE_TIME, value: '2024-03-15T12:00:00Z' },
           baseState
         );
-        expect(result).toBe('2024-03-15T12:00:00Z');
+        expect(result).toBe('2024-03-15T12:00:00.000Z');
+      });
+
+      it('should normalize timestamps without milliseconds', () => {
+        const result = resolveTimeValue(
+          { type: TimeValueType.ABSOLUTE_TIME, value: '2024-01-01T00:00:00Z' },
+          baseState
+        );
+        expect(result).toBe('2024-01-01T00:00:00.000Z');
+      });
+
+      it('should preserve timestamps already in normalized format', () => {
+        const result = resolveTimeValue(
+          {
+            type: TimeValueType.ABSOLUTE_TIME,
+            value: '2024-06-15T10:30:00.000Z',
+          },
+          baseState
+        );
+        expect(result).toBe('2024-06-15T10:30:00.000Z');
       });
 
       it('should throw if value is missing', () => {
         expect(() =>
           resolveTimeValue({ type: TimeValueType.ABSOLUTE_TIME }, baseState)
         ).toThrow('must have a value');
+      });
+
+      it('should throw a descriptive error if value is an invalid timestamp', () => {
+        expect(() =>
+          resolveTimeValue(
+            { type: TimeValueType.ABSOLUTE_TIME, value: 'not-a-date' },
+            baseState
+          )
+        ).toThrow("invalid ISO 8601 timestamp: 'not-a-date'");
       });
     });
 
@@ -394,7 +422,7 @@ describe('time-value-resolver', () => {
           scenarioState
         );
 
-        expect(start).toBe('2024-01-01T00:00:00Z');
+        expect(start).toBe('2024-01-01T00:00:00.000Z');
         expect(end).toBe(FIXED_NOW);
       });
 
@@ -422,8 +450,8 @@ describe('time-value-resolver', () => {
           scenarioState
         );
 
-        expect(start).toBe('2026-01-01T00:00:00Z');
-        expect(end).toBe('2026-03-31T23:59:59Z');
+        expect(start).toBe('2026-01-01T00:00:00.000Z');
+        expect(end).toBe('2026-03-31T23:59:59.000Z');
       });
     });
   });

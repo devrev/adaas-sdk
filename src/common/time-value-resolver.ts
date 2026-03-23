@@ -101,7 +101,15 @@ export function resolveTimeValue(
           'TimeValue of type ABSOLUTE must have a value (ISO 8601 timestamp).'
         );
       }
-      return timeValue.value;
+      // Normalize to consistent ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)
+      // to ensure string comparisons in boundary expansion are safe.
+      const parsed = new Date(timeValue.value);
+      if (isNaN(parsed.getTime())) {
+        throw new Error(
+          `TimeValue of type ABSOLUTE has an invalid ISO 8601 timestamp: '${timeValue.value}'.`
+        );
+      }
+      return parsed.toISOString();
     }
 
     case TimeValueType.CURRENT_TIME: {

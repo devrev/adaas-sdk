@@ -98,8 +98,29 @@ export async function createAdapterState<ConnectorState>({
           eventContext[target] = resolveTimeValue(timeValue, as.state);
           console.log(`Resolved ${target} to ${eventContext[target]}.`);
         } catch (error) {
-          console.error(`Failed to resolve ${source}.`, serializeError(error));
+          const errorMessage = `Failed to resolve ${source}: ${serializeError(
+            error
+          )}`;
+          console.error(errorMessage);
+          parentPort?.postMessage({
+            subject: WorkerMessageSubject.WorkerMessageFailed,
+            payload: { message: errorMessage },
+          });
+          process.exit(1);
         }
+      }
+    }
+
+    // Validate that extraction_start is before extraction_end
+    if (eventContext.extraction_start && eventContext.extraction_end) {
+      if (eventContext.extraction_start >= eventContext.extraction_end) {
+        const errorMessage = `Invalid extraction window: extraction_start (${eventContext.extraction_start}) is not before extraction_end (${eventContext.extraction_end}). This indicates an error in the platform.`;
+        console.error(errorMessage);
+        parentPort?.postMessage({
+          subject: WorkerMessageSubject.WorkerMessageFailed,
+          payload: { message: errorMessage },
+        });
+        process.exit(1);
       }
     }
   }
