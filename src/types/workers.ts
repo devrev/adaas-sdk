@@ -25,6 +25,12 @@ export interface WorkerAdapterInterface<ConnectorState> {
 }
 
 /**
+ * ExtractionScope represents the parsed extraction scope from the platform.
+ * Each key is an item type name, and the value indicates whether it should be extracted.
+ */
+export type ExtractionScope = Record<string, { extract: boolean }>;
+
+/**
  * WorkerAdapterOptions represents the options for WorkerAdapter class.
  * @interface WorkerAdapterOptions
  * @constructor

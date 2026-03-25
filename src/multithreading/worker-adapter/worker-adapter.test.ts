@@ -1,7 +1,12 @@
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
 import { State } from '../../state/state';
 import { createEvent } from '../../tests/test-helpers';
-import { AdapterState, EventType, ExtractorEventType } from '../../types';
+import {
+  AdapterState,
+  AirdropEvent,
+  EventType,
+  ExtractorEventType,
+} from '../../types';
 import { WorkerAdapter } from './worker-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -39,8 +44,8 @@ describe(WorkerAdapter.name, () => {
   }
 
   let adapter: WorkerAdapter<TestState>;
-  let mockEvent;
-  let mockAdapterState;
+  let mockEvent: AirdropEvent;
+  let mockAdapterState: State<TestState>;
 
   beforeEach(() => {
     // Reset all mocks
@@ -692,6 +697,57 @@ describe(WorkerAdapter.name, () => {
         processed_files: [],
       });
       expect(counter.counter).toBe(1);
+    });
+  });
+
+  describe('extractionScope', () => {
+    it('should return empty object by default', () => {
+      expect(adapter.extractionScope).toEqual({});
+    });
+
+    it('should return extraction scope from adapter state', () => {
+      const extractionScope = {
+        tasks: { extract: true },
+        users: { extract: false },
+      };
+
+      // Simulate what State.init() does when parsing objects from API
+      (mockAdapterState as any)._extractionScope = extractionScope;
+
+      expect(adapter.extractionScope).toEqual({
+        tasks: { extract: true },
+        users: { extract: false },
+      });
+    });
+  });
+
+  describe('shouldExtract', () => {
+    it('should return true when extraction scope is empty', () => {
+      expect(adapter.shouldExtract('tasks')).toBe(true);
+      expect(adapter.shouldExtract('users')).toBe(true);
+    });
+
+    it('should return true when item type is not in scope', () => {
+      (mockAdapterState as any)._extractionScope = {
+        tasks: { extract: true },
+      };
+      expect(adapter.shouldExtract('users')).toBe(true);
+    });
+
+    it('should return true when item type has extract: true', () => {
+      (mockAdapterState as any)._extractionScope = {
+        tasks: { extract: true },
+      };
+      expect(adapter.shouldExtract('tasks')).toBe(true);
+    });
+
+    it('should return false when item type has extract: false', () => {
+      (mockAdapterState as any)._extractionScope = {
+        tasks: { extract: false },
+        users: { extract: true },
+      };
+      expect(adapter.shouldExtract('tasks')).toBe(false);
+      expect(adapter.shouldExtract('users')).toBe(true);
     });
   });
 });
