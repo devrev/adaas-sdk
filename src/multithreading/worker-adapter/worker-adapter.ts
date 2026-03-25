@@ -153,12 +153,8 @@ export class WorkerAdapter<ConnectorState> {
   }
 
   /**
-   * Returns whether the given item type should be extracted based on the
-   * extraction scope received from the platform.
-   *
-   * - Empty scope (no keys) → true (extract everything, backward compatible)
-   * - Item type not in scope → true (not restricted)
-   * - Otherwise → scope[itemType].extract
+   * Returns whether the given item type should be extracted.
+   * Defaults to true if the scope is empty or the item type is not listed.
    */
   shouldExtract(itemType: string): boolean {
     const scope = this.extractionScope;
