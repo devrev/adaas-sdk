@@ -83,31 +83,61 @@ export async function createAdapterState<ConnectorState>({
       console.log(`Setting lastSyncStarted to ${as.state.lastSyncStarted}.`);
     }
 
-    // Resolve extraction timestamps from TimeValue objects
+    // Resolve extraction timestamps from TimeValue objects, or reuse pending values from a prior phase.
+    // On StartExtractingData: resolve fresh from TimeValue objects and store in pending state (always overwrite).
+    // On all other events: reuse the pending values cached during StartExtractingData.
     const eventContext = event.payload.event_context;
 
-    const timeFields = [
-      { source: 'extraction_start_time', target: 'extraction_start' },
-      { source: 'extraction_end_time', target: 'extraction_end' },
-    ] as const;
+    if (event.payload.event_type === EventType.StartExtractingData) {
+      const timeFields = [
+        {
+          source: 'extraction_start_time',
+          target: 'extraction_start',
+          pending: 'pendingWorkersOldest',
+        },
+        {
+          source: 'extraction_end_time',
+          target: 'extraction_end',
+          pending: 'pendingWorkersNewest',
+        },
+      ] as const;
 
-    for (const { source, target } of timeFields) {
-      const timeValue = eventContext[source];
-      if (timeValue) {
-        try {
-          eventContext[target] = resolveTimeValue(timeValue, as.state);
-          console.log(`Resolved ${target} to ${eventContext[target]}.`);
-        } catch (error) {
-          const errorMessage = `Failed to resolve ${source}: ${serializeError(
-            error
-          )}`;
-          console.error(errorMessage);
-          parentPort?.postMessage({
-            subject: WorkerMessageSubject.WorkerMessageFailed,
-            payload: { message: errorMessage },
-          });
-          process.exit(1);
+      for (const { source, target, pending } of timeFields) {
+        const timeValue = eventContext[source];
+        if (timeValue) {
+          try {
+            const resolved = resolveTimeValue(timeValue, as.state);
+            eventContext[target] = resolved;
+            as.state[pending] = resolved;
+            console.log(
+              `Resolved ${target} to ${resolved}. Stored in ${pending}.`
+            );
+          } catch (error) {
+            const errorMessage = `Failed to resolve ${source}: ${serializeError(
+              error
+            )}`;
+            console.error(errorMessage);
+            parentPort?.postMessage({
+              subject: WorkerMessageSubject.WorkerMessageFailed,
+              payload: { message: errorMessage },
+            });
+            process.exit(1);
+          }
         }
+      }
+    } else {
+      // Non-StartExtractingData events: reuse pending values from state
+      if (as.state.pendingWorkersOldest) {
+        eventContext.extraction_start = as.state.pendingWorkersOldest;
+        console.log(
+          `Reusing pendingWorkersOldest as extraction_start: ${as.state.pendingWorkersOldest}.`
+        );
+      }
+      if (as.state.pendingWorkersNewest) {
+        eventContext.extraction_end = as.state.pendingWorkersNewest;
+        console.log(
+          `Reusing pendingWorkersNewest as extraction_end: ${as.state.pendingWorkersNewest}.`
+        );
       }
     }
 

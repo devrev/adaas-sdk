@@ -287,6 +287,10 @@ export class WorkerAdapter<ConnectorState> {
         this.state.lastSuccessfulSyncStarted = this.state.lastSyncStarted;
         this.state.lastSyncStarted = '';
 
+        // Clear pending extraction boundaries now that the cycle is complete
+        this.state.pendingWorkersOldest = '';
+        this.state.pendingWorkersNewest = '';
+
         // Update workers_oldest and workers_newest boundaries from resolved extraction timestamps.
         // Expand boundaries: workers_oldest gets the earliest timestamp, workers_newest gets the latest.
         const extractionStart =

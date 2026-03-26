@@ -529,4 +529,202 @@ describe(State.name, () => {
       expect(processExitSpy).not.toHaveBeenCalled();
     });
   });
+
+  describe('Pending extraction boundaries (pendingWorkersOldest/pendingWorkersNewest)', () => {
+    const FIXED_NOW = '2026-03-26T10:00:00.000Z';
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(FIXED_NOW));
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('should store resolved values in pendingWorkersOldest/pendingWorkersNewest on StartExtractingData', async () => {
+      // Arrange
+      const event = createEvent({
+        eventType: EventType.StartExtractingData,
+        eventContextOverrides: {
+          extraction_start_time: {
+            type: TimeValueType.UNBOUNDED,
+          },
+          extraction_end_time: {
+            type: TimeValueType.CURRENT_TIME,
+          },
+        },
+        contextOverrides: {
+          snap_in_version_id: '',
+        },
+      });
+
+      fetchStateSpy.mockRejectedValue({
+        isAxiosError: true,
+        response: { status: 404 },
+      });
+      installInitialDomainMappingSpy.mockResolvedValue({ success: true });
+      postStateSpy.mockResolvedValue({ success: true });
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      const state = await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert
+      expect(state.state.pendingWorkersOldest).toBe('1970-01-01T00:00:00.000Z');
+      expect(state.state.pendingWorkersNewest).toBe(FIXED_NOW);
+      expect(event.payload.event_context.extraction_start).toBe(
+        '1970-01-01T00:00:00.000Z'
+      );
+      expect(event.payload.event_context.extraction_end).toBe(FIXED_NOW);
+    });
+
+    it('should overwrite pending values on a retry (new StartExtractingData after failure)', async () => {
+      // Arrange: state has stale pending values from a previous failed attempt
+      const staleOldest = '2026-03-25T08:00:00.000Z';
+      const staleNewest = '2026-03-25T09:00:00.000Z';
+
+      const event = createEvent({
+        eventType: EventType.StartExtractingData,
+        eventContextOverrides: {
+          extraction_start_time: {
+            type: TimeValueType.UNBOUNDED,
+          },
+          extraction_end_time: {
+            type: TimeValueType.CURRENT_TIME,
+          },
+        },
+        contextOverrides: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+        pendingWorkersOldest: staleOldest,
+        pendingWorkersNewest: staleNewest,
+      });
+      fetchStateSpy.mockResolvedValue(stringifiedState);
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      const state = await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: pending values are overwritten with fresh resolution, not stale values
+      expect(state.state.pendingWorkersOldest).toBe('1970-01-01T00:00:00.000Z');
+      expect(state.state.pendingWorkersNewest).toBe(FIXED_NOW);
+      expect(state.state.pendingWorkersNewest).not.toBe(staleNewest);
+    });
+
+    it('should reuse pending values from state on ContinueExtractingData instead of re-resolving', async () => {
+      // Arrange: state has pending values from a prior StartExtractingData phase
+      const pendingOldest = '1970-01-01T00:00:00.000Z';
+      const pendingNewest = '2026-03-26T08:00:00.000Z'; // Earlier than FIXED_NOW
+
+      const event = createEvent({
+        eventType: EventType.ContinueExtractingData,
+        eventContextOverrides: {
+          // Platform still sends TimeValue objects, but they should be ignored
+          extraction_start_time: {
+            type: TimeValueType.CURRENT_TIME,
+          },
+          extraction_end_time: {
+            type: TimeValueType.CURRENT_TIME,
+          },
+        },
+        contextOverrides: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+        pendingWorkersOldest: pendingOldest,
+        pendingWorkersNewest: pendingNewest,
+      });
+      fetchStateSpy.mockResolvedValue(stringifiedState);
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      const state = await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: uses cached pending values, NOT new Date() resolution
+      expect(event.payload.event_context.extraction_start).toBe(pendingOldest);
+      expect(event.payload.event_context.extraction_end).toBe(pendingNewest);
+      // Pending values in state remain unchanged
+      expect(state.state.pendingWorkersOldest).toBe(pendingOldest);
+      expect(state.state.pendingWorkersNewest).toBe(pendingNewest);
+    });
+
+    it('should not set extraction_start/extraction_end on ContinueExtractingData if no pending values exist', async () => {
+      // Arrange: state has no pending values (e.g. old state from before this feature)
+      const event = createEvent({
+        eventType: EventType.ContinueExtractingData,
+        contextOverrides: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+      });
+      fetchStateSpy.mockResolvedValue(stringifiedState);
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: no extraction timestamps are set
+      expect(event.payload.event_context.extraction_start).toBeUndefined();
+      expect(event.payload.event_context.extraction_end).toBeUndefined();
+    });
+
+    it('should reuse pending values on StartExtractingAttachments', async () => {
+      // Arrange: state has pending values from the StartExtractingData phase
+      const pendingOldest = '1970-01-01T00:00:00.000Z';
+      const pendingNewest = '2026-03-26T08:00:00.000Z';
+
+      const event = createEvent({
+        eventType: EventType.StartExtractingAttachments,
+        contextOverrides: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+        pendingWorkersOldest: pendingOldest,
+        pendingWorkersNewest: pendingNewest,
+      });
+      fetchStateSpy.mockResolvedValue(stringifiedState);
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: pending values are reused
+      expect(event.payload.event_context.extraction_start).toBe(pendingOldest);
+      expect(event.payload.event_context.extraction_end).toBe(pendingNewest);
+    });
+  });
 });

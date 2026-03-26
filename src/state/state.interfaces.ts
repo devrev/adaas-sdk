@@ -15,6 +15,12 @@ export const UNBOUNDED_DATE_TIME_VALUE = '1970-01-01T00:00:00.000Z';
 export interface SdkState {
   lastSyncStarted?: string;
   lastSuccessfulSyncStarted?: string;
+  /** The pending (not yet committed) oldest extraction boundary (ISO 8601 timestamp).
+   *  Set on StartExtractingData, reused across subsequent phases, cleared on AttachmentExtractionDone. */
+  pendingWorkersOldest?: string;
+  /** The pending (not yet committed) newest extraction boundary (ISO 8601 timestamp).
+   *  Set on StartExtractingData, reused across subsequent phases, cleared on AttachmentExtractionDone. */
+  pendingWorkersNewest?: string;
   /** The oldest point of extraction (ISO 8601 timestamp). */
   workersOldest?: string;
   /** The newest point of extraction (ISO 8601 timestamp). */
@@ -60,6 +66,8 @@ export interface StateInterface<ConnectorState> {
 export const extractionSdkState = {
   lastSyncStarted: '',
   lastSuccessfulSyncStarted: '',
+  pendingWorkersOldest: '',
+  pendingWorkersNewest: '',
   workers_oldest: '',
   workers_newest: '',
   snapInVersionId: '',
