@@ -17,6 +17,7 @@ export {
   EventContext,
   EventContextIn,
   EventContextOut,
+  EventContext,
   EventData,
   EventType,
   ExternalProcessAttachmentFunction,

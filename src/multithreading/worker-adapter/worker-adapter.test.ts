@@ -2,7 +2,12 @@ import { AttachmentsStreamingPool } from '../../attachments-streaming/attachment
 import { State } from '../../state/state';
 import { UNBOUNDED_DATE_TIME_VALUE } from '../../state/state.interfaces';
 import { createEvent } from '../../tests/test-helpers';
-import { AdapterState, EventType, ExtractorEventType } from '../../types';
+import {
+  AdapterState,
+  EventType,
+  ExtractorEventType,
+  LoaderEventType,
+} from '../../types';
 import { WorkerAdapter } from './worker-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -698,6 +703,140 @@ describe(WorkerAdapter.name, () => {
         processed_files: [],
       });
       expect(counter.counter).toBe(1);
+    });
+
+    it('should include artifacts in data for extraction events', async () => {
+      const { emit: mockEmit } = require('../../common/control-protocol');
+      adapter['adapterState'].postState = jest
+        .fn()
+        .mockResolvedValue(undefined);
+      adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+      adapter['_artifacts'] = [
+        { id: 'art-1', item_count: 10, item_type: 'issues' },
+      ] as any;
+
+      await adapter.emit(ExtractorEventType.DataExtractionDone);
+
+      expect(mockEmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            artifacts: expect.arrayContaining([
+              expect.objectContaining({ id: 'art-1' }),
+            ]),
+          }),
+        })
+      );
+      // Should not include loader-specific fields
+      const callData = mockEmit.mock.calls[0][0].data;
+      expect(callData).not.toHaveProperty('reports');
+      expect(callData).not.toHaveProperty('processed_files');
+    });
+
+    it('should include reports and processed_files in data for loader events', async () => {
+      const { emit: mockEmit } = require('../../common/control-protocol');
+      adapter['adapterState'].postState = jest
+        .fn()
+        .mockResolvedValue(undefined);
+      adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+      adapter['loaderReports'] = [
+        { item_type: 'tasks', created: 5 },
+      ] as any;
+      adapter['_processedFiles'] = ['file-1', 'file-2'];
+
+      await adapter.emit(LoaderEventType.DataLoadingDone);
+
+      expect(mockEmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            reports: expect.arrayContaining([
+              expect.objectContaining({ item_type: 'tasks' }),
+            ]),
+            processed_files: ['file-1', 'file-2'],
+          }),
+        })
+      );
+      // Should not include extraction-specific fields
+      const callData = mockEmit.mock.calls[0][0].data;
+      expect(callData).not.toHaveProperty('artifacts');
+    });
+
+    it('should not include artifacts, reports, or processed_files for unknown event types', async () => {
+      const { emit: mockEmit } = require('../../common/control-protocol');
+      adapter['adapterState'].postState = jest
+        .fn()
+        .mockResolvedValue(undefined);
+      adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+      adapter['_artifacts'] = [
+        { id: 'art-1', item_count: 10, item_type: 'issues' },
+      ] as any;
+      adapter['loaderReports'] = [
+        { item_type: 'tasks', created: 5 },
+      ] as any;
+      adapter['_processedFiles'] = ['file-1'];
+
+      await adapter.emit(
+        'SOME_UNKNOWN_EVENT' as ExtractorEventType
+      );
+
+      const callData = mockEmit.mock.calls[0][0].data;
+      expect(callData).not.toHaveProperty('artifacts');
+      expect(callData).not.toHaveProperty('reports');
+      expect(callData).not.toHaveProperty('processed_files');
+    });
+
+    it('should include artifacts for all ExtractorEventType values', async () => {
+      const { emit: mockEmit } = require('../../common/control-protocol');
+
+      const extractorEvents = [
+        ExtractorEventType.DataExtractionDone,
+        ExtractorEventType.DataExtractionProgress,
+        ExtractorEventType.DataExtractionError,
+        ExtractorEventType.AttachmentExtractionDone,
+        ExtractorEventType.AttachmentExtractionProgress,
+      ];
+
+      for (const eventType of extractorEvents) {
+        jest.clearAllMocks();
+        adapter.hasWorkerEmitted = false;
+        adapter['adapterState'].postState = jest
+          .fn()
+          .mockResolvedValue(undefined);
+        adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+
+        await adapter.emit(eventType);
+
+        const callData = mockEmit.mock.calls[0]?.[0]?.data;
+        expect(callData).toHaveProperty('artifacts');
+        expect(callData).not.toHaveProperty('reports');
+      }
+    });
+
+    it('should include reports and processed_files for all LoaderEventType values', async () => {
+      const { emit: mockEmit } = require('../../common/control-protocol');
+
+      const loaderEvents = [
+        LoaderEventType.DataLoadingDone,
+        LoaderEventType.DataLoadingProgress,
+        LoaderEventType.DataLoadingError,
+        LoaderEventType.AttachmentLoadingDone,
+        LoaderEventType.AttachmentLoadingProgress,
+      ];
+
+      for (const eventType of loaderEvents) {
+        jest.clearAllMocks();
+        adapter.hasWorkerEmitted = false;
+        adapter['adapterState'].postState = jest
+          .fn()
+          .mockResolvedValue(undefined);
+        adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+
+        await adapter.emit(eventType);
+
+        const callData = mockEmit.mock.calls[0]?.[0]?.data;
+        expect(callData).toHaveProperty('reports');
+        expect(callData).toHaveProperty('processed_files');
+        expect(callData).not.toHaveProperty('artifacts');
+      }
     });
   });
 
