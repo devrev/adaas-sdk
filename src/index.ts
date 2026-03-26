@@ -5,6 +5,7 @@ export * from './deprecated/uploader';
 
 export * from './http';
 export * from './types';
+export { EventContext } from './types/extraction';
 
 export * from './common/install-initial-domain-mapping';
 
@@ -18,3 +19,5 @@ export { WorkerAdapter } from './multithreading/worker-adapter/worker-adapter';
 export * from './types/workers';
 
 export { formatAxiosError, serializeAxiosError } from './logger/logger';
+
+export { MockServer } from './tests/mock-server/mock-server';
