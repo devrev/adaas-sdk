@@ -475,11 +475,10 @@ describe(WorkerAdapter.name, () => {
   });
 
   describe(WorkerAdapter.prototype.processAttachment.name, () => {
-    const createMockHttpStream = (headers: Record<string, string> = {}) =>
-      ({
-        headers,
-        data: { destroy: jest.fn() },
-      }) as any;
+    const createMockHttpStream = (headers: Record<string, string> = {}) => ({
+      headers,
+      data: { destroy: jest.fn() },
+    });
 
     beforeEach(() => {
       adapter.initializeRepos([{ itemType: 'ssor_attachment' }]);
@@ -496,11 +495,13 @@ describe(WorkerAdapter.name, () => {
         }),
       });
 
-      adapter['uploader'].getArtifactUploadUrl = jest
-        .fn()
-        .mockResolvedValue({
-          response: { artifact_id: 'art_1', upload_url: 'https://upload', form_data: [] },
-        });
+      adapter['uploader'].getArtifactUploadUrl = jest.fn().mockResolvedValue({
+        response: {
+          artifact_id: 'art_1',
+          upload_url: 'https://upload',
+          form_data: [],
+        },
+      });
       adapter['uploader'].streamArtifact = jest
         .fn()
         .mockResolvedValue({ response: {} });
@@ -533,11 +534,13 @@ describe(WorkerAdapter.name, () => {
         }),
       });
 
-      adapter['uploader'].getArtifactUploadUrl = jest
-        .fn()
-        .mockResolvedValue({
-          response: { artifact_id: 'art_2', upload_url: 'https://upload', form_data: [] },
-        });
+      adapter['uploader'].getArtifactUploadUrl = jest.fn().mockResolvedValue({
+        response: {
+          artifact_id: 'art_2',
+          upload_url: 'https://upload',
+          form_data: [],
+        },
+      });
       adapter['uploader'].streamArtifact = jest
         .fn()
         .mockResolvedValue({ response: {} });
@@ -566,11 +569,13 @@ describe(WorkerAdapter.name, () => {
         httpStream: createMockHttpStream({}),
       });
 
-      adapter['uploader'].getArtifactUploadUrl = jest
-        .fn()
-        .mockResolvedValue({
-          response: { artifact_id: 'art_3', upload_url: 'https://upload', form_data: [] },
-        });
+      adapter['uploader'].getArtifactUploadUrl = jest.fn().mockResolvedValue({
+        response: {
+          artifact_id: 'art_3',
+          upload_url: 'https://upload',
+          form_data: [],
+        },
+      });
       adapter['uploader'].streamArtifact = jest
         .fn()
         .mockResolvedValue({ response: {} });
