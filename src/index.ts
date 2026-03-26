@@ -5,7 +5,6 @@ export * from './deprecated/uploader';
 
 export * from './http';
 export * from './types';
-export { EventContext } from './types/extraction';
 
 export * from './common/install-initial-domain-mapping';
 
