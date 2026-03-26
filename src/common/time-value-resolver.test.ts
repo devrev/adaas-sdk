@@ -155,8 +155,8 @@ describe('time-value-resolver', () => {
     const baseState: SdkState = {
       lastSyncStarted: '',
       lastSuccessfulSyncStarted: '',
-      workers_oldest: '2024-01-01T00:00:00.000Z',
-      workers_newest: '2024-06-01T00:00:00.000Z',
+      workersOldest: '2024-01-01T00:00:00.000Z',
+      workersNewest: '2024-06-01T00:00:00.000Z',
     };
 
     describe('ABSOLUTE_TIME type', () => {
@@ -241,7 +241,7 @@ describe('time-value-resolver', () => {
         expect(() =>
           resolveTimeValue(
             { type: TimeValueType.WORKERS_OLDEST },
-            { workers_oldest: '' }
+            { workersOldest: '' }
           )
         ).toThrow('workers_oldest is not set in state');
       });
@@ -260,7 +260,7 @@ describe('time-value-resolver', () => {
         expect(() =>
           resolveTimeValue(
             { type: TimeValueType.WORKERS_NEWEST },
-            { workers_newest: '' }
+            { workersNewest: '' }
           )
         ).toThrow('workers_newest is not set in state');
       });
@@ -296,7 +296,7 @@ describe('time-value-resolver', () => {
               type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
               value: '2h',
             },
-            { workers_oldest: '' }
+            { workersOldest: '' }
           )
         ).toThrow('workers_oldest is not set in state');
       });
@@ -341,7 +341,7 @@ describe('time-value-resolver', () => {
               type: TimeValueType.WORKERS_NEWEST_PLUS_WINDOW,
               value: '2h',
             },
-            { workers_newest: '' }
+            { workersNewest: '' }
           )
         ).toThrow('workers_newest is not set in state');
       });
@@ -371,8 +371,8 @@ describe('time-value-resolver', () => {
       const scenarioState: SdkState = {
         lastSyncStarted: '',
         lastSuccessfulSyncStarted: '',
-        workers_oldest: '2024-01-01T00:00:00.000Z',
-        workers_newest: '2024-06-01T00:00:00.000Z',
+        workersOldest: '2024-01-01T00:00:00.000Z',
+        workersNewest: '2024-06-01T00:00:00.000Z',
       };
 
       beforeEach(() => {

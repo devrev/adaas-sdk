@@ -121,21 +121,21 @@ export function resolveTimeValue(
     }
 
     case TimeValueType.WORKERS_OLDEST: {
-      if (!state.workers_oldest) {
+      if (!state.workersOldest) {
         throw new Error(
           'workers_oldest is not set in state. Cannot resolve TimeValue of type WORKERS_OLDEST without a prior extraction boundary.'
         );
       }
-      return state.workers_oldest;
+      return state.workersOldest;
     }
 
     case TimeValueType.WORKERS_NEWEST: {
-      if (!state.workers_newest) {
+      if (!state.workersNewest) {
         throw new Error(
           'workers_newest is not set in state. Cannot resolve TimeValue of type WORKERS_NEWEST without a prior extraction boundary.'
         );
       }
-      return state.workers_newest;
+      return state.workersNewest;
     }
 
     case TimeValueType.WORKERS_OLDEST_MINUS_WINDOW: {
@@ -144,12 +144,12 @@ export function resolveTimeValue(
           "TimeValue of type WORKERS_OLDEST_MINUS_WINDOW must have a value (duration, e.g. '30s', '5m', '2h')."
         );
       }
-      if (!state.workers_oldest) {
+      if (!state.workersOldest) {
         throw new Error(
           'workers_oldest is not set in state. Cannot resolve TimeValue of type WORKERS_OLDEST_MINUS_WINDOW without a prior extraction boundary.'
         );
       }
-      return applyDuration(state.workers_oldest, timeValue.value, 'subtract');
+      return applyDuration(state.workersOldest, timeValue.value, 'subtract');
     }
 
     case TimeValueType.WORKERS_NEWEST_PLUS_WINDOW: {
@@ -158,12 +158,12 @@ export function resolveTimeValue(
           "TimeValue of type WORKERS_NEWEST_PLUS_WINDOW must have a value (duration, e.g. '30s', '5m', '2h')."
         );
       }
-      if (!state.workers_newest) {
+      if (!state.workersNewest) {
         throw new Error(
           'workers_newest is not set in state. Cannot resolve TimeValue of type WORKERS_NEWEST_PLUS_WINDOW without a prior extraction boundary.'
         );
       }
-      return applyDuration(state.workers_newest, timeValue.value, 'add');
+      return applyDuration(state.workersNewest, timeValue.value, 'add');
     }
 
     default: {

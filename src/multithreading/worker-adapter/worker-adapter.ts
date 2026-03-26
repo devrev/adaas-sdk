@@ -295,24 +295,24 @@ export class WorkerAdapter<ConnectorState> {
 
         if (
           extractionStart &&
-          (!this.state.workers_oldest ||
-            extractionStart < this.state.workers_oldest)
+          (!this.state.workersOldest ||
+            extractionStart < this.state.workersOldest)
         ) {
           console.log(
-            `Updating workers_oldest from '${this.state.workers_oldest}' to '${extractionStart}'.`
+            `Updating workers_oldest from '${this.state.workersOldest}' to '${extractionStart}'.`
           );
-          this.state.workers_oldest = extractionStart;
+          this.state.workersOldest = extractionStart;
         }
 
         if (
           extractionEnd &&
-          (!this.state.workers_newest ||
-            extractionEnd > this.state.workers_newest)
+          (!this.state.workersNewest ||
+            extractionEnd > this.state.workersNewest)
         ) {
           console.log(
-            `Updating workers_newest from '${this.state.workers_newest}' to '${extractionEnd}'.`
+            `Updating workers_newest from '${this.state.workersNewest}' to '${extractionEnd}'.`
           );
-          this.state.workers_newest = extractionEnd;
+          this.state.workersNewest = extractionEnd;
         }
       }
 

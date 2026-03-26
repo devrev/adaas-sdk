@@ -16,9 +16,9 @@ export interface SdkState {
   lastSyncStarted?: string;
   lastSuccessfulSyncStarted?: string;
   /** The oldest point of extraction (ISO 8601 timestamp). */
-  workers_oldest?: string;
+  workersOldest?: string;
   /** The newest point of extraction (ISO 8601 timestamp). */
-  workers_newest?: string;
+  workersNewest?: string;
   toDevRev?: ToDevRev;
   fromDevRev?: FromDevRev;
   snapInVersionId?: string;
