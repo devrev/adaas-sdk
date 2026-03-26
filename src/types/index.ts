@@ -14,7 +14,6 @@ export {
   AirdropMessage,
   ConnectionData,
   DomainObjectState,
-  EventContext,
   EventContextIn,
   EventContextOut,
   EventContext,
