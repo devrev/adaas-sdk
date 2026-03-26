@@ -18,3 +18,5 @@ export { WorkerAdapter } from './multithreading/worker-adapter/worker-adapter';
 export * from './types/workers';
 
 export { formatAxiosError, serializeAxiosError } from './logger/logger';
+
+export { MockServer } from './tests/mock-server/mock-server';
