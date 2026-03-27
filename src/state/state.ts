@@ -17,6 +17,7 @@ import {
   SdkState,
   StateInterface,
 } from './state.interfaces';
+import { ExtractionScope } from '../types/workers';
 
 export async function createAdapterState<ConnectorState>({
   event,
@@ -160,6 +161,7 @@ export async function createAdapterState<ConnectorState>({
 
 export class State<ConnectorState> {
   private _state: AdapterState<ConnectorState>;
+  private _extractionScope: ExtractionScope = {};
   private initialSdkState: SdkState;
   private workerUrl: string;
   private devrevToken: string;
@@ -189,6 +191,10 @@ export class State<ConnectorState> {
     this._state = value;
   }
 
+  get extractionScope(): ExtractionScope {
+    return this._extractionScope;
+  }
+
   /**
    * Initializes the state for this adapter instance by fetching from API
    * or creating an initial state if none exists (404).
@@ -196,7 +202,7 @@ export class State<ConnectorState> {
    */
   async init(initialState: ConnectorState): Promise<void> {
     try {
-      const stringifiedState = await this.fetchState();
+      const { state: stringifiedState, objects } = await this.fetchState();
       if (!stringifiedState) {
         throw new Error('No state found in response.');
       }
@@ -213,6 +219,14 @@ export class State<ConnectorState> {
         'State fetched successfully. Current state',
         getPrintableState(this.state)
       );
+
+      if (objects) {
+        try {
+          this._extractionScope = JSON.parse(objects);
+        } catch (error) {
+          console.warn(`Failed to parse extractionScope. ${error}`);
+        }
+      }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         console.log('State not found. Initializing state with initial state.');
@@ -296,7 +310,7 @@ export class State<ConnectorState> {
    *  Fetches the state of the adapter from API.
    * @return  The raw state data from API
    */
-  async fetchState(): Promise<string> {
+  async fetchState(): Promise<{ state: string; objects?: string }> {
     console.log(
       `Fetching state with sync unit id ${this.syncUnitId} and request id ${this.requestId}.`
     );
@@ -312,6 +326,9 @@ export class State<ConnectorState> {
       },
     });
 
-    return response.data?.state;
+    return {
+      state: response.data?.state,
+      objects: response.data?.objects,
+    };
   }
 }

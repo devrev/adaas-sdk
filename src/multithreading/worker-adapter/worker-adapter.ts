@@ -147,6 +147,21 @@ export class WorkerAdapter<ConnectorState> {
     return this._mappers;
   }
 
+  get extractionScope() {
+    return this.adapterState.extractionScope;
+  }
+
+  /**
+   * Returns whether the given item type should be extracted.
+   * Defaults to true if the scope is empty or the item type is not listed.
+   */
+  shouldExtract(itemType: string): boolean {
+    const scope = this.extractionScope;
+    if (Object.keys(scope).length === 0) return true;
+    if (!(itemType in scope)) return true;
+    return scope[itemType].extract;
+  }
+
   initializeRepos(repos: RepoInterface[]) {
     this.repos = repos.map((repo) => {
       const shouldNormalize =

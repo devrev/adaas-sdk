@@ -87,7 +87,7 @@ describe(State.name, () => {
       const event = createEvent({
         eventType: eventType,
       });
-      fetchStateSpy.mockResolvedValue('invalid-json');
+      fetchStateSpy.mockResolvedValue({ state: 'invalid-json' });
       jest.spyOn(console, 'error').mockImplementation(() => {});
 
       // Act & Assert
@@ -109,7 +109,7 @@ describe(State.name, () => {
       const event = createEvent({
         eventType: eventType,
       });
-      fetchStateSpy.mockResolvedValue(null);
+      fetchStateSpy.mockResolvedValue({ state: null });
       jest.spyOn(console, 'error').mockImplementation(() => {});
 
       // Act & Assert
@@ -216,11 +216,11 @@ describe(State.name, () => {
         eventType: eventType,
       });
 
-      fetchStateSpy.mockResolvedValue(
-        JSON.stringify({
+      fetchStateSpy.mockResolvedValue({
+        state: JSON.stringify({
           test: 'test',
-        })
-      );
+        }),
+      });
       jest.spyOn(console, 'log').mockImplementation(() => {});
       jest.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -251,7 +251,7 @@ describe(State.name, () => {
         test: 'test',
         snapInVersionId: '1.0.0',
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act & Assert
@@ -281,7 +281,7 @@ describe(State.name, () => {
         test: 'test',
         snapInVersionId: '1.0.0',
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       installInitialDomainMappingSpy.mockResolvedValue({
         success: true,
       });
@@ -726,5 +726,80 @@ describe(State.name, () => {
       expect(event.payload.event_context.extraction_start).toBe(pendingOldest);
       expect(event.payload.event_context.extraction_end).toBe(pendingNewest);
     });
+  });
+
+  it('should populate extractionScope from API response', async () => {
+    // Arrange
+    const event = createEvent({
+      eventType: EventType.StartExtractingData,
+      contextOverrides: {
+        snap_in_version_id: '1.0.0',
+      },
+    });
+    fetchStateSpy.mockResolvedValue({
+      state: JSON.stringify({ snapInVersionId: '1.0.0' }),
+      objects: JSON.stringify({
+        tasks: { extract: true },
+        users: { extract: true },
+      }),
+    });
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    // Act
+    const result = await createAdapterState({
+      event,
+      initialState: {},
+      initialDomainMapping: {},
+    });
+
+    // Assert
+    expect(result.extractionScope).toEqual({
+      tasks: { extract: true },
+      users: { extract: true },
+    });
+  });
+
+  it('should have empty extractionScope on 404', async () => {
+    // Arrange
+    const event = createEvent({
+      eventType: EventType.StartExtractingMetadata,
+      contextOverrides: {
+        snap_in_version_id: '',
+      },
+    });
+    fetchStateSpy.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 404 },
+    });
+    installInitialDomainMappingSpy.mockResolvedValue({ success: true });
+    postStateSpy.mockResolvedValue({ success: true });
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    // Act
+    const result = await createAdapterState({
+      event,
+      initialState: {},
+      initialDomainMapping: {},
+    });
+
+    // Assert
+    expect(result.extractionScope).toEqual({});
+  });
+
+  it('should have empty extractionScope for stateless events', async () => {
+    // Arrange
+    const event = createEvent({
+      eventType: EventType.StartExtractingExternalSyncUnits,
+    });
+
+    // Act
+    const result = await createAdapterState({
+      event,
+      initialState: {},
+      initialDomainMapping: {},
+    });
+
+    // Assert
+    expect(result.extractionScope).toEqual({});
   });
 });
