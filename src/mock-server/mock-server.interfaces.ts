@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 export const DEFAULT_MOCK_SERVER_PORT = 3001;
 

@@ -1,4 +1,4 @@
-import express, { Express, Request, Response } from 'express';
+import type { Express, Request, Response } from 'express';
 import { Server } from 'http';
 
 import {
@@ -26,6 +26,10 @@ export class MockServer {
   private requestCounts: RequestCounts = new Map();
 
   constructor(port: number = DEFAULT_MOCK_SERVER_PORT) {
+    // Lazy-load express so that importing MockServer doesn't require express at module load time.
+    // This allows the SDK to be used in production (Lambda) without express installed.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const express = require('express');
     this.internalPort = port;
     this.port = port;
     this.baseUrl = `http://localhost:${this.port}`;
