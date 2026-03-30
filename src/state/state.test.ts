@@ -316,7 +316,7 @@ describe(State.name, () => {
         workers_oldest: '',
         workers_newest: '',
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       jest.spyOn(console, 'log').mockImplementation(() => {});
       jest.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -350,7 +350,7 @@ describe(State.name, () => {
         workers_oldest: '',
         workers_newest: '',
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       jest.spyOn(console, 'log').mockImplementation(() => {});
       jest.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -386,7 +386,7 @@ describe(State.name, () => {
       const stringifiedState = JSON.stringify({
         snapInVersionId: 'test_snap_in_version_id',
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       jest.spyOn(console, 'log').mockImplementation(() => {});
       jest.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -420,7 +420,7 @@ describe(State.name, () => {
       const stringifiedState = JSON.stringify({
         snapInVersionId: 'test_snap_in_version_id',
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       jest.spyOn(console, 'log').mockImplementation(() => {});
       jest.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -454,7 +454,7 @@ describe(State.name, () => {
       const stringifiedState = JSON.stringify({
         snapInVersionId: 'test_snap_in_version_id',
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
@@ -483,7 +483,7 @@ describe(State.name, () => {
       const stringifiedState = JSON.stringify({
         snapInVersionId: 'test_snap_in_version_id',
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
@@ -515,7 +515,7 @@ describe(State.name, () => {
       const stringifiedState = JSON.stringify({
         snapInVersionId: 'test_snap_in_version_id',
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
@@ -608,7 +608,7 @@ describe(State.name, () => {
         pendingWorkersOldest: staleOldest,
         pendingWorkersNewest: staleNewest,
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
@@ -650,7 +650,7 @@ describe(State.name, () => {
         pendingWorkersOldest: pendingOldest,
         pendingWorkersNewest: pendingNewest,
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
@@ -680,7 +680,7 @@ describe(State.name, () => {
       const stringifiedState = JSON.stringify({
         snapInVersionId: 'test_snap_in_version_id',
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
@@ -712,7 +712,7 @@ describe(State.name, () => {
         pendingWorkersOldest: pendingOldest,
         pendingWorkersNewest: pendingNewest,
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
