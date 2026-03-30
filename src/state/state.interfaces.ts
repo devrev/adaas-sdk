@@ -68,8 +68,8 @@ export const extractionSdkState = {
   lastSuccessfulSyncStarted: '',
   pendingWorkersOldest: '',
   pendingWorkersNewest: '',
-  workers_oldest: '',
-  workers_newest: '',
+  workersOldest: '',
+  workersNewest: '',
   snapInVersionId: '',
   toDevRev: {
     attachmentsMetadata: {
