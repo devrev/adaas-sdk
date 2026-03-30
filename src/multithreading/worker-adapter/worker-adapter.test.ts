@@ -4,12 +4,12 @@ import { createEvent } from '../../tests/test-helpers';
 import {
   AdapterState,
   AirdropEvent,
+  Artifact,
   EventType,
   ExtractorEventType,
   LoaderEventType,
 } from '../../types';
 import { ActionType, LoaderReport } from '../../types/loading';
-import { Artifact } from '../../uploader/uploader.interfaces';
 import { WorkerAdapter } from './worker-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -435,6 +435,79 @@ describe(WorkerAdapter.name, () => {
       ]);
     });
 
+    it('should emit progress event and exit process on timeout, preserving state for resumption', async () => {
+      const mockStream = jest.fn();
+
+      // Mock process.exit to prevent it from killing the test runner
+      const exitSpy = jest
+        .spyOn(process, 'exit')
+        .mockImplementation(() => undefined as never);
+
+      // Set up adapter state with multiple artifact IDs
+      adapter.state.toDevRev = {
+        attachmentsMetadata: {
+          artifactIds: ['artifact1', 'artifact2', 'artifact3'],
+          lastProcessed: 0,
+          lastProcessedAttachmentsIdsList: [],
+        },
+      };
+
+      // Mock getting attachments for each artifact
+      adapter['uploader'].getAttachmentsFromArtifactId = jest
+        .fn()
+        .mockResolvedValue({
+          attachments: [
+            {
+              url: 'http://example.com/file1.pdf',
+              id: 'attachment1',
+              file_name: 'file1.pdf',
+              parent_id: 'parent1',
+            },
+          ],
+        });
+
+      // Mock the pool to simulate timeout happening during the first artifact
+      (AttachmentsStreamingPool as jest.Mock).mockImplementationOnce(() => {
+        return {
+          streamAll: jest.fn().mockImplementation(async () => {
+            adapter.isTimeout = true;
+            return {};
+          }),
+        };
+      });
+
+      adapter.initializeRepos = jest.fn();
+
+      // Mock emit to verify it's called with progress event
+      const emitSpy = jest.spyOn(adapter, 'emit').mockResolvedValue();
+
+      await adapter.streamAttachments({
+        stream: mockStream,
+      });
+
+      // Should have emitted progress event
+      expect(emitSpy).toHaveBeenCalledWith(
+        ExtractorEventType.AttachmentExtractionProgress
+      );
+
+      // Should have called process.exit(0)
+      expect(exitSpy).toHaveBeenCalledWith(0);
+
+      // The current artifact should NOT be removed from the list
+      expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([
+        'artifact1',
+        'artifact2',
+        'artifact3',
+      ]);
+
+      // Only the first artifact should have been fetched
+      expect(
+        adapter['uploader'].getAttachmentsFromArtifactId
+      ).toHaveBeenCalledTimes(1);
+
+      exitSpy.mockRestore();
+    });
+
     it('should reset lastProcessed and attachment IDs list after processing all artifacts', async () => {
       const mockStream = jest.fn();
       adapter.state.toDevRev = {
@@ -852,7 +925,11 @@ describe(WorkerAdapter.name, () => {
       };
 
       // Simulate what State.init() does when parsing objects from API
-      (mockAdapterState as any)._extractionScope = extractionScope;
+      (
+        mockAdapterState as unknown as {
+          _extractionScope: Record<string, { extract: boolean }>;
+        }
+      )._extractionScope = extractionScope;
 
       expect(adapter.extractionScope).toEqual({
         tasks: { extract: true },
@@ -868,21 +945,33 @@ describe(WorkerAdapter.name, () => {
     });
 
     it('should return true when item type is not in scope', () => {
-      (mockAdapterState as any)._extractionScope = {
+      (
+        mockAdapterState as unknown as {
+          _extractionScope: Record<string, { extract: boolean }>;
+        }
+      )._extractionScope = {
         tasks: { extract: true },
       };
       expect(adapter.shouldExtract('users')).toBe(true);
     });
 
     it('should return true when item type has extract: true', () => {
-      (mockAdapterState as any)._extractionScope = {
+      (
+        mockAdapterState as unknown as {
+          _extractionScope: Record<string, { extract: boolean }>;
+        }
+      )._extractionScope = {
         tasks: { extract: true },
       };
       expect(adapter.shouldExtract('tasks')).toBe(true);
     });
 
     it('should return false when item type has extract: false', () => {
-      (mockAdapterState as any)._extractionScope = {
+      (
+        mockAdapterState as unknown as {
+          _extractionScope: Record<string, { extract: boolean }>;
+        }
+      )._extractionScope = {
         tasks: { extract: false },
         users: { extract: true },
       };
