@@ -24,6 +24,7 @@ describe('ExtractionTypes', () => {
     event.payload.event_context = {
       ...baseEvent.payload.event_context,
       extract_from: '2024-01-01T00:00:00Z',
+      extract_to: '2024-06-01T00:00:00Z',
       initial_sync_scope: InitialSyncScope.TIME_SCOPED,
       reset_extract_from: true,
     } as EventContext;
@@ -31,6 +32,9 @@ describe('ExtractionTypes', () => {
     expect(event).toBeDefined();
     expect(event.payload.event_context.extract_from).toBe(
       '2024-01-01T00:00:00Z'
+    );
+    expect(event.payload.event_context.extract_to).toBe(
+      '2024-06-01T00:00:00Z'
     );
     expect(event.payload.event_context.initial_sync_scope).toBe(
       InitialSyncScope.TIME_SCOPED
@@ -80,27 +84,15 @@ describe('ExtractionTypes', () => {
     event.payload.event_context = {
       ...baseEvent.payload.event_context,
       extract_from: undefined,
+      extract_to: undefined,
       initial_sync_scope: undefined,
       reset_extract_from: undefined,
     } as EventContext;
 
     expect(event.payload.event_context.extract_from).toBeUndefined();
+    expect(event.payload.event_context.extract_to).toBeUndefined();
     expect(event.payload.event_context.initial_sync_scope).toBeUndefined();
     expect(event.payload.event_context.reset_extract_from).toBeUndefined();
-  });
-
-  it('[edge] should handle invalid date format in extract_from', () => {
-    const event = { ...baseEvent };
-
-    event.payload.event_context = {
-      ...baseEvent.payload.event_context,
-      extract_from: 'invalid-date-format',
-    } as EventContext;
-
-    expect(event.payload.event_context.extract_from).toBe(
-      'invalid-date-format'
-    );
-    // Note: Type validation would typically happen at runtime, not compile time
   });
 
   it('[edge] should handle explicit boolean values for reset_extract_from', () => {

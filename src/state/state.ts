@@ -93,12 +93,12 @@ export async function createAdapterState<ConnectorState>({
       const timeFields = [
         {
           source: 'extraction_start_time',
-          target: 'extraction_start',
+          target: 'extract_from',
           pending: 'pendingWorkersOldest',
         },
         {
           source: 'extraction_end_time',
-          target: 'extraction_end',
+          target: 'extract_to',
           pending: 'pendingWorkersNewest',
         },
       ] as const;
@@ -129,31 +129,31 @@ export async function createAdapterState<ConnectorState>({
     } else {
       // Non-StartExtractingData events: reuse pending values from state
       if (as.state.pendingWorkersOldest) {
-        eventContext.extraction_start = as.state.pendingWorkersOldest;
+        eventContext.extract_from = as.state.pendingWorkersOldest;
         console.log(
-          `Reusing pendingWorkersOldest as extraction_start: ${as.state.pendingWorkersOldest}.`
+          `Reusing pendingWorkersOldest as extract_from: ${as.state.pendingWorkersOldest}.`
         );
       } else {
         console.warn(
-          'pendingWorkersOldest is not set in state. extraction_start will not be populated for this invocation.'
+          'pendingWorkersOldest is not set in state. extract_from will not be populated for this invocation.'
         );
       }
       if (as.state.pendingWorkersNewest) {
-        eventContext.extraction_end = as.state.pendingWorkersNewest;
+        eventContext.extract_to = as.state.pendingWorkersNewest;
         console.log(
-          `Reusing pendingWorkersNewest as extraction_end: ${as.state.pendingWorkersNewest}.`
+          `Reusing pendingWorkersNewest as extract_to: ${as.state.pendingWorkersNewest}.`
         );
       } else {
         console.warn(
-          'pendingWorkersNewest is not set in state. extraction_end will not be populated for this invocation.'
+          'pendingWorkersNewest is not set in state. extract_to will not be populated for this invocation.'
         );
       }
     }
 
-    // Validate that extraction_start is before extraction_end
-    if (eventContext.extraction_start && eventContext.extraction_end) {
-      if (eventContext.extraction_start >= eventContext.extraction_end) {
-        const errorMessage = `Invalid extraction window: extraction_start (${eventContext.extraction_start}) must be older than extraction_end (${eventContext.extraction_end}). This indicates an error in the platform.`;
+    // Validate that extract_from is before extract_to
+    if (eventContext.extract_from && eventContext.extract_to) {
+      if (eventContext.extract_from >= eventContext.extract_to) {
+        const errorMessage = `Invalid extraction window: extract_from (${eventContext.extract_from}) must be older than extract_to (${eventContext.extract_to}). This indicates an error in the platform.`;
         console.error(errorMessage);
         parentPort?.postMessage({
           subject: WorkerMessageSubject.WorkerMessageFailed,

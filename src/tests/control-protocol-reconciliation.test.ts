@@ -25,21 +25,25 @@ describe('Enhanced Control Protocol', () => {
       expect(event.payload.event_context).toBeDefined();
       expect(event.payload.event_context.extraction_start_time).toBeUndefined();
       expect(event.payload.event_context.extraction_end_time).toBeUndefined();
-      expect(event.payload.event_context.extraction_start).toBeUndefined();
-      expect(event.payload.event_context.extraction_end).toBeUndefined();
+      expect(event.payload.event_context.extract_from).toBeUndefined();
+      expect(event.payload.event_context.extract_to).toBeUndefined();
     });
 
-    it('should maintain existing deprecated extract_from and reset_extract_from fields', () => {
+    it('should support setting extract_from and extract_to directly on event context', () => {
       const event = createEvent({
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
           extract_from: '2024-01-01T00:00:00Z',
+          extract_to: '2024-06-01T00:00:00Z',
           reset_extract_from: true,
         },
       });
 
       expect(event.payload.event_context.extract_from).toBe(
         '2024-01-01T00:00:00Z'
+      );
+      expect(event.payload.event_context.extract_to).toBe(
+        '2024-06-01T00:00:00Z'
       );
       expect(event.payload.event_context.reset_extract_from).toBe(true);
     });

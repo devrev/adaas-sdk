@@ -5,12 +5,12 @@ import { WorkerAdapterOptions } from '../types/workers';
 
 export interface SdkState {
   /**
-   * @deprecated Use extraction_start and extraction_end from the event context instead,
+   * @deprecated Use extract_from and extract_to from the event context instead,
    * which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
    */
   lastSyncStarted?: string;
   /**
-   * @deprecated Use extraction_start and extraction_end from the event context instead,
+   * @deprecated Use extract_from and extract_to from the event context instead,
    * which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
    */
   lastSuccessfulSyncStarted?: string;

@@ -320,7 +320,9 @@ export interface EventContext {
   external_system_name: string;
   external_system_type: string;
   /**
-   * @deprecated extract_from is deprecated. Use extraction_start and extraction_end instead, which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
+   * Resolved start timestamp of extraction (ISO 8601 format).
+   * Automatically computed by the SDK from extraction_start_time and worker state.
+   * This is the field developers should read to know when to start extracting from.
    */
   extract_from?: string;
   import_slug: string;
@@ -333,7 +335,8 @@ export interface EventContext {
    */
   reset_extraction?: boolean;
   /**
-   * @deprecated reset_extract_from is deprecated. Use extraction_start_time/extraction_end_time instead for more granular control over data extraction.
+   * @deprecated reset_extract_from is deprecated. Use extraction_start_time/extraction_end_time instead,
+   * which are automatically resolved into extract_from and extract_to.
    */
   reset_extract_from?: boolean;
   run_id: string;
@@ -358,26 +361,20 @@ export interface EventContext {
   worker_data_url: string;
   /**
    * Start time value for extraction, as sent by the platform.
-   * The SDK resolves this into a concrete ISO 8601 timestamp on extraction_start.
+   * The SDK resolves this into a concrete ISO 8601 timestamp on extract_from.
    */
   extraction_start_time?: TimeValue;
   /**
    * End time value for extraction, as sent by the platform.
-   * The SDK resolves this into a concrete ISO 8601 timestamp on extraction_end.
+   * The SDK resolves this into a concrete ISO 8601 timestamp on extract_to.
    */
   extraction_end_time?: TimeValue;
-  /**
-   * Resolved start timestamp of extraction (ISO 8601 format).
-   * Automatically computed by the SDK from extraction_start_time and worker state.
-   * This is the field developers should read to know when to start extracting from.
-   */
-  extraction_start?: string;
   /**
    * Resolved end timestamp of extraction (ISO 8601 format).
    * Automatically computed by the SDK from extraction_end_time and worker state.
    * This is the field developers should read to know when to stop extracting at.
    */
-  extraction_end?: string;
+  extract_to?: string;
 }
 
 /**

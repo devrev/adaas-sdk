@@ -367,7 +367,7 @@ describe(State.name, () => {
   });
 
   describe('Enhanced Control Protocol - extraction window validation', () => {
-    it('should exit the process if extraction_start >= extraction_end', async () => {
+    it('should exit the process if extract_from >= extract_to', async () => {
       // Arrange: start is after end (inverted window)
       const event = createEvent({
         eventType: EventType.StartExtractingData,
@@ -401,7 +401,7 @@ describe(State.name, () => {
       expect(processExitSpy).toHaveBeenCalledWith(1);
     });
 
-    it('should exit the process if extraction_start equals extraction_end', async () => {
+    it('should exit the process if extract_from equals extract_to', async () => {
       // Arrange: start equals end (zero-width window)
       const event = createEvent({
         eventType: EventType.StartExtractingData,
@@ -435,7 +435,7 @@ describe(State.name, () => {
       expect(processExitSpy).toHaveBeenCalledWith(1);
     });
 
-    it('should not exit when extraction_start < extraction_end', async () => {
+    it('should not exit when extract_from < extract_to', async () => {
       // Arrange: valid window
       const event = createEvent({
         eventType: EventType.StartExtractingData,
@@ -468,7 +468,7 @@ describe(State.name, () => {
       expect(processExitSpy).not.toHaveBeenCalled();
     });
 
-    it('should not validate when only extraction_start is set', async () => {
+    it('should not validate when only extract_from is set', async () => {
       // Arrange: only start, no end
       const event = createEvent({
         eventType: EventType.StartExtractingData,
@@ -497,7 +497,7 @@ describe(State.name, () => {
       expect(processExitSpy).not.toHaveBeenCalled();
     });
 
-    it('should not exit when extraction_start is UNBOUNDED and extraction_end is a real timestamp', async () => {
+    it('should not exit when extract_from is UNBOUNDED and extract_to is a real timestamp', async () => {
       // Arrange: UNBOUNDED start (epoch) with a real ABSOLUTE end timestamp
       const event = createEvent({
         eventType: EventType.StartExtractingData,
@@ -577,10 +577,10 @@ describe(State.name, () => {
       // Assert
       expect(state.state.pendingWorkersOldest).toBe('1970-01-01T00:00:00.000Z');
       expect(state.state.pendingWorkersNewest).toBe(FIXED_NOW);
-      expect(event.payload.event_context.extraction_start).toBe(
+      expect(event.payload.event_context.extract_from).toBe(
         '1970-01-01T00:00:00.000Z'
       );
-      expect(event.payload.event_context.extraction_end).toBe(FIXED_NOW);
+      expect(event.payload.event_context.extract_to).toBe(FIXED_NOW);
     });
 
     it('should overwrite pending values on a retry (new StartExtractingData after failure)', async () => {
@@ -661,14 +661,14 @@ describe(State.name, () => {
       });
 
       // Assert: uses cached pending values, NOT new Date() resolution
-      expect(event.payload.event_context.extraction_start).toBe(pendingOldest);
-      expect(event.payload.event_context.extraction_end).toBe(pendingNewest);
+      expect(event.payload.event_context.extract_from).toBe(pendingOldest);
+      expect(event.payload.event_context.extract_to).toBe(pendingNewest);
       // Pending values in state remain unchanged
       expect(state.state.pendingWorkersOldest).toBe(pendingOldest);
       expect(state.state.pendingWorkersNewest).toBe(pendingNewest);
     });
 
-    it('should not set extraction_start/extraction_end on ContinueExtractingData if no pending values exist', async () => {
+    it('should not set extract_from/extract_to on ContinueExtractingData if no pending values exist', async () => {
       // Arrange: state has no pending values (e.g. old state from before this feature)
       const event = createEvent({
         eventType: EventType.ContinueExtractingData,
@@ -691,8 +691,8 @@ describe(State.name, () => {
       });
 
       // Assert: no extraction timestamps are set
-      expect(event.payload.event_context.extraction_start).toBeUndefined();
-      expect(event.payload.event_context.extraction_end).toBeUndefined();
+      expect(event.payload.event_context.extract_from).toBeUndefined();
+      expect(event.payload.event_context.extract_to).toBeUndefined();
     });
 
     it('should reuse pending values on StartExtractingAttachments', async () => {
@@ -723,8 +723,8 @@ describe(State.name, () => {
       });
 
       // Assert: pending values are reused
-      expect(event.payload.event_context.extraction_start).toBe(pendingOldest);
-      expect(event.payload.event_context.extraction_end).toBe(pendingNewest);
+      expect(event.payload.event_context.extract_from).toBe(pendingOldest);
+      expect(event.payload.event_context.extract_to).toBe(pendingNewest);
     });
   });
 

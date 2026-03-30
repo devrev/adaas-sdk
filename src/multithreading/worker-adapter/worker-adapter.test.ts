@@ -860,7 +860,7 @@ describe(WorkerAdapter.name, () => {
     });
 
     /**
-     * Helper: sets extraction_start and extraction_end on the event context,
+     * Helper: sets extract_from and extract_to on the event context,
      * resets the emit guard so the adapter can emit again, then emits
      * AttachmentExtractionDone.
      */
@@ -869,9 +869,9 @@ describe(WorkerAdapter.name, () => {
       extractionStart: string | undefined,
       extractionEnd: string | undefined
     ) {
-      adapterInstance.event.payload.event_context.extraction_start =
+      adapterInstance.event.payload.event_context.extract_from =
         extractionStart;
-      adapterInstance.event.payload.event_context.extraction_end =
+      adapterInstance.event.payload.event_context.extract_to =
         extractionEnd;
       // Reset the emit guard so we can emit multiple times in a single test
       adapterInstance['hasWorkerEmitted'] = false;
@@ -1083,9 +1083,9 @@ describe(WorkerAdapter.name, () => {
       it('should not update boundaries on DataExtractionDone', async () => {
         adapter.state.workersOldest = '2025-01-01T00:00:00.000Z';
         adapter.state.workersNewest = '2025-03-01T00:00:00.000Z';
-        adapter.event.payload.event_context.extraction_start =
+        adapter.event.payload.event_context.extract_from =
           '2024-01-01T00:00:00.000Z';
-        adapter.event.payload.event_context.extraction_end =
+        adapter.event.payload.event_context.extract_to =
           '2025-12-01T00:00:00.000Z';
 
         await adapter.emit(ExtractorEventType.DataExtractionDone, {
@@ -1100,9 +1100,9 @@ describe(WorkerAdapter.name, () => {
       it('should not update boundaries on DataExtractionProgress', async () => {
         adapter.state.workersOldest = '2025-01-01T00:00:00.000Z';
         adapter.state.workersNewest = '2025-03-01T00:00:00.000Z';
-        adapter.event.payload.event_context.extraction_start =
+        adapter.event.payload.event_context.extract_from =
           '2024-01-01T00:00:00.000Z';
-        adapter.event.payload.event_context.extraction_end =
+        adapter.event.payload.event_context.extract_to =
           '2025-12-01T00:00:00.000Z';
 
         await adapter.emit(ExtractorEventType.DataExtractionProgress, {
@@ -1117,9 +1117,9 @@ describe(WorkerAdapter.name, () => {
       it('should not update boundaries on MetadataExtractionError', async () => {
         adapter.state.workersOldest = '2025-01-01T00:00:00.000Z';
         adapter.state.workersNewest = '2025-03-01T00:00:00.000Z';
-        adapter.event.payload.event_context.extraction_start =
+        adapter.event.payload.event_context.extract_from =
           '2024-01-01T00:00:00.000Z';
-        adapter.event.payload.event_context.extraction_end =
+        adapter.event.payload.event_context.extract_to =
           '2025-12-01T00:00:00.000Z';
 
         await adapter.emit(ExtractorEventType.MetadataExtractionError, {
@@ -1134,9 +1134,9 @@ describe(WorkerAdapter.name, () => {
       it('should not update boundaries on AttachmentExtractionError', async () => {
         adapter.state.workersOldest = '2025-01-01T00:00:00.000Z';
         adapter.state.workersNewest = '2025-03-01T00:00:00.000Z';
-        adapter.event.payload.event_context.extraction_start =
+        adapter.event.payload.event_context.extract_from =
           '2024-01-01T00:00:00.000Z';
-        adapter.event.payload.event_context.extraction_end =
+        adapter.event.payload.event_context.extract_to =
           '2025-12-01T00:00:00.000Z';
 
         await adapter.emit(ExtractorEventType.AttachmentExtractionError, {
