@@ -4,10 +4,12 @@ import { createEvent } from '../../tests/test-helpers';
 import {
   AdapterState,
   AirdropEvent,
+  Artifact,
   EventType,
   ExtractorEventType,
   LoaderEventType,
 } from '../../types';
+import { LoaderReport } from '../../types/loading';
 import { WorkerAdapter } from './worker-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -786,7 +788,7 @@ describe(WorkerAdapter.name, () => {
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
       adapter['_artifacts'] = [
         { id: 'art-1', item_count: 10, item_type: 'issues' },
-      ] as any;
+      ] as Artifact[];
 
       await adapter.emit(ExtractorEventType.DataExtractionDone);
 
@@ -813,7 +815,7 @@ describe(WorkerAdapter.name, () => {
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
       adapter['loaderReports'] = [
         { item_type: 'tasks', created: 5 },
-      ] as any;
+      ] as LoaderReport[];
       adapter['_processedFiles'] = ['file-1', 'file-2'];
 
       await adapter.emit(LoaderEventType.DataLoadingDone);
@@ -841,15 +843,13 @@ describe(WorkerAdapter.name, () => {
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
       adapter['_artifacts'] = [
         { id: 'art-1', item_count: 10, item_type: 'issues' },
-      ] as any;
+      ] as Artifact[];
       adapter['loaderReports'] = [
         { item_type: 'tasks', created: 5 },
-      ] as any;
+      ] as LoaderReport[];
       adapter['_processedFiles'] = ['file-1'];
 
-      await adapter.emit(
-        'SOME_UNKNOWN_EVENT' as ExtractorEventType
-      );
+      await adapter.emit('SOME_UNKNOWN_EVENT' as ExtractorEventType);
 
       const callData = mockEmit.mock.calls[0][0].data;
       expect(callData).not.toHaveProperty('artifacts');
@@ -925,7 +925,11 @@ describe(WorkerAdapter.name, () => {
       };
 
       // Simulate what State.init() does when parsing objects from API
-      (mockAdapterState as any)._extractionScope = extractionScope;
+      (
+        mockAdapterState as unknown as {
+          _extractionScope: Record<string, { extract: boolean }>;
+        }
+      )._extractionScope = extractionScope;
 
       expect(adapter.extractionScope).toEqual({
         tasks: { extract: true },
@@ -941,21 +945,33 @@ describe(WorkerAdapter.name, () => {
     });
 
     it('should return true when item type is not in scope', () => {
-      (mockAdapterState as any)._extractionScope = {
+      (
+        mockAdapterState as unknown as {
+          _extractionScope: Record<string, { extract: boolean }>;
+        }
+      )._extractionScope = {
         tasks: { extract: true },
       };
       expect(adapter.shouldExtract('users')).toBe(true);
     });
 
     it('should return true when item type has extract: true', () => {
-      (mockAdapterState as any)._extractionScope = {
+      (
+        mockAdapterState as unknown as {
+          _extractionScope: Record<string, { extract: boolean }>;
+        }
+      )._extractionScope = {
         tasks: { extract: true },
       };
       expect(adapter.shouldExtract('tasks')).toBe(true);
     });
 
     it('should return false when item type has extract: false', () => {
-      (mockAdapterState as any)._extractionScope = {
+      (
+        mockAdapterState as unknown as {
+          _extractionScope: Record<string, { extract: boolean }>;
+        }
+      )._extractionScope = {
         tasks: { extract: false },
         users: { extract: true },
       };
