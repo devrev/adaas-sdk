@@ -7,6 +7,8 @@ import {
   ExtractorEventType,
   LoaderEventType,
 } from '../../types';
+import { ActionType, LoaderReport } from '../../types/loading';
+import { Artifact } from '../../uploader/uploader.interfaces';
 import { WorkerAdapter } from './worker-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -712,7 +714,7 @@ describe(WorkerAdapter.name, () => {
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
       adapter['_artifacts'] = [
         { id: 'art-1', item_count: 10, item_type: 'issues' },
-      ] as any;
+      ] as Artifact[];
 
       await adapter.emit(ExtractorEventType.DataExtractionDone);
 
@@ -738,8 +740,8 @@ describe(WorkerAdapter.name, () => {
         .mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
       adapter['loaderReports'] = [
-        { item_type: 'tasks', created: 5 },
-      ] as any;
+        { item_type: 'tasks', [ActionType.CREATED]: 5 },
+      ] as LoaderReport[];
       adapter['_processedFiles'] = ['file-1', 'file-2'];
 
       await adapter.emit(LoaderEventType.DataLoadingDone);
@@ -767,15 +769,13 @@ describe(WorkerAdapter.name, () => {
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
       adapter['_artifacts'] = [
         { id: 'art-1', item_count: 10, item_type: 'issues' },
-      ] as any;
+      ] as Artifact[];
       adapter['loaderReports'] = [
-        { item_type: 'tasks', created: 5 },
-      ] as any;
+        { item_type: 'tasks', [ActionType.CREATED]: 5 },
+      ] as LoaderReport[];
       adapter['_processedFiles'] = ['file-1'];
 
-      await adapter.emit(
-        'SOME_UNKNOWN_EVENT' as ExtractorEventType
-      );
+      await adapter.emit('SOME_UNKNOWN_EVENT' as ExtractorEventType);
 
       const callData = mockEmit.mock.calls[0][0].data;
       expect(callData).not.toHaveProperty('artifacts');
