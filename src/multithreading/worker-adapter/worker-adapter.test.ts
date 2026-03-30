@@ -9,7 +9,7 @@ import {
   ExtractorEventType,
   LoaderEventType,
 } from '../../types';
-import { LoaderReport } from '../../types/loading';
+import { ActionType, LoaderReport } from '../../types/loading';
 import { WorkerAdapter } from './worker-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -814,7 +814,7 @@ describe(WorkerAdapter.name, () => {
         .mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
       adapter['loaderReports'] = [
-        { item_type: 'tasks', created: 5 },
+        { item_type: 'tasks', [ActionType.CREATED]: 5 },
       ] as LoaderReport[];
       adapter['_processedFiles'] = ['file-1', 'file-2'];
 
@@ -845,7 +845,7 @@ describe(WorkerAdapter.name, () => {
         { id: 'art-1', item_count: 10, item_type: 'issues' },
       ] as Artifact[];
       adapter['loaderReports'] = [
-        { item_type: 'tasks', created: 5 },
+        { item_type: 'tasks', [ActionType.CREATED]: 5 },
       ] as LoaderReport[];
       adapter['_processedFiles'] = ['file-1'];
 

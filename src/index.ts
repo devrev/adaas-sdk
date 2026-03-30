@@ -19,4 +19,9 @@ export * from './types/workers';
 
 export { formatAxiosError, serializeAxiosError } from './logger/logger';
 
-export { MockServer } from './tests/mock-server/mock-server';
+export { MockServer } from './mock-server/mock-server';
+export type {
+  RequestInfo,
+  RetryConfig,
+  RouteConfig,
+} from './mock-server/mock-server.interfaces';
