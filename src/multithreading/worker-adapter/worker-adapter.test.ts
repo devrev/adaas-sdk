@@ -1,7 +1,13 @@
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
 import { State } from '../../state/state';
 import { createEvent } from '../../tests/test-helpers';
-import { AdapterState, EventType, ExtractorEventType } from '../../types';
+import {
+  AdapterState,
+  AirdropEvent,
+  EventType,
+  ExtractorEventType,
+  LoaderEventType,
+} from '../../types';
 import { WorkerAdapter } from './worker-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -39,8 +45,8 @@ describe(WorkerAdapter.name, () => {
   }
 
   let adapter: WorkerAdapter<TestState>;
-  let mockEvent;
-  let mockAdapterState;
+  let mockEvent: AirdropEvent;
+  let mockAdapterState: State<TestState>;
 
   beforeEach(() => {
     // Reset all mocks
@@ -548,11 +554,10 @@ describe(WorkerAdapter.name, () => {
   });
 
   describe(WorkerAdapter.prototype.processAttachment.name, () => {
-    const createMockHttpStream = (headers: Record<string, string> = {}) =>
-      ({
-        headers,
-        data: { destroy: jest.fn() },
-      }) as any;
+    const createMockHttpStream = (headers: Record<string, string> = {}) => ({
+      headers,
+      data: { destroy: jest.fn() },
+    });
 
     beforeEach(() => {
       adapter.initializeRepos([{ itemType: 'ssor_attachment' }]);
@@ -569,11 +574,13 @@ describe(WorkerAdapter.name, () => {
         }),
       });
 
-      adapter['uploader'].getArtifactUploadUrl = jest
-        .fn()
-        .mockResolvedValue({
-          response: { artifact_id: 'art_1', upload_url: 'https://upload', form_data: [] },
-        });
+      adapter['uploader'].getArtifactUploadUrl = jest.fn().mockResolvedValue({
+        response: {
+          artifact_id: 'art_1',
+          upload_url: 'https://upload',
+          form_data: [],
+        },
+      });
       adapter['uploader'].streamArtifact = jest
         .fn()
         .mockResolvedValue({ response: {} });
@@ -606,11 +613,13 @@ describe(WorkerAdapter.name, () => {
         }),
       });
 
-      adapter['uploader'].getArtifactUploadUrl = jest
-        .fn()
-        .mockResolvedValue({
-          response: { artifact_id: 'art_2', upload_url: 'https://upload', form_data: [] },
-        });
+      adapter['uploader'].getArtifactUploadUrl = jest.fn().mockResolvedValue({
+        response: {
+          artifact_id: 'art_2',
+          upload_url: 'https://upload',
+          form_data: [],
+        },
+      });
       adapter['uploader'].streamArtifact = jest
         .fn()
         .mockResolvedValue({ response: {} });
@@ -639,11 +648,13 @@ describe(WorkerAdapter.name, () => {
         httpStream: createMockHttpStream({}),
       });
 
-      adapter['uploader'].getArtifactUploadUrl = jest
-        .fn()
-        .mockResolvedValue({
-          response: { artifact_id: 'art_3', upload_url: 'https://upload', form_data: [] },
-        });
+      adapter['uploader'].getArtifactUploadUrl = jest.fn().mockResolvedValue({
+        response: {
+          artifact_id: 'art_3',
+          upload_url: 'https://upload',
+          form_data: [],
+        },
+      });
       adapter['uploader'].streamArtifact = jest
         .fn()
         .mockResolvedValue({ response: {} });
@@ -765,6 +776,191 @@ describe(WorkerAdapter.name, () => {
         processed_files: [],
       });
       expect(counter.counter).toBe(1);
+    });
+
+    it('should include artifacts in data for extraction events', async () => {
+      const { emit: mockEmit } = require('../../common/control-protocol');
+      adapter['adapterState'].postState = jest
+        .fn()
+        .mockResolvedValue(undefined);
+      adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+      adapter['_artifacts'] = [
+        { id: 'art-1', item_count: 10, item_type: 'issues' },
+      ] as any;
+
+      await adapter.emit(ExtractorEventType.DataExtractionDone);
+
+      expect(mockEmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            artifacts: expect.arrayContaining([
+              expect.objectContaining({ id: 'art-1' }),
+            ]),
+          }),
+        })
+      );
+      // Should not include loader-specific fields
+      const callData = mockEmit.mock.calls[0][0].data;
+      expect(callData).not.toHaveProperty('reports');
+      expect(callData).not.toHaveProperty('processed_files');
+    });
+
+    it('should include reports and processed_files in data for loader events', async () => {
+      const { emit: mockEmit } = require('../../common/control-protocol');
+      adapter['adapterState'].postState = jest
+        .fn()
+        .mockResolvedValue(undefined);
+      adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+      adapter['loaderReports'] = [
+        { item_type: 'tasks', created: 5 },
+      ] as any;
+      adapter['_processedFiles'] = ['file-1', 'file-2'];
+
+      await adapter.emit(LoaderEventType.DataLoadingDone);
+
+      expect(mockEmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            reports: expect.arrayContaining([
+              expect.objectContaining({ item_type: 'tasks' }),
+            ]),
+            processed_files: ['file-1', 'file-2'],
+          }),
+        })
+      );
+      // Should not include extraction-specific fields
+      const callData = mockEmit.mock.calls[0][0].data;
+      expect(callData).not.toHaveProperty('artifacts');
+    });
+
+    it('should not include artifacts, reports, or processed_files for unknown event types', async () => {
+      const { emit: mockEmit } = require('../../common/control-protocol');
+      adapter['adapterState'].postState = jest
+        .fn()
+        .mockResolvedValue(undefined);
+      adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+      adapter['_artifacts'] = [
+        { id: 'art-1', item_count: 10, item_type: 'issues' },
+      ] as any;
+      adapter['loaderReports'] = [
+        { item_type: 'tasks', created: 5 },
+      ] as any;
+      adapter['_processedFiles'] = ['file-1'];
+
+      await adapter.emit(
+        'SOME_UNKNOWN_EVENT' as ExtractorEventType
+      );
+
+      const callData = mockEmit.mock.calls[0][0].data;
+      expect(callData).not.toHaveProperty('artifacts');
+      expect(callData).not.toHaveProperty('reports');
+      expect(callData).not.toHaveProperty('processed_files');
+    });
+
+    it('should include artifacts for all ExtractorEventType values', async () => {
+      const { emit: mockEmit } = require('../../common/control-protocol');
+
+      const extractorEvents = [
+        ExtractorEventType.DataExtractionDone,
+        ExtractorEventType.DataExtractionProgress,
+        ExtractorEventType.DataExtractionError,
+        ExtractorEventType.AttachmentExtractionDone,
+        ExtractorEventType.AttachmentExtractionProgress,
+      ];
+
+      for (const eventType of extractorEvents) {
+        jest.clearAllMocks();
+        adapter.hasWorkerEmitted = false;
+        adapter['adapterState'].postState = jest
+          .fn()
+          .mockResolvedValue(undefined);
+        adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+
+        await adapter.emit(eventType);
+
+        const callData = mockEmit.mock.calls[0]?.[0]?.data;
+        expect(callData).toHaveProperty('artifacts');
+        expect(callData).not.toHaveProperty('reports');
+      }
+    });
+
+    it('should include reports and processed_files for all LoaderEventType values', async () => {
+      const { emit: mockEmit } = require('../../common/control-protocol');
+
+      const loaderEvents = [
+        LoaderEventType.DataLoadingDone,
+        LoaderEventType.DataLoadingProgress,
+        LoaderEventType.DataLoadingError,
+        LoaderEventType.AttachmentLoadingDone,
+        LoaderEventType.AttachmentLoadingProgress,
+      ];
+
+      for (const eventType of loaderEvents) {
+        jest.clearAllMocks();
+        adapter.hasWorkerEmitted = false;
+        adapter['adapterState'].postState = jest
+          .fn()
+          .mockResolvedValue(undefined);
+        adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+
+        await adapter.emit(eventType);
+
+        const callData = mockEmit.mock.calls[0]?.[0]?.data;
+        expect(callData).toHaveProperty('reports');
+        expect(callData).toHaveProperty('processed_files');
+        expect(callData).not.toHaveProperty('artifacts');
+      }
+    });
+  });
+
+  describe('extractionScope', () => {
+    it('should return empty object by default', () => {
+      expect(adapter.extractionScope).toEqual({});
+    });
+
+    it('should return extraction scope from adapter state', () => {
+      const extractionScope = {
+        tasks: { extract: true },
+        users: { extract: false },
+      };
+
+      // Simulate what State.init() does when parsing objects from API
+      (mockAdapterState as any)._extractionScope = extractionScope;
+
+      expect(adapter.extractionScope).toEqual({
+        tasks: { extract: true },
+        users: { extract: false },
+      });
+    });
+  });
+
+  describe('shouldExtract', () => {
+    it('should return true when extraction scope is empty', () => {
+      expect(adapter.shouldExtract('tasks')).toBe(true);
+      expect(adapter.shouldExtract('users')).toBe(true);
+    });
+
+    it('should return true when item type is not in scope', () => {
+      (mockAdapterState as any)._extractionScope = {
+        tasks: { extract: true },
+      };
+      expect(adapter.shouldExtract('users')).toBe(true);
+    });
+
+    it('should return true when item type has extract: true', () => {
+      (mockAdapterState as any)._extractionScope = {
+        tasks: { extract: true },
+      };
+      expect(adapter.shouldExtract('tasks')).toBe(true);
+    });
+
+    it('should return false when item type has extract: false', () => {
+      (mockAdapterState as any)._extractionScope = {
+        tasks: { extract: false },
+        users: { extract: true },
+      };
+      expect(adapter.shouldExtract('tasks')).toBe(false);
+      expect(adapter.shouldExtract('users')).toBe(true);
     });
   });
 });

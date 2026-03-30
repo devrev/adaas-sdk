@@ -16,6 +16,7 @@ export {
   DomainObjectState,
   EventContextIn,
   EventContextOut,
+  EventContext,
   EventData,
   EventType,
   ExternalProcessAttachmentFunction,

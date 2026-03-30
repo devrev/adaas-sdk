@@ -3,7 +3,6 @@ import { parentPort } from 'node:worker_threads';
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
 import {
   AirSyncDefaultItemTypes,
-  ALLOWED_EXTRACTION_EVENT_TYPES,
   EVENT_SIZE_THRESHOLD_BYTES,
   SSOR_ATTACHMENT,
   STATELESS_EVENT_TYPES,
@@ -146,6 +145,21 @@ export class WorkerAdapter<ConnectorState> {
 
   get mappers(): Mappers {
     return this._mappers;
+  }
+
+  get extractionScope() {
+    return this.adapterState.extractionScope;
+  }
+
+  /**
+   * Returns whether the given item type should be extracted.
+   * Defaults to true if the scope is empty or the item type is not listed.
+   */
+  shouldExtract(itemType: string): boolean {
+    const scope = this.extractionScope;
+    if (Object.keys(scope).length === 0) return true;
+    if (!(itemType in scope)) return true;
+    return scope[itemType].extract;
   }
 
   initializeRepos(repos: RepoInterface[]) {
@@ -311,15 +325,21 @@ export class WorkerAdapter<ConnectorState> {
           data.error.message = truncateMessage(data.error.message);
         }
 
+        const isExtractionEvent = Object.values(ExtractorEventType).includes(
+          newEventType as ExtractorEventType
+        );
+        const isLoaderEvent = Object.values(LoaderEventType).includes(
+          newEventType as LoaderEventType
+        );
+
         await emit({
           eventType: newEventType,
           event: this.event,
           data: {
             ...data,
-            ...(ALLOWED_EXTRACTION_EVENT_TYPES.includes(
-              this.event.payload.event_type
-            )
-              ? { artifacts: this.artifacts }
+            ...(isExtractionEvent ? { artifacts: this.artifacts } : {}),
+            ...(isLoaderEvent
+              ? { reports: this.reports, processed_files: this.processedFiles }
               : {}),
           },
         });
