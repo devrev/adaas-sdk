@@ -1120,6 +1120,16 @@ export class WorkerAdapter<ConnectorState> {
           return response;
         }
 
+        // On timeout, emit progress and exit to allow continuation.
+        if (this.isTimeout) {
+          console.log(
+            `Timeout detected after processing attachments for artifact ID: ${attachmentsMetadataArtifactId}. Emitting progress to allow continuation.`
+          );
+          await this.emit(ExtractorEventType.AttachmentExtractionProgress);
+          process.exit(0);
+          return;
+        }
+
         console.log(
           `Finished processing all attachments for artifact ID: ${attachmentsMetadataArtifactId}.`
         );
