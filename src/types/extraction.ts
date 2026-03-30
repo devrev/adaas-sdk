@@ -333,7 +333,7 @@ export interface EventContext {
    */
   reset_extraction?: boolean;
   /**
-   * @deprecated reset_extract_from is deprecated. Use extraction_time_direction with extraction_start_time/extraction_end_time instead for more granular control over data extraction.
+   * @deprecated reset_extract_from is deprecated. Use extraction_start_time/extraction_end_time instead for more granular control over data extraction.
    */
   reset_extract_from?: boolean;
   run_id: string;
