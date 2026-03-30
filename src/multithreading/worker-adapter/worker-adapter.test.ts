@@ -1,6 +1,6 @@
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
+import { UNBOUNDED_DATE_TIME_VALUE } from '../../common/constants';
 import { State } from '../../state/state';
-import { UNBOUNDED_DATE_TIME_VALUE } from '../../state/state.interfaces';
 import { createEvent } from '../../tests/test-helpers';
 import {
   AdapterState,

@@ -84,7 +84,7 @@ export async function createAdapterState<ConnectorState>({
       console.log(`Setting lastSyncStarted to ${as.state.lastSyncStarted}.`);
     }
 
-    // Resolve extraction timestamps from TimeValue objects, or reuse pending values from a prior phase.
+    // Resolve extraction timestamps from TimeValue objects, or reuse pending values from a prior invocation.
     // On StartExtractingData: resolve fresh from TimeValue objects and store in pending state (always overwrite).
     // On all other events: reuse the pending values cached during StartExtractingData.
     const eventContext = event.payload.event_context;
@@ -133,11 +133,19 @@ export async function createAdapterState<ConnectorState>({
         console.log(
           `Reusing pendingWorkersOldest as extraction_start: ${as.state.pendingWorkersOldest}.`
         );
+      } else {
+        console.warn(
+          'pendingWorkersOldest is not set in state. extraction_start will not be populated for this invocation.'
+        );
       }
       if (as.state.pendingWorkersNewest) {
         eventContext.extraction_end = as.state.pendingWorkersNewest;
         console.log(
           `Reusing pendingWorkersNewest as extraction_end: ${as.state.pendingWorkersNewest}.`
+        );
+      } else {
+        console.warn(
+          'pendingWorkersNewest is not set in state. extraction_end will not be populated for this invocation.'
         );
       }
     }
@@ -145,7 +153,7 @@ export async function createAdapterState<ConnectorState>({
     // Validate that extraction_start is before extraction_end
     if (eventContext.extraction_start && eventContext.extraction_end) {
       if (eventContext.extraction_start >= eventContext.extraction_end) {
-        const errorMessage = `Invalid extraction window: extraction_start (${eventContext.extraction_start}) is not before extraction_end (${eventContext.extraction_end}). This indicates an error in the platform.`;
+        const errorMessage = `Invalid extraction window: extraction_start (${eventContext.extraction_start}) must be older than extraction_end (${eventContext.extraction_end}). This indicates an error in the platform.`;
         console.error(errorMessage);
         parentPort?.postMessage({
           subject: WorkerMessageSubject.WorkerMessageFailed,

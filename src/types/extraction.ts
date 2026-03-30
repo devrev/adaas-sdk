@@ -194,6 +194,27 @@ export enum InitialSyncScope {
 }
 
 /**
+ * TimeUnit is an enum that defines the supported Go duration units for time window calculations.
+ * These correspond directly to Go's time.ParseDuration units.
+ */
+export enum TimeUnit {
+  /** Nanoseconds */
+  NANOSECONDS = 'ns',
+  /** Microseconds (ASCII alias) */
+  MICROSECONDS = 'us',
+  /** Microseconds (Unicode alias) */
+  MICROSECONDS_MU = 'µs',
+  /** Milliseconds */
+  MILLISECONDS = 'ms',
+  /** Seconds */
+  SECONDS = 's',
+  /** Minutes */
+  MINUTES = 'm',
+  /** Hours */
+  HOURS = 'h',
+}
+
+/**
  * TimeValueType is an enum that defines the type of a time value used in extraction start/end times.
  * The platform sends these types to indicate how the extraction time should be resolved by the SDK.
  */

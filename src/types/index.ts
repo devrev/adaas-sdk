@@ -31,6 +31,7 @@ export {
   ExtractorEventType,
   InitialSyncScope,
   ProcessAttachmentReturnType,
+  TimeUnit,
   TimeValue,
   TimeValueType,
 } from './extraction';
@@ -52,10 +53,9 @@ export {
 } from '../repo/repo.interfaces';
 
 // State
-export {
-  AdapterState,
-  UNBOUNDED_DATE_TIME_VALUE,
-} from '../state/state.interfaces';
+export { AdapterState } from '../state/state.interfaces';
+
+export { UNBOUNDED_DATE_TIME_VALUE } from '../common/constants';
 
 // Uploader
 export {

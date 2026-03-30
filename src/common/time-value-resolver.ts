@@ -1,5 +1,6 @@
-import { TimeValue, TimeValueType } from '../types/extraction';
-import { SdkState, UNBOUNDED_DATE_TIME_VALUE } from '../state/state.interfaces';
+import { TimeUnit, TimeValue, TimeValueType } from '../types/extraction';
+import { SdkState } from '../state/state.interfaces';
+import { UNBOUNDED_DATE_TIME_VALUE } from './constants';
 
 /**
  * Parses a shorthand duration string into its numeric value and unit.
@@ -15,9 +16,12 @@ import { SdkState, UNBOUNDED_DATE_TIME_VALUE } from '../state/state.interfaces';
  */
 export function parseDuration(shorthand: string): {
   value: number;
-  unit: string;
+  unit: TimeUnit;
 } {
-  const match = shorthand.match(/^(\d+(?:\.\d+)?)(ns|us|µs|ms|s|m|h)$/);
+  const validUnits = Object.values(TimeUnit).join('|');
+  const match = shorthand.match(
+    new RegExp(`^(\\d+(?:\\.\\d+)?)(${validUnits})$`)
+  );
   if (!match) {
     throw new Error(
       `Invalid duration format: '${shorthand}'. Expected format like '100ns', '500ms', '30s', '5m', or '2h'.`
@@ -25,7 +29,7 @@ export function parseDuration(shorthand: string): {
   }
   return {
     value: parseFloat(match[1]),
-    unit: match[2],
+    unit: match[2] as TimeUnit,
   };
 }
 
@@ -47,24 +51,24 @@ export function applyDuration(
   const sign = operation === 'add' ? 1 : -1;
 
   switch (unit) {
-    case 'ns':
+    case TimeUnit.NANOSECONDS:
       // JavaScript Date works in milliseconds, so convert nanoseconds
       date.setTime(date.getTime() + sign * value * 0.000001);
       break;
-    case 'us':
-    case 'µs':
+    case TimeUnit.MICROSECONDS:
+    case TimeUnit.MICROSECONDS_MU:
       date.setTime(date.getTime() + sign * value * 0.001);
       break;
-    case 'ms':
+    case TimeUnit.MILLISECONDS:
       date.setTime(date.getTime() + sign * value);
       break;
-    case 's':
+    case TimeUnit.SECONDS:
       date.setUTCSeconds(date.getUTCSeconds() + sign * value);
       break;
-    case 'm':
+    case TimeUnit.MINUTES:
       date.setUTCMinutes(date.getUTCMinutes() + sign * value);
       break;
-    case 'h':
+    case TimeUnit.HOURS:
       date.setUTCHours(date.getUTCHours() + sign * value);
       break;
   }
@@ -123,7 +127,7 @@ export function resolveTimeValue(
     case TimeValueType.WORKERS_OLDEST: {
       if (!state.workersOldest) {
         throw new Error(
-          'workers_oldest is not set in state. Cannot resolve TimeValue of type WORKERS_OLDEST without a prior extraction boundary.'
+          'Field workersOldest is not set in state. Cannot resolve TimeValue of type WORKERS_OLDEST without a prior extraction boundary.'
         );
       }
       return state.workersOldest;
@@ -132,7 +136,7 @@ export function resolveTimeValue(
     case TimeValueType.WORKERS_NEWEST: {
       if (!state.workersNewest) {
         throw new Error(
-          'workers_newest is not set in state. Cannot resolve TimeValue of type WORKERS_NEWEST without a prior extraction boundary.'
+          'Field workersNewest is not set in state. Cannot resolve TimeValue of type WORKERS_NEWEST without a prior extraction boundary.'
         );
       }
       return state.workersNewest;
@@ -146,7 +150,7 @@ export function resolveTimeValue(
       }
       if (!state.workersOldest) {
         throw new Error(
-          'workers_oldest is not set in state. Cannot resolve TimeValue of type WORKERS_OLDEST_MINUS_WINDOW without a prior extraction boundary.'
+          'Field workersOldest is not set in state. Cannot resolve TimeValue of type WORKERS_OLDEST_MINUS_WINDOW without a prior extraction boundary.'
         );
       }
       return applyDuration(state.workersOldest, timeValue.value, 'subtract');
@@ -160,7 +164,7 @@ export function resolveTimeValue(
       }
       if (!state.workersNewest) {
         throw new Error(
-          'workers_newest is not set in state. Cannot resolve TimeValue of type WORKERS_NEWEST_PLUS_WINDOW without a prior extraction boundary.'
+          'Field workersNewest is not set in state. Cannot resolve TimeValue of type WORKERS_NEWEST_PLUS_WINDOW without a prior extraction boundary.'
         );
       }
       return applyDuration(state.workersNewest, timeValue.value, 'add');

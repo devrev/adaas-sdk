@@ -3,17 +3,16 @@ import { AirdropEvent } from '../types/extraction';
 import { FileToLoad } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
-/**
- * Sentinel value representing an unbounded (no limit) extraction timestamp.
- * Used as the resolved value for TimeValueType.UNBOUNDED, stored as workers_oldest
- * when the initial import has no lower time bound. The Unix epoch ensures that
- * no real extraction timestamp can be earlier, preventing accidental overwrites
- * of the boundary by subsequent syncs (e.g. reconciliation with absolute dates).
- */
-export const UNBOUNDED_DATE_TIME_VALUE = '1970-01-01T00:00:00.000Z';
-
 export interface SdkState {
+  /**
+   * @deprecated Use extraction_start and extraction_end from the event context instead,
+   * which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
+   */
   lastSyncStarted?: string;
+  /**
+   * @deprecated Use extraction_start and extraction_end from the event context instead,
+   * which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
+   */
   lastSuccessfulSyncStarted?: string;
   /** The pending (not yet committed) oldest extraction boundary (ISO 8601 timestamp).
    *  Set on StartExtractingData, reused across subsequent phases, cleared on AttachmentExtractionDone. */

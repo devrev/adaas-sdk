@@ -1,5 +1,6 @@
 import { TimeValueType } from '../types/extraction';
-import { SdkState, UNBOUNDED_DATE_TIME_VALUE } from '../state/state.interfaces';
+import { SdkState } from '../state/state.interfaces';
+import { UNBOUNDED_DATE_TIME_VALUE } from './constants';
 import {
   parseDuration,
   applyDuration,
@@ -243,7 +244,7 @@ describe('time-value-resolver', () => {
             { type: TimeValueType.WORKERS_OLDEST },
             { workersOldest: '' }
           )
-        ).toThrow('workers_oldest is not set in state');
+        ).toThrow('workersOldest is not set in state');
       });
     });
 
@@ -262,7 +263,7 @@ describe('time-value-resolver', () => {
             { type: TimeValueType.WORKERS_NEWEST },
             { workersNewest: '' }
           )
-        ).toThrow('workers_newest is not set in state');
+        ).toThrow('workersNewest is not set in state');
       });
     });
 
@@ -298,7 +299,7 @@ describe('time-value-resolver', () => {
             },
             { workersOldest: '' }
           )
-        ).toThrow('workers_oldest is not set in state');
+        ).toThrow('workersOldest is not set in state');
       });
 
       it('should throw if value (duration) is missing', () => {
@@ -343,7 +344,7 @@ describe('time-value-resolver', () => {
             },
             { workersNewest: '' }
           )
-        ).toThrow('workers_newest is not set in state');
+        ).toThrow('workersNewest is not set in state');
       });
 
       it('should throw if value (duration) is missing', () => {
