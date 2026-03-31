@@ -105,7 +105,7 @@ export async function createAdapterState<ConnectorState>({
 
       for (const { source, target, pending } of timeFields) {
         const timeValue = eventContext[source];
-        if (timeValue) {
+        if (timeValue && timeValue.type) {
           try {
             const resolved = resolveTimeValue(timeValue, as.state);
             eventContext[target] = resolved;
