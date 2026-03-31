@@ -301,6 +301,38 @@ export class WorkerAdapter<ConnectorState> {
 
         this.state.lastSuccessfulSyncStarted = this.state.lastSyncStarted;
         this.state.lastSyncStarted = '';
+
+        // Clear pending extraction boundaries now that the cycle is complete
+        this.state.pendingWorkersOldest = '';
+        this.state.pendingWorkersNewest = '';
+
+        // Update workersOldest and workersNewest boundaries from resolved extraction timestamps.
+        // Expand boundaries: workersOldest gets the earliest timestamp, workersNewest gets the latest.
+        const extractionStart =
+          this.event.payload.event_context.extract_from;
+        const extractionEnd = this.event.payload.event_context.extract_to;
+
+        if (
+          extractionStart &&
+          (!this.state.workersOldest ||
+            extractionStart < this.state.workersOldest)
+        ) {
+          console.log(
+            `Updating workersOldest from '${this.state.workersOldest}' to '${extractionStart}'.`
+          );
+          this.state.workersOldest = extractionStart;
+        }
+
+        if (
+          extractionEnd &&
+          (!this.state.workersNewest ||
+            extractionEnd > this.state.workersNewest)
+        ) {
+          console.log(
+            `Updating workersNewest from '${this.state.workersNewest}' to '${extractionEnd}'.`
+          );
+          this.state.workersNewest = extractionEnd;
+        }
       }
 
       // We want to save the state every time we emit an event, except for the start and delete events

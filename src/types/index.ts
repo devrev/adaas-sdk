@@ -29,7 +29,11 @@ export {
   ExtractionMode,
   ExtractorEvent,
   ExtractorEventType,
+  InitialSyncScope,
   ProcessAttachmentReturnType,
+  TimeUnit,
+  TimeValue,
+  TimeValueType,
 } from './extraction';
 
 // Loading
@@ -50,6 +54,8 @@ export {
 
 // State
 export { AdapterState } from '../state/state.interfaces';
+
+export { UNBOUNDED_DATE_TIME_VALUE } from '../common/constants';
 
 // Uploader
 export {

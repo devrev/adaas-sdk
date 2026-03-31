@@ -1,9 +1,9 @@
+import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
   ProcessAttachmentReturnType,
-} from 'types';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+} from '../types';
 import { AttachmentsStreamingPool } from './attachments-streaming-pool';
 
 // Mock types

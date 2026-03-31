@@ -3,6 +3,7 @@ import { parentPort } from 'node:worker_threads';
 
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
+import { resolveTimeValue } from '../common/time-value-resolver';
 import { axiosClient } from '../http/axios-client-internal';
 import { getPrintableState, serializeError } from '../logger/logger';
 import { SyncMode } from '../types/common';
@@ -81,6 +82,85 @@ export async function createAdapterState<ConnectorState>({
     ) {
       as.state.lastSyncStarted = new Date().toISOString();
       console.log(`Setting lastSyncStarted to ${as.state.lastSyncStarted}.`);
+    }
+
+    // Resolve extraction timestamps from TimeValue objects, or reuse pending values from a prior invocation.
+    // On StartExtractingData: resolve fresh from TimeValue objects and store in pending state (always overwrite).
+    // On all other events: reuse the pending values cached during StartExtractingData.
+    const eventContext = event.payload.event_context;
+
+    if (event.payload.event_type === EventType.StartExtractingData) {
+      const timeFields = [
+        {
+          source: 'extraction_start_time',
+          target: 'extract_from',
+          pending: 'pendingWorkersOldest',
+        },
+        {
+          source: 'extraction_end_time',
+          target: 'extract_to',
+          pending: 'pendingWorkersNewest',
+        },
+      ] as const;
+
+      for (const { source, target, pending } of timeFields) {
+        const timeValue = eventContext[source];
+        if (timeValue) {
+          try {
+            const resolved = resolveTimeValue(timeValue, as.state);
+            eventContext[target] = resolved;
+            as.state[pending] = resolved;
+            console.log(
+              `Resolved ${target} to ${resolved}. Stored in ${pending}.`
+            );
+          } catch (error) {
+            const errorMessage = `Failed to resolve ${source}: ${serializeError(
+              error
+            )}`;
+            console.error(errorMessage);
+            parentPort?.postMessage({
+              subject: WorkerMessageSubject.WorkerMessageFailed,
+              payload: { message: errorMessage },
+            });
+            process.exit(1);
+          }
+        }
+      }
+    } else {
+      // Non-StartExtractingData events: reuse pending values from state
+      if (as.state.pendingWorkersOldest) {
+        eventContext.extract_from = as.state.pendingWorkersOldest;
+        console.log(
+          `Reusing pendingWorkersOldest as extract_from: ${as.state.pendingWorkersOldest}.`
+        );
+      } else {
+        console.warn(
+          'pendingWorkersOldest is not set in state. extract_from will not be populated for this invocation.'
+        );
+      }
+      if (as.state.pendingWorkersNewest) {
+        eventContext.extract_to = as.state.pendingWorkersNewest;
+        console.log(
+          `Reusing pendingWorkersNewest as extract_to: ${as.state.pendingWorkersNewest}.`
+        );
+      } else {
+        console.warn(
+          'pendingWorkersNewest is not set in state. extract_to will not be populated for this invocation.'
+        );
+      }
+    }
+
+    // Validate that extract_from is before extract_to
+    if (eventContext.extract_from && eventContext.extract_to) {
+      if (eventContext.extract_from >= eventContext.extract_to) {
+        const errorMessage = `Invalid extraction window: extract_from (${eventContext.extract_from}) must be older than extract_to (${eventContext.extract_to}). This indicates an error in the platform.`;
+        console.error(errorMessage);
+        parentPort?.postMessage({
+          subject: WorkerMessageSubject.WorkerMessageFailed,
+          payload: { message: errorMessage },
+        });
+        process.exit(1);
+      }
     }
   }
 

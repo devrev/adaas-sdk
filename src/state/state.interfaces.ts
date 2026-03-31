@@ -4,8 +4,26 @@ import { FileToLoad } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
 export interface SdkState {
+  /**
+   * @deprecated Use extract_from and extract_to from the event context instead,
+   * which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
+   */
   lastSyncStarted?: string;
+  /**
+   * @deprecated Use extract_from and extract_to from the event context instead,
+   * which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
+   */
   lastSuccessfulSyncStarted?: string;
+  /** The pending (not yet committed) oldest extraction boundary (ISO 8601 timestamp).
+   *  Set on StartExtractingData, reused across subsequent phases, cleared on AttachmentExtractionDone. */
+  pendingWorkersOldest?: string;
+  /** The pending (not yet committed) newest extraction boundary (ISO 8601 timestamp).
+   *  Set on StartExtractingData, reused across subsequent phases, cleared on AttachmentExtractionDone. */
+  pendingWorkersNewest?: string;
+  /** The oldest point of extraction (ISO 8601 timestamp). */
+  workersOldest?: string;
+  /** The newest point of extraction (ISO 8601 timestamp). */
+  workersNewest?: string;
   toDevRev?: ToDevRev;
   fromDevRev?: FromDevRev;
   snapInVersionId?: string;
@@ -47,6 +65,10 @@ export interface StateInterface<ConnectorState> {
 export const extractionSdkState = {
   lastSyncStarted: '',
   lastSuccessfulSyncStarted: '',
+  pendingWorkersOldest: '',
+  pendingWorkersNewest: '',
+  workersOldest: '',
+  workersNewest: '',
   snapInVersionId: '',
   toDevRev: {
     attachmentsMetadata: {
