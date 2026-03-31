@@ -238,13 +238,12 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2024-01-01T00:00:00.000Z');
       });
 
-      it('should throw if workersOldest is not set', () => {
-        expect(() =>
-          resolveTimeValue(
-            { type: TimeValueType.WORKERS_OLDEST },
-            { workersOldest: '' }
-          )
-        ).toThrow('workersOldest is not set in state');
+      it('should return UNBOUNDED_DATE_TIME_VALUE if workersOldest is not set', () => {
+        const result = resolveTimeValue(
+          { type: TimeValueType.WORKERS_OLDEST },
+          { workersOldest: '' }
+        );
+        expect(result).toBe(UNBOUNDED_DATE_TIME_VALUE);
       });
     });
 
@@ -290,16 +289,15 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2023-12-31T23:30:00.000Z');
       });
 
-      it('should throw if workersOldest is not set', () => {
-        expect(() =>
-          resolveTimeValue(
-            {
-              type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
-              value: '2h',
-            },
-            { workersOldest: '' }
-          )
-        ).toThrow('workersOldest is not set in state');
+      it('should return UNBOUNDED_DATE_TIME_VALUE if workersOldest is not set', () => {
+        const result = resolveTimeValue(
+          {
+            type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
+            value: '2h',
+          },
+          { workersOldest: '' }
+        );
+        expect(result).toBe(UNBOUNDED_DATE_TIME_VALUE);
       });
 
       it('should throw if value (duration) is missing', () => {

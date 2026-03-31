@@ -301,12 +301,12 @@ describe(State.name, () => {
 
   describe('Enhanced Control Protocol - TimeValue resolution failures', () => {
     it('should exit the process if extraction_start_time resolution fails', async () => {
-      // Arrange: WORKERS_OLDEST type but state has no workersOldest
+      // Arrange: WORKERS_NEWEST type but state has no workersNewest
       const event = createEvent({
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
           extraction_start_time: {
-            type: TimeValueType.WORKERS_OLDEST,
+            type: TimeValueType.WORKERS_NEWEST,
           },
         },
       });
