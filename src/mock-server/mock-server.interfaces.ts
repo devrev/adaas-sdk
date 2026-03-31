@@ -1,6 +1,24 @@
-import { Request, Response } from 'express';
+import { IncomingMessage, ServerResponse } from 'http';
 
 export const DEFAULT_MOCK_SERVER_PORT = 3001;
+
+export interface ParsedRequest extends IncomingMessage {
+  /** Parsed URL path (without query string) */
+  path: string;
+  /** Parsed JSON body (if any) */
+  body?: unknown;
+}
+
+export interface MockResponse extends ServerResponse {
+  /** Set response headers from a record */
+  set(headers: Record<string, string>): MockResponse;
+  /** Set the HTTP status code */
+  status(code: number): MockResponse;
+  /** Send a JSON response */
+  json(data: unknown): void;
+  /** Send an empty response */
+  send(): void;
+}
 
 /**
  * Configuration for retry simulation behavior.
@@ -41,7 +59,7 @@ export interface RouteConfig {
 /**
  * Type for custom route handler functions.
  */
-export type RouteHandler = (req: Request, res: Response) => unknown;
+export type RouteHandler = (req: ParsedRequest, res: MockResponse) => unknown;
 
 /**
  * Information about a request received by the mock server.
