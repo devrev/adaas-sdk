@@ -1,6 +1,6 @@
 {
   "name": "@devrev/ts-adaas",
-  "version": "1.17.1-beta.0",
+  "version": "1.17.1-beta.6",
   "description": "Typescript library containing the ADaaS(AirDrop as a Service) control protocol.",
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -30,7 +30,6 @@
   "devDependencies": {
     "@microsoft/api-extractor": "^7.57.6",
     "@microsoft/api-extractor-model": "^7.30.7",
-    "@types/express": "^5.0.3",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.18.0",
     "@types/yargs": "^17.0.33",
@@ -38,7 +37,6 @@
     "eslint": "9.32.0",
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-prettier": "4.0.0",
-    "express": "^5.2.1",
     "jest": "^29.7.0",
     "jiti": "^2.6.1",
     "prettier": "^2.8.3",

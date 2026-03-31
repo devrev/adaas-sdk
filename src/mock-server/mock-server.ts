@@ -1,14 +1,83 @@
-import express, { Express, Request, Response } from 'express';
-import { Server } from 'http';
+import { createServer, IncomingMessage, Server, ServerResponse } from 'http';
 
 import {
   DEFAULT_MOCK_SERVER_PORT,
+  MockResponse,
+  ParsedRequest,
   RequestCounts,
   RequestInfo,
   RouteConfig,
-  RouteHandler,
   RouteHandlers,
 } from './mock-server.interfaces';
+
+const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10mb
+
+/**
+ * Parses the JSON body from an incoming request.
+ */
+function parseJsonBody(req: IncomingMessage): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+
+    req.on('data', (chunk: Buffer) => {
+      size += chunk.length;
+      if (size > MAX_BODY_SIZE) {
+        reject(new Error('Request body too large'));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+
+    req.on('end', () => {
+      if (chunks.length === 0) {
+        resolve(undefined);
+        return;
+      }
+      try {
+        const raw = Buffer.concat(chunks).toString('utf-8');
+        resolve(JSON.parse(raw));
+      } catch {
+        resolve(undefined);
+      }
+    });
+
+    req.on('error', reject);
+  });
+}
+
+/**
+ * Wraps a ServerResponse with helper methods (status, json, set, send).
+ */
+function wrapResponse(res: ServerResponse): MockResponse {
+  const mock = res as MockResponse;
+  let statusCode = 200;
+
+  mock.set = (headers: Record<string, string>) => {
+    for (const [key, value] of Object.entries(headers)) {
+      res.setHeader(key, value);
+    }
+    return mock;
+  };
+
+  mock.status = (code: number) => {
+    statusCode = code;
+    return mock;
+  };
+
+  mock.json = (data: unknown) => {
+    res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+  };
+
+  mock.send = () => {
+    res.writeHead(statusCode);
+    res.end();
+  };
+
+  return mock;
+}
 
 /**
  * MockServer used in tests to mock internal AirSync endpoints.
@@ -16,7 +85,6 @@ import {
  * Supports per-test route configuration to simulate different response scenarios.
  */
 export class MockServer {
-  private app: Express;
   private server: Server | null = null;
   private internalPort: number;
   public port: number;
@@ -29,17 +97,18 @@ export class MockServer {
     this.internalPort = port;
     this.port = port;
     this.baseUrl = `http://localhost:${this.port}`;
-    this.app = express();
-
-    // Increase limit to handle size limit tests that send large artifact arrays
-    this.app.use(express.json({ limit: '10mb' }));
-    this.setupRoutes();
   }
 
   public async start(): Promise<void> {
     return new Promise((resolve) => {
-      this.server = this.app.listen(this.internalPort, () => {
-        // Get the actual port assigned by the OS (important for port 0 = dynamic allocation)
+      this.server = createServer((req, res) => {
+        this.handleRequest(req, res).catch(() => {
+          res.writeHead(500);
+          res.end();
+        });
+      });
+
+      this.server.listen(this.internalPort, () => {
         const actualPort = (this.server?.address() as { port: number } | null)
           ?.port;
         if (actualPort) {
@@ -70,99 +139,42 @@ export class MockServer {
     });
   }
 
-  /**
-   * Sets up routes for the mock server.
-   */
-  private setupRoutes(): void {
-    // TEST ENDPOINT
-    this.app.get('/test-endpoint', this.routeHandler('GET', '/test-endpoint'));
+  private async handleRequest(
+    raw: IncomingMessage,
+    rawRes: ServerResponse
+  ): Promise<void> {
+    const req = raw as ParsedRequest;
+    const res = wrapResponse(rawRes);
 
-    // CALLBACK URL
-    this.app.post('/callback_url', this.routeHandler('POST', '/callback_url'));
+    const urlPath = (req.url || '/').split('?')[0];
+    req.path = urlPath;
+    req.body = await parseJsonBody(req);
 
-    // WORKER DATA URL
-    this.app.post(
-      '/worker_data_url',
-      this.routeHandler('POST', '/worker_data_url')
-    );
-    this.app.get(
-      '/worker_data_url.get',
-      this.routeHandler('GET', '/worker_data_url.get')
-    );
-    this.app.post(
-      '/worker_data_url.update',
-      this.routeHandler('POST', '/worker_data_url.update')
-    );
-
-    // SNAP-INS URL
-    this.app.get(
-      '/internal/snap-ins.get',
-      this.routeHandler('GET', '/internal/snap-ins.get')
-    );
-
-    // AIRDROP RECIPE INITIAL DOMAIN MAPPINGS INSTALL URL
-    this.app.post(
-      '/internal/airdrop.recipe.initial-domain-mappings.install',
-      this.routeHandler(
-        'POST',
-        '/internal/airdrop.recipe.initial-domain-mappings.install'
-      )
-    );
-
-    // ARTIFACTS URL
-    this.app.get(
-      '/internal/airdrop.artifacts.upload-url',
-      this.routeHandler('GET', '/internal/airdrop.artifacts.upload-url')
-    );
-
-    this.app.post(
-      '/internal/airdrop.artifacts.confirm-upload',
-      this.routeHandler('POST', '/internal/airdrop.artifacts.confirm-upload')
-    );
-
-    // FILE UPLOAD URL
-    this.app.post(
-      '/file-upload-url',
-      this.routeHandler('POST', '/file-upload-url')
-    );
-  }
-
-  /**
-   * Creates a route handler that checks for custom handlers before using the default.
-   * @param method - The HTTP method
-   * @param path - The route path
-   * @returns A route handler function
-   */
-  private routeHandler(method: string, path: string): RouteHandler {
-    return (req: Request, res: Response) => {
-      const requestInfo: RequestInfo = {
-        method: req.method,
-        url: req.url || req.path,
-        ...(req.body !== undefined && req.body !== null
-          ? { body: req.body }
-          : {}),
-      };
-
-      this.requests.push(requestInfo);
-
-      const key = `${method}:${path}`;
-      const customHandler = this.routeHandlers.get(key);
-      if (customHandler) {
-        customHandler(req, res);
-      } else {
-        this.defaultRouteHandler(req, res);
-      }
+    const requestInfo: RequestInfo = {
+      method: req.method || 'GET',
+      url: req.url || urlPath,
+      ...(req.body !== undefined && req.body !== null
+        ? { body: req.body }
+        : {}),
     };
+    this.requests.push(requestInfo);
+
+    const method = (req.method || 'GET').toUpperCase();
+    const key = `${method}:${urlPath}`;
+    const customHandler = this.routeHandlers.get(key);
+
+    if (customHandler) {
+      customHandler(req, res);
+    } else {
+      this.defaultRouteHandler(req, res);
+    }
   }
 
   /**
    * Default route handler for the mock server. Returns { success: true } for
    * routes that are not explicitly set.
-   * @param req - The request object
-   * @param res - The response object
-   * @returns void
    */
-  private defaultRouteHandler(req: Request, res: Response): void {
+  private defaultRouteHandler(req: ParsedRequest, res: MockResponse): void {
     if (req.method === 'GET' && req.path === '/worker_data_url.get') {
       res.status(200).json({
         state: JSON.stringify({}),
@@ -178,50 +190,35 @@ export class MockServer {
       req.method === 'GET' &&
       req.path === '/internal/airdrop.artifacts.upload-url'
     ) {
-      // Generate a unique artifact ID for each request
       const artifactId = `artifact-${Date.now()}-${Math.random()
         .toString(36)
         .substr(2, 9)}`;
       res.status(200).json({
         upload_url: `${this.baseUrl}/file-upload-url`,
         artifact_id: artifactId,
-        form_data: [], // Empty form_data for local development
+        form_data: [],
       });
     } else {
       res.status(200).json({ success: true });
     }
   }
 
-  /**
-   * Gets the route key for a given method and path.
-   * @param method - The HTTP method
-   * @param path - The route path
-   * @returns The route key in the format 'METHOD:path'
-   */
   private getRouteKey(method: string, path: string): string {
     return `${method.toUpperCase()}:${path}`;
   }
 
   /**
    * Configures a route to return a specific status code and optional response body.
-   * @param config - The route configuration object
-   * @param config.path - The path of the route (e.g., '/callback_url')
-   * @param config.method - The HTTP method (e.g., 'GET', 'POST')
-   * @param config.status - The HTTP status code to return (e.g., 200, 401, 500)
-   * @param config.body - Optional response body to send as JSON
-   * @param config.retry - Optional retry configuration for simulating failures before success
    */
   public setRoute(config: RouteConfig): void {
     const { path, method, status, body, retry, headers, delay } = config;
     const key = this.getRouteKey(method, path);
 
-    // Reset request count for this route if retry is configured
-    // This ensures a clean state each time setRoute is called
     if (retry) {
       this.requestCounts.set(key, 0);
     }
 
-    this.routeHandlers.set(key, (req: Request, res: Response) => {
+    this.routeHandlers.set(key, (req: ParsedRequest, res: MockResponse) => {
       const sendResponse = (responseDelay?: number) => {
         const send = () => {
           if (retry) {
@@ -298,7 +295,6 @@ export class MockServer {
 
   /**
    * Returns the most recent request or undefined if no requests exist.
-   * @returns The last RequestInfo object or undefined
    */
   public getLastRequest(): RequestInfo | undefined {
     if (this.requests.length === 0) {
@@ -309,9 +305,6 @@ export class MockServer {
 
   /**
    * Gets the number of requests made to a specific endpoint.
-   * @param method - The HTTP method (e.g., 'GET', 'POST')
-   * @param path - The route path (e.g., '/test-endpoint', '/callback_url')
-   * @returns The number of requests made to the endpoint
    */
   public getRequestCount(method: string, path: string): number {
     return this.getRequests(method, path).length;
@@ -319,12 +312,8 @@ export class MockServer {
 
   /**
    * Gets all requests made to a specific endpoint.
-   * @param method - The HTTP method (e.g., 'GET', 'POST')
-   * @param path - The route path (e.g., '/test-endpoint', '/callback_url')
-   * @returns An array of RequestInfo objects for the endpoint
    */
   public getRequests(method: string, path: string): RequestInfo[] {
-    // Remove query parameters for comparison
     const pathWithoutQuery = path.split('?')[0];
     return this.requests.filter(
       (req) =>
