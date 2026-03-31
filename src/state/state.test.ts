@@ -301,7 +301,7 @@ describe(State.name, () => {
 
   describe('Enhanced Control Protocol - TimeValue resolution failures', () => {
     it('should exit the process if extraction_start_time resolution fails', async () => {
-      // Arrange: WORKERS_OLDEST type but state has no workers_oldest
+      // Arrange: WORKERS_OLDEST type but state has no workersOldest
       const event = createEvent({
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {
@@ -332,7 +332,7 @@ describe(State.name, () => {
     });
 
     it('should exit the process if extraction_end_time resolution fails', async () => {
-      // Arrange: WORKERS_NEWEST type but state has no workers_newest
+      // Arrange: WORKERS_NEWEST type but state has no workersNewest
       const event = createEvent({
         eventType: EventType.StartExtractingData,
         eventContextOverrides: {

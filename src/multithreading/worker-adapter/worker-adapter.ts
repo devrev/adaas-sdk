@@ -306,8 +306,8 @@ export class WorkerAdapter<ConnectorState> {
         this.state.pendingWorkersOldest = '';
         this.state.pendingWorkersNewest = '';
 
-        // Update workers_oldest and workers_newest boundaries from resolved extraction timestamps.
-        // Expand boundaries: workers_oldest gets the earliest timestamp, workers_newest gets the latest.
+        // Update workersOldest and workersNewest boundaries from resolved extraction timestamps.
+        // Expand boundaries: workersOldest gets the earliest timestamp, workersNewest gets the latest.
         const extractionStart =
           this.event.payload.event_context.extract_from;
         const extractionEnd = this.event.payload.event_context.extract_to;
@@ -318,7 +318,7 @@ export class WorkerAdapter<ConnectorState> {
             extractionStart < this.state.workersOldest)
         ) {
           console.log(
-            `Updating workers_oldest from '${this.state.workersOldest}' to '${extractionStart}'.`
+            `Updating workersOldest from '${this.state.workersOldest}' to '${extractionStart}'.`
           );
           this.state.workersOldest = extractionStart;
         }
@@ -329,7 +329,7 @@ export class WorkerAdapter<ConnectorState> {
             extractionEnd > this.state.workersNewest)
         ) {
           console.log(
-            `Updating workers_newest from '${this.state.workersNewest}' to '${extractionEnd}'.`
+            `Updating workersNewest from '${this.state.workersNewest}' to '${extractionEnd}'.`
           );
           this.state.workersNewest = extractionEnd;
         }

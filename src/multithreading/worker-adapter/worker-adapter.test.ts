@@ -835,7 +835,7 @@ describe(WorkerAdapter.name, () => {
     });
   });
 
-  describe('workers_oldest / workers_newest boundary updates', () => {
+  describe('workersOldest / workersNewest boundary updates', () => {
     let mockPostMessage: jest.Mock;
 
     beforeEach(() => {
@@ -883,7 +883,7 @@ describe(WorkerAdapter.name, () => {
     }
 
     describe('initial import with UNBOUNDED start', () => {
-      it('should set workers_oldest to UNBOUNDED_DATE_TIME_VALUE and workers_newest to extraction end', async () => {
+      it('should set workersOldest to UNBOUNDED_DATE_TIME_VALUE and workersNewest to extraction end', async () => {
         await emitDone(
           adapter,
           UNBOUNDED_DATE_TIME_VALUE,
@@ -896,7 +896,7 @@ describe(WorkerAdapter.name, () => {
     });
 
     describe('reconciliation after UNBOUNDED initial import', () => {
-      it('should NOT overwrite workers_oldest when reconciliation start is later than sentinel', async () => {
+      it('should NOT overwrite workersOldest when reconciliation start is later than sentinel', async () => {
         // Initial import: UNBOUNDED start, NOW end
         await emitDone(
           adapter,
@@ -915,7 +915,7 @@ describe(WorkerAdapter.name, () => {
         expect(adapter.state.workersNewest).toBe('2025-06-01T00:00:00.000Z');
       });
 
-      it('should NOT overwrite workers_oldest even when reconciliation start is very early', async () => {
+      it('should NOT overwrite workersOldest even when reconciliation start is very early', async () => {
         // Initial import: UNBOUNDED start, NOW end
         await emitDone(
           adapter,
@@ -936,7 +936,7 @@ describe(WorkerAdapter.name, () => {
     });
 
     describe('forward sync after UNBOUNDED initial import', () => {
-      it('should expand workers_newest forward while preserving workers_oldest', async () => {
+      it('should expand workersNewest forward while preserving workersOldest', async () => {
         // Initial import
         await emitDone(
           adapter,
@@ -944,7 +944,7 @@ describe(WorkerAdapter.name, () => {
           '2025-06-01T00:00:00.000Z'
         );
 
-        // Forward sync: from workers_newest to now
+        // Forward sync: from workersNewest to now
         await emitDone(
           adapter,
           '2025-06-01T00:00:00.000Z',
@@ -957,7 +957,7 @@ describe(WorkerAdapter.name, () => {
     });
 
     describe('reconciliation with end beyond current newest', () => {
-      it('should expand workers_newest when reconciliation end is later', async () => {
+      it('should expand workersNewest when reconciliation end is later', async () => {
         // Initial import
         await emitDone(
           adapter,
@@ -991,7 +991,7 @@ describe(WorkerAdapter.name, () => {
     });
 
     describe('reconciliation after absolute initial sync', () => {
-      it('should expand workers_oldest backward when reconciliation start is earlier', async () => {
+      it('should expand workersOldest backward when reconciliation start is earlier', async () => {
         // Initial sync with absolute dates
         await emitDone(
           adapter,
@@ -1050,7 +1050,7 @@ describe(WorkerAdapter.name, () => {
     });
 
     describe('multiple forward syncs', () => {
-      it('should progressively expand workers_newest while preserving workers_oldest', async () => {
+      it('should progressively expand workersNewest while preserving workersOldest', async () => {
         // Initial import
         await emitDone(
           adapter,
@@ -1074,7 +1074,7 @@ describe(WorkerAdapter.name, () => {
         );
         expect(adapter.state.workersNewest).toBe('2025-08-01T00:00:00.000Z');
 
-        // workers_oldest should remain the sentinel throughout
+        // workersOldest should remain the sentinel throughout
         expect(adapter.state.workersOldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
       });
     });

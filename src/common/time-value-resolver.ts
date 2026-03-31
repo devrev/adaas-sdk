@@ -83,16 +83,16 @@ export function applyDuration(
  * - ABSOLUTE: Returns the value directly (must be an ISO 8601 timestamp)
  * - NOW: Returns the current time as ISO 8601
  * - UNBOUNDED: Returns UNBOUNDED_DATE_TIME_VALUE ('1970-01-01T00:00:00.000Z')
- * - WORKERS_OLDEST: Returns workers_oldest from state, or throws if not set
- * - WORKERS_NEWEST: Returns workers_newest from state, or throws if not set
- * - WORKERS_OLDEST_MINUS_WINDOW: Subtracts duration from workers_oldest, or throws if not set
- * - WORKERS_NEWEST_PLUS_WINDOW: Adds duration to workers_newest, or throws if not set
+ * - WORKERS_OLDEST: Returns workersOldest from state, or throws if not set
+ * - WORKERS_NEWEST: Returns workersNewest from state, or throws if not set
+ * - WORKERS_OLDEST_MINUS_WINDOW: Subtracts duration from workersOldest, or throws if not set
+ * - WORKERS_NEWEST_PLUS_WINDOW: Adds duration to workersNewest, or throws if not set
  *
  * @param timeValue - The TimeValue to resolve
- * @param state - The current SDK state containing workers_oldest and workers_newest
+ * @param state - The current SDK state containing workersOldest and workersNewest
  * @returns Resolved ISO 8601 timestamp string
  * @throws Error if required TimeValue.value is missing for ABSOLUTE or *_WINDOW types
- * @throws Error if workers_oldest/workers_newest is not set in state for WORKERS_* types
+ * @throws Error if workersOldest/workersNewest is not set in state for WORKERS_* types
  */
 export function resolveTimeValue(
   timeValue: TimeValue,

@@ -230,7 +230,7 @@ describe('time-value-resolver', () => {
     });
 
     describe('WORKERS_OLDEST type', () => {
-      it('should return workers_oldest from state', () => {
+      it('should return workersOldest from state', () => {
         const result = resolveTimeValue(
           { type: TimeValueType.WORKERS_OLDEST },
           baseState
@@ -238,7 +238,7 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2024-01-01T00:00:00.000Z');
       });
 
-      it('should throw if workers_oldest is not set', () => {
+      it('should throw if workersOldest is not set', () => {
         expect(() =>
           resolveTimeValue(
             { type: TimeValueType.WORKERS_OLDEST },
@@ -249,7 +249,7 @@ describe('time-value-resolver', () => {
     });
 
     describe('WORKERS_NEWEST type', () => {
-      it('should return workers_newest from state', () => {
+      it('should return workersNewest from state', () => {
         const result = resolveTimeValue(
           { type: TimeValueType.WORKERS_NEWEST },
           baseState
@@ -257,7 +257,7 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2024-06-01T00:00:00.000Z');
       });
 
-      it('should throw if workers_newest is not set', () => {
+      it('should throw if workersNewest is not set', () => {
         expect(() =>
           resolveTimeValue(
             { type: TimeValueType.WORKERS_NEWEST },
@@ -268,7 +268,7 @@ describe('time-value-resolver', () => {
     });
 
     describe('WORKERS_OLDEST_MINUS_WINDOW type', () => {
-      it('should subtract duration from workers_oldest', () => {
+      it('should subtract duration from workersOldest', () => {
         const result = resolveTimeValue(
           {
             type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
@@ -279,7 +279,7 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2023-12-25T00:00:00.000Z');
       });
 
-      it('should subtract minutes from workers_oldest', () => {
+      it('should subtract minutes from workersOldest', () => {
         const result = resolveTimeValue(
           {
             type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
@@ -290,7 +290,7 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2023-12-31T23:30:00.000Z');
       });
 
-      it('should throw if workers_oldest is not set', () => {
+      it('should throw if workersOldest is not set', () => {
         expect(() =>
           resolveTimeValue(
             {
@@ -313,7 +313,7 @@ describe('time-value-resolver', () => {
     });
 
     describe('WORKERS_NEWEST_PLUS_WINDOW type', () => {
-      it('should add duration to workers_newest', () => {
+      it('should add duration to workersNewest', () => {
         const result = resolveTimeValue(
           {
             type: TimeValueType.WORKERS_NEWEST_PLUS_WINDOW,
@@ -324,7 +324,7 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2024-06-08T00:00:00.000Z');
       });
 
-      it('should add minutes to workers_newest', () => {
+      it('should add minutes to workersNewest', () => {
         const result = resolveTimeValue(
           {
             type: TimeValueType.WORKERS_NEWEST_PLUS_WINDOW,
@@ -335,7 +335,7 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2024-06-01T00:30:00.000Z');
       });
 
-      it('should throw if workers_newest is not set', () => {
+      it('should throw if workersNewest is not set', () => {
         expect(() =>
           resolveTimeValue(
             {
