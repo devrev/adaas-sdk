@@ -366,6 +366,117 @@ describe(State.name, () => {
     });
   });
 
+  describe('Backwards compatibility - missing TimeValue type', () => {
+    it('should skip resolution when extraction_start_time has no type', async () => {
+      // Arrange: platform sends extraction_start_time without a type field (old platform version)
+      const event = createEvent({
+        eventType: EventType.StartExtractingData,
+        eventContextOverrides: {
+          extraction_start_time: {} as any,
+          extraction_end_time: {
+            type: TimeValueType.ABSOLUTE_TIME,
+            value: '2025-06-01T00:00:00Z',
+          },
+        },
+        contextOverrides: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+      });
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      const state = await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: should not crash, extract_from is not set, extract_to is resolved
+      expect(processExitSpy).not.toHaveBeenCalled();
+      expect(event.payload.event_context.extract_from).toBeUndefined();
+      expect(event.payload.event_context.extract_to).toBe(
+        '2025-06-01T00:00:00.000Z'
+      );
+      expect(state.state.pendingWorkersNewest).toBe(
+        '2025-06-01T00:00:00.000Z'
+      );
+    });
+
+    it('should skip resolution when extraction_end_time has no type', async () => {
+      // Arrange: platform sends extraction_end_time without a type field
+      const event = createEvent({
+        eventType: EventType.StartExtractingData,
+        eventContextOverrides: {
+          extraction_start_time: {
+            type: TimeValueType.ABSOLUTE_TIME,
+            value: '2024-01-01T00:00:00Z',
+          },
+          extraction_end_time: {} as any,
+        },
+        contextOverrides: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+      });
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: should not crash, extract_to is not set, extract_from is resolved
+      expect(processExitSpy).not.toHaveBeenCalled();
+      expect(event.payload.event_context.extract_from).toBe(
+        '2024-01-01T00:00:00.000Z'
+      );
+      expect(event.payload.event_context.extract_to).toBeUndefined();
+    });
+
+    it('should skip resolution when both extraction times have no type', async () => {
+      // Arrange: platform sends both time values without type fields
+      const event = createEvent({
+        eventType: EventType.StartExtractingData,
+        eventContextOverrides: {
+          extraction_start_time: { value: 'some-value' } as any,
+          extraction_end_time: { value: 'some-value' } as any,
+        },
+        contextOverrides: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+      });
+
+      const stringifiedState = JSON.stringify({
+        snapInVersionId: 'test_snap_in_version_id',
+      });
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // Act
+      await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: should not crash, neither extraction time is resolved
+      expect(processExitSpy).not.toHaveBeenCalled();
+      expect(event.payload.event_context.extract_from).toBeUndefined();
+      expect(event.payload.event_context.extract_to).toBeUndefined();
+    });
+  });
+
   describe('Enhanced Control Protocol - extraction window validation', () => {
     it('should exit the process if extract_from >= extract_to', async () => {
       // Arrange: start is after end (inverted window)
