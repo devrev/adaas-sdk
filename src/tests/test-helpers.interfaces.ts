@@ -1,21 +1,12 @@
-import { ErrorRecord } from '../types/common';
-import {
-  AirdropEvent,
-  EventContext,
-  EventType,
-  ExternalSyncUnit,
-} from '../types/extraction';
+import { CreateEventParams } from '../test-utils/create-event.interfaces';
 
-export interface CreateEventInterface {
-  eventType?: EventType;
-  externalSyncUnits?: ExternalSyncUnit[];
-  progress?: number;
-  error?: ErrorRecord;
-  delay?: number;
-  contextOverrides?: Partial<AirdropEvent['context']>;
-  payloadOverrides?: Partial<AirdropEvent['payload']>;
-  eventContextOverrides?: Partial<EventContext>;
-  executionMetadataOverrides?: Partial<AirdropEvent['execution_metadata']>;
+/**
+ * Internal variant of {@link CreateEventParams} where `mockServerBaseUrl` is
+ * optional — the shared test wrapper injects it automatically.
+ */
+export interface CreateEventInterface
+  extends Omit<CreateEventParams, 'mockServerBaseUrl'> {
+  mockServerBaseUrl?: string;
 }
 
 /**
