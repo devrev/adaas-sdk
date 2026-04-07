@@ -10,11 +10,27 @@ Defines the base state structure used by the Airdrop SDK.
 
 - _lastSyncStarted_
 
-  Optional. A **string** representing the timestamp when the last sync operation started.
+  Optional. A **string** representing the timestamp when the last sync operation started. **Deprecated** - use `extract_from` and `extract_to` from the event context instead, which are automatically resolved by the SDK from `extraction_start_time` and `extraction_end_time`.
 
 - _lastSuccessfulSyncStarted_
 
-  Optional. A **string** representing the timestamp when the last successful sync operation started.
+  Optional. A **string** representing the timestamp when the last successful sync operation started. **Deprecated** - use `extract_from` and `extract_to` from the event context instead, which are automatically resolved by the SDK from `extraction_start_time` and `extraction_end_time`.
+
+- _pendingWorkersOldest_
+
+  Optional. A **string** representing the pending (not yet committed) oldest extraction boundary as an ISO 8601 timestamp. Set on `StartExtractingData`, reused across subsequent phases, cleared on `AttachmentExtractionDone`.
+
+- _pendingWorkersNewest_
+
+  Optional. A **string** representing the pending (not yet committed) newest extraction boundary as an ISO 8601 timestamp. Set on `StartExtractingData`, reused across subsequent phases, cleared on `AttachmentExtractionDone`.
+
+- _workersOldest_
+
+  Optional. A **string** representing the oldest point of extraction as an ISO 8601 timestamp.
+
+- _workersNewest_
+
+  Optional. A **string** representing the newest point of extraction as an ISO 8601 timestamp.
 
 - _toDevRev_
 
@@ -23,6 +39,10 @@ Defines the base state structure used by the Airdrop SDK.
 - _fromDevRev_
 
   Optional. An object of type **FromDevRev** containing data received from DevRev.
+
+- _snapInVersionId_
+
+  Optional. A **string** representing the snap-in version ID.
 
 ### `AdapterState` type
 
@@ -45,6 +65,7 @@ Provides additional information within the state that is available only during d
 - _attachmentsMetadata_
   - _artifactIds_: An array of **strings** containing artifact IDs
   - _lastProcessed_: A **number** which is the index of the last processed attachment from the array
+  - _lastProcessedAttachmentsIdsList_: Optional. An array of **ProcessedAttachment** objects for deduplication on the SDK side
 
 ### `FromDevRev` interface
 
@@ -69,6 +90,10 @@ Defines the configuration structure for initializing state of the worker adapter
 - _initialState_
 
   Required. An object of type **ConnectorState** representing the initial state of the snap-in.
+
+- _initialDomainMapping_
+
+  Optional. An object of type **InitialDomainMapping** representing the initial domain mapping configuration.
 
 - _options_
 
@@ -122,13 +147,17 @@ Represents the standardized structure of an attachment after normalization in th
 
   Optional. A **string** identifying the author or creator of the attachment.
 
+- _inline_
+
+  Optional. A **boolean** indicating whether the attachment is inline.
+
 - _content_type_
 
   Optional. A **string** specifying the MIME type of the attachment (e.g. `'application/pdf'`, `'image/png'`). When provided, this takes precedence over the content type from the HTTP response header during streaming. Falls back to the HTTP `Content-Type` header, or `'application/octet-stream'` if neither is available.
 
 - _grand_parent_id_
 
-  Optional. A **number** identifying a higher-level parent entity, if applicable.
+  Optional. A **number** or **string** identifying a higher-level parent entity, if applicable.
 
 #### Example
 
@@ -139,6 +168,7 @@ const normalizedAttachment: NormalizedAttachment = {
   file_name: 'document.pdf',
   parent_id: 'task_789',
   author_id: 'user_456',
+  inline: false,
   content_type: 'application/pdf',
   grand_parent_id: 1001,
 };
@@ -157,6 +187,10 @@ Defines the structure of a repo which is used to store and upload extracted data
 - _normalize_
 
   Optional. A **function** that takes an object and returns either a **NormalizedItem** or **NormalizedAttachment**. This function is responsible for transforming raw data into a standardized format.
+
+- _overridenOptions_
+
+  Optional. An object of type **WorkerAdapterOptions** that overrides the default options for this specific repo.
 
 #### Example
 
@@ -266,7 +300,19 @@ Defines the structure of the event context that is sent to the external connecto
 
 - _extract_from_
 
-  Optional. A **string** representing the timestamp formatted as RFC3339 from which the extraction should start.
+  Optional. A **string** representing the resolved start timestamp of extraction in ISO 8601 format. Automatically computed by the SDK from `extraction_start_time` and worker state. This is the field developers should read to know when to start extracting from.
+
+- _extract_to_
+
+  Optional. A **string** representing the resolved end timestamp of extraction in ISO 8601 format. Automatically computed by the SDK from `extraction_end_time` and worker state. This is the field developers should read to know when to stop extracting at.
+
+- _extraction_start_time_
+
+  Optional. An object of type **TimeValue** representing the start time value for extraction as sent by the platform. The SDK resolves this into a concrete ISO 8601 timestamp on `extract_from`.
+
+- _extraction_end_time_
+
+  Optional. An object of type **TimeValue** representing the end time value for extraction as sent by the platform. The SDK resolves this into a concrete ISO 8601 timestamp on `extract_to`.
 
 - _import_slug_
 
@@ -294,7 +340,7 @@ Defines the structure of the event context that is sent to the external connecto
 
 - _reset_extract_from_
 
-  Optional. A **boolean** signifying the incremental sync should start from the given `extract_from` timestamp if true or from `lastSuccessfulSyncStarted` timestamp if false.
+  Optional. A **boolean** signifying the incremental sync should start from the given `extract_from` timestamp if true or from `lastSuccessfulSyncStarted` timestamp if false. **Deprecated** - use `extraction_start_time`/`extraction_end_time` instead, which are automatically resolved into `extract_from` and `extract_to`.
 
 - _run_id_
 
@@ -349,22 +395,21 @@ Defines the structure of events sent to external extractors from Airdrop platfor
 - _context_
 
   Required. An object containing:
-
   - _secrets_: An object containing:
     - _service_account_token_: A **string** representing the DevRev authentication token for Airdrop platform
   - _snap_in_version_id_: A **string** representing the version ID of the snap-in
+  - _snap_in_id_: A **string** representing the ID of the snap-in
 
 - _payload_
 
   Required. An object of type **AirdropMessage** containing:
-
   - _connection_data_: An object containing:
     - _org_id_: A **string** representing the organization ID
     - _org_name_: A **string** representing the organization name
     - _key_: A **string** representing the key
     - _key_type_: A **string** representing the key type
   - _event_context_: An object of type [**EventContext**](#EventContext-interface)
-  - _event_type_: A value from the **EventType** enum (see `EventType` enum documentation above)
+  - _event_type_: A value from the **EventType** enum (see `EventType` enum documentation below)
   - _event_data_: Optional. An object that may contain:
     - _external_sync_units_: Optional array of **ExternalSyncUnit** objects
     - _progress_: Optional **number** indicating progress
@@ -377,7 +422,6 @@ Defines the structure of events sent to external extractors from Airdrop platfor
 - _execution_metadata_
 
   Required. An object containing:
-
   - _devrev_endpoint_: A **string** representing the DevRev endpoint URL
 
 - _input_data_
@@ -392,11 +436,11 @@ Defines the structure of event data that is sent from the external extractor to 
 
 - _external_sync_units_
 
-  Optional. An array of **ExternalSyncUnit** objects representing external sync units to be processed.
+  Optional. An array of **ExternalSyncUnit** objects representing external sync units to be processed. **Deprecated** - external sync units should be pushed to the `AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS` repo instead.
 
 - _progress_
 
-  Optional. A **number** indicating the progress of the current operation.
+  Optional. A **number** indicating the progress of the current operation. **Deprecated** - progress is now calculated on the backend.
 
 - _error_
 
@@ -406,6 +450,251 @@ Defines the structure of event data that is sent from the external extractor to 
 
   Optional. A **number** specifying a delay duration in seconds.
 
+- _artifacts_
+
+  Optional. An array of **Artifact** objects. **Deprecated** - should not be used directly.
+
+- _reports_
+
+  Optional. An array of **LoaderReport** objects representing loader reports.
+
+- _processed_files_
+
+  Optional. An array of **strings** representing processed file IDs.
+
+- _stats_file_
+
+  Optional. A **string** representing the stats file artifact ID.
+
+### `EventType` enum
+
+Defines the different types of events that can be sent to the external extractor from ADaaS. The external extractor uses these events to know what to do next in the extraction process.
+
+#### Extraction Events (preferred)
+
+- `StartExtractingExternalSyncUnits` = `'START_EXTRACTING_EXTERNAL_SYNC_UNITS'`
+- `StartExtractingMetadata` = `'START_EXTRACTING_METADATA'`
+- `StartExtractingData` = `'START_EXTRACTING_DATA'`
+- `ContinueExtractingData` = `'CONTINUE_EXTRACTING_DATA'`
+- `StartDeletingExtractorState` = `'START_DELETING_EXTRACTOR_STATE'`
+- `StartExtractingAttachments` = `'START_EXTRACTING_ATTACHMENTS'`
+- `ContinueExtractingAttachments` = `'CONTINUE_EXTRACTING_ATTACHMENTS'`
+- `StartDeletingExtractorAttachmentsState` = `'START_DELETING_EXTRACTOR_ATTACHMENTS_STATE'`
+
+#### Extraction Events (deprecated)
+
+- `ExtractionExternalSyncUnitsStart` **Deprecated** - use `StartExtractingExternalSyncUnits`
+- `ExtractionMetadataStart` **Deprecated** - use `StartExtractingMetadata`
+- `ExtractionDataStart` **Deprecated** - use `StartExtractingData`
+- `ExtractionDataContinue` **Deprecated** - use `ContinueExtractingData`
+- `ExtractionDataDelete` **Deprecated** - use `StartDeletingExtractorState`
+- `ExtractionAttachmentsStart` **Deprecated** - use `StartExtractingAttachments`
+- `ExtractionAttachmentsContinue` **Deprecated** - use `ContinueExtractingAttachments`
+- `ExtractionAttachmentsDelete` **Deprecated** - use `StartDeletingExtractorAttachmentsState`
+
+#### Loading Events
+
+- `StartLoadingData` = `'START_LOADING_DATA'`
+- `ContinueLoadingData` = `'CONTINUE_LOADING_DATA'`
+- `StartLoadingAttachments` = `'START_LOADING_ATTACHMENTS'`
+- `ContinueLoadingAttachments` = `'CONTINUE_LOADING_ATTACHMENTS'`
+- `StartDeletingLoaderState` = `'START_DELETING_LOADER_STATE'`
+- `StartDeletingLoaderAttachmentState` = `'START_DELETING_LOADER_ATTACHMENT_STATE'`
+
+#### Other
+
+- `UnknownEventType` = `'UNKNOWN_EVENT_TYPE'`
+
+### `ExtractorEventType` enum
+
+Defines the different types of events that can be sent from the external extractor to ADaaS. The external extractor uses these events to inform ADaaS about the progress of the extraction process.
+
+#### Extraction Events (preferred)
+
+- `ExternalSyncUnitExtractionDone` = `'EXTERNAL_SYNC_UNIT_EXTRACTION_DONE'`
+- `ExternalSyncUnitExtractionError` = `'EXTERNAL_SYNC_UNIT_EXTRACTION_ERROR'`
+- `MetadataExtractionDone` = `'METADATA_EXTRACTION_DONE'`
+- `MetadataExtractionError` = `'METADATA_EXTRACTION_ERROR'`
+- `DataExtractionProgress` = `'DATA_EXTRACTION_PROGRESS'`
+- `DataExtractionDelayed` = `'DATA_EXTRACTION_DELAYED'`
+- `DataExtractionDone` = `'DATA_EXTRACTION_DONE'`
+- `DataExtractionError` = `'DATA_EXTRACTION_ERROR'`
+- `ExtractorStateDeletionDone` = `'EXTRACTOR_STATE_DELETION_DONE'`
+- `ExtractorStateDeletionError` = `'EXTRACTOR_STATE_DELETION_ERROR'`
+- `AttachmentExtractionProgress` = `'ATTACHMENT_EXTRACTION_PROGRESS'`
+- `AttachmentExtractionDelayed` = `'ATTACHMENT_EXTRACTION_DELAYED'`
+- `AttachmentExtractionDone` = `'ATTACHMENT_EXTRACTION_DONE'`
+- `AttachmentExtractionError` = `'ATTACHMENT_EXTRACTION_ERROR'`
+- `ExtractorAttachmentsStateDeletionDone` = `'EXTRACTOR_ATTACHMENTS_STATE_DELETION_DONE'`
+- `ExtractorAttachmentsStateDeletionError` = `'EXTRACTOR_ATTACHMENTS_STATE_DELETION_ERROR'`
+
+#### Extraction Events (deprecated)
+
+- `ExtractionExternalSyncUnitsDone` **Deprecated** - use `ExternalSyncUnitExtractionDone`
+- `ExtractionExternalSyncUnitsError` **Deprecated** - use `ExternalSyncUnitExtractionError`
+- `ExtractionMetadataDone` **Deprecated** - use `MetadataExtractionDone`
+- `ExtractionMetadataError` **Deprecated** - use `MetadataExtractionError`
+- `ExtractionDataProgress` **Deprecated** - use `DataExtractionProgress`
+- `ExtractionDataDelay` **Deprecated** - use `DataExtractionDelayed`
+- `ExtractionDataDone` **Deprecated** - use `DataExtractionDone`
+- `ExtractionDataError` **Deprecated** - use `DataExtractionError`
+- `ExtractionDataDeleteDone` **Deprecated** - use `ExtractorStateDeletionDone`
+- `ExtractionDataDeleteError` **Deprecated** - use `ExtractorStateDeletionError`
+- `ExtractionAttachmentsProgress` **Deprecated** - use `AttachmentExtractionProgress`
+- `ExtractionAttachmentsDelay` **Deprecated** - use `AttachmentExtractionDelayed`
+- `ExtractionAttachmentsDone` **Deprecated** - use `AttachmentExtractionDone`
+- `ExtractionAttachmentsError` **Deprecated** - use `AttachmentExtractionError`
+- `ExtractionAttachmentsDeleteDone` **Deprecated** - use `ExtractorAttachmentsStateDeletionDone`
+- `ExtractionAttachmentsDeleteError` **Deprecated** - use `ExtractorAttachmentsStateDeletionError`
+
+#### Other
+
+- `UnknownEventType` = `'UNKNOWN_EVENT_TYPE'`
+
+### `LoaderEventType` enum
+
+Defines the different types of events that can be sent from the loader to ADaaS.
+
+#### Data Loading Events
+
+- `DataLoadingProgress` = `'DATA_LOADING_PROGRESS'`
+- `DataLoadingDelayed` = `'DATA_LOADING_DELAYED'`
+- `DataLoadingDone` = `'DATA_LOADING_DONE'`
+- `DataLoadingError` = `'DATA_LOADING_ERROR'`
+- `DataLoadingDelay` **Deprecated** - this was a typo, use `DataLoadingDelayed` instead
+
+#### Attachment Loading Events
+
+- `AttachmentLoadingProgress` = `'ATTACHMENT_LOADING_PROGRESS'`
+- `AttachmentLoadingDelayed` = `'ATTACHMENT_LOADING_DELAYED'`
+- `AttachmentLoadingDone` = `'ATTACHMENT_LOADING_DONE'`
+- `AttachmentLoadingError` = `'ATTACHMENT_LOADING_ERROR'`
+
+#### Attachment Loading Events (deprecated aliases)
+
+- `AttachmentsLoadingProgress` **Deprecated** - use `AttachmentLoadingProgress`
+- `AttachmentsLoadingDelayed` **Deprecated** - use `AttachmentLoadingDelayed`
+- `AttachmentsLoadingDone` **Deprecated** - use `AttachmentLoadingDone`
+- `AttachmentsLoadingError` **Deprecated** - use `AttachmentLoadingError`
+
+#### State Deletion Events
+
+- `LoaderStateDeletionDone` = `'LOADER_STATE_DELETION_DONE'`
+- `LoaderStateDeletionError` = `'LOADER_STATE_DELETION_ERROR'`
+- `LoaderAttachmentStateDeletionDone` = `'LOADER_ATTACHMENT_STATE_DELETION_DONE'`
+- `LoaderAttachmentStateDeletionError` = `'LOADER_ATTACHMENT_STATE_DELETION_ERROR'`
+
+#### Other
+
+- `UnknownEventType` = `'UNKNOWN_EVENT_TYPE'`
+
+### `SyncMode` enum
+
+Defines the different modes of sync that can be used by the external extractor. It can be either INITIAL, INCREMENTAL or LOADING.
+
+#### Values
+
+- `INITIAL` = `'INITIAL'` - Used for the first/initial import
+- `INCREMENTAL` = `'INCREMENTAL'` - Used for doing syncs
+- `LOADING` = `'LOADING'` - Used for loading data from DevRev to the external system
+
+### `ExtractionMode` enum **Deprecated**
+
+Defines the different modes of extraction. Use `SyncMode` instead.
+
+#### Values
+
+- `INITIAL` = `'INITIAL'`
+- `INCREMENTAL` = `'INCREMENTAL'`
+
+### `InitialSyncScope` enum
+
+Defines the different scopes of initial sync that can be used by the external extractor.
+
+#### Values
+
+- `FULL_HISTORY` = `'full-history'`
+- `TIME_SCOPED` = `'time-scoped'`
+
+### `TimeUnit` enum
+
+Defines the supported Go duration units for time window calculations. These correspond directly to Go's `time.ParseDuration` units.
+
+#### Values
+
+- `NANOSECONDS` = `'ns'`
+- `MICROSECONDS` = `'us'`
+- `MICROSECONDS_MU` = `'µs'`
+- `MILLISECONDS` = `'ms'`
+- `SECONDS` = `'s'`
+- `MINUTES` = `'m'`
+- `HOURS` = `'h'`
+
+### `TimeValueType` enum
+
+Defines the type of a time value used in extraction start/end times. The platform sends these types to indicate how the extraction time should be resolved by the SDK.
+
+#### Values
+
+- `WORKERS_OLDEST` = `'workers_oldest'` - Oldest timestamp from worker state
+- `WORKERS_OLDEST_MINUS_WINDOW` = `'workers_oldest_minus_window'` - Oldest timestamp from worker state minus a duration window
+- `WORKERS_NEWEST` = `'workers_newest'` - Newest timestamp from worker state
+- `WORKERS_NEWEST_PLUS_WINDOW` = `'workers_newest_plus_window'` - Newest timestamp from worker state plus a duration window
+- `CURRENT_TIME` = `'current_time'` - Current time
+- `ABSOLUTE_TIME` = `'absolute_time'` - User-specified absolute timestamp
+- `UNBOUNDED` = `'unbounded'` - No bound, extract all available data
+
+### `TimeValue` interface
+
+Represents a time value used in extraction start/end times.
+
+#### Properties
+
+- _type_
+
+  Required. A **TimeValueType** enum value which denotes how the value should be resolved.
+
+- _value_
+
+  Optional. A **string** whose meaning depends on the type:
+  - For `ABSOLUTE_TIME`: an ISO 8601 timestamp
+  - For `*_WINDOW` types: a Go duration string (e.g. `'500ms'`, `'30s'`, `'5m'`, `'2h'`)
+  - For other types: not used
+
+### `ExtractionScope` type
+
+Represents the parsed extraction scope from the platform. Each key is an item type name, and the value indicates whether it should be extracted.
+
+#### Usage
+
+```typescript
+type ExtractionScope = Record<string, { extract: boolean }>;
+```
+
+### `ExtractionCommonError` const enum
+
+Provides predefined error codes for common extraction errors.
+
+#### Values
+
+- `EXTERNAL_SYNC_UNIT_DELETED` = `'ERROR_CODE=EXTERNAL_SYNC_UNIT_DELETED'`
+- `EXTERNAL_SYNC_UNIT_DEACTIVATED` = `'ERROR_CODE=EXTERNAL_SYNC_UNIT_DEACTIVATED'`
+- `USER_DELETED` = `'ERROR_CODE=USER_DELETED'`
+
+### `AirSyncDefaultItemTypes` enum
+
+Defines the default item types used by the SDK.
+
+#### Values
+
+- `EXTERNAL_DOMAIN_METADATA` = `'external_domain_metadata'`
+- `ATTACHMENTS` = `'attachments'`
+- `EXTERNAL_SYNC_UNITS` = `'external_sync_units'`
+
+### `UNBOUNDED_DATE_TIME_VALUE` constant
+
+Sentinel value representing an unbounded (no limit) extraction timestamp. Used as the resolved value for `TimeValueType.UNBOUNDED`. Its value is `'1970-01-01T00:00:00.000Z'`.
+
 ### `spawn` function
 
 This function initializes a new worker thread and oversees its lifecycle. It should be invoked when the snap-in receives a message from the Airdrop platform. The worker script provided then handles the event accordingly.
@@ -413,7 +702,7 @@ This function initializes a new worker thread and oversees its lifecycle. It sho
 #### Usage
 
 ```typescript
-spawn({ event, initialState, workerPath, options });
+spawn({ event, initialState, options, baseWorkerPath });
 ```
 
 #### Parameters
@@ -428,23 +717,38 @@ spawn({ event, initialState, workerPath, options });
 
 - _workerPath_
 
-  Required. A **string** that represents the path to the worker file.
+  Optional. A **string** that represents the path to the worker file. **Deprecated** - use `baseWorkerPath` instead.
 
 - _options_
 
   Optional. An object of type **WorkerAdapterOptions**, which will be passed to the newly created worker. This worker will then initialize a `WorkerAdapter` by invoking the `processTask` function. The options include:
-
   - `isLocalDevelopment`
 
     A **boolean** flag. If set to `true`, intermediary files containing extracted data will be stored on the local machine, which is useful during development. The default value is `false`.
 
   - `timeout`
 
-    A **number** that specifies the timeout duration for the lambda function, in milliseconds. The default is 10 minutes (10 _ 60 _ 1000 milliseconds), with a maximum allowable duration of 13 minutes (13 _ 60 _ 1000 milliseconds).
+    A **number** that specifies the timeout duration for the lambda function, in milliseconds. The default is 10 minutes (10 \* 60 \* 1000 milliseconds).
 
   - `batchSize`
 
     A **number** that determines the maximum number of items to be processed and saved to an intermediary file before being sent to the Airdrop platform. The default batch size is 2,000.
+
+  - `workerPathOverrides`
+
+    Optional. A partial map of **EventType** to **string** paths, allowing you to override the default worker path for specific event types.
+
+  - `skipConfirmation`
+
+    Optional. A **boolean** flag. If set to `true`, skips artifact upload confirmation.
+
+- _initialDomainMapping_
+
+  Optional. An object of type **InitialDomainMapping** representing the initial domain mapping configuration.
+
+- _baseWorkerPath_
+
+  Optional. A **string** that represents the base path for the worker files, usually `__dirname`. When provided, the SDK automatically resolves the worker script based on the event type.
 
 #### Return value
 
@@ -455,11 +759,10 @@ A **promise** that resolves once the worker has completed processing.
 ```typescript
 const run = async (events: AirdropEvent[]) => {
   for (const event of events) {
-    const file = getWorkerPerExtractionPhase(event);
     await spawn<ExtractorState>({
       event,
       initialState,
-      workerPath: file,
+      baseWorkerPath: __dirname,
     });
   }
 };
@@ -499,12 +802,12 @@ processTask({
       normalizeTodoList(todoList)
     );
 
-    await adapter.emit(ExtractorEventType.ExtractionExternalSyncUnitsDone, {
+    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionDone, {
       external_sync_units: externalSyncUnits,
     });
   },
   onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractionExternalSyncUnitsError, {
+    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionError, {
       error: {
         message: 'Failed to extract external sync units. Lambda timeout.',
       },
@@ -525,6 +828,7 @@ new Spawn({
   worker,
   options,
   resolve,
+  originalConsole,
 });
 ```
 
@@ -540,11 +844,15 @@ new Spawn({
 
 - _options_
 
-  Optional. An object of type **SpawnInterface**, which defines the options to create a new instance of Spawn class.
+  Optional. An object of type **WorkerAdapterOptions**, which defines the options to create a new instance of Spawn class.
 
 - _resolve_
 
   Required. A resolve **function** for the promise inside which the Spawn class was created.
+
+- _originalConsole_
+
+  Optional. A **Console** object representing the original console before the SDK logger replaces it.
 
 #### Example
 
@@ -621,6 +929,44 @@ export const initialState: ExtractorState = {
 };
 
 adapter.state = initialState;
+```
+
+### `WorkerAdapter.extractionScope` property
+
+Getter for the parsed extraction scope from the platform. Returns an `ExtractionScope` object.
+
+### Usage
+
+```typescript
+const scope = adapter.extractionScope;
+```
+
+### `WorkerAdapter.shouldExtract` method
+
+Returns whether the given item type should be extracted. Defaults to `true` if the scope is empty or the item type is not listed.
+
+### Usage
+
+```typescript
+adapter.shouldExtract(itemType);
+```
+
+#### Parameters
+
+- _itemType_
+
+  Required. A **string** representing the item type to check.
+
+#### Return value
+
+A **boolean** indicating whether the item type should be extracted.
+
+#### Example
+
+```typescript
+if (adapter.shouldExtract('tasks')) {
+  // Extract tasks
+}
 ```
 
 ### `WorkerAdapter.initializeRepos` method
@@ -713,13 +1059,27 @@ This should typically be called within the function passed as a parameter to the
 
 ```typescript
 // Emitting successfully finished data extraction.
-await adapter.emit(ExtractorEventType.ExtractionDataDone);
+await adapter.emit(ExtractorEventType.DataExtractionDone);
 
 // Emitting a delay in attachments extraction phase.
-await adapter.emit(ExtractorEventType.ExtractionAttachmentsDelay, {
+await adapter.emit(ExtractorEventType.AttachmentExtractionDelayed, {
   delay: 10,
 });
 ```
+
+### `WorkerAdapter.postState` method
+
+Saves the current adapter state to the Airdrop platform.
+
+### Usage
+
+```typescript
+await adapter.postState();
+```
+
+#### Return value
+
+A **promise** that resolves once the state has been posted.
 
 ### `WorkerAdapter.mappers` property
 
@@ -735,6 +1095,106 @@ await adapter.mappers.getByTargetId({
 });
 ```
 
+### `WorkerAdapter.reports` property
+
+Getter for the accumulated loader reports. Returns an array of **LoaderReport** objects.
+
+### `WorkerAdapter.processedFiles` property
+
+Getter for the list of processed file IDs. Returns an array of **strings**.
+
+### `WorkerAdapter.loadItemTypes` method
+
+Loads item types from DevRev to the external system during the loading phase.
+
+#### Usage
+
+```typescript
+const response = await adapter.loadItemTypes({ itemTypesToLoad });
+```
+
+#### Parameters
+
+- _itemTypesToLoad_
+
+  Required. An array of **ItemTypeToLoad** objects, each containing an `itemType` string, a `create` function, and an `update` function.
+
+#### Return value
+
+A **promise** resolving to a **LoadItemTypesResponse** containing `reports` and `processed_files`.
+
+### `WorkerAdapter.loadAttachments` method
+
+Loads attachments from DevRev to the external system during the loading phase.
+
+#### Usage
+
+```typescript
+const response = await adapter.loadAttachments({ create });
+```
+
+#### Parameters
+
+- _create_
+
+  Required. A function of type **ExternalSystemLoadingFunction\<ExternalSystemAttachment\>** that creates the attachment in the external system.
+
+#### Return value
+
+A **promise** resolving to a **LoadItemTypesResponse** containing `reports` and `processed_files`.
+
+### `WorkerAdapter.streamAttachments` method
+
+Streams attachments to the DevRev platform during the attachment extraction phase. Handles batching, deduplication, and progress tracking.
+
+#### Usage
+
+```typescript
+await adapter.streamAttachments({ stream, processors, batchSize });
+```
+
+#### Parameters
+
+- _stream_
+
+  Required. A function of type **ExternalSystemAttachmentStreamingFunction** that opens an HTTP stream for a given attachment.
+
+- _processors_
+
+  Optional. An object of type **ExternalSystemAttachmentProcessors** for custom attachment processing with `reducer` and `iterator` functions.
+
+- _batchSize_
+
+  Optional. A **number** specifying how many attachments to stream concurrently. Default is `1`, maximum is `50`.
+
+#### Return value
+
+A **promise** that resolves to a **StreamAttachmentsReturnType** (may contain `delay` or `error`), or `undefined` on success.
+
+### `WorkerAdapter.processAttachment` method
+
+Processes a single attachment: streams it from the external system, uploads it to DevRev, and records the SSOR attachment mapping.
+
+#### Usage
+
+```typescript
+const result = await adapter.processAttachment(attachment, stream);
+```
+
+#### Parameters
+
+- _attachment_
+
+  Required. A **NormalizedAttachment** object representing the attachment to process.
+
+- _stream_
+
+  Required. A function of type **ExternalSystemAttachmentStreamingFunction** that returns the HTTP stream for the attachment.
+
+#### Return value
+
+A **promise** resolving to a **ProcessAttachmentReturnType** (may contain `error` or `delay`), or `undefined` on success.
+
 ---
 
 ### `Mappers` class
@@ -744,19 +1204,16 @@ Manages sync mapper records that link external system items to DevRev items duri
 #### Methods
 
 - `getByTargetId(params)`
-
   - **params**: `MappersGetByTargetIdParams`
   - **returns**: `Promise<AxiosResponse<MappersGetByTargetIdResponse>>`
   - Use when you know the DevRev ID and want the corresponding mapping.
 
 - `getByExternalId(params)`
-
   - **params**: `MappersGetByExternalIdParams`
   - **returns**: `Promise<AxiosResponse<MappersGetByExternalIdResponse>>`
   - Use when you know an external ID and need the DevRev mapping.
 
 - `create(params)`
-
   - **params**: `MappersCreateParams`
   - **returns**: `Promise<AxiosResponse<MappersCreateResponse>>`
   - Call after creating an item in the external system to persist the mapping.
@@ -766,6 +1223,115 @@ Manages sync mapper records that link external system items to DevRev items duri
   - **returns**: `Promise<AxiosResponse<MappersUpdateResponse>>`
   - Call after updating an item in the external system to add IDs, targets, or version markers.
 
+### `SyncMapperRecordStatus` enum
+
+Status of a sync mapper record indicating its operational state.
+
+#### Values
+
+- `OPERATIONAL` = `'operational'` - The mapping is active and operational (default)
+- `FILTERED` = `'filtered'` - The mapping was filtered out by user filter settings
+- `IGNORED` = `'ignored'` - The external object should be ignored in sync operations
+
+### `SyncMapperRecordTargetType` enum
+
+Types of DevRev entities that can be targets in sync mapper records.
+
+#### Values
+
+- `ACCESS_CONTROL_ENTRY` = `'access_control_entry'`
+- `ACCOUNT` = `'account'`
+- `AIRDROP_AUTHORIZATION_POLICY` = `'airdrop_authorization_policy'`
+- `AIRDROP_FIELD_AUTHORIZATION_POLICY` = `'airdrop_field_authorization_policy'`
+- `AIRDROP_PLATFORM_GROUP` = `'airdrop_platform_group'`
+- `ARTICLE` = `'article'`
+- `ARTIFACT` = `'artifact'`
+- `CHAT` = `'chat'`
+- `CONVERSATION` = `'conversation'`
+- `CUSTOM_OBJECT` = `'custom_object'`
+- `DIRECTORY` = `'directory'`
+- `GROUP` = `'group'`
+- `INCIDENT` = `'incident'`
+- `LINK` = `'link'`
+- `MEETING` = `'meeting'`
+- `OBJECT_MEMBER` = `'object_member'`
+- `PART` = `'part'`
+- `REV_ORG` = `'rev_org'`
+- `ROLE` = `'role'`
+- `ROLE_SET` = `'role_set'`
+- `TAG` = `'tag'`
+- `TIMELINE_COMMENT` = `'timeline_comment'`
+- `USER` = `'user'`
+- `WORK` = `'work'`
+
+### `installInitialDomainMapping` function
+
+Installs the initial domain mapping for a snap-in. This creates recipe blueprints and installs domain mappings via the DevRev API.
+
+#### Usage
+
+```typescript
+await installInitialDomainMapping(event, initialDomainMappingJson);
 ```
 
+#### Parameters
+
+- _event_
+
+  Required. An object of type **AirdropEvent**.
+
+- _initialDomainMappingJson_
+
+  Required. An object of type **InitialDomainMapping** containing:
+  - `starting_recipe_blueprint`: Optional object with the recipe blueprint configuration
+  - `additional_mappings`: Optional object with additional mapping configuration
+
+### `MockServer` class
+
+A lightweight HTTP mock server for local development and testing of connectors. Allows you to define routes with static responses or custom handlers.
+
+#### Exported types
+
+- **RequestInfo** - Information about a request received by the mock server (method, url, body)
+- **RetryConfig** - Configuration for retry simulation behavior (failureCount, errorStatus, errorBody, headers, delay)
+- **RouteConfig** - Configuration object for setting up a route response (path, method, status, body, headers, retry, delay)
+
+### `formatAxiosError` function
+
+Formats an Axios error into a structured object for logging.
+
+#### Usage
+
+```typescript
+const formatted = formatAxiosError(error);
 ```
+
+#### Parameters
+
+- _error_
+
+  Required. An **AxiosError** object.
+
+#### Return value
+
+An **object** with structured error information.
+
+### `serializeAxiosError` function
+
+Serializes an Axios error into a structured response object.
+
+#### Usage
+
+```typescript
+const serialized = serializeAxiosError(error);
+```
+
+#### Parameters
+
+- _error_
+
+  Required. An **AxiosError** object.
+
+#### Return value
+
+An **AxiosErrorResponse** object with structured error details.
