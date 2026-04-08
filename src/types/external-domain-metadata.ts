@@ -42,7 +42,8 @@ export type FieldType =
   | 'permission'
   | 'record_type_privilege'
   | 'field_privilege'
-  | 'conditional_privilege';
+  | 'conditional_privilege'
+  | 'participation';
 
 /**
  * Reference type indicating parent-child relationship.
@@ -154,6 +155,14 @@ export interface StructData {
 }
 
 /**
+ * Participation field data specifying target record types.
+ */
+export interface ParticipationData {
+  /** The record types that this participation reference can refer to */
+  refers_to: Record<RecordTypeKey, ReferenceDetail>;
+}
+
+/**
  * Permission data associating a reference with a role.
  */
 export interface PermissionData {
@@ -238,6 +247,7 @@ export interface Field {
   record_type_privilege?: RecordTypePrivilegeData;
   field_privilege?: FieldPrivilegeData;
   conditional_privilege?: ConditionalPrivilegeData;
+  participation?: ParticipationData;
 }
 
 /**
@@ -327,6 +337,16 @@ export interface RecordTypeCategory {
 }
 
 /**
+ * Attachments configuration for a record type.
+ */
+export interface Attachments {
+  /** Whether attachments can be extracted */
+  is_extractable?: boolean;
+  /** Whether attachments can be loaded: that is, whether the connector supports creating it in the system */
+  is_loadable?: boolean;
+}
+
+/**
  * Record type definition.
  */
 export interface RecordType {
@@ -350,6 +370,8 @@ export interface RecordType {
   stage_diagram?: StageDiagram;
   /** Link naming data for custom links */
   link_naming_data?: CustomLinkData;
+  /** Attachments configuration */
+  attachments?: Attachments;
 }
 
 /**
