@@ -1,6 +1,6 @@
 import { isMainThread, Worker } from 'worker_threads';
 
-import { createEvent } from '../tests/test-helpers';
+import { createMockEvent } from '../tests/test-helpers';
 import { EventType } from '../types/extraction';
 import { createWorker } from './create-worker';
 
@@ -10,7 +10,7 @@ describe(createWorker.name, () => {
 
     const worker = isMainThread
       ? await createWorker<object>({
-          event: createEvent({
+          event: createMockEvent({
             eventType: EventType.ExtractionExternalSyncUnitsStart,
           }),
           initialState: {},
@@ -34,7 +34,7 @@ describe(createWorker.name, () => {
 
     await expect(
       createWorker<object>({
-        event: createEvent({
+        event: createMockEvent({
           eventType: EventType.ExtractionExternalSyncUnitsStart,
         }),
         initialState: {},
@@ -52,7 +52,7 @@ describe(createWorker.name, () => {
 
     if (isMainThread) {
       const worker = await createWorker<object>({
-        event: createEvent({
+        event: createMockEvent({
           eventType: EventType.ExtractionExternalSyncUnitsStart,
         }),
         initialState: {},
@@ -75,7 +75,7 @@ describe(createWorker.name, () => {
 
     if (isMainThread) {
       const worker = await createWorker<typeof complexState>({
-        event: createEvent({
+        event: createMockEvent({
           eventType: EventType.ExtractionDataStart,
         }),
         initialState: complexState,
@@ -92,7 +92,7 @@ describe(createWorker.name, () => {
 
     if (isMainThread) {
       const worker = await createWorker<object>({
-        event: createEvent({
+        event: createMockEvent({
           eventType: EventType.ExtractionMetadataStart,
         }),
         initialState: {},

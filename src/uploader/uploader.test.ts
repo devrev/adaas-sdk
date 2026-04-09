@@ -9,7 +9,7 @@ import {
   createArtifact,
   createAxiosResponse,
   createDownloadUrlResponse,
-  createEvent,
+  createMockEvent,
   createFileBuffer,
   createFileStream,
   spyOnPrivateMethod,
@@ -42,7 +42,7 @@ type UploaderPrivateMethods = {
 };
 
 describe(Uploader.name, () => {
-  const mockEvent = createEvent();
+  const mockEvent = createMockEvent();
   let uploader: Uploader;
 
   beforeEach(() => {

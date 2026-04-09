@@ -4,7 +4,7 @@ import {
   ExtractorEventType,
 } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
-import { createEvent } from '../test-helpers';
+import { createMockEvent } from '../test-helpers';
 
 import run from './extraction';
 
@@ -13,7 +13,7 @@ jest.setTimeout(10000); // 10 seconds
 describe('Timeout unblocked', () => {
   let event: AirdropEvent;
   beforeEach(() => {
-    event = createEvent({
+    event = createMockEvent({
       eventType: EventType.StartExtractingData,
     });
   });

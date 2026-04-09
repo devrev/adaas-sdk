@@ -1,7 +1,7 @@
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
 import { UNBOUNDED_DATE_TIME_VALUE } from '../../common/constants';
 import { State } from '../../state/state';
-import { createEvent } from '../../tests/test-helpers';
+import { createMockEvent } from '../../tests/test-helpers';
 import {
   AdapterState,
   AirdropEvent,
@@ -56,7 +56,7 @@ describe(WorkerAdapter.name, () => {
     jest.clearAllMocks();
 
     // Create mock objects
-    mockEvent = createEvent({ eventType: EventType.StartExtractingData });
+    mockEvent = createMockEvent({ eventType: EventType.StartExtractingData });
 
     const initialState: AdapterState<TestState> = {
       attachments: { completed: false },
@@ -470,7 +470,7 @@ describe(WorkerAdapter.name, () => {
       // Mock the pool to simulate timeout happening during the first artifact
       (AttachmentsStreamingPool as jest.Mock).mockImplementationOnce(() => {
         return {
-          streamAll: jest.fn().mockImplementation(async () => {
+          streamAll: jest.fn().mockImplementation(() => {
             adapter.isTimeout = true;
             return {};
           }),
@@ -814,7 +814,9 @@ describe(WorkerAdapter.name, () => {
         .fn()
         .mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
-      adapter['loaderReports'] = [{ item_type: 'tasks', [ActionType.CREATED]: 5 }] as LoaderReport[];
+      adapter['loaderReports'] = [
+        { item_type: 'tasks', [ActionType.CREATED]: 5 },
+      ] as LoaderReport[];
       adapter['_processedFiles'] = ['file-1', 'file-2'];
 
       await adapter.emit(LoaderEventType.DataLoadingDone);
@@ -843,7 +845,9 @@ describe(WorkerAdapter.name, () => {
       adapter['_artifacts'] = [
         { id: 'art-1', item_count: 10, item_type: 'issues' },
       ] as Artifact[];
-      adapter['loaderReports'] = [{ item_type: 'tasks', [ActionType.CREATED]: 5 }] as LoaderReport[];
+      adapter['loaderReports'] = [
+        { item_type: 'tasks', [ActionType.CREATED]: 5 },
+      ] as LoaderReport[];
       adapter['_processedFiles'] = ['file-1'];
 
       await adapter.emit('SOME_UNKNOWN_EVENT' as ExtractorEventType);
@@ -946,8 +950,7 @@ describe(WorkerAdapter.name, () => {
     ) {
       adapterInstance.event.payload.event_context.extract_from =
         extractionStart;
-      adapterInstance.event.payload.event_context.extract_to =
-        extractionEnd;
+      adapterInstance.event.payload.event_context.extract_to = extractionEnd;
       // Reset the emit guard so we can emit multiple times in a single test
       adapterInstance['hasWorkerEmitted'] = false;
 

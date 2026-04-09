@@ -6,25 +6,23 @@ import {
   NormalizedAttachment,
   NormalizedItem,
 } from '../repo/repo.interfaces';
-import { createEvent as createEventBase } from '../test-utils/create-event';
-import { AirdropEvent } from '../types/extraction';
+import { createMockEvent as createMockEventBase } from '../test-utils/create-event';
+import { AirdropEvent, EventType } from '../types/extraction';
 import { ArtifactToUpload } from '../uploader/uploader.interfaces';
 
 import { mockServer } from './jest.setup';
 import {
-  CreateEventInterface,
+  CreateMockEventOverrides,
   CreateFileStreamOptions,
 } from './test-helpers.interfaces';
 
-/**
- * Internal convenience wrapper around the public {@link createEventBase} that
- * automatically injects the shared `mockServer.baseUrl`.  All existing test
- * call-sites remain unchanged.
- */
-export function createEvent(params: CreateEventInterface = {}): AirdropEvent {
-  return createEventBase({
-    mockServerBaseUrl: mockServer.baseUrl,
-    ...params,
+export function createMockEvent(
+  overrides: CreateMockEventOverrides = {} as CreateMockEventOverrides
+): AirdropEvent {
+  return createMockEventBase({
+    ...overrides,
+    eventType: overrides.eventType ?? EventType.StartExtractingData,
+    mockServerBaseUrl: overrides.mockServerBaseUrl ?? mockServer.baseUrl,
   });
 }
 

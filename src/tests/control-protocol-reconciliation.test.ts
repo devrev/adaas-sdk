@@ -1,4 +1,4 @@
-import { createEvent } from './test-helpers';
+import { createMockEvent } from './test-helpers';
 import { EventType, TimeValueType } from '../types/extraction';
 
 describe('Enhanced Control Protocol', () => {
@@ -18,7 +18,7 @@ describe('Enhanced Control Protocol', () => {
 
   describe('Backward compatibility', () => {
     it('should work with events that do not use new extraction fields', () => {
-      const event = createEvent({
+      const event = createMockEvent({
         eventType: EventType.StartExtractingData,
       });
 
@@ -30,12 +30,14 @@ describe('Enhanced Control Protocol', () => {
     });
 
     it('should support setting extract_from and extract_to directly on event context', () => {
-      const event = createEvent({
+      const event = createMockEvent({
         eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extract_from: '2024-01-01T00:00:00Z',
-          extract_to: '2024-06-01T00:00:00Z',
-          reset_extract_from: true,
+        fixture: {
+          event_context: {
+            extract_from: '2024-01-01T00:00:00Z',
+            extract_to: '2024-06-01T00:00:00Z',
+            reset_extract_from: true,
+          },
         },
       });
 
@@ -51,15 +53,17 @@ describe('Enhanced Control Protocol', () => {
 
   describe('Enhanced protocol event context fields', () => {
     it('should support forward direction with absolute start and now end', () => {
-      const event = createEvent({
+      const event = createMockEvent({
         eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.ABSOLUTE_TIME,
-            value: '2024-01-01T00:00:00Z',
-          },
-          extraction_end_time: {
-            type: TimeValueType.CURRENT_TIME,
+        fixture: {
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.ABSOLUTE_TIME,
+              value: '2024-01-01T00:00:00Z',
+            },
+            extraction_end_time: {
+              type: TimeValueType.CURRENT_TIME,
+            },
           },
         },
       });
@@ -76,14 +80,16 @@ describe('Enhanced Control Protocol', () => {
     });
 
     it('should support historical direction with unbounded start', () => {
-      const event = createEvent({
+      const event = createMockEvent({
         eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.UNBOUNDED,
-          },
-          extraction_end_time: {
-            type: TimeValueType.CURRENT_TIME,
+        fixture: {
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.UNBOUNDED,
+            },
+            extraction_end_time: {
+              type: TimeValueType.CURRENT_TIME,
+            },
           },
         },
       });
@@ -94,14 +100,16 @@ describe('Enhanced Control Protocol', () => {
     });
 
     it('should support workers_newest for periodic forward sync', () => {
-      const event = createEvent({
+      const event = createMockEvent({
         eventType: EventType.ContinueExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.WORKERS_NEWEST,
-          },
-          extraction_end_time: {
-            type: TimeValueType.CURRENT_TIME,
+        fixture: {
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.WORKERS_NEWEST,
+            },
+            extraction_end_time: {
+              type: TimeValueType.CURRENT_TIME,
+            },
           },
         },
       });
@@ -115,15 +123,17 @@ describe('Enhanced Control Protocol', () => {
     });
 
     it('should support workers_oldest_minus_window for computer imports', () => {
-      const event = createEvent({
+      const event = createMockEvent({
         eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
-            value: '168h',
-          },
-          extraction_end_time: {
-            type: TimeValueType.WORKERS_OLDEST,
+        fixture: {
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
+              value: '168h',
+            },
+            extraction_end_time: {
+              type: TimeValueType.WORKERS_OLDEST,
+            },
           },
         },
       });
@@ -142,14 +152,16 @@ describe('Enhanced Control Protocol', () => {
 
   describe('Real-world scenarios from Enhanced Control Protocol', () => {
     it('Scenario: Normal import - initial with unbounded start', () => {
-      const event = createEvent({
+      const event = createMockEvent({
         eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.UNBOUNDED,
-          },
-          extraction_end_time: {
-            type: TimeValueType.CURRENT_TIME,
+        fixture: {
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.UNBOUNDED,
+            },
+            extraction_end_time: {
+              type: TimeValueType.CURRENT_TIME,
+            },
           },
         },
       });
@@ -160,14 +172,16 @@ describe('Enhanced Control Protocol', () => {
     });
 
     it('Scenario: Normal import - periodic sync from workers_newest to now', () => {
-      const event = createEvent({
+      const event = createMockEvent({
         eventType: EventType.ContinueExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.WORKERS_NEWEST,
-          },
-          extraction_end_time: {
-            type: TimeValueType.CURRENT_TIME,
+        fixture: {
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.WORKERS_NEWEST,
+            },
+            extraction_end_time: {
+              type: TimeValueType.CURRENT_TIME,
+            },
           },
         },
       });
@@ -181,15 +195,17 @@ describe('Enhanced Control Protocol', () => {
     });
 
     it('Scenario: POC import - from absolute date X to now', () => {
-      const event = createEvent({
+      const event = createMockEvent({
         eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.ABSOLUTE_TIME,
-            value: '2024-06-01T00:00:00Z',
-          },
-          extraction_end_time: {
-            type: TimeValueType.CURRENT_TIME,
+        fixture: {
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.ABSOLUTE_TIME,
+              value: '2024-06-01T00:00:00Z',
+            },
+            extraction_end_time: {
+              type: TimeValueType.CURRENT_TIME,
+            },
           },
         },
       });
@@ -203,16 +219,18 @@ describe('Enhanced Control Protocol', () => {
     });
 
     it('Scenario: Reconciliation import - from Date X to Date Y', () => {
-      const event = createEvent({
+      const event = createMockEvent({
         eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.ABSOLUTE_TIME,
-            value: '2024-01-01T00:00:00Z',
-          },
-          extraction_end_time: {
-            type: TimeValueType.ABSOLUTE_TIME,
-            value: '2024-03-31T23:59:59Z',
+        fixture: {
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.ABSOLUTE_TIME,
+              value: '2024-01-01T00:00:00Z',
+            },
+            extraction_end_time: {
+              type: TimeValueType.ABSOLUTE_TIME,
+              value: '2024-03-31T23:59:59Z',
+            },
           },
         },
       });
@@ -232,15 +250,17 @@ describe('Enhanced Control Protocol', () => {
     });
 
     it('Scenario: Computer import - historical direction with window', () => {
-      const event = createEvent({
+      const event = createMockEvent({
         eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
-            value: '120m',
-          },
-          extraction_end_time: {
-            type: TimeValueType.WORKERS_OLDEST,
+        fixture: {
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.WORKERS_OLDEST_MINUS_WINDOW,
+              value: '120m',
+            },
+            extraction_end_time: {
+              type: TimeValueType.WORKERS_OLDEST,
+            },
           },
         },
       });
@@ -256,16 +276,18 @@ describe('Enhanced Control Protocol', () => {
 
   describe('Event context field placement', () => {
     it('extraction fields are nested under event_context, not at payload root', () => {
-      const event = createEvent({
+      const event = createMockEvent({
         eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.ABSOLUTE_TIME,
-            value: '2024-02-01T00:00:00Z',
-          },
-          extraction_end_time: {
-            type: TimeValueType.ABSOLUTE_TIME,
-            value: '2024-02-29T23:59:59Z',
+        fixture: {
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.ABSOLUTE_TIME,
+              value: '2024-02-01T00:00:00Z',
+            },
+            extraction_end_time: {
+              type: TimeValueType.ABSOLUTE_TIME,
+              value: '2024-02-29T23:59:59Z',
+            },
           },
         },
       });

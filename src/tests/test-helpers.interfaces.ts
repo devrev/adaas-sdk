@@ -1,13 +1,16 @@
-import { CreateEventParams } from '../test-utils/create-event.interfaces';
+import { MockEventOverrides } from '../test-utils/create-event';
 
 /**
- * Internal variant of {@link CreateEventParams} where `mockServerBaseUrl` is
- * optional — the shared test wrapper injects it automatically.
+ * Internal variant of {@link MockEventOverrides} where `mockServerBaseUrl` and
+ * `eventType` are optional — the shared test wrapper injects defaults automatically.
  */
-export interface CreateEventInterface
-  extends Omit<CreateEventParams, 'mockServerBaseUrl'> {
+export type CreateMockEventOverrides = Omit<
+  MockEventOverrides,
+  'mockServerBaseUrl' | 'eventType'
+> & {
   mockServerBaseUrl?: string;
-}
+  eventType?: MockEventOverrides['eventType'];
+};
 
 /**
  * Options for creating a file stream response.

@@ -1,6 +1,6 @@
 import { AirSyncDefaultItemTypes } from '../../common/constants';
 import { State } from '../../state/state';
-import { createEvent, createItems } from '../../tests/test-helpers';
+import { createMockEvent, createItems } from '../../tests/test-helpers';
 import { Artifact, EventType } from '../../types';
 import { ExternalSyncUnit } from '../../types/extraction';
 import { WorkerAdapter } from './worker-adapter';
@@ -59,7 +59,7 @@ describe('Artifact ordering when artifacts overflow batch sizes in repositories'
 
   beforeEach(() => {
     // Create a fresh adapter instance for this test to avoid mocking conflicts
-    const mockEvent = createEvent({ eventType: EventType.StartExtractingData });
+    const mockEvent = createMockEvent({ eventType: EventType.StartExtractingData });
     const mockAdapterState = new State<TestState>({
       event: mockEvent,
       initialState: { attachments: { completed: false } },
@@ -161,7 +161,7 @@ describe('External sync units splitting into artifacts', () => {
   let testAdapter: WorkerAdapter<Record<string, unknown>>;
 
   beforeEach(() => {
-    const mockEvent = createEvent({
+    const mockEvent = createMockEvent({
       eventType: EventType.StartExtractingExternalSyncUnits,
     });
     const mockAdapterState = new State<Record<string, unknown>>({

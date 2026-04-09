@@ -1,6 +1,6 @@
 import { EventType, ExtractorEventType } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
-import { createEvent } from '../test-helpers';
+import { createMockEvent } from '../test-helpers';
 
 import run from './extraction';
 
@@ -8,7 +8,7 @@ jest.setTimeout(10000);
 
 describe('Unknown event type', () => {
   it('should successfully emit unknown event type when the event type is not found', async () => {
-    const event = createEvent({
+    const event = createMockEvent({
       eventType: 'INVALID_EVENT_TYPE' as EventType,
     });
 

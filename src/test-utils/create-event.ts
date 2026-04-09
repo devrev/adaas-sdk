@@ -1,38 +1,31 @@
-import { AirdropEvent, EventType } from '../types/extraction';
+import {
+  AirdropEvent,
+  ConnectionData,
+  EventContext,
+  EventType,
+} from '../types/extraction';
 
-import { CreateEventParams } from './create-event.interfaces';
+export type MockEventOverrides = {
+  mockServerBaseUrl: string;
+  eventType: EventType;
+  fixture?: {
+    connection_data?: object;
+    event_context?: object;
+    event_data?: object;
+    context?: object;
+  };
+};
 
-/**
- * Creates a fully-formed {@link AirdropEvent} populated with sensible test
- * defaults. Every field can be overridden through the params object.
- *
- * Unlike the internal test helper this function is **portable** — it accepts
- * `mockServerBaseUrl` as an explicit parameter so it can be used both inside
- * the SDK test suite and by external consumers (e.g. local runners).
- *
- * @example
- * ```ts
- * const event = createEvent({
- *   mockServerBaseUrl: mockServer.baseUrl,
- *   eventType: EventType.StartExtractingMetadata,
- *   eventContextOverrides: { mode: 'INITIAL' },
- * });
- * ```
- */
-export function createEvent({
-  mockServerBaseUrl,
-  eventType = EventType.StartExtractingData,
-  externalSyncUnits = [],
-  progress,
-  error,
-  delay,
-  contextOverrides = {},
-  payloadOverrides = {},
-  eventContextOverrides = {},
-  executionMetadataOverrides = {},
-}: CreateEventParams): AirdropEvent {
-  const defaultEventContext = {
-    callback_url: `${mockServerBaseUrl}/callback_url`,
+export function createMockEvent(overrides: MockEventOverrides): AirdropEvent {
+  const connectionData: ConnectionData = {
+    org_id: 'test_org_id',
+    org_name: 'test_org_name',
+    key: 'test_key',
+    key_type: 'test_key_type',
+    ...overrides.fixture?.connection_data,
+  };
+
+  const eventContext: EventContext = {
     dev_org: 'test_dev_org',
     dev_oid: 'test_dev_oid',
     dev_org_id: 'test_dev_org_id',
@@ -48,7 +41,7 @@ export function createEvent({
     external_system_name: 'test_external_system_name',
     external_system_type: 'test_external_system_type',
     import_slug: 'test_import_slug',
-    mode: 'test_mode',
+    mode: 'INITIAL',
     request_id: 'test_request_id',
     request_id_adaas: 'test_request_id_adaas',
     run_id: 'test_run_id',
@@ -61,49 +54,35 @@ export function createEvent({
     sync_unit: 'test_sync_unit',
     sync_unit_id: 'test_sync_unit_id',
     uuid: 'test_uuid',
-    worker_data_url: `${mockServerBaseUrl}/worker_data_url`,
+    ...overrides.fixture?.event_context,
+    // MockServer URLs must always override fixture values.
+    callback_url: `${overrides.mockServerBaseUrl}/callback_url`,
+    worker_data_url: `${overrides.mockServerBaseUrl}/worker_data_url`,
   };
 
-  return {
+  const event = {
     context: {
       secrets: {
         service_account_token: 'test_token',
       },
       snap_in_version_id: 'test_snap_in_version_id',
       snap_in_id: 'test_snap_in_id',
-      ...contextOverrides,
+      ...overrides.fixture?.context,
     },
     payload: {
-      connection_data: {
-        org_id: 'test_org_id',
-        org_name: 'test_org_name',
-        key: 'test_key',
-        key_type: 'test_key_type',
-      },
-      event_context: {
-        ...defaultEventContext,
-        ...eventContextOverrides,
-      },
-      event_type: eventType,
-      event_data: {
-        external_sync_units: externalSyncUnits,
-        progress,
-        error,
-        delay,
-      },
-      ...payloadOverrides,
+      connection_data: connectionData,
+      event_context: eventContext,
+      event_type: overrides.eventType,
+      event_data: overrides.fixture?.event_data ?? {},
     },
     execution_metadata: {
-      devrev_endpoint: mockServerBaseUrl,
-      ...executionMetadataOverrides,
+      devrev_endpoint: overrides.mockServerBaseUrl,
     },
     input_data: {
-      global_values: {
-        test_global_key: 'test_global_value',
-      },
-      event_sources: {
-        test_event_source_key: 'test_event_source_id',
-      },
+      global_values: {},
+      event_sources: {},
     },
-  };
+  } satisfies AirdropEvent;
+
+  return event;
 }

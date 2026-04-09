@@ -4,14 +4,14 @@ import {
   ExtractorEventType,
 } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
-import { createEvent } from '../test-helpers';
+import { createMockEvent } from '../test-helpers';
 
 import run from './extraction';
 
 describe('Dummy Connector - Data Extraction', () => {
   let event: AirdropEvent;
   beforeEach(() => {
-    event = createEvent({
+    event = createMockEvent({
       eventType: EventType.StartExtractingData,
     });
   });

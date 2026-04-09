@@ -1,2 +1,2 @@
-export { createEvent } from './create-event';
-export type { CreateEventParams } from './create-event.interfaces';
+export { createMockEvent } from './create-event';
+export type { MockEventOverrides } from './create-event';
