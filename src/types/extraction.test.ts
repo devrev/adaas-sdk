@@ -1,4 +1,5 @@
-import { createMockEvent } from '../tests/test-helpers';
+import { createMockEvent } from '../test-utils/create-event';
+import { mockServer } from '../tests/jest.setup';
 import {
   EventContext,
   EventType,
@@ -9,6 +10,7 @@ import {
 // Test the EventContext interface and related extraction types
 describe('ExtractionTypes', () => {
   const baseEvent = createMockEvent({
+    mockServerBaseUrl: mockServer.baseUrl,
     eventType: EventType.StartExtractingData,
   });
 
@@ -97,6 +99,7 @@ describe('ExtractionTypes', () => {
 
   it('[edge] should handle explicit boolean values for reset_extract_from', () => {
     const eventWithTrue = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingData,
       fixture: {
         event_context: {
@@ -106,6 +109,7 @@ describe('ExtractionTypes', () => {
     });
 
     const eventWithFalse = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingData,
       fixture: {
         event_context: {

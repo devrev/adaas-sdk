@@ -1,6 +1,7 @@
 import { isMainThread, Worker } from 'worker_threads';
 
-import { createMockEvent } from '../tests/test-helpers';
+import { mockServer } from '../tests/jest.setup';
+import { createMockEvent } from '../test-utils/create-event';
 import { EventType } from '../types/extraction';
 import { createWorker } from './create-worker';
 
@@ -11,6 +12,7 @@ describe(createWorker.name, () => {
     const worker = isMainThread
       ? await createWorker<object>({
           event: createMockEvent({
+            mockServerBaseUrl: mockServer.baseUrl,
             eventType: EventType.ExtractionExternalSyncUnitsStart,
           }),
           initialState: {},
@@ -35,6 +37,7 @@ describe(createWorker.name, () => {
     await expect(
       createWorker<object>({
         event: createMockEvent({
+          mockServerBaseUrl: mockServer.baseUrl,
           eventType: EventType.ExtractionExternalSyncUnitsStart,
         }),
         initialState: {},
@@ -53,6 +56,7 @@ describe(createWorker.name, () => {
     if (isMainThread) {
       const worker = await createWorker<object>({
         event: createMockEvent({
+          mockServerBaseUrl: mockServer.baseUrl,
           eventType: EventType.ExtractionExternalSyncUnitsStart,
         }),
         initialState: {},
@@ -76,6 +80,7 @@ describe(createWorker.name, () => {
     if (isMainThread) {
       const worker = await createWorker<typeof complexState>({
         event: createMockEvent({
+          mockServerBaseUrl: mockServer.baseUrl,
           eventType: EventType.ExtractionDataStart,
         }),
         initialState: complexState,
@@ -93,6 +98,7 @@ describe(createWorker.name, () => {
     if (isMainThread) {
       const worker = await createWorker<object>({
         event: createMockEvent({
+          mockServerBaseUrl: mockServer.baseUrl,
           eventType: EventType.ExtractionMetadataStart,
         }),
         initialState: {},

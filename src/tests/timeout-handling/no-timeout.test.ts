@@ -5,7 +5,7 @@ import {
 } from '../../types/extraction';
 
 import { mockServer } from '../jest.setup';
-import { createMockEvent } from '../test-helpers';
+import { createMockEvent } from '../../test-utils/create-event';
 
 import run from './extraction';
 
@@ -13,6 +13,7 @@ describe('No timeout', () => {
   let event: AirdropEvent;
   beforeEach(() => {
     event = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingData,
     });
   });

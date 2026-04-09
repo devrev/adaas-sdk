@@ -1,7 +1,8 @@
 import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
 import { LIBRARY_VERSION } from '../common/constants';
-import { createMockEvent } from '../tests/test-helpers';
+import { mockServer } from '../tests/jest.setup';
+import { createMockEvent } from '../test-utils/create-event';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import {
@@ -38,6 +39,7 @@ describe(Logger.name, () => {
     jest.clearAllMocks();
 
     mockEvent = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingData,
       fixture: {
         event_context: {

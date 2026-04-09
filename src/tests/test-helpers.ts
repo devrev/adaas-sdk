@@ -1,30 +1,12 @@
 import { AxiosResponse } from 'axios';
 import { Readable } from 'stream';
-
 import {
   Item,
   NormalizedAttachment,
   NormalizedItem,
 } from '../repo/repo.interfaces';
-import { createMockEvent as createMockEventBase } from '../test-utils/create-event';
-import { AirdropEvent, EventType } from '../types/extraction';
 import { ArtifactToUpload } from '../uploader/uploader.interfaces';
-
-import { mockServer } from './jest.setup';
-import {
-  CreateMockEventOverrides,
-  CreateFileStreamOptions,
-} from './test-helpers.interfaces';
-
-export function createMockEvent(
-  overrides: CreateMockEventOverrides = {} as CreateMockEventOverrides
-): AirdropEvent {
-  return createMockEventBase({
-    ...overrides,
-    eventType: overrides.eventType ?? EventType.StartExtractingData,
-    mockServerBaseUrl: overrides.mockServerBaseUrl ?? mockServer.baseUrl,
-  });
-}
+import { CreateFileStreamOptions } from './test-helpers.interfaces';
 
 export function createItem(id: number): Item {
   return {

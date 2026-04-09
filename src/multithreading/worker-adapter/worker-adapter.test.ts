@@ -1,7 +1,8 @@
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
 import { UNBOUNDED_DATE_TIME_VALUE } from '../../common/constants';
 import { State } from '../../state/state';
-import { createMockEvent } from '../../tests/test-helpers';
+import { mockServer } from '../../tests/jest.setup';
+import { createMockEvent } from '../../test-utils/create-event';
 import {
   AdapterState,
   AirdropEvent,
@@ -56,7 +57,10 @@ describe(WorkerAdapter.name, () => {
     jest.clearAllMocks();
 
     // Create mock objects
-    mockEvent = createMockEvent({ eventType: EventType.StartExtractingData });
+    mockEvent = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
+      eventType: EventType.StartExtractingData,
+    });
 
     const initialState: AdapterState<TestState> = {
       attachments: { completed: false },

@@ -2,7 +2,8 @@ import {
   STATEFUL_EVENT_TYPES,
   STATELESS_EVENT_TYPES,
 } from '../common/constants';
-import { createMockEvent } from '../tests/test-helpers';
+import { mockServer } from '../tests/jest.setup';
+import { createMockEvent } from '../test-utils/create-event';
 import { EventType, TimeValue, TimeValueType } from '../types/extraction';
 import { State, createAdapterState } from './state';
 import { extractionSdkState } from './state.interfaces';
@@ -37,6 +38,7 @@ describe(State.name, () => {
     async (eventType) => {
       // Arrange
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: eventType,
       });
 
@@ -60,6 +62,7 @@ describe(State.name, () => {
     async (eventType) => {
       // Arrange
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: eventType,
       });
       fetchStateSpy.mockRejectedValue({
@@ -85,6 +88,7 @@ describe(State.name, () => {
     async (eventType) => {
       // Arrange
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: eventType,
       });
       fetchStateSpy.mockResolvedValue({ state: 'invalid-json' });
@@ -107,6 +111,7 @@ describe(State.name, () => {
     async (eventType) => {
       // Arrange
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: eventType,
       });
       fetchStateSpy.mockResolvedValue({ state: null });
@@ -136,6 +141,7 @@ describe(State.name, () => {
         test: 'test',
       };
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: eventType,
         fixture: {
           context: {
@@ -176,6 +182,7 @@ describe(State.name, () => {
       test: 'test',
     };
     const event = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingData,
       fixture: {
         context: {
@@ -217,6 +224,7 @@ describe(State.name, () => {
     async (eventType) => {
       // Arrange
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: eventType,
       });
 
@@ -245,6 +253,7 @@ describe(State.name, () => {
     async (eventType) => {
       // Arrange
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: eventType,
         fixture: {
           context: {
@@ -277,6 +286,7 @@ describe(State.name, () => {
     async (eventType) => {
       // Arrange
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: eventType,
         fixture: {
           context: {
@@ -311,6 +321,7 @@ describe(State.name, () => {
     it('should exit the process if extraction_start_time resolution fails', async () => {
       // Arrange: WORKERS_NEWEST type but state has no workersNewest
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -344,6 +355,7 @@ describe(State.name, () => {
     it('should exit the process if extraction_end_time resolution fails', async () => {
       // Arrange: WORKERS_NEWEST type but state has no workersNewest
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -382,6 +394,7 @@ describe(State.name, () => {
     it('should skip resolution when extraction_start_time has no type', async () => {
       // Arrange: platform sends extraction_start_time without a type field (old platform version)
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -422,6 +435,7 @@ describe(State.name, () => {
     it('should skip resolution when extraction_end_time has no type', async () => {
       // Arrange: platform sends extraction_end_time without a type field
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -461,6 +475,7 @@ describe(State.name, () => {
     it('should skip resolution when both extraction times have no type', async () => {
       // Arrange: platform sends both time values without type fields
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -501,6 +516,7 @@ describe(State.name, () => {
     it('should exit the process if extract_from >= extract_to', async () => {
       // Arrange: start is after end (inverted window)
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -537,6 +553,7 @@ describe(State.name, () => {
     it('should exit the process if extract_from equals extract_to', async () => {
       // Arrange: start equals end (zero-width window)
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -573,6 +590,7 @@ describe(State.name, () => {
     it('should not exit when extract_from < extract_to', async () => {
       // Arrange: valid window
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -608,6 +626,7 @@ describe(State.name, () => {
     it('should not validate when only extract_from is set', async () => {
       // Arrange: only start, no end
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -639,6 +658,7 @@ describe(State.name, () => {
     it('should not exit when extract_from is UNBOUNDED and extract_to is a real timestamp', async () => {
       // Arrange: UNBOUNDED start (epoch) with a real ABSOLUTE end timestamp
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -686,6 +706,7 @@ describe(State.name, () => {
     it('should store resolved values in pendingWorkersOldest/pendingWorkersNewest on StartExtractingData', async () => {
       // Arrange
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -732,6 +753,7 @@ describe(State.name, () => {
       const staleNewest = '2026-03-25T09:00:00.000Z';
 
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -775,6 +797,7 @@ describe(State.name, () => {
       const pendingNewest = '2026-03-26T08:00:00.000Z'; // Earlier than FIXED_NOW
 
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.ContinueExtractingData,
         fixture: {
           event_context: {
@@ -818,6 +841,7 @@ describe(State.name, () => {
     it('should not set extract_from/extract_to on ContinueExtractingData if no pending values exist', async () => {
       // Arrange: state has no pending values (e.g. old state from before this feature)
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.ContinueExtractingData,
         fixture: {
           context: {
@@ -850,6 +874,7 @@ describe(State.name, () => {
       const pendingNewest = '2026-03-26T08:00:00.000Z';
 
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingAttachments,
         fixture: {
           context: {
@@ -882,6 +907,7 @@ describe(State.name, () => {
   it('should populate extractionScope from API response', async () => {
     // Arrange
     const event = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingData,
       fixture: {
         context: {
@@ -915,6 +941,7 @@ describe(State.name, () => {
   it('should have empty extractionScope on 404', async () => {
     // Arrange
     const event = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingMetadata,
       fixture: {
         context: {
@@ -944,6 +971,7 @@ describe(State.name, () => {
   it('should have empty extractionScope for stateless events', async () => {
     // Arrange
     const event = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingExternalSyncUnits,
     });
 

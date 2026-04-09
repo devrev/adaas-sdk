@@ -1,12 +1,13 @@
 import { EventType, ExtractorEventType } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
-import { createMockEvent } from '../test-helpers';
+import { createMockEvent } from '../../test-utils/create-event';
 
 import run from './extraction';
 
 describe('Dummy Connector - External Sync Units Extraction', () => {
   it('should successfully emit external sync units done event when all endpoints return 200', async () => {
     const event = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingExternalSyncUnits,
     });
 
@@ -22,6 +23,7 @@ describe('Dummy Connector - External Sync Units Extraction', () => {
 
   it('should upload external sync units as an artifact instead of sending them inline', async () => {
     const event = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingExternalSyncUnits,
     });
 

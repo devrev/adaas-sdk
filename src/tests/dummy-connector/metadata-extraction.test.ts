@@ -4,7 +4,7 @@ import {
   ExtractorEventType,
 } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
-import { createMockEvent } from '../test-helpers';
+import { createMockEvent } from '../../test-utils/create-event';
 
 import run from './extraction';
 
@@ -14,6 +14,7 @@ describe('Dummy Connector - Metadata Extraction', () => {
   let event: AirdropEvent;
   beforeEach(() => {
     event = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingMetadata,
     });
   });

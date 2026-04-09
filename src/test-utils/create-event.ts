@@ -7,7 +7,7 @@ import {
 
 export type MockEventOverrides = {
   mockServerBaseUrl: string;
-  eventType: EventType;
+  eventType?: EventType;
   fixture?: {
     connection_data?: object;
     event_context?: object;
@@ -72,7 +72,7 @@ export function createMockEvent(overrides: MockEventOverrides): AirdropEvent {
     payload: {
       connection_data: connectionData,
       event_context: eventContext,
-      event_type: overrides.eventType,
+      event_type: overrides.eventType ?? EventType.StartExtractingData,
       event_data: overrides.fixture?.event_data ?? {},
     },
     execution_metadata: {

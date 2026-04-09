@@ -1,9 +1,7 @@
 import { AirSyncDefaultItemTypes, SSOR_ATTACHMENT } from '../common/constants';
-import {
-  createMockEvent,
-  createItems,
-  normalizeItem,
-} from '../tests/test-helpers';
+import { createItems, normalizeItem } from '../tests/test-helpers';
+import { mockServer } from '../tests/jest.setup';
+import { createMockEvent } from '../test-utils/create-event';
 import { EventType } from '../types';
 import { Repo } from './repo';
 
@@ -19,7 +17,10 @@ describe(Repo.name, () => {
   beforeEach(() => {
     normalize = jest.fn();
     repo = new Repo({
-      event: createMockEvent({ eventType: EventType.ExtractionDataStart }),
+      event: createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
+        eventType: EventType.ExtractionDataStart,
+      }),
       itemType: 'test_item_type',
       normalize,
       onUpload: jest.fn(),
@@ -41,7 +42,10 @@ describe(Repo.name, () => {
 
   it('should not normalize items when normalize function is not provided', async () => {
     repo = new Repo({
-      event: createMockEvent({ eventType: EventType.ExtractionDataStart }),
+      event: createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
+        eventType: EventType.ExtractionDataStart,
+      }),
       itemType: 'test_item_type',
       onUpload: jest.fn(),
       options: {},
@@ -59,7 +63,10 @@ describe(Repo.name, () => {
 
   it('should not normalize items when item type is external_domain_metadata', async () => {
     repo = new Repo({
-      event: createMockEvent({ eventType: EventType.ExtractionDataStart }),
+      event: createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
+        eventType: EventType.ExtractionDataStart,
+      }),
       itemType: AirSyncDefaultItemTypes.EXTERNAL_DOMAIN_METADATA,
       normalize,
       onUpload: jest.fn(),
@@ -74,7 +81,10 @@ describe(Repo.name, () => {
 
   it('should not normalize items when item type is ssor_attachment', async () => {
     repo = new Repo({
-      event: createMockEvent({ eventType: EventType.ExtractionDataStart }),
+      event: createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
+        eventType: EventType.ExtractionDataStart,
+      }),
       itemType: SSOR_ATTACHMENT,
       normalize,
       onUpload: jest.fn(),
@@ -121,7 +131,10 @@ describe(Repo.name, () => {
   describe('should take batch size into account', () => {
     beforeEach(() => {
       repo = new Repo({
-        event: createMockEvent({ eventType: EventType.ExtractionDataStart }),
+        event: createMockEvent({
+          mockServerBaseUrl: mockServer.baseUrl,
+          eventType: EventType.ExtractionDataStart,
+        }),
         itemType: 'test_item_type',
         normalize,
         onUpload: jest.fn(),

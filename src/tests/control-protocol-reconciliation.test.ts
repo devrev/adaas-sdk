@@ -1,4 +1,5 @@
-import { createMockEvent } from './test-helpers';
+import { mockServer } from '../tests/jest.setup';
+import { createMockEvent } from '../test-utils/create-event';
 import { EventType, TimeValueType } from '../types/extraction';
 
 describe('Enhanced Control Protocol', () => {
@@ -19,6 +20,7 @@ describe('Enhanced Control Protocol', () => {
   describe('Backward compatibility', () => {
     it('should work with events that do not use new extraction fields', () => {
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
       });
 
@@ -31,6 +33,7 @@ describe('Enhanced Control Protocol', () => {
 
     it('should support setting extract_from and extract_to directly on event context', () => {
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -54,6 +57,7 @@ describe('Enhanced Control Protocol', () => {
   describe('Enhanced protocol event context fields', () => {
     it('should support forward direction with absolute start and now end', () => {
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -81,6 +85,7 @@ describe('Enhanced Control Protocol', () => {
 
     it('should support historical direction with unbounded start', () => {
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -101,6 +106,7 @@ describe('Enhanced Control Protocol', () => {
 
     it('should support workers_newest for periodic forward sync', () => {
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.ContinueExtractingData,
         fixture: {
           event_context: {
@@ -124,6 +130,7 @@ describe('Enhanced Control Protocol', () => {
 
     it('should support workers_oldest_minus_window for computer imports', () => {
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -153,6 +160,7 @@ describe('Enhanced Control Protocol', () => {
   describe('Real-world scenarios from Enhanced Control Protocol', () => {
     it('Scenario: Normal import - initial with unbounded start', () => {
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -173,6 +181,7 @@ describe('Enhanced Control Protocol', () => {
 
     it('Scenario: Normal import - periodic sync from workers_newest to now', () => {
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.ContinueExtractingData,
         fixture: {
           event_context: {
@@ -196,6 +205,7 @@ describe('Enhanced Control Protocol', () => {
 
     it('Scenario: POC import - from absolute date X to now', () => {
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -220,6 +230,7 @@ describe('Enhanced Control Protocol', () => {
 
     it('Scenario: Reconciliation import - from Date X to Date Y', () => {
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -251,6 +262,7 @@ describe('Enhanced Control Protocol', () => {
 
     it('Scenario: Computer import - historical direction with window', () => {
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
@@ -277,6 +289,7 @@ describe('Enhanced Control Protocol', () => {
   describe('Event context field placement', () => {
     it('extraction fields are nested under event_context, not at payload root', () => {
       const event = createMockEvent({
+        mockServerBaseUrl: mockServer.baseUrl,
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {

@@ -4,7 +4,7 @@ import {
   ExtractorEventType,
 } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
-import { createMockEvent } from '../test-helpers';
+import { createMockEvent } from '../../test-utils/create-event';
 import run from './extraction';
 
 // Increase timeout for this test since we're doing many uploads
@@ -13,6 +13,7 @@ jest.setTimeout(60000);
 describe('size-limit-1: SQS size limit early exit', () => {
   it('should emit progress event when size limit is exceeded during data extraction', async () => {
     const event = createMockEvent({
+      mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingData,
     });
 

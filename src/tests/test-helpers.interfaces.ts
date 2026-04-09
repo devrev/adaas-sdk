@@ -1,16 +1,10 @@
 import { MockEventOverrides } from '../test-utils/create-event';
 
 /**
- * Internal variant of {@link MockEventOverrides} where `mockServerBaseUrl` and
- * `eventType` are optional — the shared test wrapper injects defaults automatically.
+ * Internal variant of {@link MockEventOverrides} — all fields are optional,
+ * the shared test wrapper injects defaults automatically.
  */
-export type CreateMockEventOverrides = Omit<
-  MockEventOverrides,
-  'mockServerBaseUrl' | 'eventType'
-> & {
-  mockServerBaseUrl?: string;
-  eventType?: MockEventOverrides['eventType'];
-};
+export type CreateMockEventOverrides = MockEventOverrides;
 
 /**
  * Options for creating a file stream response.
