@@ -1,4 +1,4 @@
-import { createMockEvent, MOCK_SERVER_DEFAULT } from '../common/test-utils';
+import { createMockEvent, MOCK_SERVER_DEFAULT_URL } from '../common/test-utils';
 import { axiosClient } from '../http/axios-client-internal';
 import { EventType } from '../types/extraction';
 import { Mappers } from './mappers';
@@ -24,7 +24,7 @@ describe(Mappers.name, () => {
   const externalIds = ['test_external_id'];
   const targets = ['test_target_id'];
 
-  const mockEvent = createMockEvent(MOCK_SERVER_DEFAULT, {
+  const mockEvent = createMockEvent(MOCK_SERVER_DEFAULT_URL, {
     context: {
       secrets: { service_account_token: apiToken },
     },
@@ -50,7 +50,7 @@ describe(Mappers.name, () => {
 
     // Assert
     expect(mockAxiosClient.get).toHaveBeenCalledWith(
-      `${MOCK_SERVER_DEFAULT}/internal/airdrop.sync-mapper-record.get-by-target`,
+      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.sync-mapper-record.get-by-target`,
       {
         headers: {
           Authorization: apiToken,
@@ -74,7 +74,7 @@ describe(Mappers.name, () => {
 
     // Assert
     expect(mockAxiosClient.get).toHaveBeenCalledWith(
-      `${MOCK_SERVER_DEFAULT}/internal/airdrop.sync-mapper-record.get-by-external-id`,
+      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.sync-mapper-record.get-by-external-id`,
       {
         headers: {
           Authorization: apiToken,
@@ -103,7 +103,7 @@ describe(Mappers.name, () => {
 
     // Assert
     expect(mockAxiosClient.post).toHaveBeenCalledWith(
-      `${MOCK_SERVER_DEFAULT}/internal/airdrop.sync-mapper-record.create`,
+      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.sync-mapper-record.create`,
       params,
       {
         headers: {
@@ -129,7 +129,7 @@ describe(Mappers.name, () => {
 
     // Assert
     expect(mockAxiosClient.post).toHaveBeenCalledWith(
-      `${MOCK_SERVER_DEFAULT}/internal/airdrop.sync-mapper-record.update`,
+      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.sync-mapper-record.update`,
       params,
       {
         headers: {

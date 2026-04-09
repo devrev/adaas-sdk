@@ -16,7 +16,7 @@ export type {
 export { processTask } from './multithreading/process-task';
 export { spawn } from './multithreading/spawn/spawn';
 export { WorkerAdapter } from './multithreading/worker-adapter/worker-adapter';
-export { createMockEvent, MOCK_SERVER_DEFAULT } from './common/test-utils';
+export { createMockEvent, MOCK_SERVER_DEFAULT_URL } from './common/test-utils';
 export type { DeepPartial } from './common/test-utils';
 export * from './types';
 export * from './types/workers';

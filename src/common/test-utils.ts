@@ -1,6 +1,6 @@
 import { AirdropEvent, EventType } from '../types/extraction';
 
-export const MOCK_SERVER_DEFAULT = 'http://localhost:0';
+export const MOCK_SERVER_DEFAULT_URL = 'http://localhost:0';
 
 /**
  * Recursively makes all properties of T optional.
@@ -46,14 +46,14 @@ function deepMerge<T extends Record<string, unknown>>(
 /**
  * Creates a mock AirdropEvent for testing.
  *
- * @param mockServerUrl - Base URL for the mock server. Defaults to {@link MOCK_SERVER_DEFAULT}.
+ * @param mockServerUrl - Base URL for the mock server. Defaults to {@link MOCK_SERVER_DEFAULT_URL}.
  *   The `callback_url`, `worker_data_url`, and `devrev_endpoint` fields are
  *   derived from this value unless explicitly overridden.
  * @param overrides - Deep partial of AirdropEvent. Any provided fields are
  *   deep-merged on top of the defaults.
  */
 export function createMockEvent(
-  mockServerUrl: string = MOCK_SERVER_DEFAULT,
+  mockServerUrl: string = MOCK_SERVER_DEFAULT_URL,
   overrides: DeepPartial<AirdropEvent> = {}
 ): AirdropEvent {
   const base: AirdropEvent = {
