@@ -485,7 +485,9 @@ describe('ExternalDomainMetadata schema-type consistency', () => {
     });
 
     it('rejects participation field missing refers_to', () => {
-      expectSchemaInvalid(edmWithField({ type: 'participation', participation: {} }));
+      expectSchemaInvalid(
+        edmWithField({ type: 'participation', participation: {} })
+      );
     });
 
     it('rejects struct field missing struct data', () => {
