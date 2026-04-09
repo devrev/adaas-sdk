@@ -41,24 +41,6 @@ describe(Logger.name, () => {
     mockEvent = createMockEvent({
       mockServerBaseUrl: mockServer.baseUrl,
       eventType: EventType.StartExtractingData,
-      fixture: {
-        event_context: {
-          dev_org: 'DEV-test',
-          dev_org_id: 'DEV-test-id',
-          dev_user: 'DEVU-test',
-          dev_user_id: 'DEVU-test-id',
-          external_sync_unit: 'test-unit',
-          external_sync_unit_id: 'test-unit-id',
-          external_sync_unit_name: 'test-unit-name',
-          external_system: 'test-system',
-          external_system_type: 'test-type',
-          import_slug: 'test-import',
-          request_id: 'test-request-id',
-          snap_in_slug: 'test-snap-slug',
-          sync_run: 'test-sync-run',
-          sync_run_id: 'test-sync-run-id',
-        },
-      },
     });
 
     mockOptions = {
