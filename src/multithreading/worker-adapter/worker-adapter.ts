@@ -308,8 +308,7 @@ export class WorkerAdapter<ConnectorState> {
 
         // Update workersOldest and workersNewest boundaries from resolved extraction timestamps.
         // Expand boundaries: workersOldest gets the earliest timestamp, workersNewest gets the latest.
-        const extractionStart =
-          this.event.payload.event_context.extract_from;
+        const extractionStart = this.event.payload.event_context.extract_from;
         const extractionEnd = this.event.payload.event_context.extract_to;
 
         if (

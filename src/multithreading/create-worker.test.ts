@@ -1,6 +1,7 @@
 import { isMainThread, Worker } from 'worker_threads';
 
-import { createEvent } from '../tests/test-helpers';
+import { mockServer } from '../tests/jest.setup';
+import { createMockEvent } from '../common/test-utils';
 import { EventType } from '../types/extraction';
 import { createWorker } from './create-worker';
 
@@ -10,8 +11,8 @@ describe(createWorker.name, () => {
 
     const worker = isMainThread
       ? await createWorker<object>({
-          event: createEvent({
-            eventType: EventType.ExtractionExternalSyncUnitsStart,
+          event: createMockEvent(mockServer.baseUrl, {
+            payload: { event_type: EventType.ExtractionExternalSyncUnitsStart },
           }),
           initialState: {},
           workerPath,
@@ -34,8 +35,8 @@ describe(createWorker.name, () => {
 
     await expect(
       createWorker<object>({
-        event: createEvent({
-          eventType: EventType.ExtractionExternalSyncUnitsStart,
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: { event_type: EventType.ExtractionExternalSyncUnitsStart },
         }),
         initialState: {},
         workerPath,
@@ -52,8 +53,8 @@ describe(createWorker.name, () => {
 
     if (isMainThread) {
       const worker = await createWorker<object>({
-        event: createEvent({
-          eventType: EventType.ExtractionExternalSyncUnitsStart,
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: { event_type: EventType.ExtractionExternalSyncUnitsStart },
         }),
         initialState: {},
         workerPath,
@@ -75,8 +76,8 @@ describe(createWorker.name, () => {
 
     if (isMainThread) {
       const worker = await createWorker<typeof complexState>({
-        event: createEvent({
-          eventType: EventType.ExtractionDataStart,
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: { event_type: EventType.ExtractionDataStart },
         }),
         initialState: complexState,
         workerPath,
@@ -92,8 +93,8 @@ describe(createWorker.name, () => {
 
     if (isMainThread) {
       const worker = await createWorker<object>({
-        event: createEvent({
-          eventType: EventType.ExtractionMetadataStart,
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: { event_type: EventType.ExtractionMetadataStart },
         }),
         initialState: {},
         workerPath,

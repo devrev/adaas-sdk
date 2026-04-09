@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { axiosClient } from '../http/axios-client-internal';
-import { createEvent } from '../tests/test-helpers';
+import { mockServer } from '../tests/jest.setup';
+import { createMockEvent } from './test-utils';
 import { InitialDomainMapping } from '../types';
 import { EventType } from '../types/extraction';
 import { installInitialDomainMapping } from './install-initial-domain-mapping';
@@ -27,7 +28,9 @@ const mockIsAxiosError = axios.isAxiosError as unknown as jest.Mock;
 
 describe(installInitialDomainMapping.name, () => {
   // Create mock objects
-  const mockEvent = createEvent({ eventType: EventType.ExtractionDataStart });
+  const mockEvent = createMockEvent(mockServer.baseUrl, {
+    payload: { event_type: EventType.ExtractionDataStart },
+  });
 
   const mockInitialDomainMapping: InitialDomainMapping = {
     starting_recipe_blueprint: {
