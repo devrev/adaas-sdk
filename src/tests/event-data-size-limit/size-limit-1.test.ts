@@ -4,7 +4,7 @@ import {
   ExtractorEventType,
 } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
-import { createMockEvent } from '../../test-utils/create-event';
+import { createMockEvent } from '../../common/test-utils';
 import run from './extraction';
 
 // Increase timeout for this test since we're doing many uploads

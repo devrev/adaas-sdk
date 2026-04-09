@@ -1,4 +1,4 @@
-import { createMockEvent } from '../test-utils/create-event';
+import { createMockEvent } from '../common/test-utils';
 import { axiosClient } from '../http/axios-client-internal';
 import { EventType } from '../types/extraction';
 import { Mappers } from './mappers';

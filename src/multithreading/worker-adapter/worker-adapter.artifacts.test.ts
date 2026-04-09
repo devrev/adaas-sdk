@@ -2,7 +2,7 @@ import { AirSyncDefaultItemTypes } from '../../common/constants';
 import { State } from '../../state/state';
 import { mockServer } from '../../tests/jest.setup';
 import { createItems } from '../../tests/test-helpers';
-import { createMockEvent } from '../../test-utils/create-event';
+import { createMockEvent } from '../../common/test-utils';
 import { Artifact, EventType } from '../../types';
 import { ExternalSyncUnit } from '../../types/extraction';
 import { WorkerAdapter } from './worker-adapter';

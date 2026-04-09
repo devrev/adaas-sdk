@@ -1,7 +1,7 @@
 import { isMainThread, Worker } from 'worker_threads';
 
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../test-utils/create-event';
+import { createMockEvent } from '../common/test-utils';
 import { EventType } from '../types/extraction';
 import { createWorker } from './create-worker';
 

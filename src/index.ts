@@ -16,7 +16,7 @@ export type {
 export { processTask } from './multithreading/process-task';
 export { spawn } from './multithreading/spawn/spawn';
 export { WorkerAdapter } from './multithreading/worker-adapter/worker-adapter';
-export { createMockEvent } from './test-utils';
-export type { MockEventOverrides } from './test-utils';
+export { createMockEvent } from './common/test-utils';
+export type { MockEventOverrides } from './common/test-utils';
 export * from './types';
 export * from './types/workers';

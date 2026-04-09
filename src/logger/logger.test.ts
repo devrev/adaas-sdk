@@ -2,7 +2,7 @@ import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
 import { LIBRARY_VERSION } from '../common/constants';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../test-utils/create-event';
+import { createMockEvent } from '../common/test-utils';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import {

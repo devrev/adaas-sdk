@@ -1,4 +1,4 @@
-import { createMockEvent } from '../test-utils/create-event';
+import { createMockEvent } from '../common/test-utils';
 import { mockServer } from '../tests/jest.setup';
 import {
   EventContext,

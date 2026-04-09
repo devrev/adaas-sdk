@@ -3,7 +3,7 @@ import {
   STATELESS_EVENT_TYPES,
 } from '../common/constants';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../test-utils/create-event';
+import { createMockEvent } from '../common/test-utils';
 import { EventType, TimeValue, TimeValueType } from '../types/extraction';
 import { State, createAdapterState } from './state';
 import { extractionSdkState } from './state.interfaces';

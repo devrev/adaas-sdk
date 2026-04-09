@@ -1,7 +1,7 @@
 import { AirSyncDefaultItemTypes, SSOR_ATTACHMENT } from '../common/constants';
 import { createItems, normalizeItem } from '../tests/test-helpers';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../test-utils/create-event';
+import { createMockEvent } from '../common/test-utils';
 import { EventType } from '../types';
 import { Repo } from './repo';
 

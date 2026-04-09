@@ -2,7 +2,7 @@ import { AttachmentsStreamingPool } from '../../attachments-streaming/attachment
 import { UNBOUNDED_DATE_TIME_VALUE } from '../../common/constants';
 import { State } from '../../state/state';
 import { mockServer } from '../../tests/jest.setup';
-import { createMockEvent } from '../../test-utils/create-event';
+import { createMockEvent } from '../../common/test-utils';
 import {
   AdapterState,
   AirdropEvent,

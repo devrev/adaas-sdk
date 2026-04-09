@@ -1,4 +1,4 @@
-import { MockEventOverrides } from '../test-utils/create-event';
+import { MockEventOverrides } from '../common/test-utils';
 
 /**
  * Internal variant of {@link MockEventOverrides} — all fields are optional,

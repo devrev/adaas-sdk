@@ -1,5 +1,5 @@
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../test-utils/create-event';
+import { createMockEvent } from '../common/test-utils';
 import { EventType, TimeValueType } from '../types/extraction';
 
 describe('Enhanced Control Protocol', () => {
