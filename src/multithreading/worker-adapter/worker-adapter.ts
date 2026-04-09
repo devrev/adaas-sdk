@@ -308,8 +308,7 @@ export class WorkerAdapter<ConnectorState> {
 
         // Update workersOldest and workersNewest boundaries from resolved extraction timestamps.
         // Expand boundaries: workersOldest gets the earliest timestamp, workersNewest gets the latest.
-        const extractionStart =
-          this.event.payload.event_context.extract_from;
+        const extractionStart = this.event.payload.event_context.extract_from;
         const extractionEnd = this.event.payload.event_context.extract_to;
 
         if (
@@ -445,75 +444,93 @@ export class WorkerAdapter<ConnectorState> {
         this.adapterState.state.fromDevRev?.filesToLoad
       );
 
-      outerloop: for (const fileToLoad of this.adapterState.state.fromDevRev
-        .filesToLoad) {
-        const itemTypeToLoad = itemTypesToLoad.find(
-          (itemTypeToLoad: ItemTypeToLoad) =>
-            itemTypeToLoad.itemType === fileToLoad.itemType
-        );
-
-        if (!itemTypeToLoad) {
-          console.error(
-            `Item type to load not found for item type: ${fileToLoad.itemType}.`
+      try {
+        outerloop: for (const fileToLoad of this.adapterState.state.fromDevRev
+          .filesToLoad) {
+          const itemTypeToLoad = itemTypesToLoad.find(
+            (itemTypeToLoad: ItemTypeToLoad) =>
+              itemTypeToLoad.itemType === fileToLoad.itemType
           );
 
-          await this.emit(LoaderEventType.DataLoadingError, {
-            error: {
-              message: `Item type to load not found for item type: ${fileToLoad.itemType}.`,
-            },
-          });
-
-          break;
-        }
-
-        if (!fileToLoad.completed) {
-          const { response, error: transformerFileError } =
-            await this.uploader.getJsonObjectByArtifactId({
-              artifactId: fileToLoad.id,
-              isGzipped: true,
-            });
-
-          if (transformerFileError) {
+          if (!itemTypeToLoad) {
             console.error(
-              `Transformer file not found for artifact ID: ${fileToLoad.id}.`
+              `Item type to load not found for item type: ${fileToLoad.itemType}.`
             );
+
             await this.emit(LoaderEventType.DataLoadingError, {
               error: {
-                message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
+                message: `Item type to load not found for item type: ${fileToLoad.itemType}.`,
               },
             });
+
+            break;
           }
 
-          const transformerFile = response as ExternalSystemItem[];
-
-          for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
-            const { report, rateLimit } = await this.loadItem({
-              item: transformerFile[i],
-              itemTypeToLoad,
-            });
-
-            if (rateLimit?.delay) {
-              await this.emit(LoaderEventType.DataLoadingDelayed, {
-                delay: rateLimit.delay,
-                reports: this.reports,
-                processed_files: this.processedFiles,
+          if (!fileToLoad.completed) {
+            const { response, error: transformerFileError } =
+              await this.uploader.getJsonObjectByArtifactId({
+                artifactId: fileToLoad.id,
+                isGzipped: true,
               });
 
-              break outerloop;
+            if (transformerFileError) {
+              console.error(
+                `Transformer file not found for artifact ID: ${fileToLoad.id}.`
+              );
+              await this.emit(LoaderEventType.DataLoadingError, {
+                error: {
+                  message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
+                },
+              });
             }
 
-            if (report) {
-              addReportToLoaderReport({
-                loaderReports: this.loaderReports,
-                report,
+            const transformerFile = response as ExternalSystemItem[];
+
+            for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
+              if (this.isTimeout) {
+                console.log(
+                  'Timeout detected during data loading. Emitting progress to allow continuation.'
+                );
+                await this.emit(LoaderEventType.DataLoadingProgress);
+                process.exit(0);
+              }
+
+              const { report, rateLimit } = await this.loadItem({
+                item: transformerFile[i],
+                itemTypeToLoad,
               });
-              fileToLoad.lineToProcess = fileToLoad.lineToProcess + 1;
+
+              if (rateLimit?.delay) {
+                await this.emit(LoaderEventType.DataLoadingDelayed, {
+                  delay: rateLimit.delay,
+                  reports: this.reports,
+                  processed_files: this.processedFiles,
+                });
+
+                break outerloop;
+              }
+
+              if (report) {
+                addReportToLoaderReport({
+                  loaderReports: this.loaderReports,
+                  report,
+                });
+                fileToLoad.lineToProcess = fileToLoad.lineToProcess + 1;
+              }
             }
+
+            fileToLoad.completed = true;
+            this._processedFiles.push(fileToLoad.id);
           }
-
-          fileToLoad.completed = true;
-          this._processedFiles.push(fileToLoad.id);
         }
+      } catch (error) {
+        console.error('Error during data loading.', serializeError(error));
+        await this.emit(LoaderEventType.DataLoadingError, {
+          error: {
+            message: `Error during data loading. ${serializeError(error)}`,
+          },
+        });
+        process.exit(1);
       }
 
       return {
@@ -582,51 +599,79 @@ export class WorkerAdapter<ConnectorState> {
 
       const filesToLoad = this.adapterState.state.fromDevRev?.filesToLoad;
 
-      outerloop: for (const fileToLoad of filesToLoad) {
-        if (!fileToLoad.completed) {
-          const { response, error: transformerFileError } =
-            await this.uploader.getJsonObjectByArtifactId({
-              artifactId: fileToLoad.id,
-              isGzipped: true,
-            });
-
-          const transformerFile = response as ExternalSystemAttachment[];
-
-          if (transformerFileError) {
-            console.error(
-              `Transformer file not found for artifact ID: ${fileToLoad.id}.`
-            );
-            break outerloop;
-          }
-
-          for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
-            const { report, rateLimit } = await this.loadAttachment({
-              item: transformerFile[i],
-              create,
-            });
-
-            if (rateLimit?.delay) {
-              await this.emit(LoaderEventType.DataLoadingDelayed, {
-                delay: rateLimit.delay,
-                reports: this.reports,
-                processed_files: this.processedFiles,
+      try {
+        outerloop: for (const fileToLoad of filesToLoad) {
+          if (!fileToLoad.completed) {
+            const { response, error: transformerFileError } =
+              await this.uploader.getJsonObjectByArtifactId({
+                artifactId: fileToLoad.id,
+                isGzipped: true,
               });
 
+            const transformerFile = response as ExternalSystemAttachment[];
+
+            if (transformerFileError) {
+              console.error(
+                `Transformer file not found for artifact ID: ${fileToLoad.id}.`
+              );
+              await this.emit(LoaderEventType.AttachmentLoadingError, {
+                error: {
+                  message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
+                },
+              });
               break outerloop;
             }
 
-            if (report) {
-              addReportToLoaderReport({
-                loaderReports: this.loaderReports,
-                report,
-              });
-              fileToLoad.lineToProcess = fileToLoad.lineToProcess + 1;
-            }
-          }
+            for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
+              if (this.isTimeout) {
+                console.log(
+                  'Timeout detected during attachment loading. Emitting progress to allow continuation.'
+                );
+                await this.emit(LoaderEventType.AttachmentLoadingProgress);
+                process.exit(0);
+              }
 
-          fileToLoad.completed = true;
-          this._processedFiles.push(fileToLoad.id);
+              const { report, rateLimit } = await this.loadAttachment({
+                item: transformerFile[i],
+                create,
+              });
+
+              if (rateLimit?.delay) {
+                await this.emit(LoaderEventType.DataLoadingDelayed, {
+                  delay: rateLimit.delay,
+                  reports: this.reports,
+                  processed_files: this.processedFiles,
+                });
+
+                break outerloop;
+              }
+
+              if (report) {
+                addReportToLoaderReport({
+                  loaderReports: this.loaderReports,
+                  report,
+                });
+                fileToLoad.lineToProcess = fileToLoad.lineToProcess + 1;
+              }
+            }
+
+            fileToLoad.completed = true;
+            this._processedFiles.push(fileToLoad.id);
+          }
         }
+      } catch (error) {
+        console.error(
+          'Error during attachment loading.',
+          serializeError(error)
+        );
+        await this.emit(LoaderEventType.AttachmentLoadingError, {
+          error: {
+            message: `Error during attachment loading. ${serializeError(
+              error
+            )}`,
+          },
+        });
+        process.exit(1);
       }
 
       return {
