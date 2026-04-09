@@ -3,7 +3,7 @@ import {
   STATELESS_EVENT_TYPES,
 } from '../common/constants';
 import { createMockEvent } from '../tests/test-helpers';
-import { EventType, TimeValueType } from '../types/extraction';
+import { EventType, TimeValue, TimeValueType } from '../types/extraction';
 import { State, createAdapterState } from './state';
 import { extractionSdkState } from './state.interfaces';
 
@@ -385,7 +385,7 @@ describe(State.name, () => {
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
-            extraction_start_time: {} as any,
+            extraction_start_time: {} as unknown as TimeValue,
             extraction_end_time: {
               type: TimeValueType.ABSOLUTE_TIME,
               value: '2025-06-01T00:00:00Z',
@@ -429,7 +429,7 @@ describe(State.name, () => {
               type: TimeValueType.ABSOLUTE_TIME,
               value: '2024-01-01T00:00:00Z',
             },
-            extraction_end_time: {} as any,
+            extraction_end_time: {} as unknown as TimeValue,
           },
           context: {
             snap_in_version_id: 'test_snap_in_version_id',
@@ -464,8 +464,12 @@ describe(State.name, () => {
         eventType: EventType.StartExtractingData,
         fixture: {
           event_context: {
-            extraction_start_time: { value: 'some-value' } as any,
-            extraction_end_time: { value: 'some-value' } as any,
+            extraction_start_time: {
+              value: 'some-value',
+            } as unknown as TimeValue,
+            extraction_end_time: {
+              value: 'some-value',
+            } as unknown as TimeValue,
           },
           context: {
             snap_in_version_id: 'test_snap_in_version_id',

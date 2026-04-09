@@ -1,5 +1,9 @@
 import { AirSyncDefaultItemTypes, SSOR_ATTACHMENT } from '../common/constants';
-import { createMockEvent, createItems, normalizeItem } from '../tests/test-helpers';
+import {
+  createMockEvent,
+  createItems,
+  normalizeItem,
+} from '../tests/test-helpers';
 import { EventType } from '../types';
 import { Repo } from './repo';
 

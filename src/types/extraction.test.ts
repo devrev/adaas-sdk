@@ -8,7 +8,9 @@ import {
 
 // Test the EventContext interface and related extraction types
 describe('ExtractionTypes', () => {
-  const baseEvent = createMockEvent({ eventType: EventType.StartExtractingData });
+  const baseEvent = createMockEvent({
+    eventType: EventType.StartExtractingData,
+  });
 
   it('should create event context without optional fields', () => {
     const event = { ...baseEvent };
