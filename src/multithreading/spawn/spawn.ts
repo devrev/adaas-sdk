@@ -89,7 +89,7 @@ export async function spawn<ConnectorState>({
 
   // Read the command line arguments to check if the local flag is passed.
   const argv = await yargs(hideBin(process.argv)).argv;
-  if (argv._.includes('local')) {
+  if (argv._.includes('local') || argv.local) {
     options = {
       ...(options || {}),
       isLocalDevelopment: true,
