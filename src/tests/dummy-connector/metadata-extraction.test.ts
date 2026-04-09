@@ -13,9 +13,8 @@ jest.setTimeout(60000);
 describe('Dummy Connector - Metadata Extraction', () => {
   let event: AirdropEvent;
   beforeEach(() => {
-    event = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingMetadata,
+    event = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingMetadata },
     });
   });
 

@@ -11,9 +11,8 @@ import run from './extraction';
 describe('Dummy Connector - Data Extraction', () => {
   let event: AirdropEvent;
   beforeEach(() => {
-    event = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingData,
+    event = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingData },
     });
   });
 

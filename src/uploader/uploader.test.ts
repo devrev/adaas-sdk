@@ -43,7 +43,7 @@ type UploaderPrivateMethods = {
 };
 
 describe(Uploader.name, () => {
-  const mockEvent = createMockEvent({ mockServerBaseUrl: mockServer.baseUrl });
+  const mockEvent = createMockEvent(mockServer.baseUrl);
   let uploader: Uploader;
 
   beforeEach(() => {

@@ -38,9 +38,8 @@ describe(Logger.name, () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockEvent = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingData,
+    mockEvent = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingData },
     });
 
     mockOptions = {

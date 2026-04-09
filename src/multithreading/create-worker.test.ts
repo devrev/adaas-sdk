@@ -11,9 +11,8 @@ describe(createWorker.name, () => {
 
     const worker = isMainThread
       ? await createWorker<object>({
-          event: createMockEvent({
-            mockServerBaseUrl: mockServer.baseUrl,
-            eventType: EventType.ExtractionExternalSyncUnitsStart,
+          event: createMockEvent(mockServer.baseUrl, {
+            payload: { event_type: EventType.ExtractionExternalSyncUnitsStart },
           }),
           initialState: {},
           workerPath,
@@ -36,9 +35,8 @@ describe(createWorker.name, () => {
 
     await expect(
       createWorker<object>({
-        event: createMockEvent({
-          mockServerBaseUrl: mockServer.baseUrl,
-          eventType: EventType.ExtractionExternalSyncUnitsStart,
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: { event_type: EventType.ExtractionExternalSyncUnitsStart },
         }),
         initialState: {},
         workerPath,
@@ -55,9 +53,8 @@ describe(createWorker.name, () => {
 
     if (isMainThread) {
       const worker = await createWorker<object>({
-        event: createMockEvent({
-          mockServerBaseUrl: mockServer.baseUrl,
-          eventType: EventType.ExtractionExternalSyncUnitsStart,
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: { event_type: EventType.ExtractionExternalSyncUnitsStart },
         }),
         initialState: {},
         workerPath,
@@ -79,9 +76,8 @@ describe(createWorker.name, () => {
 
     if (isMainThread) {
       const worker = await createWorker<typeof complexState>({
-        event: createMockEvent({
-          mockServerBaseUrl: mockServer.baseUrl,
-          eventType: EventType.ExtractionDataStart,
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: { event_type: EventType.ExtractionDataStart },
         }),
         initialState: complexState,
         workerPath,
@@ -97,9 +93,8 @@ describe(createWorker.name, () => {
 
     if (isMainThread) {
       const worker = await createWorker<object>({
-        event: createMockEvent({
-          mockServerBaseUrl: mockServer.baseUrl,
-          eventType: EventType.ExtractionMetadataStart,
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: { event_type: EventType.ExtractionMetadataStart },
         }),
         initialState: {},
         workerPath,

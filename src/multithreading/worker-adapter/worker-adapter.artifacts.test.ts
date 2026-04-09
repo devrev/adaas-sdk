@@ -61,9 +61,8 @@ describe('Artifact ordering when artifacts overflow batch sizes in repositories'
 
   beforeEach(() => {
     // Create a fresh adapter instance for this test to avoid mocking conflicts
-    const mockEvent = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingData,
+    const mockEvent = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingData },
     });
     const mockAdapterState = new State<TestState>({
       event: mockEvent,
@@ -166,9 +165,8 @@ describe('External sync units splitting into artifacts', () => {
   let testAdapter: WorkerAdapter<Record<string, unknown>>;
 
   beforeEach(() => {
-    const mockEvent = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingExternalSyncUnits,
+    const mockEvent = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingExternalSyncUnits },
     });
     const mockAdapterState = new State<Record<string, unknown>>({
       event: mockEvent,

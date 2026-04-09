@@ -6,9 +6,8 @@ import run from './extraction';
 
 describe('Delete event type', () => {
   it('should successfully emit delete done event when the incoming event is start delete and there is no script passed', async () => {
-    const event = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartDeletingExtractorState,
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartDeletingExtractorState },
     });
 
     await run([event]);
@@ -22,9 +21,8 @@ describe('Delete event type', () => {
   });
 
   it('should successfully emit delete done event when the incoming event is start delete and there is a script passed', async () => {
-    const event = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartDeletingExtractorState,
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartDeletingExtractorState },
     });
 
     await run([event], __dirname + '/some-cleanup-worker');

@@ -1,4 +1,4 @@
-import { createMockEvent } from '../common/test-utils';
+import { createMockEvent, MOCK_SERVER_DEFAULT } from '../common/test-utils';
 import { axiosClient } from '../http/axios-client-internal';
 import { EventType } from '../types/extraction';
 import { Mappers } from './mappers';
@@ -16,7 +16,6 @@ jest.mock('../http/axios-client-internal');
 const mockAxiosClient = axiosClient as jest.Mocked<typeof axiosClient>;
 
 describe(Mappers.name, () => {
-  const apiEndpoint = 'test_devrev_endpoint';
   const apiToken = 'test_service_token';
   const syncUnit = 'test_sync_unit';
   const targetId = 'test_target_id';
@@ -25,14 +24,11 @@ describe(Mappers.name, () => {
   const externalIds = ['test_external_id'];
   const targets = ['test_target_id'];
 
-  const mockEvent = createMockEvent({
-    eventType: EventType.StartExtractingData,
-    mockServerBaseUrl: apiEndpoint,
-    fixture: {
-      context: {
-        secrets: { service_account_token: apiToken },
-      },
+  const mockEvent = createMockEvent(MOCK_SERVER_DEFAULT, {
+    context: {
+      secrets: { service_account_token: apiToken },
     },
+    payload: { event_type: EventType.StartExtractingData },
   });
 
   const mappers = new Mappers({ event: mockEvent });
@@ -54,7 +50,7 @@ describe(Mappers.name, () => {
 
     // Assert
     expect(mockAxiosClient.get).toHaveBeenCalledWith(
-      `${apiEndpoint}/internal/airdrop.sync-mapper-record.get-by-target`,
+      `${MOCK_SERVER_DEFAULT}/internal/airdrop.sync-mapper-record.get-by-target`,
       {
         headers: {
           Authorization: apiToken,
@@ -78,7 +74,7 @@ describe(Mappers.name, () => {
 
     // Assert
     expect(mockAxiosClient.get).toHaveBeenCalledWith(
-      `${apiEndpoint}/internal/airdrop.sync-mapper-record.get-by-external-id`,
+      `${MOCK_SERVER_DEFAULT}/internal/airdrop.sync-mapper-record.get-by-external-id`,
       {
         headers: {
           Authorization: apiToken,
@@ -107,7 +103,7 @@ describe(Mappers.name, () => {
 
     // Assert
     expect(mockAxiosClient.post).toHaveBeenCalledWith(
-      `${apiEndpoint}/internal/airdrop.sync-mapper-record.create`,
+      `${MOCK_SERVER_DEFAULT}/internal/airdrop.sync-mapper-record.create`,
       params,
       {
         headers: {
@@ -133,7 +129,7 @@ describe(Mappers.name, () => {
 
     // Assert
     expect(mockAxiosClient.post).toHaveBeenCalledWith(
-      `${apiEndpoint}/internal/airdrop.sync-mapper-record.update`,
+      `${MOCK_SERVER_DEFAULT}/internal/airdrop.sync-mapper-record.update`,
       params,
       {
         headers: {

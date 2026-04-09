@@ -37,9 +37,8 @@ describe(State.name, () => {
     'should not init, fetch, post or install IDM for stateless event type %s',
     async (eventType) => {
       // Arrange
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: eventType,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: eventType },
       });
 
       // Act
@@ -61,9 +60,8 @@ describe(State.name, () => {
     'should exit the process if fetching the state fails',
     async (eventType) => {
       // Arrange
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: eventType,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: eventType },
       });
       fetchStateSpy.mockRejectedValue({
         isAxiosError: true,
@@ -87,9 +85,8 @@ describe(State.name, () => {
     'should exit the process if parsing the state fails',
     async (eventType) => {
       // Arrange
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: eventType,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: eventType },
       });
       fetchStateSpy.mockResolvedValue({ state: 'invalid-json' });
       jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -110,9 +107,8 @@ describe(State.name, () => {
     'should exit the process if fetching is successful but there is no state in the response',
     async (eventType) => {
       // Arrange
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: eventType,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: eventType },
       });
       fetchStateSpy.mockResolvedValue({ state: null });
       jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -140,14 +136,11 @@ describe(State.name, () => {
       const initialState = {
         test: 'test',
       };
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: eventType,
-        fixture: {
-          context: {
-            snap_in_version_id: '',
-          },
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: '',
         },
+        payload: { event_type: eventType },
       });
       fetchStateSpy.mockRejectedValue({
         isAxiosError: true,
@@ -181,14 +174,11 @@ describe(State.name, () => {
     const initialState = {
       test: 'test',
     };
-    const event = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingData,
-      fixture: {
-        context: {
-          snap_in_version_id: '',
-        },
+    const event = createMockEvent(mockServer.baseUrl, {
+      context: {
+        snap_in_version_id: '',
       },
+      payload: { event_type: EventType.StartExtractingData },
     });
     fetchStateSpy.mockRejectedValue({
       isAxiosError: true,
@@ -223,9 +213,8 @@ describe(State.name, () => {
     'should exit the process if initialDomainMapping is not provided for event type %s',
     async (eventType) => {
       // Arrange
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: eventType,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: eventType },
       });
 
       fetchStateSpy.mockResolvedValue({
@@ -252,14 +241,11 @@ describe(State.name, () => {
     'should not install IDM if version matches for event type %s',
     async (eventType) => {
       // Arrange
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: eventType,
-        fixture: {
-          context: {
-            snap_in_version_id: '1.0.0',
-          },
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: '1.0.0',
         },
+        payload: { event_type: eventType },
       });
 
       const stringifiedState = JSON.stringify({
@@ -285,14 +271,11 @@ describe(State.name, () => {
     'should install IDM if version does not match for event type %s',
     async (eventType) => {
       // Arrange
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: eventType,
-        fixture: {
-          context: {
-            snap_in_version_id: '2.0.0',
-          },
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: '2.0.0',
         },
+        payload: { event_type: eventType },
       });
 
       const stringifiedState = JSON.stringify({
@@ -320,10 +303,9 @@ describe(State.name, () => {
   describe('Enhanced Control Protocol - TimeValue resolution failures', () => {
     it('should exit the process if extraction_start_time resolution fails', async () => {
       // Arrange: WORKERS_NEWEST type but state has no workersNewest
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.WORKERS_NEWEST,
@@ -354,10 +336,9 @@ describe(State.name, () => {
 
     it('should exit the process if extraction_end_time resolution fails', async () => {
       // Arrange: WORKERS_NEWEST type but state has no workersNewest
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.UNBOUNDED,
@@ -393,19 +374,18 @@ describe(State.name, () => {
   describe('Backwards compatibility - missing TimeValue type', () => {
     it('should skip resolution when extraction_start_time has no type', async () => {
       // Arrange: platform sends extraction_start_time without a type field (old platform version)
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.StartExtractingData,
           event_context: {
             extraction_start_time: {} as unknown as TimeValue,
             extraction_end_time: {
               type: TimeValueType.ABSOLUTE_TIME,
               value: '2025-06-01T00:00:00Z',
             },
-          },
-          context: {
-            snap_in_version_id: 'test_snap_in_version_id',
           },
         },
       });
@@ -434,19 +414,18 @@ describe(State.name, () => {
 
     it('should skip resolution when extraction_end_time has no type', async () => {
       // Arrange: platform sends extraction_end_time without a type field
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.StartExtractingData,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.ABSOLUTE_TIME,
               value: '2024-01-01T00:00:00Z',
             },
             extraction_end_time: {} as unknown as TimeValue,
-          },
-          context: {
-            snap_in_version_id: 'test_snap_in_version_id',
           },
         },
       });
@@ -474,10 +453,12 @@ describe(State.name, () => {
 
     it('should skip resolution when both extraction times have no type', async () => {
       // Arrange: platform sends both time values without type fields
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.StartExtractingData,
           event_context: {
             extraction_start_time: {
               value: 'some-value',
@@ -485,9 +466,6 @@ describe(State.name, () => {
             extraction_end_time: {
               value: 'some-value',
             } as unknown as TimeValue,
-          },
-          context: {
-            snap_in_version_id: 'test_snap_in_version_id',
           },
         },
       });
@@ -515,10 +493,9 @@ describe(State.name, () => {
   describe('Enhanced Control Protocol - extraction window validation', () => {
     it('should exit the process if extract_from >= extract_to', async () => {
       // Arrange: start is after end (inverted window)
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.ABSOLUTE_TIME,
@@ -552,10 +529,9 @@ describe(State.name, () => {
 
     it('should exit the process if extract_from equals extract_to', async () => {
       // Arrange: start equals end (zero-width window)
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.ABSOLUTE_TIME,
@@ -589,10 +565,9 @@ describe(State.name, () => {
 
     it('should not exit when extract_from < extract_to', async () => {
       // Arrange: valid window
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.ABSOLUTE_TIME,
@@ -625,10 +600,9 @@ describe(State.name, () => {
 
     it('should not validate when only extract_from is set', async () => {
       // Arrange: only start, no end
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.ABSOLUTE_TIME,
@@ -657,10 +631,9 @@ describe(State.name, () => {
 
     it('should not exit when extract_from is UNBOUNDED and extract_to is a real timestamp', async () => {
       // Arrange: UNBOUNDED start (epoch) with a real ABSOLUTE end timestamp
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.UNBOUNDED,
@@ -705,10 +678,12 @@ describe(State.name, () => {
 
     it('should store resolved values in pendingWorkersOldest/pendingWorkersNewest on StartExtractingData', async () => {
       // Arrange
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: '',
+        },
+        payload: {
+          event_type: EventType.StartExtractingData,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.UNBOUNDED,
@@ -716,9 +691,6 @@ describe(State.name, () => {
             extraction_end_time: {
               type: TimeValueType.CURRENT_TIME,
             },
-          },
-          context: {
-            snap_in_version_id: '',
           },
         },
       });
@@ -752,10 +724,12 @@ describe(State.name, () => {
       const staleOldest = '2026-03-25T08:00:00.000Z';
       const staleNewest = '2026-03-25T09:00:00.000Z';
 
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.StartExtractingData,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.UNBOUNDED,
@@ -763,9 +737,6 @@ describe(State.name, () => {
             extraction_end_time: {
               type: TimeValueType.CURRENT_TIME,
             },
-          },
-          context: {
-            snap_in_version_id: 'test_snap_in_version_id',
           },
         },
       });
@@ -796,10 +767,12 @@ describe(State.name, () => {
       const pendingOldest = '1970-01-01T00:00:00.000Z';
       const pendingNewest = '2026-03-26T08:00:00.000Z'; // Earlier than FIXED_NOW
 
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.ContinueExtractingData,
-        fixture: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.ContinueExtractingData,
           event_context: {
             // Platform still sends TimeValue objects, but they should be ignored
             extraction_start_time: {
@@ -808,9 +781,6 @@ describe(State.name, () => {
             extraction_end_time: {
               type: TimeValueType.CURRENT_TIME,
             },
-          },
-          context: {
-            snap_in_version_id: 'test_snap_in_version_id',
           },
         },
       });
@@ -840,14 +810,11 @@ describe(State.name, () => {
 
     it('should not set extract_from/extract_to on ContinueExtractingData if no pending values exist', async () => {
       // Arrange: state has no pending values (e.g. old state from before this feature)
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.ContinueExtractingData,
-        fixture: {
-          context: {
-            snap_in_version_id: 'test_snap_in_version_id',
-          },
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
         },
+        payload: { event_type: EventType.ContinueExtractingData },
       });
 
       const stringifiedState = JSON.stringify({
@@ -873,14 +840,11 @@ describe(State.name, () => {
       const pendingOldest = '1970-01-01T00:00:00.000Z';
       const pendingNewest = '2026-03-26T08:00:00.000Z';
 
-      const event = createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.StartExtractingAttachments,
-        fixture: {
-          context: {
-            snap_in_version_id: 'test_snap_in_version_id',
-          },
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
         },
+        payload: { event_type: EventType.StartExtractingAttachments },
       });
 
       const stringifiedState = JSON.stringify({
@@ -906,14 +870,11 @@ describe(State.name, () => {
 
   it('should populate extractionScope from API response', async () => {
     // Arrange
-    const event = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingData,
-      fixture: {
-        context: {
-          snap_in_version_id: '1.0.0',
-        },
+    const event = createMockEvent(mockServer.baseUrl, {
+      context: {
+        snap_in_version_id: '1.0.0',
       },
+      payload: { event_type: EventType.StartExtractingData },
     });
     fetchStateSpy.mockResolvedValue({
       state: JSON.stringify({ snapInVersionId: '1.0.0' }),
@@ -940,14 +901,11 @@ describe(State.name, () => {
 
   it('should have empty extractionScope on 404', async () => {
     // Arrange
-    const event = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingMetadata,
-      fixture: {
-        context: {
-          snap_in_version_id: '',
-        },
+    const event = createMockEvent(mockServer.baseUrl, {
+      context: {
+        snap_in_version_id: '',
       },
+      payload: { event_type: EventType.StartExtractingMetadata },
     });
     fetchStateSpy.mockRejectedValue({
       isAxiosError: true,
@@ -970,9 +928,8 @@ describe(State.name, () => {
 
   it('should have empty extractionScope for stateless events', async () => {
     // Arrange
-    const event = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingExternalSyncUnits,
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingExternalSyncUnits },
     });
 
     // Act

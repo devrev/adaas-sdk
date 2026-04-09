@@ -17,9 +17,8 @@ describe(Repo.name, () => {
   beforeEach(() => {
     normalize = jest.fn();
     repo = new Repo({
-      event: createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.ExtractionDataStart,
+      event: createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: EventType.ExtractionDataStart },
       }),
       itemType: 'test_item_type',
       normalize,
@@ -42,9 +41,8 @@ describe(Repo.name, () => {
 
   it('should not normalize items when normalize function is not provided', async () => {
     repo = new Repo({
-      event: createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.ExtractionDataStart,
+      event: createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: EventType.ExtractionDataStart },
       }),
       itemType: 'test_item_type',
       onUpload: jest.fn(),
@@ -63,9 +61,8 @@ describe(Repo.name, () => {
 
   it('should not normalize items when item type is external_domain_metadata', async () => {
     repo = new Repo({
-      event: createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.ExtractionDataStart,
+      event: createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: EventType.ExtractionDataStart },
       }),
       itemType: AirSyncDefaultItemTypes.EXTERNAL_DOMAIN_METADATA,
       normalize,
@@ -81,9 +78,8 @@ describe(Repo.name, () => {
 
   it('should not normalize items when item type is ssor_attachment', async () => {
     repo = new Repo({
-      event: createMockEvent({
-        mockServerBaseUrl: mockServer.baseUrl,
-        eventType: EventType.ExtractionDataStart,
+      event: createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: EventType.ExtractionDataStart },
       }),
       itemType: SSOR_ATTACHMENT,
       normalize,
@@ -131,9 +127,8 @@ describe(Repo.name, () => {
   describe('should take batch size into account', () => {
     beforeEach(() => {
       repo = new Repo({
-        event: createMockEvent({
-          mockServerBaseUrl: mockServer.baseUrl,
-          eventType: EventType.ExtractionDataStart,
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: { event_type: EventType.ExtractionDataStart },
         }),
         itemType: 'test_item_type',
         normalize,

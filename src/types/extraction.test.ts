@@ -9,9 +9,8 @@ import {
 
 // Test the EventContext interface and related extraction types
 describe('ExtractionTypes', () => {
-  const baseEvent = createMockEvent({
-    mockServerBaseUrl: mockServer.baseUrl,
-    eventType: EventType.StartExtractingData,
+  const baseEvent = createMockEvent(mockServer.baseUrl, {
+    payload: { event_type: EventType.StartExtractingData },
   });
 
   it('should create event context without optional fields', () => {
@@ -98,20 +97,18 @@ describe('ExtractionTypes', () => {
   });
 
   it('[edge] should handle explicit boolean values for reset_extract_from', () => {
-    const eventWithTrue = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingData,
-      fixture: {
+    const eventWithTrue = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
         event_context: {
           reset_extract_from: true,
         },
       },
     });
 
-    const eventWithFalse = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingData,
-      fixture: {
+    const eventWithFalse = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
         event_context: {
           reset_extract_from: false,
         },

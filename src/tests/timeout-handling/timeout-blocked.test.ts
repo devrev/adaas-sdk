@@ -13,9 +13,8 @@ jest.setTimeout(10000);
 describe('Timeout blocked', () => {
   let event: AirdropEvent;
   beforeEach(() => {
-    event = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingData,
+    event = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingData },
     });
   });
 

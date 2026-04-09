@@ -57,9 +57,8 @@ describe(WorkerAdapter.name, () => {
     jest.clearAllMocks();
 
     // Create mock objects
-    mockEvent = createMockEvent({
-      mockServerBaseUrl: mockServer.baseUrl,
-      eventType: EventType.StartExtractingData,
+    mockEvent = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingData },
     });
 
     const initialState: AdapterState<TestState> = {
