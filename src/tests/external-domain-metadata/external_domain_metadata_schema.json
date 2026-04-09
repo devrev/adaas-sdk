@@ -5,6 +5,20 @@
  ],
  "additionalProperties": false,
  "definitions": {
+  "Attachments": {
+   "additionalProperties": false,
+   "properties": {
+    "is_extractable": {
+     "description": "Whether attachments can be extracted",
+     "type": "boolean"
+    },
+    "is_loadable": {
+     "description": "Whether attachments can be loaded: that is, whether the connector supports creating it in the system",
+     "type": "boolean"
+    }
+   },
+   "type": "object"
+  },
   "CollectionData": {
    "additionalProperties": false,
    "properties": {
@@ -240,6 +254,9 @@
     "name": {
      "type": "string"
     },
+    "participation": {
+     "$ref": "#/definitions/ParticipationData"
+    },
     "permission": {
      "$ref": "#/definitions/PermissionData"
     },
@@ -273,7 +290,8 @@
       "type_key",
       "record_type_privilege",
       "field_privilege",
-      "conditional_privilege"
+      "conditional_privilege",
+      "participation"
      ],
      "type": "string"
     },
@@ -1525,6 +1543,22 @@
   "LoadingData": {
    "type": "object"
   },
+  "ParticipationData": {
+   "required": [
+    "refers_to"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "refers_to": {
+     "description": "The record types that this participation reference can refer to",
+     "additionalProperties": {
+      "$ref": "#/definitions/ReferenceDetail"
+     },
+     "type": "object"
+    }
+   },
+   "type": "object"
+  },
   "PermissionData": {
    "description": "A value describing access control, associating a reference (member_id) with a role.",
    "additionalProperties": false,
@@ -1544,6 +1578,9 @@
    ],
    "additionalProperties": false,
    "properties": {
+    "attachments": {
+     "$ref": "#/definitions/Attachments"
+    },
     "category": {
      "type": "string"
     },
