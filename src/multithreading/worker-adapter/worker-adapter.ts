@@ -482,6 +482,7 @@ export class WorkerAdapter<ConnectorState> {
                   message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
                 },
               });
+              break outerloop;
             }
 
             const transformerFile = response as ExternalSystemItem[];
