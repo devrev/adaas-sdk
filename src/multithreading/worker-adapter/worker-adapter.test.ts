@@ -10,7 +10,12 @@ import {
   ExtractorEventType,
   LoaderEventType,
 } from '../../types';
-import { ActionType, LoaderReport } from '../../types/loading';
+import {
+  ActionType,
+  ExternalSystemAttachment,
+  ExternalSystemItem,
+  LoaderReport,
+} from '../../types/loading';
 import { WorkerAdapter } from './worker-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -470,6 +475,7 @@ describe(WorkerAdapter.name, () => {
       // Mock the pool to simulate timeout happening during the first artifact
       (AttachmentsStreamingPool as jest.Mock).mockImplementationOnce(() => {
         return {
+          // eslint-disable-next-line @typescript-eslint/require-await
           streamAll: jest.fn().mockImplementation(async () => {
             adapter.isTimeout = true;
             return {};
@@ -814,7 +820,9 @@ describe(WorkerAdapter.name, () => {
         .fn()
         .mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
-      adapter['loaderReports'] = [{ item_type: 'tasks', [ActionType.CREATED]: 5 }] as LoaderReport[];
+      adapter['loaderReports'] = [
+        { item_type: 'tasks', [ActionType.CREATED]: 5 },
+      ] as LoaderReport[];
       adapter['_processedFiles'] = ['file-1', 'file-2'];
 
       await adapter.emit(LoaderEventType.DataLoadingDone);
@@ -843,7 +851,9 @@ describe(WorkerAdapter.name, () => {
       adapter['_artifacts'] = [
         { id: 'art-1', item_count: 10, item_type: 'issues' },
       ] as Artifact[];
-      adapter['loaderReports'] = [{ item_type: 'tasks', [ActionType.CREATED]: 5 }] as LoaderReport[];
+      adapter['loaderReports'] = [
+        { item_type: 'tasks', [ActionType.CREATED]: 5 },
+      ] as LoaderReport[];
       adapter['_processedFiles'] = ['file-1'];
 
       await adapter.emit('SOME_UNKNOWN_EVENT' as ExtractorEventType);
@@ -946,8 +956,7 @@ describe(WorkerAdapter.name, () => {
     ) {
       adapterInstance.event.payload.event_context.extract_from =
         extractionStart;
-      adapterInstance.event.payload.event_context.extract_to =
-        extractionEnd;
+      adapterInstance.event.payload.event_context.extract_to = extractionEnd;
       // Reset the emit guard so we can emit multiple times in a single test
       adapterInstance['hasWorkerEmitted'] = false;
 
@@ -1289,6 +1298,320 @@ describe(WorkerAdapter.name, () => {
       };
       expect(adapter.shouldExtract('tasks')).toBe(false);
       expect(adapter.shouldExtract('users')).toBe(true);
+    });
+  });
+
+  describe(WorkerAdapter.prototype.loadItemTypes.name, () => {
+    let exitSpy: jest.SpyInstance;
+    let emitSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      exitSpy = jest
+        .spyOn(process, 'exit')
+        .mockImplementation(() => undefined as never);
+      emitSpy = jest.spyOn(adapter, 'emit').mockResolvedValue();
+
+      // Set event type to loading continuation (not StartLoadingData) so we can
+      // set fromDevRev state directly without mocking getLoaderBatches
+      mockEvent.payload.event_type =
+        EventType.ContinueLoadingData as unknown as EventType;
+    });
+
+    afterEach(() => {
+      exitSpy.mockRestore();
+    });
+
+    function setupFilesToLoad(items: ExternalSystemItem[]) {
+      adapter['adapterState'].state.fromDevRev = {
+        filesToLoad: [
+          {
+            id: 'artifact-1',
+            file_name: 'file1.json',
+            itemType: 'tasks',
+            count: items.length,
+            lineToProcess: 0,
+            completed: false,
+          },
+        ],
+      };
+
+      adapter['uploader'].getJsonObjectByArtifactId = jest
+        .fn()
+        .mockResolvedValue({ response: items });
+    }
+
+    it('should emit DataLoadingProgress and exit on timeout', async () => {
+      const items: ExternalSystemItem[] = [
+        {
+          id: { devrev: 'dev-1', external: 'ext-1' },
+          created_date: '',
+          modified_date: '',
+          data: {},
+        },
+        {
+          id: { devrev: 'dev-2', external: 'ext-2' },
+          created_date: '',
+          modified_date: '',
+          data: {},
+        },
+      ];
+      setupFilesToLoad(items);
+
+      // Set timeout before calling loadItemTypes
+      adapter.isTimeout = true;
+
+      const itemTypesToLoad = [
+        {
+          itemType: 'tasks',
+          create: jest.fn(),
+          update: jest.fn(),
+        },
+      ];
+
+      await adapter.loadItemTypes({ itemTypesToLoad });
+
+      expect(emitSpy).toHaveBeenCalledWith(LoaderEventType.DataLoadingProgress);
+      expect(exitSpy).toHaveBeenCalledWith(0);
+    });
+
+    it('should emit DataLoadingProgress mid-loop when timeout arrives between items', async () => {
+      const items: ExternalSystemItem[] = [
+        {
+          id: { devrev: 'dev-1', external: 'ext-1' },
+          created_date: '',
+          modified_date: '',
+          data: {},
+        },
+        {
+          id: { devrev: 'dev-2', external: 'ext-2' },
+          created_date: '',
+          modified_date: '',
+          data: {},
+        },
+        {
+          id: { devrev: 'dev-3', external: 'ext-3' },
+          created_date: '',
+          modified_date: '',
+          data: {},
+        },
+      ];
+      setupFilesToLoad(items);
+
+      // Mock process.exit to throw so it stops execution like a real exit would
+      exitSpy.mockRestore();
+      exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {
+        throw new Error(`process.exit`);
+      }) as never);
+
+      let loadItemCallCount = 0;
+      // Mock loadItem to set timeout after the first call
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/require-await
+      jest.spyOn(adapter as any, 'loadItem').mockImplementation(async () => {
+        loadItemCallCount++;
+        if (loadItemCallCount === 1) {
+          adapter.isTimeout = true;
+        }
+        return { report: { item_type: 'tasks', updated: 1 } };
+      });
+
+      const itemTypesToLoad = [
+        {
+          itemType: 'tasks',
+          create: jest.fn(),
+          update: jest.fn(),
+        },
+      ];
+
+      // process.exit throws, so this will throw
+      await expect(adapter.loadItemTypes({ itemTypesToLoad })).rejects.toThrow(
+        'process.exit'
+      );
+
+      // First item processed, then timeout detected on second iteration
+      expect(loadItemCallCount).toBe(1);
+      expect(emitSpy).toHaveBeenCalledWith(LoaderEventType.DataLoadingProgress);
+    });
+
+    it('should emit DataLoadingError and exit(1) on unexpected error', async () => {
+      adapter['adapterState'].state.fromDevRev = {
+        filesToLoad: [
+          {
+            id: 'artifact-1',
+            file_name: 'file1.json',
+            itemType: 'tasks',
+            count: 1,
+            lineToProcess: 0,
+            completed: false,
+          },
+        ],
+      };
+
+      // Make getJsonObjectByArtifactId throw (not return error — throw)
+      adapter['uploader'].getJsonObjectByArtifactId = jest
+        .fn()
+        .mockRejectedValue(new Error('Unexpected network failure'));
+
+      const itemTypesToLoad = [
+        {
+          itemType: 'tasks',
+          create: jest.fn(),
+          update: jest.fn(),
+        },
+      ];
+
+      await adapter.loadItemTypes({ itemTypesToLoad });
+
+      expect(emitSpy).toHaveBeenCalledWith(
+        LoaderEventType.DataLoadingError,
+        expect.objectContaining({
+          error: expect.objectContaining({
+            message: expect.stringContaining('Error during data loading'),
+          }),
+        })
+      );
+      expect(exitSpy).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe(WorkerAdapter.prototype.loadAttachments.name, () => {
+    let exitSpy: jest.SpyInstance;
+    let emitSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      exitSpy = jest
+        .spyOn(process, 'exit')
+        .mockImplementation(() => undefined as never);
+      emitSpy = jest.spyOn(adapter, 'emit').mockResolvedValue();
+
+      // Set event type to continuation so we can set fromDevRev state directly
+      mockEvent.payload.event_type =
+        EventType.ContinueLoadingAttachments as unknown as EventType;
+    });
+
+    afterEach(() => {
+      exitSpy.mockRestore();
+    });
+
+    function setupFilesToLoad(items: ExternalSystemAttachment[]) {
+      adapter['adapterState'].state.fromDevRev = {
+        filesToLoad: [
+          {
+            id: 'artifact-1',
+            file_name: 'attachments.json',
+            itemType: 'attachment',
+            count: items.length,
+            lineToProcess: 0,
+            completed: false,
+          },
+        ],
+      };
+
+      adapter['uploader'].getJsonObjectByArtifactId = jest
+        .fn()
+        .mockResolvedValue({ response: items });
+    }
+
+    it('should emit AttachmentLoadingProgress and exit on timeout', async () => {
+      const items = [
+        {
+          reference_id: 'ref-1',
+          parent_type: 'task',
+          parent_reference_id: 'parent-1',
+          file_name: 'file.pdf',
+          file_type: 'application/pdf',
+          file_size: 100,
+          url: 'https://example.com/file.pdf',
+          valid_until: '',
+          created_by_id: 'user-1',
+          created_date: '',
+          modified_by_id: 'user-1',
+          modified_date: '',
+        },
+      ] as ExternalSystemAttachment[];
+      setupFilesToLoad(items);
+
+      adapter.isTimeout = true;
+
+      await adapter.loadAttachments({
+        create: jest.fn(),
+      });
+
+      expect(emitSpy).toHaveBeenCalledWith(
+        LoaderEventType.AttachmentLoadingProgress
+      );
+      expect(exitSpy).toHaveBeenCalledWith(0);
+    });
+
+    it('should emit AttachmentLoadingError on transformer file error', async () => {
+      adapter['adapterState'].state.fromDevRev = {
+        filesToLoad: [
+          {
+            id: 'bad-artifact',
+            file_name: 'attachments.json',
+            itemType: 'attachment',
+            count: 1,
+            lineToProcess: 0,
+            completed: false,
+          },
+        ],
+      };
+
+      adapter['uploader'].getJsonObjectByArtifactId = jest
+        .fn()
+        .mockResolvedValue({
+          response: null,
+          error: new Error('Artifact not found'),
+        });
+
+      await adapter.loadAttachments({
+        create: jest.fn(),
+      });
+
+      expect(emitSpy).toHaveBeenCalledWith(
+        LoaderEventType.AttachmentLoadingError,
+        expect.objectContaining({
+          error: expect.objectContaining({
+            message: expect.stringContaining('Transformer file not found'),
+          }),
+        })
+      );
+    });
+
+    it('should emit AttachmentLoadingError and exit(1) on unexpected error', async () => {
+      const items = [
+        {
+          reference_id: 'ref-1',
+          parent_type: 'task',
+          parent_reference_id: 'parent-1',
+          file_name: 'file.pdf',
+          file_type: 'application/pdf',
+          file_size: 100,
+          url: 'https://example.com/file.pdf',
+          valid_until: '',
+          created_by_id: 'user-1',
+          created_date: '',
+          modified_by_id: 'user-1',
+          modified_date: '',
+        },
+      ] as ExternalSystemAttachment[];
+      setupFilesToLoad(items);
+
+      // Make the create function throw
+      const mockCreate = jest
+        .fn()
+        .mockRejectedValue(new Error('Unexpected API failure'));
+
+      await adapter.loadAttachments({ create: mockCreate });
+
+      expect(emitSpy).toHaveBeenCalledWith(
+        LoaderEventType.AttachmentLoadingError,
+        expect.objectContaining({
+          error: expect.objectContaining({
+            message: expect.stringContaining('Error during attachment loading'),
+          }),
+        })
+      );
+      expect(exitSpy).toHaveBeenCalledWith(1);
     });
   });
 });
