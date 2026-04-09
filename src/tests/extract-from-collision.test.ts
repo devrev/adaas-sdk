@@ -1,4 +1,5 @@
-import { createEvent } from './test-helpers';
+import { mockServer } from '../tests/jest.setup';
+import { createMockEvent } from '../common/test-utils';
 import { EventContext, EventType, TimeValueType } from '../types/extraction';
 
 /**
@@ -18,8 +19,8 @@ import { EventContext, EventType, TimeValueType } from '../types/extraction';
 describe('extract_from / extract_to non-collision tests', () => {
   describe('extract_from is the SDK-resolved field (not deprecated pass-through)', () => {
     it('extract_from should be undefined when extraction_start_time is not set', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: EventType.StartExtractingData },
       });
 
       // Without extraction_start_time, extract_from should not be auto-populated
@@ -27,18 +28,20 @@ describe('extract_from / extract_to non-collision tests', () => {
     });
 
     it('extract_to should be undefined when extraction_end_time is not set', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: EventType.StartExtractingData },
       });
 
       expect(event.payload.event_context.extract_to).toBeUndefined();
     });
 
     it('extract_from can be set directly via eventContextOverrides', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extract_from: '2024-06-15T12:00:00Z',
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extract_from: '2024-06-15T12:00:00Z',
+          },
         },
       });
 
@@ -48,10 +51,12 @@ describe('extract_from / extract_to non-collision tests', () => {
     });
 
     it('extract_to can be set directly via eventContextOverrides', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extract_to: '2024-12-31T23:59:59Z',
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extract_to: '2024-12-31T23:59:59Z',
+          },
         },
       });
 
@@ -61,11 +66,13 @@ describe('extract_from / extract_to non-collision tests', () => {
     });
 
     it('extract_from and extract_to can both be set simultaneously', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extract_from: '2024-01-01T00:00:00Z',
-          extract_to: '2024-12-31T23:59:59Z',
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extract_from: '2024-01-01T00:00:00Z',
+            extract_to: '2024-12-31T23:59:59Z',
+          },
         },
       });
 
@@ -80,11 +87,13 @@ describe('extract_from / extract_to non-collision tests', () => {
 
   describe('extract_from coexists with reset_extract_from without confusion', () => {
     it('extract_from and reset_extract_from are independent fields', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extract_from: '2024-03-15T00:00:00Z',
-          reset_extract_from: true,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extract_from: '2024-03-15T00:00:00Z',
+            reset_extract_from: true,
+          },
         },
       });
 
@@ -102,10 +111,12 @@ describe('extract_from / extract_to non-collision tests', () => {
     });
 
     it('reset_extract_from can be true while extract_from is undefined', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          reset_extract_from: true,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            reset_extract_from: true,
+          },
         },
       });
 
@@ -114,11 +125,13 @@ describe('extract_from / extract_to non-collision tests', () => {
     });
 
     it('reset_extract_from can be false while extract_from is set', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extract_from: '2024-01-01T00:00:00Z',
-          reset_extract_from: false,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extract_from: '2024-01-01T00:00:00Z',
+            reset_extract_from: false,
+          },
         },
       });
 
@@ -129,12 +142,14 @@ describe('extract_from / extract_to non-collision tests', () => {
     });
 
     it('extract_from, extract_to, and reset_extract_from can all coexist', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extract_from: '2024-01-01T00:00:00Z',
-          extract_to: '2024-06-30T23:59:59Z',
-          reset_extract_from: true,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extract_from: '2024-01-01T00:00:00Z',
+            extract_to: '2024-06-30T23:59:59Z',
+            reset_extract_from: true,
+          },
         },
       });
 
@@ -150,16 +165,18 @@ describe('extract_from / extract_to non-collision tests', () => {
 
   describe('extract_from works alongside extraction_start_time (input vs resolved)', () => {
     it('extraction_start_time and extract_from can coexist on the same event context', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.ABSOLUTE_TIME,
-            value: '2024-01-01T00:00:00Z',
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.ABSOLUTE_TIME,
+              value: '2024-01-01T00:00:00Z',
+            },
+            // In real usage, SDK resolves extraction_start_time into extract_from.
+            // Here we set both to verify they don't interfere.
+            extract_from: '2024-01-01T00:00:00Z',
           },
-          // In real usage, SDK resolves extraction_start_time into extract_from.
-          // Here we set both to verify they don't interfere.
-          extract_from: '2024-01-01T00:00:00Z',
         },
       });
 
@@ -173,13 +190,15 @@ describe('extract_from / extract_to non-collision tests', () => {
     });
 
     it('extraction_end_time and extract_to can coexist on the same event context', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extraction_end_time: {
-            type: TimeValueType.CURRENT_TIME,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extraction_end_time: {
+              type: TimeValueType.CURRENT_TIME,
+            },
+            extract_to: '2024-12-31T23:59:59Z',
           },
-          extract_to: '2024-12-31T23:59:59Z',
         },
       });
 
@@ -195,15 +214,17 @@ describe('extract_from / extract_to non-collision tests', () => {
       // This test verifies the SDK resolution behavior:
       // When extraction_start_time is set, the SDK resolves it and writes to extract_from,
       // overwriting any value that was already there.
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.ABSOLUTE_TIME,
-            value: '2024-06-01T00:00:00Z',
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.ABSOLUTE_TIME,
+              value: '2024-06-01T00:00:00Z',
+            },
+            // Pre-set a different value — SDK should overwrite this during resolution
+            extract_from: '1999-01-01T00:00:00Z',
           },
-          // Pre-set a different value — SDK should overwrite this during resolution
-          extract_from: '1999-01-01T00:00:00Z',
         },
       });
 
@@ -238,38 +259,35 @@ describe('extract_from / extract_to non-collision tests', () => {
     });
 
     it('deprecated extraction_start field no longer exists on EventContext', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: EventType.StartExtractingData },
       });
 
       // The old `extraction_start` field has been removed from EventContext.
       // Accessing it should return undefined since it no longer exists on the interface.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(
-        (event.payload.event_context as any).extraction_start
-      ).toBeUndefined();
+
+      expect('extraction_start' in event.payload.event_context).toBe(false);
     });
 
     it('deprecated extraction_end field no longer exists on EventContext', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: EventType.StartExtractingData },
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(
-        (event.payload.event_context as any).extraction_end
-      ).toBeUndefined();
+      expect('extraction_end' in event.payload.event_context).toBe(false);
     });
 
     it('extract_from is distinct from the old deprecated extract_from (no @deprecated tag)', () => {
       // This test is a compile-time check: if extract_from were still marked @deprecated,
       // TypeScript tooling would show a deprecation warning. The fact that this code
       // compiles without deprecation warnings confirms the @deprecated tag was removed.
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extract_from: '2024-01-01T00:00:00Z',
-          extract_to: '2024-06-01T00:00:00Z',
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extract_from: '2024-01-01T00:00:00Z',
+            extract_to: '2024-06-01T00:00:00Z',
+          },
         },
       });
 
@@ -284,18 +302,20 @@ describe('extract_from / extract_to non-collision tests', () => {
 
   describe('Full event context shape with all extraction fields', () => {
     it('should have the correct shape with all new extraction fields', () => {
-      const event = createEvent({
-        eventType: EventType.StartExtractingData,
-        eventContextOverrides: {
-          extraction_start_time: {
-            type: TimeValueType.UNBOUNDED,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.UNBOUNDED,
+            },
+            extraction_end_time: {
+              type: TimeValueType.CURRENT_TIME,
+            },
+            extract_from: '1970-01-01T00:00:00.000Z',
+            extract_to: '2024-12-31T23:59:59Z',
+            reset_extract_from: false,
           },
-          extraction_end_time: {
-            type: TimeValueType.CURRENT_TIME,
-          },
-          extract_from: '1970-01-01T00:00:00.000Z',
-          extract_to: '2024-12-31T23:59:59Z',
-          reset_extract_from: false,
         },
       });
 

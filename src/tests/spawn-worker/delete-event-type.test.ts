@@ -1,13 +1,13 @@
 import { EventType, ExtractorEventType } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
-import { createEvent } from '../test-helpers';
+import { createMockEvent } from '../../common/test-utils';
 
 import run from './extraction';
 
 describe('Delete event type', () => {
   it('should successfully emit delete done event when the incoming event is start delete and there is no script passed', async () => {
-    const event = createEvent({
-      eventType: EventType.StartDeletingExtractorState,
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartDeletingExtractorState },
     });
 
     await run([event]);
@@ -21,8 +21,8 @@ describe('Delete event type', () => {
   });
 
   it('should successfully emit delete done event when the incoming event is start delete and there is a script passed', async () => {
-    const event = createEvent({
-      eventType: EventType.StartDeletingExtractorState,
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartDeletingExtractorState },
     });
 
     await run([event], __dirname + '/some-cleanup-worker');

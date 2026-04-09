@@ -15,7 +15,7 @@ const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10mb
 /**
  * Parses the JSON body from an incoming request.
  */
-function parseJsonBody(req: IncomingMessage): Promise<unknown> {
+async function parseJsonBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let size = 0;

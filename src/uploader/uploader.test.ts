@@ -9,11 +9,12 @@ import {
   createArtifact,
   createAxiosResponse,
   createDownloadUrlResponse,
-  createEvent,
   createFileBuffer,
   createFileStream,
   spyOnPrivateMethod,
 } from '../tests/test-helpers';
+import { mockServer } from '../tests/jest.setup';
+import { createMockEvent } from '../common/test-utils';
 
 import { compressGzip, downloadToLocal } from './uploader.helpers';
 import { ArtifactToUpload, UploaderResult } from './uploader.interfaces';
@@ -42,7 +43,7 @@ type UploaderPrivateMethods = {
 };
 
 describe(Uploader.name, () => {
-  const mockEvent = createEvent();
+  const mockEvent = createMockEvent(mockServer.baseUrl);
   let uploader: Uploader;
 
   beforeEach(() => {

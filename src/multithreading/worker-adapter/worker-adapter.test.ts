@@ -1,7 +1,8 @@
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
 import { UNBOUNDED_DATE_TIME_VALUE } from '../../common/constants';
 import { State } from '../../state/state';
-import { createEvent } from '../../tests/test-helpers';
+import { mockServer } from '../../tests/jest.setup';
+import { createMockEvent } from '../../common/test-utils';
 import {
   AdapterState,
   AirdropEvent,
@@ -61,7 +62,9 @@ describe(WorkerAdapter.name, () => {
     jest.clearAllMocks();
 
     // Create mock objects
-    mockEvent = createEvent({ eventType: EventType.StartExtractingData });
+    mockEvent = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingData },
+    });
 
     const initialState: AdapterState<TestState> = {
       attachments: { completed: false },
@@ -475,8 +478,7 @@ describe(WorkerAdapter.name, () => {
       // Mock the pool to simulate timeout happening during the first artifact
       (AttachmentsStreamingPool as jest.Mock).mockImplementationOnce(() => {
         return {
-          // eslint-disable-next-line @typescript-eslint/require-await
-          streamAll: jest.fn().mockImplementation(async () => {
+          streamAll: jest.fn().mockImplementation(() => {
             adapter.isTimeout = true;
             return {};
           }),

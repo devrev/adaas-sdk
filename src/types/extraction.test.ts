@@ -1,4 +1,5 @@
-import { createEvent } from '../tests/test-helpers';
+import { createMockEvent } from '../common/test-utils';
+import { mockServer } from '../tests/jest.setup';
 import {
   EventContext,
   EventType,
@@ -8,7 +9,9 @@ import {
 
 // Test the EventContext interface and related extraction types
 describe('ExtractionTypes', () => {
-  const baseEvent = createEvent({ eventType: EventType.StartExtractingData });
+  const baseEvent = createMockEvent(mockServer.baseUrl, {
+    payload: { event_type: EventType.StartExtractingData },
+  });
 
   it('should create event context without optional fields', () => {
     const event = { ...baseEvent };
@@ -33,9 +36,7 @@ describe('ExtractionTypes', () => {
     expect(event.payload.event_context.extract_from).toBe(
       '2024-01-01T00:00:00Z'
     );
-    expect(event.payload.event_context.extract_to).toBe(
-      '2024-06-01T00:00:00Z'
-    );
+    expect(event.payload.event_context.extract_to).toBe('2024-06-01T00:00:00Z');
     expect(event.payload.event_context.initial_sync_scope).toBe(
       InitialSyncScope.TIME_SCOPED
     );
@@ -96,17 +97,21 @@ describe('ExtractionTypes', () => {
   });
 
   it('[edge] should handle explicit boolean values for reset_extract_from', () => {
-    const eventWithTrue = createEvent({
-      eventType: EventType.StartExtractingData,
-      eventContextOverrides: {
-        reset_extract_from: true,
+    const eventWithTrue = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
+        event_context: {
+          reset_extract_from: true,
+        },
       },
     });
 
-    const eventWithFalse = createEvent({
-      eventType: EventType.StartExtractingData,
-      eventContextOverrides: {
-        reset_extract_from: false,
+    const eventWithFalse = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
+        event_context: {
+          reset_extract_from: false,
+        },
       },
     });
 
