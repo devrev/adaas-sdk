@@ -305,7 +305,7 @@ describe(State.name, () => {
       // Arrange: WORKERS_NEWEST type but state has no workersNewest
       const event = createMockEvent(mockServer.baseUrl, {
         payload: {
-          event_type: EventType.StartExtractingData,
+          event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.WORKERS_NEWEST,
@@ -338,7 +338,7 @@ describe(State.name, () => {
       // Arrange: WORKERS_NEWEST type but state has no workersNewest
       const event = createMockEvent(mockServer.baseUrl, {
         payload: {
-          event_type: EventType.StartExtractingData,
+          event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.UNBOUNDED,
@@ -379,7 +379,7 @@ describe(State.name, () => {
           snap_in_version_id: 'test_snap_in_version_id',
         },
         payload: {
-          event_type: EventType.StartExtractingData,
+          event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {} as unknown as TimeValue,
             extraction_end_time: {
@@ -419,7 +419,7 @@ describe(State.name, () => {
           snap_in_version_id: 'test_snap_in_version_id',
         },
         payload: {
-          event_type: EventType.StartExtractingData,
+          event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.ABSOLUTE_TIME,
@@ -458,7 +458,7 @@ describe(State.name, () => {
           snap_in_version_id: 'test_snap_in_version_id',
         },
         payload: {
-          event_type: EventType.StartExtractingData,
+          event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {
               value: 'some-value',
@@ -495,7 +495,7 @@ describe(State.name, () => {
       // Arrange: start is after end (inverted window)
       const event = createMockEvent(mockServer.baseUrl, {
         payload: {
-          event_type: EventType.StartExtractingData,
+          event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.ABSOLUTE_TIME,
@@ -531,7 +531,7 @@ describe(State.name, () => {
       // Arrange: start equals end (zero-width window)
       const event = createMockEvent(mockServer.baseUrl, {
         payload: {
-          event_type: EventType.StartExtractingData,
+          event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.ABSOLUTE_TIME,
@@ -567,7 +567,7 @@ describe(State.name, () => {
       // Arrange: valid window
       const event = createMockEvent(mockServer.baseUrl, {
         payload: {
-          event_type: EventType.StartExtractingData,
+          event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.ABSOLUTE_TIME,
@@ -602,7 +602,7 @@ describe(State.name, () => {
       // Arrange: only start, no end
       const event = createMockEvent(mockServer.baseUrl, {
         payload: {
-          event_type: EventType.StartExtractingData,
+          event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.ABSOLUTE_TIME,
@@ -633,7 +633,7 @@ describe(State.name, () => {
       // Arrange: UNBOUNDED start (epoch) with a real ABSOLUTE end timestamp
       const event = createMockEvent(mockServer.baseUrl, {
         payload: {
-          event_type: EventType.StartExtractingData,
+          event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.UNBOUNDED,
@@ -676,14 +676,14 @@ describe(State.name, () => {
       jest.useRealTimers();
     });
 
-    it('should store resolved values in pendingWorkersOldest/pendingWorkersNewest on StartExtractingData', async () => {
+    it('should store resolved values in pendingWorkersOldest/pendingWorkersNewest on StartExtractingMetadata', async () => {
       // Arrange
       const event = createMockEvent(mockServer.baseUrl, {
         context: {
           snap_in_version_id: '',
         },
         payload: {
-          event_type: EventType.StartExtractingData,
+          event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.UNBOUNDED,
@@ -719,7 +719,7 @@ describe(State.name, () => {
       expect(event.payload.event_context.extract_to).toBe(FIXED_NOW);
     });
 
-    it('should overwrite pending values on a retry (new StartExtractingData after failure)', async () => {
+    it('should overwrite pending values on a retry (new StartExtractingMetadata after failure)', async () => {
       // Arrange: state has stale pending values from a previous failed attempt
       const staleOldest = '2026-03-25T08:00:00.000Z';
       const staleNewest = '2026-03-25T09:00:00.000Z';
@@ -729,7 +729,7 @@ describe(State.name, () => {
           snap_in_version_id: 'test_snap_in_version_id',
         },
         payload: {
-          event_type: EventType.StartExtractingData,
+          event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {
               type: TimeValueType.UNBOUNDED,
@@ -763,7 +763,7 @@ describe(State.name, () => {
     });
 
     it('should reuse pending values from state on ContinueExtractingData instead of re-resolving', async () => {
-      // Arrange: state has pending values from a prior StartExtractingData phase
+      // Arrange: state has pending values from a prior StartExtractingMetadata phase
       const pendingOldest = '1970-01-01T00:00:00.000Z';
       const pendingNewest = '2026-03-26T08:00:00.000Z'; // Earlier than FIXED_NOW
 
@@ -836,7 +836,7 @@ describe(State.name, () => {
     });
 
     it('should reuse pending values on StartExtractingAttachments', async () => {
-      // Arrange: state has pending values from the StartExtractingData phase
+      // Arrange: state has pending values from the StartExtractingMetadata phase
       const pendingOldest = '1970-01-01T00:00:00.000Z';
       const pendingNewest = '2026-03-26T08:00:00.000Z';
 
