@@ -638,7 +638,7 @@ export class WorkerAdapter<ConnectorState> {
               });
 
               if (rateLimit?.delay) {
-                await this.emit(LoaderEventType.DataLoadingDelayed, {
+                await this.emit(LoaderEventType.AttachmentLoadingDelayed, {
                   delay: rateLimit.delay,
                   reports: this.reports,
                   processed_files: this.processedFiles,
