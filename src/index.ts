@@ -18,5 +18,10 @@ export { spawn } from './multithreading/spawn/spawn';
 export { WorkerAdapter } from './multithreading/worker-adapter/worker-adapter';
 export { createMockEvent, MOCK_SERVER_DEFAULT_URL } from './common/test-utils';
 export type { DeepPartial } from './common/test-utils';
+export { testRunner, TestRunnerError } from './common/test-runner';
+export type {
+  FunctionFactory,
+  TestRunnerProps,
+} from './common/test-runner';
 export * from './types';
 export * from './types/workers';
