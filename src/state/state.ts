@@ -126,6 +126,11 @@ export async function createAdapterState<ConnectorState>({
           }
         }
       }
+
+      // Remove raw platform fields from event context so SDK users only see
+      // the resolved extract_from / extract_to strings.
+      delete eventContext.extraction_start_time;
+      delete eventContext.extraction_end_time;
     } else {
       // Non-StartExtractingMetadata events: reuse pending values from state
       if (as.state.pendingWorkersOldest) {

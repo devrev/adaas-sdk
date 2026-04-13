@@ -410,6 +410,9 @@ describe(State.name, () => {
         '2025-06-01T00:00:00.000Z'
       );
       expect(state.state.pendingWorkersNewest).toBe('2025-06-01T00:00:00.000Z');
+      // Raw platform fields should be removed from event context
+      expect(event.payload.event_context.extraction_start_time).toBeUndefined();
+      expect(event.payload.event_context.extraction_end_time).toBeUndefined();
     });
 
     it('should skip resolution when extraction_end_time has no type', async () => {
@@ -449,6 +452,9 @@ describe(State.name, () => {
         '2024-01-01T00:00:00.000Z'
       );
       expect(event.payload.event_context.extract_to).toBeUndefined();
+      // Raw platform fields should be removed from event context
+      expect(event.payload.event_context.extraction_start_time).toBeUndefined();
+      expect(event.payload.event_context.extraction_end_time).toBeUndefined();
     });
 
     it('should skip resolution when both extraction times have no type', async () => {
@@ -487,6 +493,9 @@ describe(State.name, () => {
       expect(processExitSpy).not.toHaveBeenCalled();
       expect(event.payload.event_context.extract_from).toBeUndefined();
       expect(event.payload.event_context.extract_to).toBeUndefined();
+      // Raw platform fields should be removed from event context
+      expect(event.payload.event_context.extraction_start_time).toBeUndefined();
+      expect(event.payload.event_context.extraction_end_time).toBeUndefined();
     });
   });
 
@@ -596,6 +605,9 @@ describe(State.name, () => {
 
       // Assert: process.exit should NOT have been called
       expect(processExitSpy).not.toHaveBeenCalled();
+      // Raw platform fields should be removed from event context
+      expect(event.payload.event_context.extraction_start_time).toBeUndefined();
+      expect(event.payload.event_context.extraction_end_time).toBeUndefined();
     });
 
     it('should not validate when only extract_from is set', async () => {
@@ -627,6 +639,8 @@ describe(State.name, () => {
 
       // Assert: process.exit should NOT have been called
       expect(processExitSpy).not.toHaveBeenCalled();
+      // Raw platform fields should be removed from event context
+      expect(event.payload.event_context.extraction_start_time).toBeUndefined();
     });
 
     it('should not exit when extract_from is UNBOUNDED and extract_to is a real timestamp', async () => {
@@ -661,6 +675,9 @@ describe(State.name, () => {
 
       // Assert: process.exit should NOT have been called
       expect(processExitSpy).not.toHaveBeenCalled();
+      // Raw platform fields should be removed from event context
+      expect(event.payload.event_context.extraction_start_time).toBeUndefined();
+      expect(event.payload.event_context.extraction_end_time).toBeUndefined();
     });
   });
 
@@ -717,6 +734,9 @@ describe(State.name, () => {
         '1970-01-01T00:00:00.000Z'
       );
       expect(event.payload.event_context.extract_to).toBe(FIXED_NOW);
+      // Raw platform fields should be removed from event context
+      expect(event.payload.event_context.extraction_start_time).toBeUndefined();
+      expect(event.payload.event_context.extraction_end_time).toBeUndefined();
     });
 
     it('should overwrite pending values on a retry (new StartExtractingMetadata after failure)', async () => {
@@ -760,6 +780,9 @@ describe(State.name, () => {
       expect(state.state.pendingWorkersOldest).toBe('1970-01-01T00:00:00.000Z');
       expect(state.state.pendingWorkersNewest).toBe(FIXED_NOW);
       expect(state.state.pendingWorkersNewest).not.toBe(staleNewest);
+      // Raw platform fields should be removed from event context
+      expect(event.payload.event_context.extraction_start_time).toBeUndefined();
+      expect(event.payload.event_context.extraction_end_time).toBeUndefined();
     });
 
     it('should reuse pending values from state on ContinueExtractingData instead of re-resolving', async () => {
