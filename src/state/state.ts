@@ -134,7 +134,7 @@ export async function createAdapterState<ConnectorState>({
           `Reusing pendingWorkersOldest as extract_from: ${as.state.pendingWorkersOldest}.`
         );
       } else {
-        console.warn(
+        console.log(
           'pendingWorkersOldest is not set in state. extract_from will not be populated for this invocation.'
         );
       }
@@ -144,7 +144,7 @@ export async function createAdapterState<ConnectorState>({
           `Reusing pendingWorkersNewest as extract_to: ${as.state.pendingWorkersNewest}.`
         );
       } else {
-        console.warn(
+        console.log(
           'pendingWorkersNewest is not set in state. extract_to will not be populated for this invocation.'
         );
       }
