@@ -15,10 +15,10 @@ export interface SdkState {
    */
   lastSuccessfulSyncStarted?: string;
   /** The pending (not yet committed) oldest extraction boundary (ISO 8601 timestamp).
-   *  Set on StartExtractingData, reused across subsequent phases, cleared on AttachmentExtractionDone. */
+   *  Set on StartExtractingMetadata, reused across subsequent phases, cleared on AttachmentExtractionDone. */
   pendingWorkersOldest?: string;
   /** The pending (not yet committed) newest extraction boundary (ISO 8601 timestamp).
-   *  Set on StartExtractingData, reused across subsequent phases, cleared on AttachmentExtractionDone. */
+   *  Set on StartExtractingMetadata, reused across subsequent phases, cleared on AttachmentExtractionDone. */
   pendingWorkersNewest?: string;
   /** The oldest point of extraction (ISO 8601 timestamp). */
   workersOldest?: string;

@@ -85,11 +85,11 @@ export async function createAdapterState<ConnectorState>({
     }
 
     // Resolve extraction timestamps from TimeValue objects, or reuse pending values from a prior invocation.
-    // On StartExtractingData: resolve fresh from TimeValue objects and store in pending state (always overwrite).
-    // On all other events: reuse the pending values cached during StartExtractingData.
+    // On StartExtractingMetadata: resolve fresh from TimeValue objects and store in pending state (always overwrite).
+    // On all other events: reuse the pending values cached during StartExtractingMetadata.
     const eventContext = event.payload.event_context;
 
-    if (event.payload.event_type === EventType.StartExtractingData) {
+    if (event.payload.event_type === EventType.StartExtractingMetadata) {
       const timeFields = [
         {
           source: 'extraction_start_time',
@@ -127,14 +127,14 @@ export async function createAdapterState<ConnectorState>({
         }
       }
     } else {
-      // Non-StartExtractingData events: reuse pending values from state
+      // Non-StartExtractingMetadata events: reuse pending values from state
       if (as.state.pendingWorkersOldest) {
         eventContext.extract_from = as.state.pendingWorkersOldest;
         console.log(
           `Reusing pendingWorkersOldest as extract_from: ${as.state.pendingWorkersOldest}.`
         );
       } else {
-        console.warn(
+        console.log(
           'pendingWorkersOldest is not set in state. extract_from will not be populated for this invocation.'
         );
       }
@@ -144,7 +144,7 @@ export async function createAdapterState<ConnectorState>({
           `Reusing pendingWorkersNewest as extract_to: ${as.state.pendingWorkersNewest}.`
         );
       } else {
-        console.warn(
+        console.log(
           'pendingWorkersNewest is not set in state. extract_to will not be populated for this invocation.'
         );
       }
