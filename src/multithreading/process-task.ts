@@ -64,15 +64,17 @@ export function processTask<ConnectorState>({
         }
         process.exit(0);
       } catch (error) {
-        const errorMessage = `Error while processing task. ${serializeError(
-          error
-        )}`;
-        console.error(errorMessage);
-        parentPort?.postMessage({
-          subject: WorkerMessageSubject.WorkerMessageFailed,
-          payload: { message: errorMessage },
+        runWithUserLogContext(() => {
+          const errorMessage = `Error while processing task. ${serializeError(
+            error
+          )}`;
+          console.error(errorMessage);
+          parentPort?.postMessage({
+            subject: WorkerMessageSubject.WorkerMessageFailed,
+            payload: { message: errorMessage },
+          });
+          process.exit(1);
         });
-        process.exit(1);
       }
     });
   })();
