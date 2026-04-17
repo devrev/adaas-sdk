@@ -37,7 +37,7 @@ export const emit = async ({
     },
   };
 
-  console.info('Emitting event', newEvent);
+  console.info(`Emitting event with event type: ${translatedEventType}.`);
 
   return axiosClient.post(
     event.payload.event_context.callback_url,

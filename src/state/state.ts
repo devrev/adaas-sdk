@@ -6,6 +6,7 @@ import { installInitialDomainMapping } from '../common/install-initial-domain-ma
 import { resolveTimeValue } from '../common/time-value-resolver';
 import { axiosClient } from '../http/axios-client-internal';
 import { getPrintableState, serializeError } from '../logger/logger';
+import { runWithUserLogContext } from '../logger/logger.context';
 import { SyncMode } from '../types/common';
 import { EventType } from '../types/extraction';
 import { WorkerMessageSubject } from '../types/workers';
@@ -223,9 +224,11 @@ export class State<ConnectorState> {
       }
 
       this.state = parsedState;
-      console.log(
-        'State fetched successfully. Current state',
-        getPrintableState(this.state)
+      runWithUserLogContext(() =>
+        console.log(
+          'State fetched successfully. Current state',
+          getPrintableState(this.state)
+        )
       );
 
       if (objects) {
@@ -297,9 +300,11 @@ export class State<ConnectorState> {
         }
       );
 
-      console.log(
-        'State updated successfully to',
-        getPrintableState(this.state)
+      runWithUserLogContext(() =>
+        console.log(
+          'State updated successfully to',
+          getPrintableState(this.state)
+        )
       );
     } catch (error) {
       const errorMessage = `Failed to update the state. ${serializeError(

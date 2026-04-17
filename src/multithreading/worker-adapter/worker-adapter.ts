@@ -896,10 +896,12 @@ export class WorkerAdapter<ConnectorState> {
     stream: ExternalSystemAttachmentStreamingFunction
   ): Promise<ProcessAttachmentReturnType> {
     return runWithSdkLogContext(async () => {
-      const { httpStream, delay, error } = await stream({
-        item: attachment,
-        event: this.event,
-      });
+      const { httpStream, delay, error } = await runWithUserLogContext(() =>
+        stream({
+          item: attachment,
+          event: this.event,
+        })
+      );
 
       if (error) {
         return { error };
@@ -1030,11 +1032,13 @@ export class WorkerAdapter<ConnectorState> {
   }): Promise<LoadItemResponse> {
     return runWithSdkLogContext(async () => {
       // Create item
-      const { id, delay, error } = await create({
-        item,
-        mappers: this._mappers,
-        event: this.event,
-      });
+      const { id, delay, error } = await runWithUserLogContext(() =>
+        create({
+          item,
+          mappers: this._mappers,
+          event: this.event,
+        })
+      );
 
       if (delay) {
         return {
@@ -1177,11 +1181,13 @@ export class WorkerAdapter<ConnectorState> {
           const reducer = processors.reducer;
           const iterator = processors.iterator;
 
-          const reducedAttachments = reducer({
-            attachments,
-            adapter: this,
-            batchSize,
-          });
+          const reducedAttachments = runWithUserLogContext(() =>
+            reducer({
+              attachments,
+              adapter: this,
+              batchSize,
+            })
+          );
 
           response = await runWithUserLogContext(async () => {
             return await iterator({

@@ -9,6 +9,7 @@ import { Uploader } from '../uploader/uploader';
 import { Artifact } from '../uploader/uploader.interfaces';
 
 import { WorkerAdapterOptions } from '../types/workers';
+import { runWithUserLogContext } from '../logger/logger.context';
 import {
   NormalizedAttachment,
   NormalizedItem,
@@ -97,7 +98,9 @@ export class Repo {
       this.itemType != AirSyncDefaultItemTypes.EXTERNAL_DOMAIN_METADATA &&
       this.itemType != SSOR_ATTACHMENT
     ) {
-      recordsToPush = items.map((item: Item) => this.normalize!(item));
+      recordsToPush = runWithUserLogContext(() =>
+        items.map((item: Item) => this.normalize!(item))
+      );
     } else {
       recordsToPush = items;
     }
