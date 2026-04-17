@@ -24,6 +24,7 @@
 
 import axios, { AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
+import { runWithUserLogContext } from '../logger/logger.context';
 
 const axiosClient = axios.create();
 
@@ -33,12 +34,14 @@ axiosRetry(axiosClient, {
     // exponential backoff algorithm: 1 * 2 ^ retryCount * 1000ms
     const delay = axiosRetry.exponentialDelay(retryCount, error, 1000);
 
-    console.warn(
-      `Request to ${error.config?.url} failed with response status code ${
-        error.response?.status
-      }. Method ${
-        error.config?.method
-      }. Retry count: ${retryCount}. Retrying in ${Math.round(delay / 1000)}s.`
+    runWithUserLogContext(() =>
+      console.warn(
+        `Request to ${error.config?.url} failed with response status code ${
+          error.response?.status
+        }. Method ${
+          error.config?.method
+        }. Retry count: ${retryCount}. Retrying in ${Math.round(delay / 1000)}s.`
+      )
     );
 
     return delay;
@@ -54,7 +57,9 @@ axiosRetry(axiosClient, {
     delete error.config?.headers?.authorization;
     delete error.config?.headers?.Authorization;
     delete error.request._header;
-    console.warn('Max retry times exceeded. Error', error);
+    runWithUserLogContext(() =>
+      console.warn('Max retry times exceeded. Error', error)
+    );
   },
 });
 
