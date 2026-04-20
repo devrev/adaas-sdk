@@ -40,7 +40,9 @@ axiosRetry(axiosClient, {
           error.response?.status
         }. Method ${
           error.config?.method
-        }. Retry count: ${retryCount}. Retrying in ${Math.round(delay / 1000)}s.`
+        }. Retry count: ${retryCount}. Retrying in ${Math.round(
+          delay / 1000
+        )}s.`
       )
     );
 

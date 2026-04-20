@@ -896,11 +896,12 @@ export class WorkerAdapter<ConnectorState> {
     stream: ExternalSystemAttachmentStreamingFunction
   ): Promise<ProcessAttachmentReturnType> {
     return runWithSdkLogContext(async () => {
-      const { httpStream, delay, error } = await runWithUserLogContext(() =>
-        stream({
-          item: attachment,
-          event: this.event,
-        })
+      const { httpStream, delay, error } = await runWithUserLogContext(
+        async () =>
+          stream({
+            item: attachment,
+            event: this.event,
+          })
       );
 
       if (error) {
@@ -1032,7 +1033,7 @@ export class WorkerAdapter<ConnectorState> {
   }): Promise<LoadItemResponse> {
     return runWithSdkLogContext(async () => {
       // Create item
-      const { id, delay, error } = await runWithUserLogContext(() =>
+      const { id, delay, error } = await runWithUserLogContext(async () =>
         create({
           item,
           mappers: this._mappers,
