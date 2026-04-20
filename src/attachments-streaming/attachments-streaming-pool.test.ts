@@ -5,6 +5,11 @@ import {
   ProcessAttachmentReturnType,
 } from '../types';
 import { AttachmentsStreamingPool } from './attachments-streaming-pool';
+import {
+  runWithSdkLogContext,
+  runWithUserLogContext,
+  getSdkLogContextValue,
+} from '../logger/logger.context';
 
 // Mock types
 interface TestState {
@@ -627,6 +632,67 @@ describe(AttachmentsStreamingPool.name, () => {
 
       // Should complete in roughly 200ms (2 batches of 100ms each) rather than 300ms (sequential)
       expect(endTime - startTime).toBeLessThan(250);
+    });
+  });
+
+  describe('log context attribution', () => {
+    it('should emit SDK-generated logs from pool (Starting download message)', async () => {
+      const logSpy = jest.spyOn(console, 'log');
+      mockAdapter.processAttachment.mockResolvedValue({});
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: mockAttachments.slice(0, 1),
+        stream: mockStream,
+      });
+
+      // Call streamAll - it should log "Starting download of N attachments..."
+      await pool.streamAll();
+
+      // Verify the SDK-generated "Starting download" message was logged
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Starting download of 1 attachments')
+      );
+    });
+
+    it('should process user stream callback correctly while maintaining context isolation', async () => {
+      let userCallbackContextId: string | undefined;
+      let userCallbackExecuted = false;
+
+      // Mock stream to capture context info
+      const mockStreamFn: ExternalSystemAttachmentStreamingFunction = jest
+        .fn()
+        .mockImplementation(async () => {
+          userCallbackExecuted = true;
+          // Record that the callback executed
+          return {
+            httpStream: undefined,
+            error: undefined,
+          };
+        });
+
+      mockAdapter.processAttachment.mockImplementation(
+        async (attachment, stream) => {
+          // processAttachment should be called with the user's stream function
+          const result = await stream({
+            item: attachment,
+            event: {} as any,
+          });
+          return result;
+        }
+      );
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: mockAttachments.slice(0, 1),
+        stream: mockStreamFn,
+      });
+
+      await pool.streamAll();
+
+      // Verify the user callback was executed
+      expect(userCallbackExecuted).toBe(true);
+      expect(mockStreamFn).toHaveBeenCalled();
     });
   });
 });
