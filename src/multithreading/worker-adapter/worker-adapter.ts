@@ -1209,9 +1209,7 @@ export class WorkerAdapter<ConnectorState> {
             stream,
           });
 
-          response = await runWithUserLogContext(async () => {
-            return await attachmentsPool.streamAll();
-          });
+          response = await attachmentsPool.streamAll();
         }
 
         if (response?.delay || response?.error) {
