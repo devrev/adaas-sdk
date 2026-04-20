@@ -13,7 +13,10 @@ import {
   getFilesToLoad,
 } from './worker-adapter.helpers';
 import { serializeError } from '../../logger/logger';
-import { runWithSdkLogContext } from '../../logger/logger.context';
+import {
+  runWithSdkLogContext,
+  runWithUserLogContext,
+} from '../../logger/logger.context';
 import { Mappers } from '../../mappers/mappers';
 import { SyncMapperRecordStatus } from '../../mappers/mappers.interface';
 import { Repo } from '../../repo/repo';
@@ -709,11 +712,15 @@ export class WorkerAdapter<ConnectorState> {
         }
 
         // Update item in external system
-        const { id, modifiedDate, delay, error } = await itemTypeToLoad.update({
-          item,
-          mappers: this._mappers,
-          event: this.event,
-        });
+        const { id, modifiedDate, delay, error } = await runWithUserLogContext(
+          async () => {
+            return await itemTypeToLoad.update({
+              item,
+              mappers: this._mappers,
+              event: this.event,
+            });
+          }
+        );
 
         if (id) {
           try {
@@ -788,10 +795,12 @@ export class WorkerAdapter<ConnectorState> {
           if (error.response?.status === 404) {
             // Create item in external system if mapper record not found
             const { id, modifiedDate, delay, error } =
-              await itemTypeToLoad.create({
-                item,
-                mappers: this._mappers,
-                event: this.event,
+              await runWithUserLogContext(async () => {
+                return await itemTypeToLoad.create({
+                  item,
+                  mappers: this._mappers,
+                  event: this.event,
+                });
               });
 
             if (id) {
@@ -887,10 +896,13 @@ export class WorkerAdapter<ConnectorState> {
     stream: ExternalSystemAttachmentStreamingFunction
   ): Promise<ProcessAttachmentReturnType> {
     return runWithSdkLogContext(async () => {
-      const { httpStream, delay, error } = await stream({
-        item: attachment,
-        event: this.event,
-      });
+      const { httpStream, delay, error } = await runWithUserLogContext(
+        async () =>
+          stream({
+            item: attachment,
+            event: this.event,
+          })
+      );
 
       if (error) {
         return { error };
@@ -1021,11 +1033,13 @@ export class WorkerAdapter<ConnectorState> {
   }): Promise<LoadItemResponse> {
     return runWithSdkLogContext(async () => {
       // Create item
-      const { id, delay, error } = await create({
-        item,
-        mappers: this._mappers,
-        event: this.event,
-      });
+      const { id, delay, error } = await runWithUserLogContext(async () =>
+        create({
+          item,
+          mappers: this._mappers,
+          event: this.event,
+        })
+      );
 
       if (delay) {
         return {
@@ -1168,16 +1182,20 @@ export class WorkerAdapter<ConnectorState> {
           const reducer = processors.reducer;
           const iterator = processors.iterator;
 
-          const reducedAttachments = reducer({
-            attachments,
-            adapter: this,
-            batchSize,
-          });
+          const reducedAttachments = runWithUserLogContext(() =>
+            reducer({
+              attachments,
+              adapter: this,
+              batchSize,
+            })
+          );
 
-          response = await iterator({
-            reducedAttachments,
-            adapter: this,
-            stream,
+          response = await runWithUserLogContext(async () => {
+            return await iterator({
+              reducedAttachments,
+              adapter: this,
+              stream,
+            });
           });
         } else {
           console.log(
