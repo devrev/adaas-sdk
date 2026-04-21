@@ -942,4 +942,109 @@ describe(State.name, () => {
     // Assert
     expect(result.extractionScope).toEqual({});
   });
+
+  it('should warn but continue when objects field contains invalid JSON', async () => {
+    // Arrange
+    const event = createMockEvent(mockServer.baseUrl, {
+      context: { snap_in_version_id: '1.0.0' },
+      payload: { event_type: EventType.StartExtractingData },
+    });
+    fetchStateSpy.mockResolvedValue({
+      state: JSON.stringify({ snapInVersionId: '1.0.0' }),
+      objects: 'NOT_VALID_JSON',
+    });
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    // Act
+    const result = await createAdapterState({
+      event,
+      initialState: {},
+      initialDomainMapping: {},
+    });
+
+    // Assert: should not crash, extractionScope is empty (default)
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to parse extractionScope')
+    );
+    expect(result.extractionScope).toEqual({});
+    expect(processExitSpy).not.toHaveBeenCalled();
+  });
+
+  describe('State.postState', () => {
+    it('should POST the stringified state with Authorization header to the update endpoint', async () => {
+      // Arrange
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: '1.0.0',
+          secrets: { service_account_token: 'test_token' },
+        },
+        payload: { event_type: EventType.StartExtractingData },
+      });
+      const stateToPost = { snapInVersionId: '1.0.0', foo: 'bar' };
+      fetchStateSpy.mockResolvedValue({
+        state: JSON.stringify({ snapInVersionId: '1.0.0' }),
+      });
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      postStateSpy.mockRestore();
+
+      const adapterState = await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      await adapterState.postState(stateToPost as never);
+
+      // The mock server records all incoming requests — inspect what was sent
+      const requests = mockServer.getRequests(
+        'POST',
+        '/worker_data_url.update'
+      );
+      expect(requests).toHaveLength(1);
+
+      const body = requests[0].body as { state: string };
+      // Body must contain the stringified state, preserving the original fields
+      expect(typeof body.state).toBe('string');
+      const parsed = JSON.parse(body.state) as Record<string, unknown>;
+      expect(parsed.foo).toBe('bar');
+      expect(parsed.snapInVersionId).toBe('1.0.0');
+    });
+
+    it('should exit(1) when postState HTTP request fails', async () => {
+      // Arrange
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: { snap_in_version_id: '1.0.0' },
+        payload: { event_type: EventType.StartExtractingData },
+      });
+      fetchStateSpy.mockResolvedValue({
+        state: JSON.stringify({ snapInVersionId: '1.0.0' }),
+      });
+      jest.spyOn(console, 'log').mockImplementation(() => {});
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      postStateSpy.mockRestore();
+
+      const adapterState = await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Mock axiosClient.post directly to bypass the retry backoff
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const axiosClientModule = require('../http/axios-client-internal');
+      const axiosPostSpy = jest
+        .spyOn(axiosClientModule.axiosClient, 'post')
+        .mockRejectedValue(new Error('network error'));
+
+      await expect(adapterState.postState()).rejects.toThrow(
+        'process.exit called'
+      );
+      expect(processExitSpy).toHaveBeenCalledWith(1);
+
+      axiosPostSpy.mockRestore();
+    });
+  });
 });
