@@ -6,7 +6,6 @@ import {
 } from '../types';
 import { AttachmentsStreamingPool } from './attachments-streaming-pool';
 
-// Mock types
 interface TestState {
   attachments: { completed: boolean };
 }
@@ -78,7 +77,6 @@ describe(AttachmentsStreamingPool.name, () => {
         stream: mockStream,
       });
 
-      expect(pool).toBeDefined();
       expect(pool['adapter']).toBe(mockAdapter);
       expect(pool['attachments']).toEqual(mockAttachments);
       expect(pool['batchSize']).toBe(10);
@@ -657,6 +655,7 @@ describe(AttachmentsStreamingPool.name, () => {
       const mockStreamFn: ExternalSystemAttachmentStreamingFunction = jest
         .fn()
         .mockImplementation(async () => {
+          await Promise.resolve();
           userCallbackExecuted = true;
           // Record that the callback executed
           return Promise.resolve({

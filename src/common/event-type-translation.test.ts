@@ -7,12 +7,7 @@ import {
   translateOutgoingEventType,
 } from './event-type-translation';
 
-// These are pure unit tests for the translation module. The integration
-// end-to-end behaviour is already exercised via src/tests/backwards-compatibility/.
-// These tests exist to lock in the per-case mappings so a typo in the dictionary
-// is caught before shipping.
-
-describe('translateIncomingEventType', () => {
+describe(translateIncomingEventType.name, () => {
   it.each([
     [
       EventType.ExtractionExternalSyncUnitsStart,
@@ -72,7 +67,7 @@ describe('translateIncomingEventType', () => {
   });
 });
 
-describe('translateExtractorEventType', () => {
+describe(translateExtractorEventType.name, () => {
   it.each([
     [
       ExtractorEventType.ExtractionExternalSyncUnitsDone,
@@ -153,7 +148,7 @@ describe('translateExtractorEventType', () => {
   });
 });
 
-describe('translateLoaderEventType', () => {
+describe(translateLoaderEventType.name, () => {
   it.each([
     [LoaderEventType.DataLoadingDelay, LoaderEventType.DataLoadingDelayed],
     [
@@ -185,7 +180,7 @@ describe('translateLoaderEventType', () => {
   });
 });
 
-describe('translateOutgoingEventType', () => {
+describe(translateOutgoingEventType.name, () => {
   it('routes extractor events through translateExtractorEventType', () => {
     expect(
       translateOutgoingEventType(ExtractorEventType.ExtractionDataDone)

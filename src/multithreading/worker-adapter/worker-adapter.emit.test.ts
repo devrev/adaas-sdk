@@ -89,9 +89,11 @@ describe(`${WorkerAdapter.name}.emit`, () => {
   });
 
   it('should emit only one event when multiple events of same type are sent', async () => {
+    // Arrange
     adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
     adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
+    // Act
     await adapter.emit(ExtractorEventType.MetadataExtractionError, {
       reports: [],
       processed_files: [],
@@ -101,13 +103,16 @@ describe(`${WorkerAdapter.name}.emit`, () => {
       processed_files: [],
     });
 
+    // Assert
     expect(counter.counter).toBe(1);
   });
 
   it('should emit only once even when a different event type follows', async () => {
+    // Arrange
     adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
     adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
+    // Act
     await adapter.emit(ExtractorEventType.MetadataExtractionError, {
       reports: [],
       processed_files: [],
@@ -121,36 +126,46 @@ describe(`${WorkerAdapter.name}.emit`, () => {
       processed_files: [],
     });
 
+    // Assert
     expect(counter.counter).toBe(1);
   });
 
   it('should correctly emit one event even if postState errors', async () => {
+    // Arrange
     adapter['adapterState'].postState = jest
       .fn()
       .mockRejectedValue(new Error('postState error'));
     adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
+    // Act
     await adapter.emit(ExtractorEventType.MetadataExtractionError, {
       reports: [],
       processed_files: [],
     });
+
+    // Assert
     expect(counter.counter).toBe(1);
   });
 
   it('should correctly emit one event even if uploadAllRepos errors', async () => {
+    // Arrange
     adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
     adapter.uploadAllRepos = jest
       .fn()
       .mockRejectedValue(new Error('uploadAllRepos error'));
 
+    // Act
     await adapter.emit(ExtractorEventType.MetadataExtractionError, {
       reports: [],
       processed_files: [],
     });
+
+    // Assert
     expect(counter.counter).toBe(1);
   });
 
   it('should include artifacts in data for extraction events', async () => {
+    // Arrange
     const { emit: mockEmit } = require('../../common/control-protocol');
     adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
     adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
@@ -158,8 +173,10 @@ describe(`${WorkerAdapter.name}.emit`, () => {
       { id: 'art-1', item_count: 10, item_type: 'issues' },
     ] as Artifact[];
 
+    // Act
     await adapter.emit(ExtractorEventType.DataExtractionDone);
 
+    // Assert
     expect(mockEmit).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -175,6 +192,7 @@ describe(`${WorkerAdapter.name}.emit`, () => {
   });
 
   it('should include reports and processed_files in data for loader events', async () => {
+    // Arrange
     const { emit: mockEmit } = require('../../common/control-protocol');
     adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
     adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
@@ -183,8 +201,10 @@ describe(`${WorkerAdapter.name}.emit`, () => {
     ] as LoaderReport[];
     adapter['_processedFiles'] = ['file-1', 'file-2'];
 
+    // Act
     await adapter.emit(LoaderEventType.DataLoadingDone);
 
+    // Assert
     expect(mockEmit).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -200,6 +220,7 @@ describe(`${WorkerAdapter.name}.emit`, () => {
   });
 
   it('should not include artifacts, reports, or processed_files for unknown event types', async () => {
+    // Arrange
     const { emit: mockEmit } = require('../../common/control-protocol');
     adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
     adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
@@ -211,8 +232,10 @@ describe(`${WorkerAdapter.name}.emit`, () => {
     ] as LoaderReport[];
     adapter['_processedFiles'] = ['file-1'];
 
+    // Act
     await adapter.emit('SOME_UNKNOWN_EVENT' as ExtractorEventType);
 
+    // Assert
     const callData = mockEmit.mock.calls[0][0].data;
     expect(callData).not.toHaveProperty('artifacts');
     expect(callData).not.toHaveProperty('reports');
@@ -220,8 +243,8 @@ describe(`${WorkerAdapter.name}.emit`, () => {
   });
 
   it('should include artifacts for all ExtractorEventType values', async () => {
+    // Arrange
     const { emit: mockEmit } = require('../../common/control-protocol');
-
     const extractorEvents = [
       ExtractorEventType.DataExtractionDone,
       ExtractorEventType.DataExtractionProgress,
@@ -238,8 +261,10 @@ describe(`${WorkerAdapter.name}.emit`, () => {
         .mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
+      // Act
       await adapter.emit(eventType);
 
+      // Assert
       const callData = mockEmit.mock.calls[0]?.[0]?.data;
       expect(callData).toHaveProperty('artifacts');
       expect(callData).not.toHaveProperty('reports');
@@ -247,8 +272,8 @@ describe(`${WorkerAdapter.name}.emit`, () => {
   });
 
   it('should include reports and processed_files for all LoaderEventType values', async () => {
+    // Arrange
     const { emit: mockEmit } = require('../../common/control-protocol');
-
     const loaderEvents = [
       LoaderEventType.DataLoadingDone,
       LoaderEventType.DataLoadingProgress,
@@ -265,8 +290,10 @@ describe(`${WorkerAdapter.name}.emit`, () => {
         .mockResolvedValue(undefined);
       adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
+      // Act
       await adapter.emit(eventType);
 
+      // Assert
       const callData = mockEmit.mock.calls[0]?.[0]?.data;
       expect(callData).toHaveProperty('reports');
       expect(callData).toHaveProperty('processed_files');
@@ -274,21 +301,21 @@ describe(`${WorkerAdapter.name}.emit`, () => {
     }
   });
 
-  // Net-new branch coverage ported from worker-adapter.helpers.coverage.test.ts.
   it('should truncate a long error message, preserving the original prefix', async () => {
+    // Arrange
     adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
     adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
-
     const longMessage = 'E'.repeat(20_000);
 
+    // Act
     await adapter.emit(ExtractorEventType.DataExtractionError, {
       error: { message: longMessage },
     });
 
+    // Assert
     const { emit: mockEmit } = require('../../common/control-protocol');
     const emittedMessage = mockEmit.mock.calls[0][0].data?.error
       ?.message as string;
-
     expect(emittedMessage.length).toBeLessThan(longMessage.length);
     expect(emittedMessage.startsWith('E'.repeat(100))).toBe(true);
   });
@@ -296,24 +323,24 @@ describe(`${WorkerAdapter.name}.emit`, () => {
 
 describe(`${WorkerAdapter.name}.emit — ExternalSyncUnitExtractionDone legacy path`, () => {
   it('should upload ESUs via a repo and strip external_sync_units from the emitted payload', async () => {
+    // Arrange
     const { adapter } = makeAdapter(EventType.StartExtractingExternalSyncUnits);
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
     adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
-
     const pushMock = jest.fn().mockResolvedValue(undefined);
     jest.spyOn(adapter, 'initializeRepos');
     jest.spyOn(adapter, 'getRepo').mockReturnValue({ push: pushMock } as never);
-
     const esus = [{ id: 'esu-1' }, { id: 'esu-2' }] as never;
 
+    // Act
     await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionDone, {
       external_sync_units: esus,
     });
 
+    // Assert
     expect(pushMock).toHaveBeenCalledWith(esus);
-
     // external_sync_units must NOT appear in the payload sent to the platform
     // (it would be too large for SQS — that is the entire reason this path exists).
     const { emit: mockEmit } = require('../../common/control-protocol');
