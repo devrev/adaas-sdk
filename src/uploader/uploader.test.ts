@@ -141,7 +141,6 @@ describe(Uploader.name, () => {
       const result = await uploader.upload(itemType, fetchedObjects);
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.artifact).toBeUndefined();
     });
@@ -162,7 +161,6 @@ describe(Uploader.name, () => {
       const result = await uploader.upload(itemType, fetchedObjects);
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.artifact).toBeUndefined();
     });
@@ -183,7 +181,6 @@ describe(Uploader.name, () => {
       const result = await uploader.upload(itemType, fetchedObjects);
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.artifact).toBeUndefined();
     });
@@ -198,7 +195,6 @@ describe(Uploader.name, () => {
       const result = await uploader.upload(itemType, fetchedObjects);
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.artifact).toBeUndefined();
     });
@@ -374,7 +370,6 @@ describe(Uploader.name, () => {
 
       // Assert
       expect(result.response).toBeUndefined();
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
     });
   });
@@ -699,7 +694,6 @@ describe(Uploader.name, () => {
       });
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.attachments).toBeUndefined();
     });
@@ -716,7 +710,6 @@ describe(Uploader.name, () => {
       });
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.attachments).toBeUndefined();
     });
@@ -735,7 +728,6 @@ describe(Uploader.name, () => {
       });
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.attachments).toBeUndefined();
     });
@@ -755,7 +747,6 @@ describe(Uploader.name, () => {
       });
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.attachments).toBeUndefined();
     });

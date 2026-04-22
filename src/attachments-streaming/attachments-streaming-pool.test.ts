@@ -5,13 +5,7 @@ import {
   ProcessAttachmentReturnType,
 } from '../types';
 import { AttachmentsStreamingPool } from './attachments-streaming-pool';
-import {
-  runWithSdkLogContext,
-  runWithUserLogContext,
-  getSdkLogContextValue,
-} from '../logger/logger.context';
 
-// Mock types
 interface TestState {
   attachments: { completed: boolean };
 }
@@ -83,7 +77,6 @@ describe(AttachmentsStreamingPool.name, () => {
         stream: mockStream,
       });
 
-      expect(pool).toBeDefined();
       expect(pool['adapter']).toBe(mockAdapter);
       expect(pool['attachments']).toEqual(mockAttachments);
       expect(pool['batchSize']).toBe(10);
@@ -656,13 +649,13 @@ describe(AttachmentsStreamingPool.name, () => {
     });
 
     it('should process user stream callback correctly while maintaining context isolation', async () => {
-      let userCallbackContextId: string | undefined;
       let userCallbackExecuted = false;
 
       // Mock stream to capture context info
       const mockStreamFn: ExternalSystemAttachmentStreamingFunction = jest
         .fn()
         .mockImplementation(async () => {
+          await Promise.resolve();
           userCallbackExecuted = true;
           // Record that the callback executed
           return {

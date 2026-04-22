@@ -82,7 +82,7 @@ function makeEvent(eventType = EventType.StartExtractingData) {
 // Flush the microtask queue enough to let the async IIFE inside processTask run.
 const flush = async () => new Promise((r) => setTimeout(r, 0));
 
-describe('processTask', () => {
+describe(processTask.name, () => {
   let processExitSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -101,19 +101,20 @@ describe('processTask', () => {
   });
 
   it('should translate incoming event type before passing to task', async () => {
+    // Arrange
     const event = makeEvent(EventType.StartExtractingData);
     setWorkerData({ event, initialState: {}, options: {} });
-
     (translateIncomingEventType as jest.Mock).mockReturnValue(
       EventType.StartExtractingMetadata
     );
-
     const task = jest.fn().mockResolvedValue(undefined);
     const onTimeout = jest.fn().mockResolvedValue(undefined);
 
+    // Act
     processTask({ task, onTimeout });
     await flush();
 
+    // Assert
     expect(translateIncomingEventType).toHaveBeenCalledWith(
       EventType.StartExtractingData
     );
@@ -123,39 +124,41 @@ describe('processTask', () => {
   });
 
   it('should NOT call onTimeout when the worker already emitted before timeout check', async () => {
+    // Arrange
     const event = makeEvent();
     setWorkerData({ event, initialState: {}, options: {} });
-
     // Both flags true: a timeout arrived but the worker had already emitted —
     // onTimeout must be skipped. This is the guard the integration suite cannot
     // target cleanly because it requires a precise race between emit and timeout.
     const mockAdapter = { isTimeout: true, hasWorkerEmitted: true };
     (WorkerAdapter as jest.Mock).mockImplementation(() => mockAdapter);
-
     const task = jest.fn().mockResolvedValue(undefined);
     const onTimeout = jest.fn().mockResolvedValue(undefined);
 
+    // Act
     processTask({ task, onTimeout });
     await flush();
 
+    // Assert
     expect(onTimeout).not.toHaveBeenCalled();
     expect(processExitSpy).toHaveBeenCalledWith(0);
   });
 
   it('should post WorkerMessageFailed with the error message and exit(1) when task throws', async () => {
+    // Arrange
     const event = makeEvent();
     setWorkerData({ event, initialState: {}, options: {} });
-
     const mockAdapter = { isTimeout: false, hasWorkerEmitted: false };
     (WorkerAdapter as jest.Mock).mockImplementation(() => mockAdapter);
-
     const taskError = new Error('task boom');
     const task = jest.fn().mockRejectedValue(taskError);
     const onTimeout = jest.fn().mockResolvedValue(undefined);
 
+    // Act
     processTask({ task, onTimeout });
     await flush();
 
+    // Assert
     expect(mockParentPortPostMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         subject: WorkerMessageSubject.WorkerMessageFailed,
