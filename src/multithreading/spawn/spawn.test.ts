@@ -3,8 +3,6 @@ import { EventType } from '../../types/extraction';
 import { WorkerEvent, WorkerMessageSubject } from '../../types/workers';
 import { createMockEvent } from '../../common/test-utils';
 
-/* eslint-disable @typescript-eslint/no-require-imports */
-
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
@@ -199,33 +197,9 @@ describe('Spawn class', () => {
     expect(resolveMock).toHaveBeenCalled();
   });
 
-  // -------------------------------------------------------------------------
-  // Soft timeout → posts WorkerMessageExit to worker
-  // -------------------------------------------------------------------------
-  it('should post WorkerMessageExit to the worker when soft timeout fires', async () => {
-    buildSpawn({ worker, resolve: resolveMock });
-
-    jest.advanceTimersByTime(600_001); // DEFAULT_LAMBDA_TIMEOUT = 10 min = 600 000 ms
-    await Promise.resolve();
-
-    expect(worker.postMessage).toHaveBeenCalledWith(
-      expect.objectContaining({
-        subject: WorkerMessageSubject.WorkerMessageExit,
-      })
-    );
-  });
-
-  // -------------------------------------------------------------------------
-  // Hard timeout → terminates worker
-  // -------------------------------------------------------------------------
-  it('should call worker.terminate() when the hard timeout fires', async () => {
-    buildSpawn({ worker, resolve: resolveMock });
-
-    jest.advanceTimersByTime(780_001); // 600_000 * 1.3 = 780_000 ms
-    await Promise.resolve();
-
-    expect(worker.terminate).toHaveBeenCalled();
-  });
+  // Soft-timeout and hard-timeout timer behavior is covered end-to-end by
+  // src/tests/timeout-handling/ (real workers, real timers). Unit tests with
+  // fake timers only re-asserted the mocked setTimeout call and gave no signal.
 
   // -------------------------------------------------------------------------
   // Memory monitoring — error clears the interval

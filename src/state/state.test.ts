@@ -1033,7 +1033,7 @@ describe(State.name, () => {
       });
 
       // Mock axiosClient.post directly to bypass the retry backoff
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+
       const axiosClientModule = require('../http/axios-client-internal');
       const axiosPostSpy = jest
         .spyOn(axiosClientModule.axiosClient, 'post')
