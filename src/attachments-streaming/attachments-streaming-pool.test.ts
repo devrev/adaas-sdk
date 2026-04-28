@@ -5,11 +5,6 @@ import {
   ProcessAttachmentReturnType,
 } from '../types';
 import { AttachmentsStreamingPool } from './attachments-streaming-pool';
-import {
-  runWithSdkLogContext,
-  runWithUserLogContext,
-  getSdkLogContextValue,
-} from '../logger/logger.context';
 
 // Mock types
 interface TestState {
@@ -656,7 +651,6 @@ describe(AttachmentsStreamingPool.name, () => {
     });
 
     it('should process user stream callback correctly while maintaining context isolation', async () => {
-      let userCallbackContextId: string | undefined;
       let userCallbackExecuted = false;
 
       // Mock stream to capture context info
@@ -665,10 +659,10 @@ describe(AttachmentsStreamingPool.name, () => {
         .mockImplementation(async () => {
           userCallbackExecuted = true;
           // Record that the callback executed
-          return {
+          return Promise.resolve({
             httpStream: undefined,
             error: undefined,
-          };
+          });
         });
 
       mockAdapter.processAttachment.mockImplementation(
