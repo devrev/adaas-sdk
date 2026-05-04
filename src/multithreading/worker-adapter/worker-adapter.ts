@@ -913,11 +913,10 @@ export class WorkerAdapter<ConnectorState> {
       if (httpStream) {
         const fileType =
           attachment.content_type ||
-          httpStream.headers['content-type'] ||
+          httpStream.headers['content-type']?.toString() ||
           'application/octet-stream';
-        const fileSize = httpStream.headers['content-length']
-          ? parseInt(httpStream.headers['content-length'])
-          : undefined;
+        const contentLength = httpStream.headers['content-length']?.toString();
+        const fileSize = contentLength ? parseInt(contentLength) : undefined;
 
         // Get upload URL
         const { error: artifactUrlError, response: artifactUrlResponse } =

@@ -658,10 +658,10 @@ describe(AttachmentsStreamingPool.name, () => {
           await Promise.resolve();
           userCallbackExecuted = true;
           // Record that the callback executed
-          return {
+          return Promise.resolve({
             httpStream: undefined,
             error: undefined,
-          };
+          });
         });
 
       mockAdapter.processAttachment.mockImplementation(
