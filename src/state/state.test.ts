@@ -67,7 +67,6 @@ describe(State.name, () => {
         isAxiosError: true,
         response: { status: 500 },
       });
-      jest.spyOn(console, 'error').mockImplementation(() => {});
 
       // Act & Assert
       await expect(
@@ -89,7 +88,6 @@ describe(State.name, () => {
         payload: { event_type: eventType },
       });
       fetchStateSpy.mockResolvedValue({ state: 'invalid-json' });
-      jest.spyOn(console, 'error').mockImplementation(() => {});
 
       // Act & Assert
       await expect(
@@ -111,7 +109,6 @@ describe(State.name, () => {
         payload: { event_type: eventType },
       });
       fetchStateSpy.mockResolvedValue({ state: null });
-      jest.spyOn(console, 'error').mockImplementation(() => {});
 
       // Act & Assert
       await expect(
@@ -152,7 +149,6 @@ describe(State.name, () => {
       postStateSpy.mockResolvedValue({
         success: true,
       });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
       await createAdapterState({
@@ -190,7 +186,6 @@ describe(State.name, () => {
     postStateSpy.mockResolvedValue({
       success: true,
     });
-    jest.spyOn(console, 'log').mockImplementation(() => {});
 
     // Act
     await createAdapterState({
@@ -222,8 +217,6 @@ describe(State.name, () => {
           test: 'test',
         }),
       });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
-      jest.spyOn(console, 'error').mockImplementation(() => {});
 
       // Act & Assert
       await expect(
@@ -253,7 +246,6 @@ describe(State.name, () => {
         snapInVersionId: '1.0.0',
       });
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act & Assert
       await createAdapterState({
@@ -286,7 +278,6 @@ describe(State.name, () => {
       installInitialDomainMappingSpy.mockResolvedValue({
         success: true,
       });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
       await createAdapterState({
@@ -315,7 +306,6 @@ describe(State.name, () => {
         users: { extract: true },
       }),
     });
-    jest.spyOn(console, 'log').mockImplementation(() => {});
 
     // Act
     const result = await createAdapterState({
@@ -345,7 +335,6 @@ describe(State.name, () => {
     });
     installInitialDomainMappingSpy.mockResolvedValue({ success: true });
     postStateSpy.mockResolvedValue({ success: true });
-    jest.spyOn(console, 'log').mockImplementation(() => {});
 
     // Act
     const result = await createAdapterState({
@@ -386,7 +375,6 @@ describe(State.name, () => {
       objects: 'NOT_VALID_JSON',
     });
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'log').mockImplementation(() => {});
 
     // Act
     const result = await createAdapterState({

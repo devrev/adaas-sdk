@@ -117,11 +117,11 @@ describe(`${WorkerAdapter.name}.emit`, () => {
       reports: [],
       processed_files: [],
     });
-    await adapter.emit(ExtractorEventType.MetadataExtractionError, {
+    await adapter.emit(ExtractorEventType.DataExtractionError, {
       reports: [],
       processed_files: [],
     });
-    await adapter.emit(ExtractorEventType.MetadataExtractionError, {
+    await adapter.emit(ExtractorEventType.AttachmentExtractionError, {
       reports: [],
       processed_files: [],
     });
@@ -325,8 +325,6 @@ describe(`${WorkerAdapter.name}.emit — ExternalSyncUnitExtractionDone legacy p
   it('should upload ESUs via a repo and strip external_sync_units from the emitted payload', async () => {
     // Arrange
     const { adapter } = makeAdapter(EventType.StartExtractingExternalSyncUnits);
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
     adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
     adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
     const pushMock = jest.fn().mockResolvedValue(undefined);
@@ -574,15 +572,12 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
   });
 
   describe('non-AttachmentExtractionDone events should NOT update boundaries', () => {
-    it.each([
-      ['DataExtractionDone', ExtractorEventType.DataExtractionDone],
-      ['DataExtractionProgress', ExtractorEventType.DataExtractionProgress],
-      ['MetadataExtractionError', ExtractorEventType.MetadataExtractionError],
-      [
-        'AttachmentExtractionError',
-        ExtractorEventType.AttachmentExtractionError,
-      ],
-    ])('should not update boundaries on %s', async (_label, eventType) => {
+    it.each<ExtractorEventType>([
+      ExtractorEventType.DataExtractionDone,
+      ExtractorEventType.DataExtractionProgress,
+      ExtractorEventType.MetadataExtractionError,
+      ExtractorEventType.AttachmentExtractionError,
+    ])('should not update boundaries on %s', async (eventType) => {
       adapter.state.workersOldest = '2025-01-01T00:00:00.000Z';
       adapter.state.workersNewest = '2025-03-01T00:00:00.000Z';
       adapter.event.payload.event_context.extract_from =

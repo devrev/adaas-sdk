@@ -62,7 +62,6 @@ describe(State.name, () => {
       });
       installInitialDomainMappingSpy.mockResolvedValue({ success: true });
       postStateSpy.mockResolvedValue({ success: true });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
       const state = await createAdapterState({
@@ -108,7 +107,6 @@ describe(State.name, () => {
         pendingWorkersNewest: staleNewest,
       });
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
       const state = await createAdapterState({
@@ -152,7 +150,6 @@ describe(State.name, () => {
         pendingWorkersNewest: pendingNewest,
       });
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
       const state = await createAdapterState({
@@ -182,7 +179,6 @@ describe(State.name, () => {
         snapInVersionId: 'test_snap_in_version_id',
       });
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
       await createAdapterState({
@@ -214,7 +210,6 @@ describe(State.name, () => {
         pendingWorkersNewest: pendingNewest,
       });
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
       await createAdapterState({

@@ -489,9 +489,6 @@ describe(`${WorkerAdapter.name}.processAttachment`, () => {
   beforeEach(() => {
     jest.clearAllMocks();
     ({ adapter } = makeAdapter(EventType.StartExtractingAttachments));
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -721,7 +718,6 @@ describe(`${WorkerAdapter.name}.processAttachment`, () => {
 describe(`${WorkerAdapter.name}.initializeRepos — event size threshold`, () => {
   it('should set isTimeout=true once the cumulative artifact payload exceeds EVENT_SIZE_THRESHOLD_BYTES', () => {
     const { adapter } = makeAdapter();
-    jest.spyOn(console, 'log').mockImplementation(() => {});
 
     let capturedOnUpload: ((artifact: Artifact) => void) | undefined;
     const { Repo } = require('../../repo/repo');
@@ -767,7 +763,6 @@ describe(`${WorkerAdapter.name}.destroyHttpStream`, () => {
 
   beforeEach(() => {
     ({ adapter } = makeAdapter());
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {

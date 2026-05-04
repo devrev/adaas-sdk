@@ -17,21 +17,8 @@ import {
 } from './uploader.helpers';
 
 describe('uploader.helpers', () => {
-  let consoleErrorSpy: jest.SpyInstance;
-  let consoleLogSpy: jest.SpyInstance;
-  let consoleWarnSpy: jest.SpyInstance;
-
-  beforeEach(() => {
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-  });
-
   afterEach(() => {
     jest.clearAllMocks();
-    consoleErrorSpy.mockRestore();
-    consoleLogSpy.mockRestore();
-    consoleWarnSpy.mockRestore();
   });
 
   describe(compressGzip.name, () => {

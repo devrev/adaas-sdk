@@ -40,8 +40,6 @@ describe(State.name, () => {
         snapInVersionId: 'test_snap_in_version_id',
       });
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
-      jest.spyOn(console, 'error').mockImplementation(() => {});
 
       // Act & Assert
       await expect(
@@ -76,8 +74,6 @@ describe(State.name, () => {
         snapInVersionId: 'test_snap_in_version_id',
       });
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
-      jest.spyOn(console, 'error').mockImplementation(() => {});
 
       // Act & Assert
       await expect(
@@ -112,7 +108,6 @@ describe(State.name, () => {
         snapInVersionId: 'test_snap_in_version_id',
       });
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
       await createAdapterState({
@@ -143,7 +138,6 @@ describe(State.name, () => {
         snapInVersionId: 'test_snap_in_version_id',
       });
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
       await createAdapterState({
@@ -177,7 +171,6 @@ describe(State.name, () => {
         snapInVersionId: 'test_snap_in_version_id',
       });
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
       await createAdapterState({

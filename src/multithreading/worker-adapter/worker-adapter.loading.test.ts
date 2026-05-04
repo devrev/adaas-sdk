@@ -209,9 +209,6 @@ describe(`${WorkerAdapter.name}.loadItemTypes — loadItem branch coverage via p
   beforeEach(() => {
     jest.clearAllMocks();
     ({ adapter } = makeAdapter(EventType.ContinueLoadingData));
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
     emitSpy = jest.spyOn(adapter, 'emit').mockResolvedValue();
     exitSpy = jest
       .spyOn(process, 'exit')
@@ -354,9 +351,6 @@ describe(`${WorkerAdapter.name}.loadItemTypes — additional branches`, () => {
   beforeEach(() => {
     jest.clearAllMocks();
     ({ adapter } = makeAdapter(EventType.ContinueLoadingData));
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
     emitSpy = jest.spyOn(adapter, 'emit').mockResolvedValue();
   });
 
@@ -574,9 +568,6 @@ describe(`${WorkerAdapter.name}.loadAttachments — additional branches`, () => 
   beforeEach(() => {
     jest.clearAllMocks();
     ({ adapter } = makeAdapter(EventType.ContinueLoadingAttachments));
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
     emitSpy = jest.spyOn(adapter, 'emit').mockResolvedValue();
   });
 
@@ -652,9 +643,6 @@ describe(`${WorkerAdapter.name}.loadAttachment`, () => {
   beforeEach(() => {
     jest.clearAllMocks();
     ({ adapter } = makeAdapter(EventType.ContinueLoadingAttachments));
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {

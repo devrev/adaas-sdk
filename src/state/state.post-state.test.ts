@@ -35,7 +35,6 @@ describe(State.name, () => {
       fetchStateSpy.mockResolvedValue({
         state: JSON.stringify({ snapInVersionId: '1.0.0' }),
       });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       postStateSpy.mockRestore();
 
@@ -71,8 +70,6 @@ describe(State.name, () => {
       fetchStateSpy.mockResolvedValue({
         state: JSON.stringify({ snapInVersionId: '1.0.0' }),
       });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
-      jest.spyOn(console, 'error').mockImplementation(() => {});
 
       postStateSpy.mockRestore();
 
