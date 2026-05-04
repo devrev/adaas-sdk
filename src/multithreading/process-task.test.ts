@@ -1,5 +1,5 @@
 import { EventType } from '../types/extraction';
-import { WorkerMessageSubject } from '../types/workers';
+import { WorkerEvent, WorkerMessageSubject } from '../types/workers';
 
 // These tests cover logic that is NOT exercised by the end-to-end integration
 // tests under src/tests/timeout-handling/:
@@ -7,6 +7,8 @@ import { WorkerMessageSubject } from '../types/workers';
 //   - the hasWorkerEmitted guard that prevents onTimeout from firing after a
 //     successful emit (integration tests only exercise the positive case)
 //   - the error branch that posts WorkerMessageFailed and exits(1)
+//   - the WorkerMessage handler's guard that only flips isTimeout on
+//     WorkerMessageExit (integration tests can't cleanly target non-Exit messages)
 //
 // Tests for the happy path, timeout-signal-reaches-worker behavior, and main-thread
 // early return were removed — they either duplicate what the integration suite
@@ -142,6 +144,34 @@ describe(processTask.name, () => {
     // Assert
     expect(onTimeout).not.toHaveBeenCalled();
     expect(processExitSpy).toHaveBeenCalledWith(0);
+  });
+
+  it('should NOT flip adapter.isTimeout when a non-Exit WorkerMessage arrives', async () => {
+    // Arrange
+    const event = makeEvent();
+    setWorkerData({ event, initialState: {}, options: {} });
+    const mockAdapter = { isTimeout: false, hasWorkerEmitted: false };
+    (WorkerAdapter as jest.Mock).mockImplementation(() => mockAdapter);
+    const task = jest.fn().mockResolvedValue(undefined);
+    const onTimeout = jest.fn().mockResolvedValue(undefined);
+
+    // Act
+    processTask({ task, onTimeout });
+    await flush();
+
+    // Grab the handler registered for WorkerMessage events and invoke it with
+    // subjects that must NOT flip isTimeout (log messages, unknown subjects).
+    const messageHandlerCall = mockParentPortOn.mock.calls.find(
+      ([eventName]) => eventName === WorkerEvent.WorkerMessage
+    );
+    expect(messageHandlerCall).toBeDefined();
+    const handler = messageHandlerCall![1] as (m: unknown) => void;
+
+    handler({ subject: WorkerMessageSubject.WorkerMessageLog });
+    handler({ subject: 'NONSENSE_SUBJECT' });
+
+    // Assert
+    expect(mockAdapter.isTimeout).toBe(false);
   });
 
   it('should post WorkerMessageFailed with the error message and exit(1) when task throws', async () => {

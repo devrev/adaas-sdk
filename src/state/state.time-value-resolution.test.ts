@@ -3,7 +3,7 @@ import { createMockEvent } from '../common/test-utils';
 import { EventType, TimeValue, TimeValueType } from '../types/extraction';
 import { State, createAdapterState } from './state';
 
-describe(State.name, () => {
+describe('State — TimeValue resolution', () => {
   let fetchStateSpy: jest.SpyInstance;
   let processExitSpy: jest.SpyInstance;
 

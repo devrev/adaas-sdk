@@ -63,18 +63,14 @@ function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
 
 describe(`${WorkerAdapter.name}.emit`, () => {
   let adapter: WorkerAdapter<TestState>;
-  let counter: { counter: number };
   let mockPostMessage: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
     ({ adapter } = makeAdapter());
 
-    counter = { counter: 0 };
     const workerThreads = require('node:worker_threads');
-    mockPostMessage = jest.fn().mockImplementation(() => {
-      counter.counter += 1;
-    });
+    mockPostMessage = jest.fn();
     if (workerThreads.parentPort) {
       jest
         .spyOn(workerThreads.parentPort, 'postMessage')
@@ -104,7 +100,7 @@ describe(`${WorkerAdapter.name}.emit`, () => {
     });
 
     // Assert
-    expect(counter.counter).toBe(1);
+    expect(mockPostMessage).toHaveBeenCalledTimes(1);
   });
 
   it('should emit only once even when a different event type follows', async () => {
@@ -127,7 +123,7 @@ describe(`${WorkerAdapter.name}.emit`, () => {
     });
 
     // Assert
-    expect(counter.counter).toBe(1);
+    expect(mockPostMessage).toHaveBeenCalledTimes(1);
   });
 
   it('should correctly emit one event even if postState errors', async () => {
@@ -144,7 +140,7 @@ describe(`${WorkerAdapter.name}.emit`, () => {
     });
 
     // Assert
-    expect(counter.counter).toBe(1);
+    expect(mockPostMessage).toHaveBeenCalledTimes(1);
   });
 
   it('should correctly emit one event even if uploadAllRepos errors', async () => {
@@ -161,7 +157,7 @@ describe(`${WorkerAdapter.name}.emit`, () => {
     });
 
     // Assert
-    expect(counter.counter).toBe(1);
+    expect(mockPostMessage).toHaveBeenCalledTimes(1);
   });
 
   it('should include artifacts in data for extraction events', async () => {

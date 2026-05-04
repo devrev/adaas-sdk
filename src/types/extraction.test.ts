@@ -1,29 +1,21 @@
 import { createMockEvent } from '../common/test-utils';
 import { mockServer } from '../tests/jest.setup';
-import {
-  EventContext,
-  EventType,
-  InitialSyncScope,
-  TimeValueType,
-} from './extraction';
+import { EventType, InitialSyncScope, TimeValueType } from './extraction';
 
 describe('ExtractionTypes', () => {
-  const baseEvent = createMockEvent(mockServer.baseUrl, {
-    payload: { event_type: EventType.StartExtractingData },
-  });
-
   it('should create event context with all optional fields', () => {
-    // Arrange
-    const event = { ...baseEvent };
-
-    // Act
-    event.payload.event_context = {
-      ...baseEvent.payload.event_context,
-      extract_from: '2024-01-01T00:00:00Z',
-      extract_to: '2024-06-01T00:00:00Z',
-      initial_sync_scope: InitialSyncScope.TIME_SCOPED,
-      reset_extract_from: true,
-    } as EventContext;
+    // Arrange & Act
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
+        event_context: {
+          extract_from: '2024-01-01T00:00:00Z',
+          extract_to: '2024-06-01T00:00:00Z',
+          initial_sync_scope: InitialSyncScope.TIME_SCOPED,
+          reset_extract_from: true,
+        },
+      },
+    });
 
     // Assert
     expect(event.payload.event_context.extract_from).toBe(
@@ -37,14 +29,15 @@ describe('ExtractionTypes', () => {
   });
 
   it('should create event context with partial optional fields', () => {
-    // Arrange
-    const event = { ...baseEvent };
-
-    // Act
-    event.payload.event_context = {
-      ...baseEvent.payload.event_context,
-      extract_from: '2024-01-01T00:00:00Z',
-    } as EventContext;
+    // Arrange & Act
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
+        event_context: {
+          extract_from: '2024-01-01T00:00:00Z',
+        },
+      },
+    });
 
     // Assert
     expect(event.payload.event_context.extract_from).toBe(
@@ -53,14 +46,15 @@ describe('ExtractionTypes', () => {
   });
 
   it('should handle different InitialSyncScope values', () => {
-    // Arrange
-    const event = { ...baseEvent };
-
-    // Act
-    event.payload.event_context = {
-      ...baseEvent.payload.event_context,
-      initial_sync_scope: InitialSyncScope.FULL_HISTORY,
-    } as EventContext;
+    // Arrange & Act
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
+        event_context: {
+          initial_sync_scope: InitialSyncScope.FULL_HISTORY,
+        },
+      },
+    });
 
     // Assert
     expect(event.payload.event_context.initial_sync_scope).toBe(
@@ -70,7 +64,9 @@ describe('ExtractionTypes', () => {
 
   it('[edge] should handle null event context gracefully', () => {
     // Arrange
-    const event = { ...baseEvent };
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingData },
+    });
 
     // Act
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -81,17 +77,18 @@ describe('ExtractionTypes', () => {
   });
 
   it('[edge] should handle undefined optional fields', () => {
-    // Arrange
-    const event = { ...baseEvent };
-
-    // Act
-    event.payload.event_context = {
-      ...baseEvent.payload.event_context,
-      extract_from: undefined,
-      extract_to: undefined,
-      initial_sync_scope: undefined,
-      reset_extract_from: undefined,
-    } as EventContext;
+    // Arrange & Act
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
+        event_context: {
+          extract_from: undefined,
+          extract_to: undefined,
+          initial_sync_scope: undefined,
+          reset_extract_from: undefined,
+        },
+      },
+    });
 
     // Assert
     expect(event.payload.event_context.extract_from).toBeUndefined();

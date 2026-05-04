@@ -3,7 +3,7 @@ import { createMockEvent } from '../common/test-utils';
 import { EventType, TimeValueType } from '../types/extraction';
 import { State, createAdapterState } from './state';
 
-describe(State.name, () => {
+describe('State — extraction window validation', () => {
   let fetchStateSpy: jest.SpyInstance;
   let processExitSpy: jest.SpyInstance;
 

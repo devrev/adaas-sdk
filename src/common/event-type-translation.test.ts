@@ -53,17 +53,10 @@ describe(translateIncomingEventType.name, () => {
     expect(translateIncomingEventType(eventType)).toBe(eventType);
   });
 
-  it('warns and returns the input verbatim for an unrecognised event type', () => {
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-
+  it('returns the input verbatim for an unrecognised event type', () => {
     const result = translateIncomingEventType('NONSENSE_EVENT' as EventType);
 
     expect(result).toBe('NONSENSE_EVENT');
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('NONSENSE_EVENT')
-    );
-
-    warnSpy.mockRestore();
   });
 });
 

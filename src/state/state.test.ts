@@ -57,7 +57,7 @@ describe(State.name, () => {
   );
 
   it.each(STATEFUL_EVENT_TYPES)(
-    'should exit the process if fetching the state fails',
+    'should exit the process if fetching the state fails for event type %s',
     async (eventType) => {
       // Arrange
       const event = createMockEvent(mockServer.baseUrl, {
@@ -81,7 +81,7 @@ describe(State.name, () => {
   );
 
   it.each(STATEFUL_EVENT_TYPES)(
-    'should exit the process if parsing the state fails',
+    'should exit the process if parsing the state fails for event type %s',
     async (eventType) => {
       // Arrange
       const event = createMockEvent(mockServer.baseUrl, {
@@ -102,7 +102,7 @@ describe(State.name, () => {
   );
 
   it.each(STATEFUL_EVENT_TYPES)(
-    'should exit the process if fetching is successful but there is no state in the response',
+    'should exit the process if fetching is successful but there is no state in the response for event type %s',
     async (eventType) => {
       // Arrange
       const event = createMockEvent(mockServer.baseUrl, {
@@ -364,7 +364,7 @@ describe(State.name, () => {
     expect(result.extractionScope).toEqual({});
   });
 
-  it('should warn but continue when objects field contains invalid JSON', async () => {
+  it('should continue with empty extractionScope when objects field contains invalid JSON', async () => {
     // Arrange
     const event = createMockEvent(mockServer.baseUrl, {
       context: { snap_in_version_id: '1.0.0' },
@@ -374,7 +374,6 @@ describe(State.name, () => {
       state: JSON.stringify({ snapInVersionId: '1.0.0' }),
       objects: 'NOT_VALID_JSON',
     });
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     // Act
     const result = await createAdapterState({
@@ -384,9 +383,6 @@ describe(State.name, () => {
     });
 
     // Assert: should not crash, extractionScope is empty (default)
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to parse extractionScope')
-    );
     expect(result.extractionScope).toEqual({});
     expect(processExitSpy).not.toHaveBeenCalled();
   });

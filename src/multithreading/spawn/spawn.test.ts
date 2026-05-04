@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { DEFAULT_LAMBDA_TIMEOUT } from '../../common/constants';
 import { EventType } from '../../types/extraction';
 import { WorkerEvent, WorkerMessageSubject } from '../../types/workers';
 import { createMockEvent } from '../../common/test-utils';
@@ -110,27 +111,31 @@ describe('spawn() factory', () => {
   });
 
   it('should emit a no-script event and NOT spawn a worker for an unknown event type', async () => {
+    // Arrange
     const event = createMockEvent('http://localhost:0', {
       payload: { event_type: EventType.UnknownEventType },
     });
 
+    // Act
     await spawn({ event, initialState: {} });
 
-    // No worker process should be started
+    // Assert: no worker process should be started, but the platform should
+    // still receive a terminal event (so the run doesn't hang).
     expect(createWorker).not.toHaveBeenCalled();
-    // The platform should still receive a terminal event (so the run doesn't hang)
     expect(emit).toHaveBeenCalledWith(
       expect.objectContaining({ event, eventType: expect.any(String) })
     );
   });
 
   it('should reject the returned promise when createWorker throws', async () => {
+    // Arrange
     (createWorker as jest.Mock).mockRejectedValue(new Error('worker boom'));
 
     const event = createMockEvent('http://localhost:0', {
       payload: { event_type: EventType.StartExtractingData },
     });
 
+    // Act & Assert
     await expect(
       spawn({ event, initialState: {}, workerPath: '/fake/path.js' })
     ).rejects.toThrow('worker boom');
@@ -160,8 +165,10 @@ describe('Spawn class', () => {
   // WorkerMessageFailed captured and propagated in error emit
   // -------------------------------------------------------------------------
   it('should include the WorkerMessageFailed reason in the error event emitted to the platform', async () => {
+    // Arrange
     buildSpawn({ worker, resolve: resolveMock });
 
+    // Act
     worker.emit(WorkerEvent.WorkerMessage, {
       subject: WorkerMessageSubject.WorkerMessageFailed,
       payload: { message: 'connector exploded' },
@@ -171,8 +178,8 @@ describe('Spawn class', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    // The platform receives an error event whose message contains the reason
-    // sent by the worker — this is what operators see in the run log.
+    // Assert: the platform receives an error event whose message contains
+    // the reason sent by the worker — this is what operators see in the run log.
     expect(emit).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -186,13 +193,16 @@ describe('Spawn class', () => {
   });
 
   it('should emit an error event when the worker exits without ever emitting', async () => {
+    // Arrange
     buildSpawn({ worker, resolve: resolveMock });
 
+    // Act
     worker.emit(WorkerEvent.WorkerExit, 1);
 
     await Promise.resolve();
     await Promise.resolve();
 
+    // Assert
     expect(emit).toHaveBeenCalled();
     expect(resolveMock).toHaveBeenCalled();
   });
@@ -205,17 +215,18 @@ describe('Spawn class', () => {
   // Memory monitoring — error clears the interval
   // -------------------------------------------------------------------------
   it('should clear the memory monitoring interval when getMemoryUsage throws to prevent repeated crashes', async () => {
+    // Arrange
     (getMemoryUsage as jest.Mock).mockImplementation(() => {
       throw new Error('OOM');
     });
-
     const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
-
     buildSpawn({ worker, resolve: resolveMock });
 
+    // Act
     jest.advanceTimersByTime(30_001); // MEMORY_LOG_INTERVAL = 30 s
     await Promise.resolve();
 
+    // Assert
     expect(clearIntervalSpy).toHaveBeenCalled();
   });
 
@@ -223,11 +234,20 @@ describe('Spawn class', () => {
   // Soft-timeout race: worker emits AFTER softTimeoutSent — no double-emit
   // -------------------------------------------------------------------------
   it('should NOT emit an error when the worker successfully emits just after receiving the soft-timeout signal', async () => {
+    // Arrange
     buildSpawn({ worker, resolve: resolveMock });
 
-    // Trigger soft timeout — sends WorkerMessageExit to the worker
-    jest.advanceTimersByTime(600_001);
+    // Act: trigger soft timeout — sends WorkerMessageExit to the worker
+    jest.advanceTimersByTime(DEFAULT_LAMBDA_TIMEOUT + 1);
     await Promise.resolve();
+
+    // Confirm the soft-timeout path actually fired — guards against a silent
+    // pass if the timeout constant changes and the timer never runs.
+    expect(worker.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: WorkerMessageSubject.WorkerMessageExit,
+      })
+    );
 
     // Worker responds: emits its event successfully, then exits normally
     worker.emit(WorkerEvent.WorkerMessage, {
@@ -240,7 +260,7 @@ describe('Spawn class', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    // No error should reach the platform — the worker completed its job
+    // Assert: no error should reach the platform — the worker completed its job
     const errorEmits = (emit as jest.Mock).mock.calls.filter(
       (call) => call[0]?.data?.error
     );
