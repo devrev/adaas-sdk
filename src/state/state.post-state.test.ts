@@ -21,7 +21,7 @@ describe('State.postState', () => {
     });
   });
 
-  it('should POST the stringified state with Authorization header to the update endpoint', async () => {
+  it('should POST the stringified state to the update endpoint', async () => {
     // Arrange
     const event = createMockEvent(mockServer.baseUrl, {
       context: {

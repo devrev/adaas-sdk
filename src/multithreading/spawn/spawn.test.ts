@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { DEFAULT_LAMBDA_TIMEOUT } from '../../common/constants';
-import { EventType } from '../../types/extraction';
+import { EventType, ExtractorEventType } from '../../types/extraction';
 import { WorkerEvent, WorkerMessageSubject } from '../../types/workers';
 import { createMockEvent } from '../../common/test-utils';
 
@@ -192,7 +192,7 @@ describe('Spawn class', () => {
     expect(resolveMock).toHaveBeenCalled();
   });
 
-  it('should emit an error event when the worker exits without ever emitting', async () => {
+  it('should emit a data extraction error when the worker exits without ever emitting', async () => {
     // Arrange
     buildSpawn({ worker, resolve: resolveMock });
 
@@ -202,8 +202,14 @@ describe('Spawn class', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    // Assert
-    expect(emit).toHaveBeenCalled();
+    // Assert: a silent worker exit must surface a DataExtractionError to the
+    // platform with a non-empty message. The event type is the upstream
+    // contract; the exact message wording is implementation detail.
+    expect(emit).toHaveBeenCalledTimes(1);
+    const [emitted] = (emit as jest.Mock).mock.calls[0];
+    expect(emitted.eventType).toBe(ExtractorEventType.DataExtractionError);
+    expect(emitted.data.error.message).toEqual(expect.any(String));
+    expect(emitted.data.error.message.length).toBeGreaterThan(0);
     expect(resolveMock).toHaveBeenCalled();
   });
 
