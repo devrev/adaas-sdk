@@ -6,7 +6,6 @@ import {
 } from '../types';
 import { AttachmentsStreamingPool } from './attachments-streaming-pool';
 
-// Mock types
 interface TestState {
   attachments: { completed: boolean };
 }
@@ -58,11 +57,6 @@ describe(AttachmentsStreamingPool.name, () => {
         parent_id: 'parent-3',
       },
     ];
-
-    // Mock console methods
-    jest.spyOn(console, 'log').mockImplementation();
-    jest.spyOn(console, 'error').mockImplementation();
-    jest.spyOn(console, 'warn').mockImplementation();
   });
 
   afterEach(() => {
@@ -78,7 +72,6 @@ describe(AttachmentsStreamingPool.name, () => {
         stream: mockStream,
       });
 
-      expect(pool).toBeDefined();
       expect(pool['adapter']).toBe(mockAdapter);
       expect(pool['attachments']).toEqual(mockAttachments);
       expect(pool['batchSize']).toBe(10);
@@ -295,6 +288,7 @@ describe(AttachmentsStreamingPool.name, () => {
     });
 
     it('should handle processing errors gracefully', async () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const error = new Error('Processing failed');
       mockAdapter.processAttachment
         .mockResolvedValueOnce({}) // First attachment succeeds
@@ -309,7 +303,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       await pool.streamAll();
 
-      expect(console.warn).toHaveBeenCalledWith(
+      expect(warnSpy).toHaveBeenCalledWith(
         'Skipping attachment with ID attachment-2 with extension jpg due to error in processAttachment function',
         error
       );
@@ -657,6 +651,7 @@ describe(AttachmentsStreamingPool.name, () => {
       const mockStreamFn: ExternalSystemAttachmentStreamingFunction = jest
         .fn()
         .mockImplementation(async () => {
+          await Promise.resolve();
           userCallbackExecuted = true;
           // Record that the callback executed
           return Promise.resolve({

@@ -213,7 +213,6 @@ describe('time-value-resolver', () => {
         );
         const after = new Date().toISOString();
 
-        expect(result).toBeDefined();
         expect(result! >= before).toBe(true);
         expect(result! <= after).toBe(true);
       });
