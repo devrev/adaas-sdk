@@ -25,6 +25,12 @@ import {
   getTimeoutErrorEventType,
   getNoScriptEventType,
 } from './spawn.helpers';
+import {
+  createLocalTraceSession,
+  resolveTraceOutputPath,
+  spanContextToSerialized,
+  withLocalTraceSpan,
+} from '../../tracing/local-trace';
 
 function getWorkerPath({
   event,
@@ -96,75 +102,126 @@ export async function spawn<ConnectorState>({
     };
   }
 
+  const isLocalDevelopment = Boolean(options?.isLocalDevelopment);
+  const traceOutputPath = isLocalDevelopment
+    ? resolveTraceOutputPath(options?.traceOutputPath)
+    : undefined;
+  const traceSession = await createLocalTraceSession({
+    enabled: isLocalDevelopment,
+    outputPath: traceOutputPath,
+  });
+  const tracedOptions = isLocalDevelopment
+    ? {
+        ...(options || {}),
+        traceOutputPath: traceSession.outputPath ?? traceOutputPath,
+      }
+    : options;
+
+  if (traceSession.enabled && traceSession.outputPath) {
+    console.log(`Local OTEL trace output: ${traceSession.outputPath}`);
+  }
+
   const originalConsole = console;
   // eslint-disable-next-line no-global-assign
-  console = new Logger({ event, options });
+  console = new Logger({ event, options: tracedOptions });
 
-  if (translatedEventType !== originalEventType) {
-    console.log(
-      `Event type translated from ${originalEventType} to ${translatedEventType}.`
+  try {
+    return await withLocalTraceSpan(
+      'spawn',
+      {
+        attributes: {
+          event_type: translatedEventType,
+          original_event_type: originalEventType,
+          local_development: isLocalDevelopment,
+        },
+        source: {
+          file: __filename,
+          symbol: 'spawn',
+        },
+      },
+      async () => {
+        if (translatedEventType !== originalEventType) {
+          console.log(
+            `Event type translated from ${originalEventType} to ${translatedEventType}.`
+          );
+        }
+        if (isLocalDevelopment) {
+          console.log('Snap-in is running in local development mode.');
+        }
+
+        let script = null;
+        if (workerPath != null) {
+          script = workerPath;
+        } else if (
+          baseWorkerPath != null &&
+          tracedOptions?.workerPathOverrides != null &&
+          tracedOptions.workerPathOverrides[translatedEventType as EventType] !=
+            null
+        ) {
+          script =
+            baseWorkerPath +
+            tracedOptions.workerPathOverrides[translatedEventType as EventType];
+        } else {
+          script = getWorkerPath({
+            event,
+            workerBasePath: baseWorkerPath ?? __dirname,
+          });
+        }
+
+        // If a script is found for the event type, spawn a new worker.
+        if (script) {
+          const workerOptions = isLocalDevelopment
+            ? {
+                ...(tracedOptions || {}),
+                traceParentSpanContext: spanContextToSerialized(
+                  traceSession.getCurrentSpanContext()
+                ),
+              }
+            : tracedOptions;
+
+          try {
+            const worker = await createWorker<ConnectorState>({
+              event,
+              initialState,
+              workerPath: script,
+              initialDomainMapping,
+              options: workerOptions,
+            });
+
+            return new Promise((resolve) => {
+              new Spawn({
+                event,
+                worker,
+                options: workerOptions,
+                resolve,
+                originalConsole,
+              });
+            });
+          } catch (error) {
+            console.error('Worker error while processing task', error);
+
+            // eslint-disable-next-line no-global-assign
+            console = originalConsole;
+            return Promise.reject(error);
+          }
+        } else {
+          const { eventType } = getNoScriptEventType(event.payload.event_type);
+
+          await emit({
+            event,
+            eventType,
+          });
+
+          // eslint-disable-next-line no-global-assign
+          console = originalConsole;
+          return Promise.resolve();
+        }
+      }
     );
-  }
-  if (options?.isLocalDevelopment) {
-    console.log('Snap-in is running in local development mode.');
-  }
-
-  let script = null;
-  if (workerPath != null) {
-    script = workerPath;
-  } else if (
-    baseWorkerPath != null &&
-    options?.workerPathOverrides != null &&
-    options.workerPathOverrides[translatedEventType as EventType] != null
-  ) {
-    script =
-      baseWorkerPath +
-      options.workerPathOverrides[translatedEventType as EventType];
-  } else {
-    script = getWorkerPath({
-      event,
-      workerBasePath: baseWorkerPath ?? __dirname,
-    });
-  }
-
-  // If a script is found for the event type, spawn a new worker.
-  if (script) {
-    try {
-      const worker = await createWorker<ConnectorState>({
-        event,
-        initialState,
-        workerPath: script,
-        initialDomainMapping,
-        options,
-      });
-
-      return new Promise((resolve) => {
-        new Spawn({
-          event,
-          worker,
-          options,
-          resolve,
-          originalConsole,
-        });
-      });
-    } catch (error) {
-      console.error('Worker error while processing task', error);
-
-      // eslint-disable-next-line no-global-assign
-      console = originalConsole;
-      return Promise.reject(error);
-    }
-  } else {
-    const { eventType } = getNoScriptEventType(event.payload.event_type);
-
-    await emit({
-      event,
-      eventType,
-    });
-
+  } finally {
     // eslint-disable-next-line no-global-assign
     console = originalConsole;
-    return Promise.resolve();
+    await traceSession.shutdown();
   }
 }
 

@@ -12,6 +12,11 @@ import {
   WorkerMessageSubject,
 } from '../types/workers';
 import { WorkerAdapter } from './worker-adapter/worker-adapter';
+import {
+  createLocalTraceSession,
+  markSpanError,
+  withLocalTraceSpan,
+} from '../tracing/local-trace';
 
 export function processTask<ConnectorState>({
   task,
@@ -22,60 +27,89 @@ export function processTask<ConnectorState>({
   }
 
   void (async () => {
-    await runWithSdkLogContext(async () => {
-      try {
-        const event = workerData.event;
-
-        // TODO: Remove when the old types are completely phased out
-        event.payload.event_type = translateIncomingEventType(
-          event.payload.event_type
-        );
-
-        const initialState = workerData.initialState as ConnectorState;
-        const initialDomainMapping = workerData.initialDomainMapping;
-        const options = workerData.options;
-        // eslint-disable-next-line no-global-assign
-        console = new Logger({ event, options });
-
-        const adapterState = await createAdapterState<ConnectorState>({
-          event,
-          initialState,
-          initialDomainMapping,
-          options,
-        });
-
-        const adapter = new WorkerAdapter<ConnectorState>({
-          event,
-          adapterState,
-          options,
-        });
-
-        parentPort?.on(WorkerEvent.WorkerMessage, (message) => {
-          if (message.subject !== WorkerMessageSubject.WorkerMessageExit) {
-            return;
-          }
-          console.log('Timeout received. Waiting for the task to finish.');
-          adapter.isTimeout = true;
-        });
-
-        await runWithUserLogContext(async () => task({ adapter }));
-        if (adapter.isTimeout && !adapter.hasWorkerEmitted) {
-          await runWithUserLogContext(async () => onTimeout({ adapter }));
-        }
-        process.exit(0);
-      } catch (error) {
-        runWithUserLogContext(() => {
-          const errorMessage = `Error while processing task. ${serializeError(
-            error
-          )}`;
-          console.error(errorMessage);
-          parentPort?.postMessage({
-            subject: WorkerMessageSubject.WorkerMessageFailed,
-            payload: { message: errorMessage },
-          });
-          process.exit(1);
-        });
-      }
+    const traceSession = await createLocalTraceSession({
+      enabled: Boolean(workerData.options?.isLocalDevelopment),
+      outputPath: workerData.options?.traceOutputPath,
     });
+
+    try {
+      await withLocalTraceSpan(
+        'processTask',
+        {
+          attributes: {
+            event_type: workerData.event.payload.event_type,
+            worker_path: workerData.workerPath,
+          },
+          source: {
+            file: __filename,
+            symbol: 'processTask',
+          },
+          parentSpanContext: workerData.options?.traceParentSpanContext,
+        },
+        async (span) =>
+          runWithSdkLogContext(async () => {
+            try {
+              const event = workerData.event;
+
+              // TODO: Remove when the old types are completely phased out
+              event.payload.event_type = translateIncomingEventType(
+                event.payload.event_type
+              );
+
+              const initialState = workerData.initialState as ConnectorState;
+              const initialDomainMapping = workerData.initialDomainMapping;
+              const options = workerData.options;
+              // eslint-disable-next-line no-global-assign
+              console = new Logger({ event, options });
+
+              const adapterState = await createAdapterState<ConnectorState>({
+                event,
+                initialState,
+                initialDomainMapping,
+                options,
+              });
+
+              const adapter = new WorkerAdapter<ConnectorState>({
+                event,
+                adapterState,
+                options,
+              });
+
+              parentPort?.on(WorkerEvent.WorkerMessage, (message) => {
+                if (
+                  message.subject !== WorkerMessageSubject.WorkerMessageExit
+                ) {
+                  return;
+                }
+                console.log(
+                  'Timeout received. Waiting for the task to finish.'
+                );
+                adapter.isTimeout = true;
+              });
+
+              await runWithUserLogContext(async () => task({ adapter }));
+              if (adapter.isTimeout && !adapter.hasWorkerEmitted) {
+                await runWithUserLogContext(async () => onTimeout({ adapter }));
+              }
+              process.exit(0);
+            } catch (error) {
+              markSpanError(error, span);
+              runWithUserLogContext(() => {
+                const errorMessage = `Error while processing task. ${serializeError(
+                  error
+                )}`;
+                console.error(errorMessage);
+                parentPort?.postMessage({
+                  subject: WorkerMessageSubject.WorkerMessageFailed,
+                  payload: { message: errorMessage },
+                });
+                process.exit(1);
+              });
+            }
+          })
+      );
+    } finally {
+      await traceSession.shutdown();
+    }
   })();
 }

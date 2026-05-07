@@ -10,6 +10,7 @@ import {
 import { LoaderEventType } from '../types/loading';
 import { LIBRARY_VERSION } from './constants';
 import { translateOutgoingEventType } from './event-type-translation';
+import { withLocalTraceSpan } from '../tracing/local-trace';
 
 export interface EmitInterface {
   event: AirdropEvent;
@@ -26,31 +27,48 @@ export const emit = async ({
   // TODO: Remove when the old types are completely phased out
   const translatedEventType = translateOutgoingEventType(eventType);
 
-  const newEvent: ExtractorEvent | LoaderEvent = {
-    event_type: translatedEventType,
-    event_context: event.payload.event_context,
-    event_data: {
-      ...data,
-    },
-    worker_metadata: {
-      adaas_library_version: LIBRARY_VERSION,
-    },
-  };
-
-  console.info('Emitting event', newEvent);
-
-  return axiosClient.post(
-    event.payload.event_context.callback_url,
-    { ...newEvent },
+  return withLocalTraceSpan(
+    'control-protocol.emit',
     {
-      headers: {
-        Accept: 'application/json, text/plain, */*',
-        Authorization: event.context.secrets.service_account_token,
-        'Content-Type': 'application/json',
-        'X-DevRev-Client-Platform': event.payload.event_context.snap_in_slug,
-        'X-DevRev-Client-Id': event.payload.event_context.snap_in_version_id,
-        'X-DevRev-Client-Version': LIBRARY_VERSION,
+      attributes: {
+        event_type: translatedEventType,
+        callback_url: event.payload.event_context.callback_url,
       },
+      source: {
+        file: __filename,
+        symbol: 'emit',
+      },
+    },
+    async () => {
+      const newEvent: ExtractorEvent | LoaderEvent = {
+        event_type: translatedEventType,
+        event_context: event.payload.event_context,
+        event_data: {
+          ...data,
+        },
+        worker_metadata: {
+          adaas_library_version: LIBRARY_VERSION,
+        },
+      };
+
+      console.info('Emitting event', newEvent);
+
+      return axiosClient.post(
+        event.payload.event_context.callback_url,
+        { ...newEvent },
+        {
+          headers: {
+            Accept: 'application/json, text/plain, */*',
+            Authorization: event.context.secrets.service_account_token,
+            'Content-Type': 'application/json',
+            'X-DevRev-Client-Platform':
+              event.payload.event_context.snap_in_slug,
+            'X-DevRev-Client-Id':
+              event.payload.event_context.snap_in_version_id,
+            'X-DevRev-Client-Version': LIBRARY_VERSION,
+          },
+        }
+      );
     }
   );
 };

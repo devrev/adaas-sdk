@@ -35,6 +35,16 @@ export interface AdapterUpdateParams {
 }
 
 /**
+ * SerializedSpanContext represents the minimal span context fields needed to
+ * continue a trace across worker threads.
+ */
+export interface SerializedSpanContext {
+  traceId: string;
+  spanId: string;
+  traceFlags: number;
+}
+
+/**
  * InitialDomainMapping is an interface that defines the structure of the initial domain mapping.
  */
 export interface InitialDomainMapping {

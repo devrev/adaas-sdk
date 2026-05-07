@@ -17,6 +17,7 @@ import {
   runWithSdkLogContext,
   runWithUserLogContext,
 } from '../../logger/logger.context';
+import { markSpanError, withLocalTraceSpan } from '../../tracing/local-trace';
 import { Mappers } from '../../mappers/mappers';
 import { SyncMapperRecordStatus } from '../../mappers/mappers.interface';
 import { Repo } from '../../repo/repo';
@@ -218,9 +219,22 @@ export class WorkerAdapter<ConnectorState> {
   }
 
   async postState() {
-    return runWithSdkLogContext(async () => {
-      await this.adapterState.postState();
-    });
+    return withLocalTraceSpan(
+      'WorkerAdapter.postState',
+      {
+        attributes: {
+          event_type: this.event.payload.event_type,
+        },
+        source: {
+          file: __filename,
+          symbol: 'WorkerAdapter.postState',
+        },
+      },
+      async () =>
+        runWithSdkLogContext(async () => {
+          await this.adapterState.postState();
+        })
+    );
   }
 
   get artifacts(): Artifact[] {
@@ -243,157 +257,178 @@ export class WorkerAdapter<ConnectorState> {
     newEventType: ExtractorEventType | LoaderEventType,
     data?: EventData
   ): Promise<void> {
-    return runWithSdkLogContext(async () => {
-      newEventType = translateOutgoingEventType(newEventType);
+    return withLocalTraceSpan(
+      'WorkerAdapter.emit',
+      {
+        attributes: {
+          event_type: newEventType,
+        },
+        source: {
+          file: __filename,
+          symbol: 'WorkerAdapter.emit',
+        },
+      },
+      async (span) =>
+        runWithSdkLogContext(async () => {
+          newEventType = translateOutgoingEventType(newEventType);
 
-      if (this.hasWorkerEmitted) {
-        console.warn(
-          `Trying to emit event with event type: ${newEventType}. Ignoring emit request because it has already been emitted.`
-        );
-        return;
-      }
+          if (this.hasWorkerEmitted) {
+            console.warn(
+              `Trying to emit event with event type: ${newEventType}. Ignoring emit request because it has already been emitted.`
+            );
+            return;
+          }
 
-      // If the event is ExternalSyncUnitExtractionDone, upload external sync units via a Repo before emitting
-      // TODO: Remove in v2.0.0
-      if (
-        newEventType === ExtractorEventType.ExternalSyncUnitExtractionDone &&
-        data?.external_sync_units &&
-        data.external_sync_units.length > 0
-      ) {
-        console.log(
-          `Uploading ${data.external_sync_units.length} external sync units via repo before emitting event.`
-        );
+          // If the event is ExternalSyncUnitExtractionDone, upload external sync units via a Repo before emitting
+          // TODO: Remove in v2.0.0
+          if (
+            newEventType ===
+              ExtractorEventType.ExternalSyncUnitExtractionDone &&
+            data?.external_sync_units &&
+            data.external_sync_units.length > 0
+          ) {
+            console.log(
+              `Uploading ${data.external_sync_units.length} external sync units via repo before emitting event.`
+            );
 
-        this.initializeRepos([
-          {
-            itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
-            overridenOptions: {
-              batchSize: 25000,
-              skipConfirmation: true,
-            },
-          },
-        ]);
+            this.initializeRepos([
+              {
+                itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
+                overridenOptions: {
+                  batchSize: 25000,
+                  skipConfirmation: true,
+                },
+              },
+            ]);
 
-        await this.getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)?.push(
-          data.external_sync_units
-        );
+            await this.getRepo(
+              AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS
+            )?.push(data.external_sync_units);
 
-        // Remove inline external_sync_units from data to avoid SQS size issues
-        delete data.external_sync_units;
-      }
+            // Remove inline external_sync_units from data to avoid SQS size issues
+            delete data.external_sync_units;
+          }
 
-      // Upload all repos before emitting the event
-      console.log(
-        `Uploading all repos before emitting event with event type: ${newEventType}.`
-      );
-
-      try {
-        await this.uploadAllRepos();
-      } catch (error) {
-        console.error('Error while uploading repos', error);
-        parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
-        this.hasWorkerEmitted = true;
-        return;
-      }
-
-      // If the extraction is done, we want to save the timestamp of the last successful sync
-      if (newEventType === ExtractorEventType.AttachmentExtractionDone) {
-        console.log(
-          `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${this.state.lastSyncStarted}).`
-        );
-
-        this.state.lastSuccessfulSyncStarted = this.state.lastSyncStarted;
-        this.state.lastSyncStarted = '';
-
-        // Clear pending extraction boundaries now that the cycle is complete
-        this.state.pendingWorkersOldest = '';
-        this.state.pendingWorkersNewest = '';
-
-        // Update workersOldest and workersNewest boundaries from resolved extraction timestamps.
-        // Expand boundaries: workersOldest gets the earliest timestamp, workersNewest gets the latest.
-        const extractionStart = this.event.payload.event_context.extract_from;
-        const extractionEnd = this.event.payload.event_context.extract_to;
-
-        if (
-          extractionStart &&
-          (!this.state.workersOldest ||
-            extractionStart < this.state.workersOldest)
-        ) {
+          // Upload all repos before emitting the event
           console.log(
-            `Updating workersOldest from '${this.state.workersOldest}' to '${extractionStart}'.`
+            `Uploading all repos before emitting event with event type: ${newEventType}.`
           );
-          this.state.workersOldest = extractionStart;
-        }
 
-        if (
-          extractionEnd &&
-          (!this.state.workersNewest ||
-            extractionEnd > this.state.workersNewest)
-        ) {
-          console.log(
-            `Updating workersNewest from '${this.state.workersNewest}' to '${extractionEnd}'.`
-          );
-          this.state.workersNewest = extractionEnd;
-        }
-      }
+          try {
+            await this.uploadAllRepos();
+          } catch (error) {
+            markSpanError(error, span);
+            console.error('Error while uploading repos', error);
+            parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+            this.hasWorkerEmitted = true;
+            return;
+          }
 
-      // We want to save the state every time we emit an event, except for the start and delete events
-      if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
-        console.log(
-          `Saving state before emitting event with event type: ${newEventType}.`
-        );
+          // If the extraction is done, we want to save the timestamp of the last successful sync
+          if (newEventType === ExtractorEventType.AttachmentExtractionDone) {
+            console.log(
+              `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${this.state.lastSyncStarted}).`
+            );
 
-        try {
-          await this.adapterState.postState(this.state);
-        } catch (error) {
-          console.error('Error while posting state', error);
-          parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
-          this.hasWorkerEmitted = true;
-          return;
-        }
-      }
+            this.state.lastSuccessfulSyncStarted = this.state.lastSyncStarted;
+            this.state.lastSyncStarted = '';
 
-      try {
-        // Always prune error messages to make them shorter before emit
-        if (data?.error?.message) {
-          data.error.message = truncateMessage(data.error.message);
-        }
+            // Clear pending extraction boundaries now that the cycle is complete
+            this.state.pendingWorkersOldest = '';
+            this.state.pendingWorkersNewest = '';
 
-        const isExtractionEvent = Object.values(ExtractorEventType).includes(
-          newEventType as ExtractorEventType
-        );
-        const isLoaderEvent = Object.values(LoaderEventType).includes(
-          newEventType as LoaderEventType
-        );
+            // Update workersOldest and workersNewest boundaries from resolved extraction timestamps.
+            // Expand boundaries: workersOldest gets the earliest timestamp, workersNewest gets the latest.
+            const extractionStart =
+              this.event.payload.event_context.extract_from;
+            const extractionEnd = this.event.payload.event_context.extract_to;
 
-        await emit({
-          eventType: newEventType,
-          event: this.event,
-          data: {
-            ...data,
-            ...(isExtractionEvent ? { artifacts: this.artifacts } : {}),
-            ...(isLoaderEvent
-              ? { reports: this.reports, processed_files: this.processedFiles }
-              : {}),
-          },
-        });
+            if (
+              extractionStart &&
+              (!this.state.workersOldest ||
+                extractionStart < this.state.workersOldest)
+            ) {
+              console.log(
+                `Updating workersOldest from '${this.state.workersOldest}' to '${extractionStart}'.`
+              );
+              this.state.workersOldest = extractionStart;
+            }
 
-        const message: WorkerMessageEmitted = {
-          subject: WorkerMessageSubject.WorkerMessageEmitted,
-          payload: { eventType: newEventType },
-        };
-        this.artifacts = [];
-        parentPort?.postMessage(message);
-        this.hasWorkerEmitted = true;
-      } catch (error) {
-        console.error(
-          `Error while emitting event with event type: ${newEventType}.`,
-          serializeError(error)
-        );
-        parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
-        this.hasWorkerEmitted = true;
-      }
-    });
+            if (
+              extractionEnd &&
+              (!this.state.workersNewest ||
+                extractionEnd > this.state.workersNewest)
+            ) {
+              console.log(
+                `Updating workersNewest from '${this.state.workersNewest}' to '${extractionEnd}'.`
+              );
+              this.state.workersNewest = extractionEnd;
+            }
+          }
+
+          // We want to save the state every time we emit an event, except for the start and delete events
+          if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
+            console.log(
+              `Saving state before emitting event with event type: ${newEventType}.`
+            );
+
+            try {
+              await this.adapterState.postState(this.state);
+            } catch (error) {
+              markSpanError(error, span);
+              console.error('Error while posting state', error);
+              parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+              this.hasWorkerEmitted = true;
+              return;
+            }
+          }
+
+          try {
+            // Always prune error messages to make them shorter before emit
+            if (data?.error?.message) {
+              data.error.message = truncateMessage(data.error.message);
+            }
+
+            const isExtractionEvent = Object.values(
+              ExtractorEventType
+            ).includes(newEventType as ExtractorEventType);
+            const isLoaderEvent = Object.values(LoaderEventType).includes(
+              newEventType as LoaderEventType
+            );
+
+            await emit({
+              eventType: newEventType,
+              event: this.event,
+              data: {
+                ...data,
+                ...(isExtractionEvent ? { artifacts: this.artifacts } : {}),
+                ...(isLoaderEvent
+                  ? {
+                      reports: this.reports,
+                      processed_files: this.processedFiles,
+                    }
+                  : {}),
+              },
+            });
+
+            const message: WorkerMessageEmitted = {
+              subject: WorkerMessageSubject.WorkerMessageEmitted,
+              payload: { eventType: newEventType },
+            };
+            this.artifacts = [];
+            parentPort?.postMessage(message);
+            this.hasWorkerEmitted = true;
+          } catch (error) {
+            markSpanError(error, span);
+            console.error(
+              `Error while emitting event with event type: ${newEventType}.`,
+              serializeError(error)
+            );
+            parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+            this.hasWorkerEmitted = true;
+          }
+        })
+    );
   }
 
   async uploadAllRepos(): Promise<void> {
@@ -409,139 +444,160 @@ export class WorkerAdapter<ConnectorState> {
   async loadItemTypes({
     itemTypesToLoad,
   }: ItemTypesToLoadParams): Promise<LoadItemTypesResponse> {
-    return runWithSdkLogContext(async () => {
-      if (this.event.payload.event_type === EventType.StartLoadingData) {
-        const itemTypes = itemTypesToLoad.map(
-          (itemTypeToLoad) => itemTypeToLoad.itemType
-        );
+    return withLocalTraceSpan(
+      'WorkerAdapter.loadItemTypes',
+      {
+        attributes: {
+          event_type: this.event.payload.event_type,
+          item_types: itemTypesToLoad
+            .map((itemTypeToLoad) => itemTypeToLoad.itemType)
+            .join(','),
+        },
+        source: {
+          file: __filename,
+          symbol: 'WorkerAdapter.loadItemTypes',
+        },
+      },
+      async (span) =>
+        runWithSdkLogContext(async () => {
+          if (this.event.payload.event_type === EventType.StartLoadingData) {
+            const itemTypes = itemTypesToLoad.map(
+              (itemTypeToLoad) => itemTypeToLoad.itemType
+            );
 
-        if (!itemTypes.length) {
-          console.warn('No item types to load, returning.');
+            if (!itemTypes.length) {
+              console.warn('No item types to load, returning.');
+              return {
+                reports: this.reports,
+                processed_files: this.processedFiles,
+              };
+            }
+
+            const filesToLoad = await this.getLoaderBatches({
+              supportedItemTypes: itemTypes,
+            });
+            this.adapterState.state.fromDevRev = {
+              filesToLoad,
+            };
+          }
+
+          if (
+            !this.adapterState.state.fromDevRev ||
+            !this.adapterState.state.fromDevRev.filesToLoad.length
+          ) {
+            console.warn('No files to load, returning.');
+            return {
+              reports: this.reports,
+              processed_files: this.processedFiles,
+            };
+          }
+
+          console.log(
+            'Files to load in state',
+            this.adapterState.state.fromDevRev?.filesToLoad
+          );
+
+          try {
+            outerloop: for (const fileToLoad of this.adapterState.state
+              .fromDevRev.filesToLoad) {
+              const itemTypeToLoad = itemTypesToLoad.find(
+                (itemTypeToLoad: ItemTypeToLoad) =>
+                  itemTypeToLoad.itemType === fileToLoad.itemType
+              );
+
+              if (!itemTypeToLoad) {
+                console.error(
+                  `Item type to load not found for item type: ${fileToLoad.itemType}.`
+                );
+
+                await this.emit(LoaderEventType.DataLoadingError, {
+                  error: {
+                    message: `Item type to load not found for item type: ${fileToLoad.itemType}.`,
+                  },
+                });
+
+                break;
+              }
+
+              if (!fileToLoad.completed) {
+                const { response, error: transformerFileError } =
+                  await this.uploader.getJsonObjectByArtifactId({
+                    artifactId: fileToLoad.id,
+                    isGzipped: true,
+                  });
+
+                if (transformerFileError) {
+                  console.error(
+                    `Transformer file not found for artifact ID: ${fileToLoad.id}.`
+                  );
+                  await this.emit(LoaderEventType.DataLoadingError, {
+                    error: {
+                      message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
+                    },
+                  });
+                  break outerloop;
+                }
+
+                const transformerFile = response as ExternalSystemItem[];
+
+                for (
+                  let i = fileToLoad.lineToProcess;
+                  i < fileToLoad.count;
+                  i++
+                ) {
+                  if (this.isTimeout) {
+                    console.log(
+                      'Timeout detected during data loading. Emitting progress to allow continuation.'
+                    );
+                    await this.emit(LoaderEventType.DataLoadingProgress);
+                    process.exit(0);
+                  }
+
+                  const { report, rateLimit } = await this.loadItem({
+                    item: transformerFile[i],
+                    itemTypeToLoad,
+                  });
+
+                  if (rateLimit?.delay) {
+                    await this.emit(LoaderEventType.DataLoadingDelayed, {
+                      delay: rateLimit.delay,
+                      reports: this.reports,
+                      processed_files: this.processedFiles,
+                    });
+
+                    break outerloop;
+                  }
+
+                  if (report) {
+                    addReportToLoaderReport({
+                      loaderReports: this.loaderReports,
+                      report,
+                    });
+                    fileToLoad.lineToProcess = fileToLoad.lineToProcess + 1;
+                  }
+                }
+
+                fileToLoad.completed = true;
+                this._processedFiles.push(fileToLoad.id);
+              }
+            }
+          } catch (error) {
+            markSpanError(error, span);
+            console.error('Error during data loading.', serializeError(error));
+            await this.emit(LoaderEventType.DataLoadingError, {
+              error: {
+                message: `Error during data loading. ${serializeError(error)}`,
+              },
+            });
+            process.exit(1);
+          }
+
           return {
             reports: this.reports,
             processed_files: this.processedFiles,
           };
-        }
-
-        const filesToLoad = await this.getLoaderBatches({
-          supportedItemTypes: itemTypes,
-        });
-        this.adapterState.state.fromDevRev = {
-          filesToLoad,
-        };
-      }
-
-      if (
-        !this.adapterState.state.fromDevRev ||
-        !this.adapterState.state.fromDevRev.filesToLoad.length
-      ) {
-        console.warn('No files to load, returning.');
-        return {
-          reports: this.reports,
-          processed_files: this.processedFiles,
-        };
-      }
-
-      console.log(
-        'Files to load in state',
-        this.adapterState.state.fromDevRev?.filesToLoad
-      );
-
-      try {
-        outerloop: for (const fileToLoad of this.adapterState.state.fromDevRev
-          .filesToLoad) {
-          const itemTypeToLoad = itemTypesToLoad.find(
-            (itemTypeToLoad: ItemTypeToLoad) =>
-              itemTypeToLoad.itemType === fileToLoad.itemType
-          );
-
-          if (!itemTypeToLoad) {
-            console.error(
-              `Item type to load not found for item type: ${fileToLoad.itemType}.`
-            );
-
-            await this.emit(LoaderEventType.DataLoadingError, {
-              error: {
-                message: `Item type to load not found for item type: ${fileToLoad.itemType}.`,
-              },
-            });
-
-            break;
-          }
-
-          if (!fileToLoad.completed) {
-            const { response, error: transformerFileError } =
-              await this.uploader.getJsonObjectByArtifactId({
-                artifactId: fileToLoad.id,
-                isGzipped: true,
-              });
-
-            if (transformerFileError) {
-              console.error(
-                `Transformer file not found for artifact ID: ${fileToLoad.id}.`
-              );
-              await this.emit(LoaderEventType.DataLoadingError, {
-                error: {
-                  message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
-                },
-              });
-              break outerloop;
-            }
-
-            const transformerFile = response as ExternalSystemItem[];
-
-            for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
-              if (this.isTimeout) {
-                console.log(
-                  'Timeout detected during data loading. Emitting progress to allow continuation.'
-                );
-                await this.emit(LoaderEventType.DataLoadingProgress);
-                process.exit(0);
-              }
-
-              const { report, rateLimit } = await this.loadItem({
-                item: transformerFile[i],
-                itemTypeToLoad,
-              });
-
-              if (rateLimit?.delay) {
-                await this.emit(LoaderEventType.DataLoadingDelayed, {
-                  delay: rateLimit.delay,
-                  reports: this.reports,
-                  processed_files: this.processedFiles,
-                });
-
-                break outerloop;
-              }
-
-              if (report) {
-                addReportToLoaderReport({
-                  loaderReports: this.loaderReports,
-                  report,
-                });
-                fileToLoad.lineToProcess = fileToLoad.lineToProcess + 1;
-              }
-            }
-
-            fileToLoad.completed = true;
-            this._processedFiles.push(fileToLoad.id);
-          }
-        }
-      } catch (error) {
-        console.error('Error during data loading.', serializeError(error));
-        await this.emit(LoaderEventType.DataLoadingError, {
-          error: {
-            message: `Error during data loading. ${serializeError(error)}`,
-          },
-        });
-        process.exit(1);
-      }
-
-      return {
-        reports: this.reports,
-        processed_files: this.processedFiles,
-      };
-    });
+        })
+    );
   }
 
   async getLoaderBatches({
@@ -581,108 +637,128 @@ export class WorkerAdapter<ConnectorState> {
   }: {
     create: ExternalSystemLoadingFunction<ExternalSystemAttachment>;
   }): Promise<LoadItemTypesResponse> {
-    return runWithSdkLogContext(async () => {
-      if (this.event.payload.event_type === EventType.StartLoadingAttachments) {
-        this.adapterState.state.fromDevRev = {
-          filesToLoad: await this.getLoaderBatches({
-            supportedItemTypes: ['attachment'],
-          }),
-        };
-      }
-
-      if (
-        !this.adapterState.state.fromDevRev ||
-        this.adapterState.state.fromDevRev?.filesToLoad.length === 0
-      ) {
-        console.log('No files to load, returning.');
-        return {
-          reports: this.reports,
-          processed_files: this.processedFiles,
-        };
-      }
-
-      const filesToLoad = this.adapterState.state.fromDevRev?.filesToLoad;
-
-      try {
-        outerloop: for (const fileToLoad of filesToLoad) {
-          if (!fileToLoad.completed) {
-            const { response, error: transformerFileError } =
-              await this.uploader.getJsonObjectByArtifactId({
-                artifactId: fileToLoad.id,
-                isGzipped: true,
-              });
-
-            const transformerFile = response as ExternalSystemAttachment[];
-
-            if (transformerFileError) {
-              console.error(
-                `Transformer file not found for artifact ID: ${fileToLoad.id}.`
-              );
-              await this.emit(LoaderEventType.AttachmentLoadingError, {
-                error: {
-                  message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
-                },
-              });
-              break outerloop;
-            }
-
-            for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
-              if (this.isTimeout) {
-                console.log(
-                  'Timeout detected during attachment loading. Emitting progress to allow continuation.'
-                );
-                await this.emit(LoaderEventType.AttachmentLoadingProgress);
-                process.exit(0);
-              }
-
-              const { report, rateLimit } = await this.loadAttachment({
-                item: transformerFile[i],
-                create,
-              });
-
-              if (rateLimit?.delay) {
-                await this.emit(LoaderEventType.AttachmentLoadingDelayed, {
-                  delay: rateLimit.delay,
-                  reports: this.reports,
-                  processed_files: this.processedFiles,
-                });
-
-                break outerloop;
-              }
-
-              if (report) {
-                addReportToLoaderReport({
-                  loaderReports: this.loaderReports,
-                  report,
-                });
-                fileToLoad.lineToProcess = fileToLoad.lineToProcess + 1;
-              }
-            }
-
-            fileToLoad.completed = true;
-            this._processedFiles.push(fileToLoad.id);
+    return withLocalTraceSpan(
+      'WorkerAdapter.loadAttachments',
+      {
+        attributes: {
+          event_type: this.event.payload.event_type,
+        },
+        source: {
+          file: __filename,
+          symbol: 'WorkerAdapter.loadAttachments',
+        },
+      },
+      async (span) =>
+        runWithSdkLogContext(async () => {
+          if (
+            this.event.payload.event_type === EventType.StartLoadingAttachments
+          ) {
+            this.adapterState.state.fromDevRev = {
+              filesToLoad: await this.getLoaderBatches({
+                supportedItemTypes: ['attachment'],
+              }),
+            };
           }
-        }
-      } catch (error) {
-        console.error(
-          'Error during attachment loading.',
-          serializeError(error)
-        );
-        await this.emit(LoaderEventType.AttachmentLoadingError, {
-          error: {
-            message: `Error during attachment loading. ${serializeError(
-              error
-            )}`,
-          },
-        });
-        process.exit(1);
-      }
 
-      return {
-        reports: this.reports,
-        processed_files: this.processedFiles,
-      };
-    });
+          if (
+            !this.adapterState.state.fromDevRev ||
+            this.adapterState.state.fromDevRev?.filesToLoad.length === 0
+          ) {
+            console.log('No files to load, returning.');
+            return {
+              reports: this.reports,
+              processed_files: this.processedFiles,
+            };
+          }
+
+          const filesToLoad = this.adapterState.state.fromDevRev?.filesToLoad;
+
+          try {
+            outerloop: for (const fileToLoad of filesToLoad) {
+              if (!fileToLoad.completed) {
+                const { response, error: transformerFileError } =
+                  await this.uploader.getJsonObjectByArtifactId({
+                    artifactId: fileToLoad.id,
+                    isGzipped: true,
+                  });
+
+                const transformerFile = response as ExternalSystemAttachment[];
+
+                if (transformerFileError) {
+                  console.error(
+                    `Transformer file not found for artifact ID: ${fileToLoad.id}.`
+                  );
+                  await this.emit(LoaderEventType.AttachmentLoadingError, {
+                    error: {
+                      message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
+                    },
+                  });
+                  break outerloop;
+                }
+
+                for (
+                  let i = fileToLoad.lineToProcess;
+                  i < fileToLoad.count;
+                  i++
+                ) {
+                  if (this.isTimeout) {
+                    console.log(
+                      'Timeout detected during attachment loading. Emitting progress to allow continuation.'
+                    );
+                    await this.emit(LoaderEventType.AttachmentLoadingProgress);
+                    process.exit(0);
+                  }
+
+                  const { report, rateLimit } = await this.loadAttachment({
+                    item: transformerFile[i],
+                    create,
+                  });
+
+                  if (rateLimit?.delay) {
+                    await this.emit(LoaderEventType.AttachmentLoadingDelayed, {
+                      delay: rateLimit.delay,
+                      reports: this.reports,
+                      processed_files: this.processedFiles,
+                    });
+
+                    break outerloop;
+                  }
+
+                  if (report) {
+                    addReportToLoaderReport({
+                      loaderReports: this.loaderReports,
+                      report,
+                    });
+                    fileToLoad.lineToProcess = fileToLoad.lineToProcess + 1;
+                  }
+                }
+
+                fileToLoad.completed = true;
+                this._processedFiles.push(fileToLoad.id);
+              }
+            }
+          } catch (error) {
+            markSpanError(error, span);
+            console.error(
+              'Error during attachment loading.',
+              serializeError(error)
+            );
+            await this.emit(LoaderEventType.AttachmentLoadingError, {
+              error: {
+                message: `Error during attachment loading. ${serializeError(
+                  error
+                )}`,
+              },
+            });
+            process.exit(1);
+          }
+
+          return {
+            reports: this.reports,
+            processed_files: this.processedFiles,
+          };
+        })
+    );
   }
 
   async loadItem({

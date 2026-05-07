@@ -5,6 +5,7 @@ import { State } from '../state/state';
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 
 import { AirdropEvent, EventType, ExtractorEventType } from './extraction';
+import type { SerializedSpanContext } from './common';
 
 import { LoaderEventType } from './loading';
 
@@ -45,6 +46,8 @@ export interface WorkerAdapterOptions {
   batchSize?: number;
   workerPathOverrides?: WorkerPathOverrides;
   skipConfirmation?: boolean;
+  traceOutputPath?: string;
+  traceParentSpanContext?: SerializedSpanContext;
 }
 
 /**
