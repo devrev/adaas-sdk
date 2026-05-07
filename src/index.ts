@@ -26,6 +26,7 @@ export {
   spanContextToSerialized,
   withLocalTraceResult,
   withLocalTraceSpan,
+  withUserTraceSpan,
 } from './tracing/local-trace';
 export type {
   LocalTraceSession,

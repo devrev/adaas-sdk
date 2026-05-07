@@ -1,10 +1,7 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { translateIncomingEventType } from '../common/event-type-translation';
 import { Logger, serializeError } from '../logger/logger';
-import {
-  runWithSdkLogContext,
-  runWithUserLogContext,
-} from '../logger/logger.context';
+import { runWithSdkLogContext } from '../logger/logger.context';
 import { createAdapterState } from '../state/state';
 import {
   ProcessTaskInterface,
@@ -16,7 +13,9 @@ import {
   createLocalTraceSession,
   markSpanError,
   withLocalTraceSpan,
+  withUserTraceSpan,
 } from '../tracing/local-trace';
+import { summarizeEventContext } from '../tracing/trace-context';
 
 export function processTask<ConnectorState>({
   task,
@@ -32,6 +31,8 @@ export function processTask<ConnectorState>({
       outputPath: workerData.options?.traceOutputPath,
     });
 
+    let exitCode = 0;
+
     try {
       await withLocalTraceSpan(
         'processTask',
@@ -39,6 +40,7 @@ export function processTask<ConnectorState>({
           attributes: {
             event_type: workerData.event.payload.event_type,
             worker_path: workerData.workerPath,
+            ...summarizeEventContext(workerData.event.payload.event_context),
           },
           source: {
             file: __filename,
@@ -87,14 +89,32 @@ export function processTask<ConnectorState>({
                 adapter.isTimeout = true;
               });
 
-              await runWithUserLogContext(async () => task({ adapter }));
+              await withUserTraceSpan(
+                'User.task',
+                {
+                  source: {
+                    file: __filename,
+                    symbol: 'task',
+                  },
+                },
+                async () => task({ adapter })
+              );
               if (adapter.isTimeout && !adapter.hasWorkerEmitted) {
-                await runWithUserLogContext(async () => onTimeout({ adapter }));
+                await withUserTraceSpan(
+                  'User.onTimeout',
+                  {
+                    source: {
+                      file: __filename,
+                      symbol: 'onTimeout',
+                    },
+                  },
+                  async () => onTimeout({ adapter })
+                );
               }
-              process.exit(0);
             } catch (error) {
+              exitCode = 1;
               markSpanError(error, span);
-              runWithUserLogContext(() => {
+              runWithSdkLogContext(() => {
                 const errorMessage = `Error while processing task. ${serializeError(
                   error
                 )}`;
@@ -103,13 +123,13 @@ export function processTask<ConnectorState>({
                   subject: WorkerMessageSubject.WorkerMessageFailed,
                   payload: { message: errorMessage },
                 });
-                process.exit(1);
               });
             }
           })
       );
     } finally {
       await traceSession.shutdown();
+      process.exit(exitCode);
     }
   })();
 }

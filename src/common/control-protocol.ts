@@ -11,6 +11,10 @@ import { LoaderEventType } from '../types/loading';
 import { LIBRARY_VERSION } from './constants';
 import { translateOutgoingEventType } from './event-type-translation';
 import { withLocalTraceSpan } from '../tracing/local-trace';
+import {
+  summarizeEventContext,
+  summarizeEventData,
+} from '../tracing/trace-context';
 
 export interface EmitInterface {
   event: AirdropEvent;
@@ -32,7 +36,8 @@ export const emit = async ({
     {
       attributes: {
         event_type: translatedEventType,
-        callback_url: event.payload.event_context.callback_url,
+        ...summarizeEventContext(event.payload.event_context),
+        ...summarizeEventData(data),
       },
       source: {
         file: __filename,

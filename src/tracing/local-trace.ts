@@ -11,6 +11,7 @@ import type {
 } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 
+import { runWithUserLogContext } from '../logger/logger.context';
 import type { SerializedSpanContext } from '../types/common';
 
 const SESSION_DIR = '.adaas-traces';
@@ -680,6 +681,16 @@ export async function withLocalTraceResult<T extends { error?: unknown }>(
       throw error;
     }
   });
+}
+
+export async function withUserTraceSpan<T>(
+  name: string,
+  options: TraceSpanOptions,
+  fn: (span: Span | undefined) => Promise<T> | T
+): Promise<T> {
+  return withLocalTraceSpan(name, options, async (span) =>
+    runWithUserLogContext(async () => fn(span))
+  );
 }
 
 export function markSpanError(error: unknown, span?: Span): void {

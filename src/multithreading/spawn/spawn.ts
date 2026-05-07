@@ -31,6 +31,7 @@ import {
   spanContextToSerialized,
   withLocalTraceSpan,
 } from '../../tracing/local-trace';
+import { summarizeEventContext } from '../../tracing/trace-context';
 
 function getWorkerPath({
   event,
@@ -133,13 +134,15 @@ export async function spawn<ConnectorState>({
           event_type: translatedEventType,
           original_event_type: originalEventType,
           local_development: isLocalDevelopment,
+          ...(traceOutputPath ? { trace_output_path: traceOutputPath } : {}),
+          ...summarizeEventContext(event.payload.event_context),
         },
         source: {
           file: __filename,
           symbol: 'spawn',
         },
       },
-      async () => {
+      async (span) => {
         if (translatedEventType !== originalEventType) {
           console.log(
             `Event type translated from ${originalEventType} to ${translatedEventType}.`
@@ -150,8 +153,11 @@ export async function spawn<ConnectorState>({
         }
 
         let script = null;
+        let workerPathSource: 'explicit' | 'override' | 'default' | 'none' =
+          'none';
         if (workerPath != null) {
           script = workerPath;
+          workerPathSource = 'explicit';
         } else if (
           baseWorkerPath != null &&
           tracedOptions?.workerPathOverrides != null &&
@@ -161,11 +167,18 @@ export async function spawn<ConnectorState>({
           script =
             baseWorkerPath +
             tracedOptions.workerPathOverrides[translatedEventType as EventType];
+          workerPathSource = 'override';
         } else {
           script = getWorkerPath({
             event,
             workerBasePath: baseWorkerPath ?? __dirname,
           });
+          workerPathSource = 'default';
+        }
+
+        span?.setAttribute('worker_path_source', workerPathSource);
+        if (script) {
+          span?.setAttribute('worker_path', script);
         }
 
         // If a script is found for the event type, spawn a new worker.

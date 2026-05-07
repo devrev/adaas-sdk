@@ -13,11 +13,12 @@ import {
   getFilesToLoad,
 } from './worker-adapter.helpers';
 import { serializeError } from '../../logger/logger';
+import { runWithSdkLogContext } from '../../logger/logger.context';
 import {
-  runWithSdkLogContext,
-  runWithUserLogContext,
-} from '../../logger/logger.context';
-import { markSpanError, withLocalTraceSpan } from '../../tracing/local-trace';
+  markSpanError,
+  withLocalTraceSpan,
+  withUserTraceSpan,
+} from '../../tracing/local-trace';
 import { Mappers } from '../../mappers/mappers';
 import { SyncMapperRecordStatus } from '../../mappers/mappers.interface';
 import { Repo } from '../../repo/repo';
@@ -61,6 +62,10 @@ import { Uploader } from '../../uploader/uploader';
 import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
 import { translateOutgoingEventType } from '../../common/event-type-translation';
 import { truncateMessage } from '../../common/helpers';
+import {
+  summarizeEventContext,
+  summarizeEventData,
+} from '../../tracing/trace-context';
 
 export function createWorkerAdapter<ConnectorState>({
   event,
@@ -261,7 +266,8 @@ export class WorkerAdapter<ConnectorState> {
       'WorkerAdapter.emit',
       {
         attributes: {
-          event_type: newEventType,
+          requested_event_type: newEventType,
+          ...summarizeEventContext(this.event.payload.event_context),
         },
         source: {
           file: __filename,
@@ -271,6 +277,7 @@ export class WorkerAdapter<ConnectorState> {
       async (span) =>
         runWithSdkLogContext(async () => {
           newEventType = translateOutgoingEventType(newEventType);
+          span?.setAttribute('emitted_event_type', newEventType);
 
           if (this.hasWorkerEmitted) {
             console.warn(
@@ -396,10 +403,7 @@ export class WorkerAdapter<ConnectorState> {
               newEventType as LoaderEventType
             );
 
-            await emit({
-              eventType: newEventType,
-              event: this.event,
-              data: {
+            const emitData = {
                 ...data,
                 ...(isExtractionEvent ? { artifacts: this.artifacts } : {}),
                 ...(isLoaderEvent
@@ -408,7 +412,18 @@ export class WorkerAdapter<ConnectorState> {
                       processed_files: this.processedFiles,
                     }
                   : {}),
-              },
+            };
+
+            for (const [key, value] of Object.entries(
+              summarizeEventData(emitData)
+            )) {
+              span?.setAttribute(key, value);
+            }
+
+            await emit({
+              eventType: newEventType,
+              event: this.event,
+              data: emitData,
             });
 
             const message: WorkerMessageEmitted = {
@@ -452,6 +467,7 @@ export class WorkerAdapter<ConnectorState> {
           item_types: itemTypesToLoad
             .map((itemTypeToLoad) => itemTypeToLoad.itemType)
             .join(','),
+          ...summarizeEventContext(this.event.payload.event_context),
         },
         source: {
           file: __filename,
@@ -642,6 +658,7 @@ export class WorkerAdapter<ConnectorState> {
       {
         attributes: {
           event_type: this.event.payload.event_type,
+          ...summarizeEventContext(this.event.payload.event_context),
         },
         source: {
           file: __filename,
@@ -788,7 +805,17 @@ export class WorkerAdapter<ConnectorState> {
         }
 
         // Update item in external system
-        const { id, modifiedDate, delay, error } = await runWithUserLogContext(
+        const { id, modifiedDate, delay, error } = await withUserTraceSpan(
+          'User.loadItem.update',
+          {
+            source: {
+              file: __filename,
+              symbol: 'loadItem.update',
+            },
+            attributes: {
+              item_type: itemTypeToLoad.itemType,
+            },
+          },
           async () => {
             return await itemTypeToLoad.update({
               item,
@@ -870,14 +897,25 @@ export class WorkerAdapter<ConnectorState> {
         if (axios.isAxiosError(error)) {
           if (error.response?.status === 404) {
             // Create item in external system if mapper record not found
-            const { id, modifiedDate, delay, error } =
-              await runWithUserLogContext(async () => {
+            const { id, modifiedDate, delay, error } = await withUserTraceSpan(
+              'User.loadItem.create',
+              {
+                source: {
+                  file: __filename,
+                  symbol: 'loadItem.create',
+                },
+                attributes: {
+                  item_type: itemTypeToLoad.itemType,
+                },
+              },
+              async () => {
                 return await itemTypeToLoad.create({
                   item,
                   mappers: this._mappers,
                   event: this.event,
                 });
-              });
+              }
+            );
 
             if (id) {
               // Create mapper
@@ -972,7 +1010,21 @@ export class WorkerAdapter<ConnectorState> {
     stream: ExternalSystemAttachmentStreamingFunction
   ): Promise<ProcessAttachmentReturnType> {
     return runWithSdkLogContext(async () => {
-      const { httpStream, delay, error } = await runWithUserLogContext(
+      const { httpStream, delay, error } = await withUserTraceSpan(
+        'User.processAttachment.stream',
+        {
+          source: {
+            file: __filename,
+            symbol: 'processAttachment.stream',
+          },
+          attributes: {
+            attachment_id: attachment.id,
+            parent_id: attachment.parent_id,
+            ...(attachment.content_type
+              ? { content_type: attachment.content_type }
+              : {}),
+          },
+        },
         async () =>
           stream({
             item: attachment,
@@ -1108,7 +1160,26 @@ export class WorkerAdapter<ConnectorState> {
   }): Promise<LoadItemResponse> {
     return runWithSdkLogContext(async () => {
       // Create item
-      const { id, delay, error } = await runWithUserLogContext(async () =>
+      const { id, delay, error } = await withUserTraceSpan(
+        'User.loadAttachment.create',
+        {
+          source: {
+            file: __filename,
+            symbol: 'loadAttachment.create',
+          },
+          attributes: {
+            reference_id: item.reference_id,
+            file_name: item.file_name,
+            file_type: item.file_type,
+            file_size: item.file_size,
+            parent_type: item.parent_type,
+            ...(item.parent_id ? { parent_id: item.parent_id } : {}),
+            ...(item.grand_parent_id
+              ? { grand_parent_id: item.grand_parent_id }
+              : {}),
+          },
+        },
+        async () =>
         create({
           item,
           mappers: this._mappers,
@@ -1257,7 +1328,19 @@ export class WorkerAdapter<ConnectorState> {
           const reducer = processors.reducer;
           const iterator = processors.iterator;
 
-          const reducedAttachments = runWithUserLogContext(() =>
+          const reducedAttachments = await withUserTraceSpan(
+            'User.loadAttachments.reducer',
+            {
+              source: {
+                file: __filename,
+                symbol: 'loadAttachments.reducer',
+              },
+              attributes: {
+                attachment_count: attachments.length,
+                batch_size: batchSize,
+              },
+            },
+            () =>
             reducer({
               attachments,
               adapter: this,
@@ -1265,13 +1348,28 @@ export class WorkerAdapter<ConnectorState> {
             })
           );
 
-          response = await runWithUserLogContext(async () => {
+          response = await withUserTraceSpan(
+            'User.loadAttachments.iterator',
+            {
+              source: {
+                file: __filename,
+                symbol: 'loadAttachments.iterator',
+              },
+              attributes: {
+                ...(Array.isArray(reducedAttachments)
+                  ? { reduced_attachment_count: reducedAttachments.length }
+                  : {}),
+                batch_size: batchSize,
+              },
+            },
+            async () => {
             return await iterator({
               reducedAttachments,
               adapter: this,
               stream,
             });
-          });
+            }
+          );
         } else {
           console.log(
             `Using attachments streaming pool for attachments streaming.`
