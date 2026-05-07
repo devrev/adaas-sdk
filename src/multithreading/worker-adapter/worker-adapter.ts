@@ -404,14 +404,14 @@ export class WorkerAdapter<ConnectorState> {
             );
 
             const emitData = {
-                ...data,
-                ...(isExtractionEvent ? { artifacts: this.artifacts } : {}),
-                ...(isLoaderEvent
-                  ? {
-                      reports: this.reports,
-                      processed_files: this.processedFiles,
-                    }
-                  : {}),
+              ...data,
+              ...(isExtractionEvent ? { artifacts: this.artifacts } : {}),
+              ...(isLoaderEvent
+                ? {
+                    reports: this.reports,
+                    processed_files: this.processedFiles,
+                  }
+                : {}),
             };
 
             for (const [key, value] of Object.entries(
@@ -1180,11 +1180,11 @@ export class WorkerAdapter<ConnectorState> {
           },
         },
         async () =>
-        create({
-          item,
-          mappers: this._mappers,
-          event: this.event,
-        })
+          create({
+            item,
+            mappers: this._mappers,
+            event: this.event,
+          })
       );
 
       if (delay) {
@@ -1341,11 +1341,11 @@ export class WorkerAdapter<ConnectorState> {
               },
             },
             () =>
-            reducer({
-              attachments,
-              adapter: this,
-              batchSize,
-            })
+              reducer({
+                attachments,
+                adapter: this,
+                batchSize,
+              })
           );
 
           response = await withUserTraceSpan(
@@ -1363,11 +1363,11 @@ export class WorkerAdapter<ConnectorState> {
               },
             },
             async () => {
-            return await iterator({
-              reducedAttachments,
-              adapter: this,
-              stream,
-            });
+              return await iterator({
+                reducedAttachments,
+                adapter: this,
+                stream,
+              });
             }
           );
         } else {
