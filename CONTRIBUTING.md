@@ -10,6 +10,12 @@ We follow Semantic Versioning (SemVer) for versioning, with the format `MAJOR.MI
 - `MINOR` - New features, backwards compatible
 - `PATCH` - Bug fixes, no new features
 
+## Commit Messages
+
+- Commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+- Example: `feat: add retry handling`
+- Local git hooks reject non-conforming commit messages.
+
 ## Testing
 
 All new code must include comprehensive tests. Follow these testing guidelines:
