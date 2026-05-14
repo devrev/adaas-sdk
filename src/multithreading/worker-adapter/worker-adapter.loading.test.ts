@@ -678,7 +678,7 @@ describe(`${WorkerAdapter.name}.loadAttachment`, () => {
     });
 
     // Assert
-    expect(result.report?.item_type).toBe('attachment');
+    expect(result.report?.item_type).toBe('attachments');
     expect(result.report?.[ActionType.CREATED]).toBe(1);
   });
 
