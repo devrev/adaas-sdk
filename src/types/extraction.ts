@@ -1,3 +1,5 @@
+import { InputData } from '@devrev/typescript-sdk/dist/snap-ins';
+
 import { Artifact } from '../uploader/uploader.interfaces';
 
 import { ErrorRecord } from './common';
@@ -7,26 +9,6 @@ import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import { DonV2, LoaderReport, RateLimited } from './loading';
 
-/**
- * Input data provided to the function.
- */
-export type InputData = {
-    /**
-     * Map of globals and their corresponding values stored in Snap-in.
-     * The values are passed as string and typing need to be handled by the function
-     */
-    global_values: Record<string, string>;
-    /**
-     * Map of event sources and their corresponding ids stored in Snap-in.
-     * These could be used to schedule events on a schedule based event source.
-     */
-    event_sources: Record<string, string>;
-    /**
-     * Map of resources stored in the Snap-in. The resources include keyrings and tags.
-     * The key is the resource name defined in manifest and value is the resource object.
-     */
-    resources?: Record<string, any>;
-};
 /**
  * EventType is an enum that defines the different types of events that can be sent to the external extractor from ADaaS.
  * The external extractor can use these events to know what to do next in the extraction process.
