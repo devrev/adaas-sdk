@@ -24,6 +24,10 @@ export class Repo {
   private onUpload: (artifact: Artifact) => void;
   private options?: WorkerAdapterOptions;
   public uploadedArtifacts: Artifact[];
+  public itemTimestamps: { min: number; max: number } = {
+    min: 0,
+    max: 0,
+  };
 
   constructor({
     event,
@@ -51,6 +55,28 @@ export class Repo {
     const itemsToUpload = batch || this.items;
 
     if (itemsToUpload.length > 0) {
+      for (const item of itemsToUpload) {
+        if (
+          item != null &&
+          'created_date' in item &&
+          item.created_date != null
+        ) {
+          const created_date = new Date(item['created_date']).getTime();
+          if (
+            this.itemTimestamps.min == 0 ||
+            created_date < this.itemTimestamps.min
+          ) {
+            this.itemTimestamps.min = created_date;
+          }
+          if (
+            this.itemTimestamps.max == 0 ||
+            created_date > this.itemTimestamps.max
+          ) {
+            this.itemTimestamps.max = created_date;
+          }
+        }
+      }
+
       console.log(
         `Uploading ${itemsToUpload.length} items of type ${this.itemType}. `
       );
