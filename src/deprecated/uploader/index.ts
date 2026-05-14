@@ -1,8 +1,17 @@
-import { betaSDK, client } from '@devrev/typescript-sdk';
+import { AxiosResponse } from 'axios';
+import FormData from 'form-data';
 import fs, { promises as fsPromises } from 'fs';
+import { jsonl } from 'js-jsonl';
+import { truncateFilename } from '../../common/helpers';
 import { axiosClient } from '../../http/axios-client-internal';
 import { Artifact, UploadResponse } from '../../uploader/uploader.interfaces';
-import { createFormData } from '../common/helpers';
+import { serializeError } from '../../logger/logger';
+
+interface PreparedArtifact {
+  upload_url: string;
+  artifact_id: string;
+  form_data: Array<{ key: string; value: string }>;
+}
 
 /**
  * Uploader class is used to upload files to the DevRev platform.
@@ -18,13 +27,16 @@ import { createFormData } from '../common/helpers';
  * @param {boolean} local - Flag to indicate if the uploader should upload to the file-system.
  */
 export class Uploader {
-  private betaDevrevSdk: betaSDK.Api<unknown>;
+  private devrevApiEndpoint: string;
+  private devrevApiToken: string;
+  private defaultHeaders: Record<string, string>;
   private local: boolean;
   constructor(endpoint: string, token: string, local = false) {
-    this.betaDevrevSdk = client.setupBeta({
-      endpoint,
-      token,
-    });
+    this.devrevApiEndpoint = endpoint;
+    this.devrevApiToken = token;
+    this.defaultHeaders = {
+      Authorization: `Bearer ${this.devrevApiToken}`,
+    };
     this.local = local;
   }
 
@@ -73,7 +85,7 @@ export class Uploader {
     // If file was successfully uploaded we want to post data about that file when emitting
     const itemCount = Array.isArray(fetchedObjects) ? fetchedObjects.length : 1;
     const artifact: Artifact = {
-      id: preparedArtifact.id,
+      id: preparedArtifact.artifact_id,
       item_type: entity,
       item_count: itemCount,
     };
@@ -86,37 +98,57 @@ export class Uploader {
   private async prepareArtifact(
     filename: string,
     filetype: string
-  ): Promise<betaSDK.ArtifactsPrepareResponse | null> {
+  ): Promise<PreparedArtifact | null> {
     try {
-      const response = await this.betaDevrevSdk.artifactsPrepare({
-        file_name: filename,
-        file_type: filetype,
-      });
+      const response = await axiosClient.get(
+        `${this.devrevApiEndpoint}/internal/airdrop.artifacts.upload-url`,
+        {
+          headers: {
+            ...this.defaultHeaders,
+          },
+          params: {
+            file_name: truncateFilename(filename),
+            file_type: filetype,
+          },
+        }
+      );
 
       return response.data;
     } catch (error) {
-      console.error('Error while preparing artifact: ' + error);
+      console.error(
+        'Error while preparing artifact: ' + serializeError(error)
+      );
       return null;
     }
   }
 
   private async uploadToArtifact(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    preparedArtifact: any,
+    preparedArtifact: PreparedArtifact,
     fetchedObjects: object[] | object
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<any | null> {
-    const formData = createFormData(preparedArtifact, fetchedObjects);
+  ): Promise<AxiosResponse | null> {
+    const formData = new FormData();
+    for (const item of preparedArtifact.form_data) {
+      formData.append(item.key, item.value);
+    }
+
+    formData.append('file', jsonl.stringify(fetchedObjects));
+
     try {
-      const response = await axiosClient.post(preparedArtifact.url, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axiosClient.post(
+        preparedArtifact.upload_url,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+          },
+        }
+      );
 
       return response;
     } catch (error) {
-      console.error('Error while uploading artifact: ' + error);
+      console.error(
+        'Error while uploading artifact: ' + serializeError(error)
+      );
       return null;
     }
   }
