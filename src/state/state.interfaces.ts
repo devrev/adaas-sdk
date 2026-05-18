@@ -1,5 +1,5 @@
 import { InitialDomainMapping } from '../types/common';
-import { AirdropEvent } from '../types/extraction';
+import { AirSyncEvent } from '../types/extraction';
 import { FileToLoad } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
@@ -46,7 +46,7 @@ export interface FromDevRev {
 }
 
 export interface StateInterface<ConnectorState> {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   initialState: ConnectorState;
   initialDomainMapping?: InitialDomainMapping;
   options?: WorkerAdapterOptions;

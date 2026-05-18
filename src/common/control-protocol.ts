@@ -1,7 +1,7 @@
 import { AxiosResponse } from 'axios';
 import { axiosClient } from '../http/axios-client-internal';
 import {
-  AirdropEvent,
+  AirSyncEvent,
   EventData,
   ExtractorEvent,
   ExtractorEventType,
@@ -11,7 +11,7 @@ import { LoaderEventType } from '../types/loading';
 import { LIBRARY_VERSION } from './constants';
 
 export interface EmitInterface {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   eventType: ExtractorEventType | LoaderEventType;
   data?: EventData;
 }

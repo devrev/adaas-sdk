@@ -17,8 +17,18 @@ import { Worker as Worker_2 } from 'worker_threads';
 // @public
 export type AdapterState<ConnectorState> = ConnectorState & SdkState;
 
+// @public (undocumented)
+export enum AirSyncDefaultItemTypes {
+    // (undocumented)
+    ATTACHMENTS = "attachments",
+    // (undocumented)
+    EXTERNAL_DOMAIN_METADATA = "external_domain_metadata",
+    // (undocumented)
+    EXTERNAL_SYNC_UNITS = "external_sync_units"
+}
+
 // @public
-export interface AirdropEvent {
+export interface AirSyncEvent {
     // (undocumented)
     context: {
         secrets: {
@@ -34,11 +44,11 @@ export interface AirdropEvent {
     // (undocumented)
     input_data: InputData;
     // (undocumented)
-    payload: AirdropMessage;
+    payload: AirSyncMessage;
 }
 
 // @public
-export interface AirdropMessage {
+export interface AirSyncMessage {
     // (undocumented)
     connection_data: ConnectionData;
     // (undocumented)
@@ -47,16 +57,6 @@ export interface AirdropMessage {
     event_data?: EventData;
     // (undocumented)
     event_type: EventType;
-}
-
-// @public (undocumented)
-export enum AirSyncDefaultItemTypes {
-    // (undocumented)
-    ATTACHMENTS = "attachments",
-    // (undocumented)
-    EXTERNAL_DOMAIN_METADATA = "external_domain_metadata",
-    // (undocumented)
-    EXTERNAL_SYNC_UNITS = "external_sync_units"
 }
 
 // @public
@@ -113,7 +113,7 @@ export interface ConnectionData {
 }
 
 // @public
-export function createMockEvent(mockServerUrl?: string, overrides?: DeepPartial<AirdropEvent>): AirdropEvent;
+export function createMockEvent(mockServerUrl?: string, overrides?: DeepPartial<AirSyncEvent>): AirSyncEvent;
 
 // @public
 export interface CustomLinkData {
@@ -358,7 +358,7 @@ export type ExternalSystemAttachmentStreamingFunction = (input: ExternalSystemAt
 // @public (undocumented)
 export interface ExternalSystemAttachmentStreamingParams {
     // (undocumented)
-    event: AirdropEvent;
+    event: AirSyncEvent;
     // (undocumented)
     item: NormalizedAttachment;
 }
@@ -406,7 +406,7 @@ export interface ExternalSystemItem {
 // @public (undocumented)
 export interface ExternalSystemItemLoadingParams<Type> {
     // (undocumented)
-    event: AirdropEvent;
+    event: AirSyncEvent;
     // (undocumented)
     item: Type;
     // Warning: (ae-forgotten-export) The symbol "Mappers" needs to be exported by the entry point index.d.ts
@@ -584,7 +584,7 @@ export interface FloatData {
 // @public
 export interface GetWorkerPathInterface {
     // (undocumented)
-    event: AirdropEvent;
+    event: AirSyncEvent;
     // (undocumented)
     workerBasePath?: string | null;
 }
@@ -606,7 +606,7 @@ export enum InitialSyncScope {
 }
 
 // @public (undocumented)
-export function installInitialDomainMapping(event: AirdropEvent, initialDomainMappingJson: InitialDomainMapping): Promise<void>;
+export function installInitialDomainMapping(event: AirSyncEvent, initialDomainMappingJson: InitialDomainMapping): Promise<void>;
 
 // @public
 export interface IntData {
@@ -883,7 +883,7 @@ export interface SpawnFactoryInterface<ConnectorState> {
     // (undocumented)
     baseWorkerPath?: string;
     // (undocumented)
-    event: AirdropEvent;
+    event: AirSyncEvent;
     // (undocumented)
     initialDomainMapping?: InitialDomainMapping;
     // (undocumented)
@@ -895,7 +895,7 @@ export interface SpawnFactoryInterface<ConnectorState> {
 // @public
 export interface SpawnInterface {
     // (undocumented)
-    event: AirdropEvent;
+    event: AirSyncEvent;
     // (undocumented)
     options?: WorkerAdapterOptions;
     // (undocumented)
@@ -985,11 +985,11 @@ export enum SyncMapperRecordTargetType {
     // (undocumented)
     ACCOUNT = "account",
     // (undocumented)
-    AIRDROP_AUTHORIZATION_POLICY = "airdrop_authorization_policy",
+    AIRSYNC_AUTHORIZATION_POLICY = "airdrop_authorization_policy",
     // (undocumented)
-    AIRDROP_FIELD_AUTHORIZATION_POLICY = "airdrop_field_authorization_policy",
+    AIRSYNC_FIELD_AUTHORIZATION_POLICY = "airdrop_field_authorization_policy",
     // (undocumented)
-    AIRDROP_PLATFORM_GROUP = "airdrop_platform_group",
+    AIRSYNC_PLATFORM_GROUP = "airdrop_platform_group",
     // (undocumented)
     ARTICLE = "article",
     // (undocumented)
@@ -1114,7 +1114,7 @@ export class WorkerAdapter<ConnectorState> {
     set artifacts(artifacts: Artifact[]);
     emit(newEventType: ExtractorEventType | LoaderEventType, data?: EventData): Promise<void>;
     // (undocumented)
-    readonly event: AirdropEvent;
+    readonly event: AirSyncEvent;
     // (undocumented)
     get extractionScope(): ExtractionScope;
     // Warning: (ae-forgotten-export) The symbol "FileToLoad" needs to be exported by the entry point index.d.ts
@@ -1187,7 +1187,7 @@ export interface WorkerAdapterInterface<ConnectorState> {
     // (undocumented)
     adapterState: State<ConnectorState>;
     // (undocumented)
-    event: AirdropEvent;
+    event: AirSyncEvent;
     // (undocumented)
     options?: WorkerAdapterOptions;
 }
@@ -1209,7 +1209,7 @@ export interface WorkerAdapterOptions {
 // @public
 export interface WorkerData<ConnectorState> {
     // (undocumented)
-    event: AirdropEvent;
+    event: AirSyncEvent;
     // (undocumented)
     initialDomainMapping?: InitialDomainMapping;
     // (undocumented)

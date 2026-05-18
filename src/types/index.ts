@@ -3,8 +3,8 @@ export { ErrorRecord, InitialDomainMapping, SyncMode } from './common';
 
 // Extraction
 export {
-  AirdropEvent,
-  AirdropMessage,
+  AirSyncEvent,
+  AirSyncMessage,
   ConnectionData,
   EventContext,
   EventData,

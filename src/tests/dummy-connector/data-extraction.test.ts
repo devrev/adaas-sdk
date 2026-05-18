@@ -1,5 +1,5 @@
 import {
-  AirdropEvent,
+  AirSyncEvent,
   EventType,
   ExtractorEventType,
 } from '../../types/extraction';
@@ -9,7 +9,7 @@ import { createMockEvent } from '../../common/test-utils';
 import run from './extraction';
 
 describe('Dummy Connector - Data Extraction', () => {
-  let event: AirdropEvent;
+  let event: AirSyncEvent;
   beforeEach(() => {
     event = createMockEvent(mockServer.baseUrl, {
       payload: { event_type: EventType.StartExtractingData },

@@ -27,7 +27,7 @@ import {
 import { State } from '../../state/state';
 import { AdapterState } from '../../state/state.interfaces';
 import {
-  AirdropEvent,
+  AirSyncEvent,
   EventData,
   EventType,
   ExternalSystemAttachmentProcessors,
@@ -73,7 +73,7 @@ export function createWorkerAdapter<ConnectorState>({
 }
 
 /**
- * WorkerAdapter class is used to interact with Airdrop platform. It is passed to the snap-in
+ * WorkerAdapter class is used to interact with AirSync platform. It is passed to the snap-in
  * as parameter in processTask and onTimeout functions. The class provides
  * utilities to emit control events to the platform, update the state of the connector,
  * and upload artifacts to the platform.
@@ -88,7 +88,7 @@ export function createWorkerAdapter<ConnectorState>({
  * @public
  */
 export class WorkerAdapter<ConnectorState> {
-  readonly event: AirdropEvent;
+  readonly event: AirSyncEvent;
   readonly options?: WorkerAdapterOptions;
   isTimeout: boolean;
   hasWorkerEmitted: boolean;

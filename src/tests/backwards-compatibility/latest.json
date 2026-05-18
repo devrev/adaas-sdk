@@ -233,264 +233,6 @@
           }
         },
         {
-          "kind": "Interface",
-          "canonicalReference": "@devrev/airsync-sdk!AirdropEvent:interface",
-          "docComment": "/**\n * AirdropEvent is an interface that defines the structure of the event that is sent to the external extractor from ADaaS. It contains the context, payload, execution metadata, and input data as common snap-ins.\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export interface AirdropEvent "
-            }
-          ],
-          "fileUrlPath": "src/types/extraction.ts",
-          "releaseTag": "Public",
-          "name": "AirdropEvent",
-          "preserveMemberOrder": false,
-          "members": [
-            {
-              "kind": "PropertySignature",
-              "canonicalReference": "@devrev/airsync-sdk!AirdropEvent#context:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "context: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "{\n        secrets: {\n            service_account_token: string;\n        };\n        snap_in_version_id: string;\n        snap_in_id: string;\n    }"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isReadonly": false,
-              "isOptional": false,
-              "releaseTag": "Public",
-              "name": "context",
-              "propertyTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              }
-            },
-            {
-              "kind": "PropertySignature",
-              "canonicalReference": "@devrev/airsync-sdk!AirdropEvent#execution_metadata:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "execution_metadata: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "{\n        devrev_endpoint: string;\n    }"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isReadonly": false,
-              "isOptional": false,
-              "releaseTag": "Public",
-              "name": "execution_metadata",
-              "propertyTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              }
-            },
-            {
-              "kind": "PropertySignature",
-              "canonicalReference": "@devrev/airsync-sdk!AirdropEvent#input_data:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "input_data: "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "InputData",
-                  "canonicalReference": "@devrev/typescript-sdk!InputData:type"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isReadonly": false,
-              "isOptional": false,
-              "releaseTag": "Public",
-              "name": "input_data",
-              "propertyTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              }
-            },
-            {
-              "kind": "PropertySignature",
-              "canonicalReference": "@devrev/airsync-sdk!AirdropEvent#payload:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "payload: "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "AirdropMessage",
-                  "canonicalReference": "@devrev/airsync-sdk!AirdropMessage:interface"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isReadonly": false,
-              "isOptional": false,
-              "releaseTag": "Public",
-              "name": "payload",
-              "propertyTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              }
-            }
-          ],
-          "extendsTokenRanges": []
-        },
-        {
-          "kind": "Interface",
-          "canonicalReference": "@devrev/airsync-sdk!AirdropMessage:interface",
-          "docComment": "/**\n * AirdropMessage is an interface that defines the structure of the payload/message that is sent to the external extractor from ADaaS.\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export interface AirdropMessage "
-            }
-          ],
-          "fileUrlPath": "src/types/extraction.ts",
-          "releaseTag": "Public",
-          "name": "AirdropMessage",
-          "preserveMemberOrder": false,
-          "members": [
-            {
-              "kind": "PropertySignature",
-              "canonicalReference": "@devrev/airsync-sdk!AirdropMessage#connection_data:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "connection_data: "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "ConnectionData",
-                  "canonicalReference": "@devrev/airsync-sdk!ConnectionData:interface"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isReadonly": false,
-              "isOptional": false,
-              "releaseTag": "Public",
-              "name": "connection_data",
-              "propertyTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              }
-            },
-            {
-              "kind": "PropertySignature",
-              "canonicalReference": "@devrev/airsync-sdk!AirdropMessage#event_context:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "event_context: "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "EventContext",
-                  "canonicalReference": "@devrev/airsync-sdk!EventContext:interface"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isReadonly": false,
-              "isOptional": false,
-              "releaseTag": "Public",
-              "name": "event_context",
-              "propertyTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              }
-            },
-            {
-              "kind": "PropertySignature",
-              "canonicalReference": "@devrev/airsync-sdk!AirdropMessage#event_data:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "event_data?: "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "EventData",
-                  "canonicalReference": "@devrev/airsync-sdk!EventData:interface"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isReadonly": false,
-              "isOptional": true,
-              "releaseTag": "Public",
-              "name": "event_data",
-              "propertyTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              }
-            },
-            {
-              "kind": "PropertySignature",
-              "canonicalReference": "@devrev/airsync-sdk!AirdropMessage#event_type:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "event_type: "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "EventType",
-                  "canonicalReference": "@devrev/airsync-sdk!EventType:enum"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isReadonly": false,
-              "isOptional": false,
-              "releaseTag": "Public",
-              "name": "event_type",
-              "propertyTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              }
-            }
-          ],
-          "extendsTokenRanges": []
-        },
-        {
           "kind": "Enum",
           "canonicalReference": "@devrev/airsync-sdk!AirSyncDefaultItemTypes:enum",
           "docComment": "",
@@ -572,8 +314,266 @@
         },
         {
           "kind": "Interface",
+          "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent:interface",
+          "docComment": "/**\n * AirSyncEvent is an interface that defines the structure of the event that is sent to the external extractor from the AirSync platform. It contains the context, payload, execution metadata, and input data as common snap-ins.\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export interface AirSyncEvent "
+            }
+          ],
+          "fileUrlPath": "src/types/extraction.ts",
+          "releaseTag": "Public",
+          "name": "AirSyncEvent",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent#context:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "context: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "{\n        secrets: {\n            service_account_token: string;\n        };\n        snap_in_version_id: string;\n        snap_in_id: string;\n    }"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "context",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent#execution_metadata:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "execution_metadata: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "{\n        devrev_endpoint: string;\n    }"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "execution_metadata",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent#input_data:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "input_data: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "InputData",
+                  "canonicalReference": "@devrev/typescript-sdk!InputData:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "input_data",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent#payload:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "payload: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "AirSyncMessage",
+                  "canonicalReference": "@devrev/airsync-sdk!AirSyncMessage:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "payload",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            }
+          ],
+          "extendsTokenRanges": []
+        },
+        {
+          "kind": "Interface",
+          "canonicalReference": "@devrev/airsync-sdk!AirSyncMessage:interface",
+          "docComment": "/**\n * AirSyncMessage is an interface that defines the structure of the payload/message that is sent to the external extractor from the AirSync platform.\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export interface AirSyncMessage "
+            }
+          ],
+          "fileUrlPath": "src/types/extraction.ts",
+          "releaseTag": "Public",
+          "name": "AirSyncMessage",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/airsync-sdk!AirSyncMessage#connection_data:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "connection_data: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "ConnectionData",
+                  "canonicalReference": "@devrev/airsync-sdk!ConnectionData:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "connection_data",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/airsync-sdk!AirSyncMessage#event_context:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "event_context: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "EventContext",
+                  "canonicalReference": "@devrev/airsync-sdk!EventContext:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "event_context",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/airsync-sdk!AirSyncMessage#event_data:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "event_data?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "EventData",
+                  "canonicalReference": "@devrev/airsync-sdk!EventData:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "event_data",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@devrev/airsync-sdk!AirSyncMessage#event_type:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "event_type: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "EventType",
+                  "canonicalReference": "@devrev/airsync-sdk!EventType:enum"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "event_type",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            }
+          ],
+          "extendsTokenRanges": []
+        },
+        {
+          "kind": "Interface",
           "canonicalReference": "@devrev/airsync-sdk!Artifact:interface",
-          "docComment": "/**\n * Artifact is an interface that defines the structure of an artifact. Artifact is a file that is generated by the extractor and uploaded to ADaaS.\n */\n",
+          "docComment": "/**\n * Artifact is an interface that defines the structure of an artifact. Artifact is a file that is generated by the extractor and uploaded to the AirSync platform.\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -921,7 +921,7 @@
         {
           "kind": "Interface",
           "canonicalReference": "@devrev/airsync-sdk!ConnectionData:interface",
-          "docComment": "/**\n * ConnectionData is an interface that defines the structure of the connection data that is sent to the external extractor from ADaaS. It contains the organization ID, organization name, key, and key type.\n */\n",
+          "docComment": "/**\n * ConnectionData is an interface that defines the structure of the connection data that is sent to the external extractor from the AirSync platform. It contains the organization ID, organization name, key, and key type.\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -1047,7 +1047,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@devrev/airsync-sdk!createMockEvent:function(1)",
-          "docComment": "/**\n * Creates a mock AirdropEvent for testing.\n *\n * @param mockServerUrl - Base URL for the mock server. Defaults to {@link MOCK_SERVER_DEFAULT_URL}. The `callback_url`, `worker_data_url`, and `devrev_endpoint` fields are derived from this value unless explicitly overridden.\n *\n * @param overrides - Deep partial of AirdropEvent. Any provided fields are deep-merged on top of the defaults.\n */\n",
+          "docComment": "/**\n * Creates a mock AirSyncEvent for testing.\n *\n * @param mockServerUrl - Base URL for the mock server. Defaults to {@link MOCK_SERVER_DEFAULT_URL}. The `callback_url`, `worker_data_url`, and `devrev_endpoint` fields are derived from this value unless explicitly overridden.\n *\n * @param overrides - Deep partial of AirSyncEvent. Any provided fields are deep-merged on top of the defaults.\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -1072,8 +1072,8 @@
             },
             {
               "kind": "Reference",
-              "text": "AirdropEvent",
-              "canonicalReference": "@devrev/airsync-sdk!AirdropEvent:interface"
+              "text": "AirSyncEvent",
+              "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent:interface"
             },
             {
               "kind": "Content",
@@ -1085,8 +1085,8 @@
             },
             {
               "kind": "Reference",
-              "text": "AirdropEvent",
-              "canonicalReference": "@devrev/airsync-sdk!AirdropEvent:interface"
+              "text": "AirSyncEvent",
+              "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent:interface"
             },
             {
               "kind": "Content",
@@ -2506,7 +2506,7 @@
         {
           "kind": "Interface",
           "canonicalReference": "@devrev/airsync-sdk!EventData:interface",
-          "docComment": "/**\n * EventData is an interface that defines the structure of the event data that is sent from the external extractor to ADaaS.\n */\n",
+          "docComment": "/**\n * EventData is an interface that defines the structure of the event data that is sent from the external extractor to the AirSync platform.\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -2697,7 +2697,7 @@
         {
           "kind": "Enum",
           "canonicalReference": "@devrev/airsync-sdk!EventType:enum",
-          "docComment": "/**\n * EventType is an enum that defines the different types of events that can be sent to the external extractor from ADaaS. The external extractor can use these events to know what to do next in the extraction process.\n */\n",
+          "docComment": "/**\n * EventType is an enum that defines the different types of events that can be sent to the external extractor from the AirSync platform. The external extractor can use these events to know what to do next in the extraction process.\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -4070,8 +4070,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "AirdropEvent",
-                  "canonicalReference": "@devrev/airsync-sdk!AirdropEvent:interface"
+                  "text": "AirSyncEvent",
+                  "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent:interface"
                 },
                 {
                   "kind": "Content",
@@ -4393,8 +4393,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "AirdropEvent",
-                  "canonicalReference": "@devrev/airsync-sdk!AirdropEvent:interface"
+                  "text": "AirSyncEvent",
+                  "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent:interface"
                 },
                 {
                   "kind": "Content",
@@ -4708,7 +4708,7 @@
         {
           "kind": "Interface",
           "canonicalReference": "@devrev/airsync-sdk!ExtractorEvent:interface",
-          "docComment": "/**\n * ExtractorEvent is an interface that defines the structure of the event that is sent from the external extractor to ADaaS. It contains the event type, event context, extractor state, and event data.\n */\n",
+          "docComment": "/**\n * ExtractorEvent is an interface that defines the structure of the event that is sent from the external extractor to the AirSync platform. It contains the event type, event context, extractor state, and event data.\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -4837,7 +4837,7 @@
         {
           "kind": "Enum",
           "canonicalReference": "@devrev/airsync-sdk!ExtractorEventType:enum",
-          "docComment": "/**\n * ExtractorEventType is an enum that defines the different types of events that can be sent from the external extractor to ADaaS. The external extractor can use these events to inform ADaaS about the progress of the extraction process.\n */\n",
+          "docComment": "/**\n * ExtractorEventType is an enum that defines the different types of events that can be sent from the external extractor to the AirSync platform. The external extractor can use these events to inform the AirSync platform about the progress of the extraction process.\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -6372,8 +6372,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "AirdropEvent",
-                  "canonicalReference": "@devrev/airsync-sdk!AirdropEvent:interface"
+                  "text": "AirSyncEvent",
+                  "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent:interface"
                 },
                 {
                   "kind": "Content",
@@ -6561,8 +6561,8 @@
             },
             {
               "kind": "Reference",
-              "text": "AirdropEvent",
-              "canonicalReference": "@devrev/airsync-sdk!AirdropEvent:interface"
+              "text": "AirSyncEvent",
+              "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent:interface"
             },
             {
               "kind": "Content",
@@ -10225,7 +10225,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@devrev/airsync-sdk!spawn:function(1)",
-          "docComment": "/**\n * Creates a new instance of Spawn class. Spawn class is responsible for spawning a new worker thread and managing the lifecycle of the worker. The class provides utilities to emit control events to the platform and exit the worker gracefully. In case of lambda timeout, the class emits a lambda timeout event to the platform.\n *\n * @param options - The options to create a new instance of Spawn class\n *\n * @param  - {AirdropEvent} options.event - The event object received from the platform\n *\n * @param  - {object} options.initialState - The initial state of the adapter\n *\n * @param  - {string} [options.baseWorkerPath] - The base path for the worker files, usually `__dirname`\n *\n * @returns {Promise<Spawn>} - A new instance of Spawn class\n */\n",
+          "docComment": "/**\n * Creates a new instance of Spawn class. Spawn class is responsible for spawning a new worker thread and managing the lifecycle of the worker. The class provides utilities to emit control events to the platform and exit the worker gracefully. In case of lambda timeout, the class emits a lambda timeout event to the platform.\n *\n * @param options - The options to create a new instance of Spawn class\n *\n * @param  - {AirSyncEvent} options.event - The event object received from the platform\n *\n * @param  - {object} options.initialState - The initial state of the adapter\n *\n * @param  - {string} [options.baseWorkerPath] - The base path for the worker files, usually `__dirname`\n *\n * @returns {Promise<Spawn>} - A new instance of Spawn class\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -10364,8 +10364,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "AirdropEvent",
-                  "canonicalReference": "@devrev/airsync-sdk!AirdropEvent:interface"
+                  "text": "AirSyncEvent",
+                  "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent:interface"
                 },
                 {
                   "kind": "Content",
@@ -10493,8 +10493,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "AirdropEvent",
-                  "canonicalReference": "@devrev/airsync-sdk!AirdropEvent:interface"
+                  "text": "AirSyncEvent",
+                  "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent:interface"
                 },
                 {
                   "kind": "Content",
@@ -11470,12 +11470,12 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/airsync-sdk!SyncMapperRecordTargetType.AIRDROP_AUTHORIZATION_POLICY:member",
+              "canonicalReference": "@devrev/airsync-sdk!SyncMapperRecordTargetType.AIRSYNC_AUTHORIZATION_POLICY:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "AIRDROP_AUTHORIZATION_POLICY = "
+                  "text": "AIRSYNC_AUTHORIZATION_POLICY = "
                 },
                 {
                   "kind": "Content",
@@ -11487,16 +11487,16 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "AIRDROP_AUTHORIZATION_POLICY"
+              "name": "AIRSYNC_AUTHORIZATION_POLICY"
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/airsync-sdk!SyncMapperRecordTargetType.AIRDROP_FIELD_AUTHORIZATION_POLICY:member",
+              "canonicalReference": "@devrev/airsync-sdk!SyncMapperRecordTargetType.AIRSYNC_FIELD_AUTHORIZATION_POLICY:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "AIRDROP_FIELD_AUTHORIZATION_POLICY = "
+                  "text": "AIRSYNC_FIELD_AUTHORIZATION_POLICY = "
                 },
                 {
                   "kind": "Content",
@@ -11508,16 +11508,16 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "AIRDROP_FIELD_AUTHORIZATION_POLICY"
+              "name": "AIRSYNC_FIELD_AUTHORIZATION_POLICY"
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@devrev/airsync-sdk!SyncMapperRecordTargetType.AIRDROP_PLATFORM_GROUP:member",
+              "canonicalReference": "@devrev/airsync-sdk!SyncMapperRecordTargetType.AIRSYNC_PLATFORM_GROUP:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "AIRDROP_PLATFORM_GROUP = "
+                  "text": "AIRSYNC_PLATFORM_GROUP = "
                 },
                 {
                   "kind": "Content",
@@ -11529,7 +11529,7 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "AIRDROP_PLATFORM_GROUP"
+              "name": "AIRSYNC_PLATFORM_GROUP"
             },
             {
               "kind": "EnumMember",
@@ -12798,7 +12798,7 @@
         {
           "kind": "Class",
           "canonicalReference": "@devrev/airsync-sdk!WorkerAdapter:class",
-          "docComment": "/**\n * WorkerAdapter class is used to interact with Airdrop platform. It is passed to the snap-in as parameter in processTask and onTimeout functions. The class provides utilities to emit control events to the platform, update the state of the connector, and upload artifacts to the platform.  @class WorkerAdapter  @constructor\n *\n * @param options - The options to create a new instance of WorkerAdapter class\n *\n * @param event - The event object received from the platform\n *\n * @param initialState - The initial state of the adapter\n *\n * @param isLocalDevelopment - A flag to indicate if the adapter is being used in local development\n *\n * @param workerPath - The path to the worker file\n *\n * @public\n */\n",
+          "docComment": "/**\n * WorkerAdapter class is used to interact with AirSync platform. It is passed to the snap-in as parameter in processTask and onTimeout functions. The class provides utilities to emit control events to the platform, update the state of the connector, and upload artifacts to the platform.  @class WorkerAdapter  @constructor\n *\n * @param options - The options to create a new instance of WorkerAdapter class\n *\n * @param event - The event object received from the platform\n *\n * @param initialState - The initial state of the adapter\n *\n * @param isLocalDevelopment - A flag to indicate if the adapter is being used in local development\n *\n * @param workerPath - The path to the worker file\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -13004,8 +13004,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "AirdropEvent",
-                  "canonicalReference": "@devrev/airsync-sdk!AirdropEvent:interface"
+                  "text": "AirSyncEvent",
+                  "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent:interface"
                 },
                 {
                   "kind": "Content",
@@ -14194,8 +14194,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "AirdropEvent",
-                  "canonicalReference": "@devrev/airsync-sdk!AirdropEvent:interface"
+                  "text": "AirSyncEvent",
+                  "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent:interface"
                 },
                 {
                   "kind": "Content",
@@ -14435,8 +14435,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "AirdropEvent",
-                  "canonicalReference": "@devrev/airsync-sdk!AirdropEvent:interface"
+                  "text": "AirSyncEvent",
+                  "canonicalReference": "@devrev/airsync-sdk!AirSyncEvent:interface"
                 },
                 {
                   "kind": "Content",

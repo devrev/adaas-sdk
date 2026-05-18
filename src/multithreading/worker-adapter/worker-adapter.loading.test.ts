@@ -3,7 +3,7 @@ import { mockServer } from '../../tests/jest.setup';
 import { createMockEvent } from '../../common/test-utils';
 import {
   AdapterState,
-  AirdropEvent,
+  AirSyncEvent,
   EventType,
   LoaderEventType,
 } from '../../types';
@@ -36,7 +36,7 @@ interface TestState {
 
 function makeAdapter(eventType: EventType): {
   adapter: WorkerAdapter<TestState>;
-  event: AirdropEvent;
+  event: AirSyncEvent;
   adapterState: State<TestState>;
 } {
   const event = createMockEvent(mockServer.baseUrl, {

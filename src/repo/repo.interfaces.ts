@@ -1,6 +1,6 @@
 import { Artifact } from '../uploader/uploader.interfaces';
 
-import { AirdropEvent } from '../types/extraction';
+import { AirSyncEvent } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 
 /**
@@ -16,7 +16,7 @@ export interface RepoInterface {
  * RepoFactoryInterface is an interface that defines the structure of a repo factory which is used to create a repo.
  */
 export interface RepoFactoryInterface {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   itemType: string;
   normalize?: (record: object) => NormalizedItem | NormalizedAttachment;
   onUpload: (artifact: Artifact) => void;

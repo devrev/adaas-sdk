@@ -10,7 +10,7 @@ import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import { DonV2, LoaderReport, RateLimited } from './loading';
 
 /**
- * EventType is an enum that defines the different types of events that can be sent to the external extractor from ADaaS.
+ * EventType is an enum that defines the different types of events that can be sent to the external extractor from the AirSync platform.
  * The external extractor can use these events to know what to do next in the extraction process.
  */
 export enum EventType {
@@ -37,8 +37,8 @@ export enum EventType {
 }
 
 /**
- * ExtractorEventType is an enum that defines the different types of events that can be sent from the external extractor to ADaaS.
- * The external extractor can use these events to inform ADaaS about the progress of the extraction process.
+ * ExtractorEventType is an enum that defines the different types of events that can be sent from the external extractor to the AirSync platform.
+ * The external extractor can use these events to inform the AirSync platform about the progress of the extraction process.
  */
 export enum ExtractorEventType {
   ExternalSyncUnitExtractionDone = 'EXTERNAL_SYNC_UNIT_EXTRACTION_DONE',
@@ -187,7 +187,7 @@ export interface EventContext {
 }
 
 /**
- * ConnectionData is an interface that defines the structure of the connection data that is sent to the external extractor from ADaaS.
+ * ConnectionData is an interface that defines the structure of the connection data that is sent to the external extractor from the AirSync platform.
  * It contains the organization ID, organization name, key, and key type.
  */
 export interface ConnectionData {
@@ -198,7 +198,7 @@ export interface ConnectionData {
 }
 
 /**
- * EventData is an interface that defines the structure of the event data that is sent from the external extractor to ADaaS.
+ * EventData is an interface that defines the structure of the event data that is sent from the external extractor to the AirSync platform.
  */
 export interface EventData {
   error?: ErrorRecord;
@@ -212,17 +212,17 @@ export interface EventData {
 }
 
 /**
- * WorkerMetadata is an interface that defines the structure of the worker metadata that is sent from the external extractor to ADaaS.
+ * WorkerMetadata is an interface that defines the structure of the worker metadata that is sent from the external extractor to the AirSync platform.
  */
 export interface WorkerMetadata {
   adaas_library_version: string;
 }
 
 /**
- * AirdropEvent is an interface that defines the structure of the event that is sent to the external extractor from ADaaS.
+ * AirSyncEvent is an interface that defines the structure of the event that is sent to the external extractor from the AirSync platform.
  * It contains the context, payload, execution metadata, and input data as common snap-ins.
  */
-export interface AirdropEvent {
+export interface AirSyncEvent {
   context: {
     secrets: {
       service_account_token: string;
@@ -230,7 +230,7 @@ export interface AirdropEvent {
     snap_in_version_id: string;
     snap_in_id: string;
   };
-  payload: AirdropMessage;
+  payload: AirSyncMessage;
   execution_metadata: {
     devrev_endpoint: string;
   };
@@ -238,9 +238,9 @@ export interface AirdropEvent {
 }
 
 /**
- * AirdropMessage is an interface that defines the structure of the payload/message that is sent to the external extractor from ADaaS.
+ * AirSyncMessage is an interface that defines the structure of the payload/message that is sent to the external extractor from the AirSync platform.
  */
-export interface AirdropMessage {
+export interface AirSyncMessage {
   connection_data: ConnectionData;
   event_context: EventContext;
   event_type: EventType;
@@ -248,7 +248,7 @@ export interface AirdropMessage {
 }
 
 /**
- * ExtractorEvent is an interface that defines the structure of the event that is sent from the external extractor to ADaaS.
+ * ExtractorEvent is an interface that defines the structure of the event that is sent from the external extractor to the AirSync platform.
  * It contains the event type, event context, extractor state, and event data.
  */
 export interface ExtractorEvent {
@@ -275,7 +275,7 @@ export type ExternalSystemAttachmentStreamingFunction = ({
 
 export interface ExternalSystemAttachmentStreamingParams {
   item: NormalizedAttachment;
-  event: AirdropEvent;
+  event: AirSyncEvent;
 }
 
 export interface ExternalSystemAttachmentStreamingResponse {

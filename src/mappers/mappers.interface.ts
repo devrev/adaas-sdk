@@ -1,4 +1,4 @@
-import { AirdropEvent } from '../types';
+import { AirSyncEvent } from '../types';
 import { DonV2 } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
@@ -6,7 +6,7 @@ import { WorkerAdapterOptions } from '../types/workers';
  * Configuration interface for creating a Mappers instance.
  */
 export interface MappersFactoryInterface {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   options?: WorkerAdapterOptions;
 }
 
@@ -275,9 +275,9 @@ export interface MappersGetByExternalIdParams {
 export enum SyncMapperRecordTargetType {
   ACCESS_CONTROL_ENTRY = 'access_control_entry',
   ACCOUNT = 'account',
-  AIRDROP_AUTHORIZATION_POLICY = 'airdrop_authorization_policy',
-  AIRDROP_FIELD_AUTHORIZATION_POLICY = 'airdrop_field_authorization_policy',
-  AIRDROP_PLATFORM_GROUP = 'airdrop_platform_group',
+  AIRSYNC_AUTHORIZATION_POLICY = 'airdrop_authorization_policy',
+  AIRSYNC_FIELD_AUTHORIZATION_POLICY = 'airdrop_field_authorization_policy',
+  AIRSYNC_PLATFORM_GROUP = 'airdrop_platform_group',
   ARTICLE = 'article',
   ARTIFACT = 'artifact',
   CHAT = 'chat',
