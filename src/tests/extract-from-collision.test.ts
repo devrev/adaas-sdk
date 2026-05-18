@@ -85,84 +85,6 @@ describe('extract_from / extract_to non-collision tests', () => {
     });
   });
 
-  describe('extract_from coexists with reset_extract_from without confusion', () => {
-    it('extract_from and reset_extract_from are independent fields', () => {
-      const event = createMockEvent(mockServer.baseUrl, {
-        payload: {
-          event_type: EventType.StartExtractingData,
-          event_context: {
-            extract_from: '2024-03-15T00:00:00Z',
-            reset_extract_from: true,
-          },
-        },
-      });
-
-      // extract_from is a string (resolved timestamp)
-      expect(typeof event.payload.event_context.extract_from).toBe('string');
-      // reset_extract_from is a boolean (deprecated flag)
-      expect(typeof event.payload.event_context.reset_extract_from).toBe(
-        'boolean'
-      );
-      // They are different types and serve different purposes
-      expect(event.payload.event_context.extract_from).toBe(
-        '2024-03-15T00:00:00Z'
-      );
-      expect(event.payload.event_context.reset_extract_from).toBe(true);
-    });
-
-    it('reset_extract_from can be true while extract_from is undefined', () => {
-      const event = createMockEvent(mockServer.baseUrl, {
-        payload: {
-          event_type: EventType.StartExtractingData,
-          event_context: {
-            reset_extract_from: true,
-          },
-        },
-      });
-
-      expect(event.payload.event_context.extract_from).toBeUndefined();
-      expect(event.payload.event_context.reset_extract_from).toBe(true);
-    });
-
-    it('reset_extract_from can be false while extract_from is set', () => {
-      const event = createMockEvent(mockServer.baseUrl, {
-        payload: {
-          event_type: EventType.StartExtractingData,
-          event_context: {
-            extract_from: '2024-01-01T00:00:00Z',
-            reset_extract_from: false,
-          },
-        },
-      });
-
-      expect(event.payload.event_context.extract_from).toBe(
-        '2024-01-01T00:00:00Z'
-      );
-      expect(event.payload.event_context.reset_extract_from).toBe(false);
-    });
-
-    it('extract_from, extract_to, and reset_extract_from can all coexist', () => {
-      const event = createMockEvent(mockServer.baseUrl, {
-        payload: {
-          event_type: EventType.StartExtractingData,
-          event_context: {
-            extract_from: '2024-01-01T00:00:00Z',
-            extract_to: '2024-06-30T23:59:59Z',
-            reset_extract_from: true,
-          },
-        },
-      });
-
-      expect(event.payload.event_context.extract_from).toBe(
-        '2024-01-01T00:00:00Z'
-      );
-      expect(event.payload.event_context.extract_to).toBe(
-        '2024-06-30T23:59:59Z'
-      );
-      expect(event.payload.event_context.reset_extract_from).toBe(true);
-    });
-  });
-
   describe('extract_from works alongside extraction_start_time (input vs resolved)', () => {
     it('extraction_start_time and extract_from can coexist on the same event context', () => {
       const event = createMockEvent(mockServer.baseUrl, {
@@ -314,7 +236,6 @@ describe('extract_from / extract_to non-collision tests', () => {
             },
             extract_from: '1970-01-01T00:00:00.000Z',
             extract_to: '2024-12-31T23:59:59Z',
-            reset_extract_from: false,
           },
         },
       });
@@ -332,9 +253,6 @@ describe('extract_from / extract_to non-collision tests', () => {
       // SDK-resolved output fields
       expect(ctx.extract_from).toBe('1970-01-01T00:00:00.000Z');
       expect(ctx.extract_to).toBe('2024-12-31T23:59:59Z');
-
-      // Deprecated but kept flag
-      expect(ctx.reset_extract_from).toBe(false);
 
       // Old fields should not exist
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

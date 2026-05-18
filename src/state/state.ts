@@ -75,15 +75,6 @@ export async function createAdapterState<ConnectorState>({
       }
     }
 
-    // Set lastSyncStarted if the event type is StartExtractingData
-    if (
-      event.payload.event_type === EventType.StartExtractingData &&
-      !as.state.lastSyncStarted
-    ) {
-      as.state.lastSyncStarted = new Date().toISOString();
-      console.log(`Setting lastSyncStarted to ${as.state.lastSyncStarted}.`);
-    }
-
     // Resolve extraction timestamps from TimeValue objects, or reuse pending values from a prior invocation.
     // On StartExtractingMetadata: resolve fresh from TimeValue objects and store in pending state (always overwrite).
     // On all other events: reuse the pending values cached during StartExtractingMetadata.

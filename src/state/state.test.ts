@@ -165,45 +165,6 @@ describe(State.name, () => {
     }
   );
 
-  it(EventType.StartExtractingData, async () => {
-    // Arrange
-    const initialState = {
-      test: 'test',
-    };
-    const event = createMockEvent(mockServer.baseUrl, {
-      context: {
-        snap_in_version_id: '',
-      },
-      payload: { event_type: EventType.StartExtractingData },
-    });
-    fetchStateSpy.mockRejectedValue({
-      isAxiosError: true,
-      response: { status: 404 },
-    });
-    installInitialDomainMappingSpy.mockResolvedValue({
-      success: true,
-    });
-    postStateSpy.mockResolvedValue({
-      success: true,
-    });
-
-    // Act
-    await createAdapterState({
-      event,
-      initialState,
-      initialDomainMapping: {},
-    });
-
-    // Assert
-    // Verify that post state is called with object that contains
-    // lastSyncStarted which is not empty string
-    expect(postStateSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        lastSyncStarted: expect.not.stringMatching(/^$/),
-      })
-    );
-  });
-
   it.each(STATEFUL_EVENT_TYPES)(
     'should exit the process if initialDomainMapping is not provided for event type %s',
     async (eventType) => {

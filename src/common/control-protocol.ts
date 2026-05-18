@@ -9,7 +9,6 @@ import {
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
 import { LIBRARY_VERSION } from './constants';
-import { translateOutgoingEventType } from './event-type-translation';
 
 export interface EmitInterface {
   event: AirdropEvent;
@@ -22,12 +21,8 @@ export const emit = async ({
   eventType,
   data,
 }: EmitInterface): Promise<AxiosResponse> => {
-  // Translate outgoing event type to ensure we always send new event types
-  // TODO: Remove when the old types are completely phased out
-  const translatedEventType = translateOutgoingEventType(eventType);
-
   const newEvent: ExtractorEvent | LoaderEvent = {
-    event_type: translatedEventType,
+    event_type: eventType,
     event_context: event.payload.event_context,
     event_data: {
       ...data,

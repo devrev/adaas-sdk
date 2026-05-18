@@ -34,10 +34,6 @@ jest.mock('node:worker_threads', () => ({
   },
 }));
 
-jest.mock('../common/event-type-translation', () => ({
-  translateIncomingEventType: jest.fn((t: string) => t),
-}));
-
 jest.mock('../logger/logger', () => ({
   Logger: jest.fn().mockImplementation(() => ({
     log: jest.fn(),
@@ -66,7 +62,6 @@ jest.mock('./worker-adapter/worker-adapter', () => ({
 }));
 
 import { processTask } from './process-task';
-import { translateIncomingEventType } from '../common/event-type-translation';
 import { createAdapterState } from '../state/state';
 import { WorkerAdapter } from './worker-adapter/worker-adapter';
 import { createMockEvent } from '../common/test-utils';
@@ -100,29 +95,6 @@ describe(processTask.name, () => {
 
   afterEach(() => {
     processExitSpy.mockRestore();
-  });
-
-  it('should translate incoming event type before passing to task', async () => {
-    // Arrange
-    const event = makeEvent(EventType.StartExtractingData);
-    setWorkerData({ event, initialState: {}, options: {} });
-    (translateIncomingEventType as jest.Mock).mockReturnValue(
-      EventType.StartExtractingMetadata
-    );
-    const task = jest.fn().mockResolvedValue(undefined);
-    const onTimeout = jest.fn().mockResolvedValue(undefined);
-
-    // Act
-    processTask({ task, onTimeout });
-    await flush();
-
-    // Assert
-    expect(translateIncomingEventType).toHaveBeenCalledWith(
-      EventType.StartExtractingData
-    );
-    // The event is mutated in place — downstream code (including task) sees the
-    // translated type, not the original wire type.
-    expect(event.payload.event_type).toBe(EventType.StartExtractingMetadata);
   });
 
   it('should NOT call onTimeout when the worker already emitted before timeout check', async () => {

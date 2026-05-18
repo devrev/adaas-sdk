@@ -1,4 +1,9 @@
-import { ExternalSyncUnit, ExtractorEventType, processTask } from '../../index';
+import {
+  AirSyncDefaultItemTypes,
+  ExternalSyncUnit,
+  ExtractorEventType,
+  processTask,
+} from '../../index';
 
 processTask({
   task: async ({ adapter }) => {
@@ -12,9 +17,17 @@ processTask({
       },
     ];
 
-    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionDone, {
-      external_sync_units: dummyExternalSyncUnits,
-    });
+    adapter.initializeRepos([
+      {
+        itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
+      },
+    ]);
+
+    await adapter
+      .getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)
+      ?.push(dummyExternalSyncUnits);
+
+    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionDone);
   },
   onTimeout: async ({ adapter }) => {
     await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionError, {

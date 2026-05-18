@@ -37,7 +37,6 @@ describe('Enhanced Control Protocol', () => {
           event_context: {
             extract_from: '2024-01-01T00:00:00Z',
             extract_to: '2024-06-01T00:00:00Z',
-            reset_extract_from: true,
           },
         },
       });
@@ -48,7 +47,6 @@ describe('Enhanced Control Protocol', () => {
       expect(event.payload.event_context.extract_to).toBe(
         '2024-06-01T00:00:00Z'
       );
-      expect(event.payload.event_context.reset_extract_from).toBe(true);
     });
   });
 

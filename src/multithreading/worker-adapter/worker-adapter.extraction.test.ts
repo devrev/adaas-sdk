@@ -43,8 +43,6 @@ function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
   });
   const initialState: AdapterState<TestState> = {
     attachments: { completed: false },
-    lastSyncStarted: '',
-    lastSuccessfulSyncStarted: '',
     snapInVersionId: '',
     toDevRev: {
       attachmentsMetadata: {

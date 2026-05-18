@@ -4,16 +4,6 @@ import { FileToLoad } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
 export interface SdkState {
-  /**
-   * @deprecated Use extract_from and extract_to from the event context instead,
-   * which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
-   */
-  lastSyncStarted?: string;
-  /**
-   * @deprecated Use extract_from and extract_to from the event context instead,
-   * which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
-   */
-  lastSuccessfulSyncStarted?: string;
   /** The pending (not yet committed) oldest extraction boundary (ISO 8601 timestamp).
    *  Set on StartExtractingMetadata, reused across subsequent phases, cleared on AttachmentExtractionDone. */
   pendingWorkersOldest?: string;
@@ -31,7 +21,7 @@ export interface SdkState {
 
 /**
  * AdapterState is an interface that defines the structure of the adapter state that is used by the external extractor.
- * It extends the connector state with additional fields: lastSyncStarted, lastSuccessfulSyncStarted, snapInVersionId and attachmentsMetadata.
+ * It extends the connector state with additional fields including snapInVersionId and attachmentsMetadata.
  */
 export type AdapterState<ConnectorState> = ConnectorState & SdkState;
 
@@ -63,8 +53,6 @@ export interface StateInterface<ConnectorState> {
 }
 
 export const extractionSdkState = {
-  lastSyncStarted: '',
-  lastSuccessfulSyncStarted: '',
   pendingWorkersOldest: '',
   pendingWorkersNewest: '',
   workersOldest: '',

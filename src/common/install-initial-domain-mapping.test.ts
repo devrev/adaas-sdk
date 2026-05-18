@@ -29,7 +29,7 @@ const mockIsAxiosError = axios.isAxiosError as unknown as jest.Mock;
 describe(installInitialDomainMapping.name, () => {
   // Create mock objects
   const mockEvent = createMockEvent(mockServer.baseUrl, {
-    payload: { event_type: EventType.ExtractionDataStart },
+    payload: { event_type: EventType.StartExtractingData },
   });
 
   const mockInitialDomainMapping: InitialDomainMapping = {

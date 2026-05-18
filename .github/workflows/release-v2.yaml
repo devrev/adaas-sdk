@@ -108,6 +108,7 @@ jobs:
           npm ci
           npm run build
           npm run test
+          npm run test:backwards-compatibility
 
       - name: Commit package.json and package-lock.json changes and create tag
         run: |

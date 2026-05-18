@@ -232,14 +232,3 @@ export function serializeAxiosError(error: AxiosError): AxiosErrorResponse {
 
   return serializedAxiosError;
 }
-
-/**
- * Formats an Axios error to a printable format.
- *
- * @param error - Axios error to format
- * @returns Formatted error object
- * @deprecated Use {@link serializeAxiosError} instead
- */
-export function formatAxiosError(error: AxiosError): object {
-  return serializeAxiosError(error);
-}

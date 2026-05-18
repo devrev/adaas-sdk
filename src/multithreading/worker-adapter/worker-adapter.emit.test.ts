@@ -45,8 +45,6 @@ function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
   });
   const initialState: AdapterState<TestState> = {
     attachments: { completed: false },
-    lastSyncStarted: '',
-    lastSuccessfulSyncStarted: '',
     snapInVersionId: '',
     toDevRev: {
       attachmentsMetadata: {
@@ -314,35 +312,6 @@ describe(`${WorkerAdapter.name}.emit`, () => {
       ?.message as string;
     expect(emittedMessage.length).toBeLessThan(longMessage.length);
     expect(emittedMessage.startsWith('E'.repeat(100))).toBe(true);
-  });
-});
-
-describe(`${WorkerAdapter.name}.emit — ExternalSyncUnitExtractionDone legacy path`, () => {
-  it('should upload ESUs via a repo and strip external_sync_units from the emitted payload', async () => {
-    // Arrange
-    const { adapter } = makeAdapter(EventType.StartExtractingExternalSyncUnits);
-    adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
-    adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
-    const pushMock = jest.fn().mockResolvedValue(undefined);
-    jest.spyOn(adapter, 'initializeRepos');
-    jest.spyOn(adapter, 'getRepo').mockReturnValue({ push: pushMock } as never);
-    const esus = [{ id: 'esu-1' }, { id: 'esu-2' }] as never;
-
-    // Act
-    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionDone, {
-      external_sync_units: esus,
-    });
-
-    // Assert
-    expect(pushMock).toHaveBeenCalledWith(esus);
-    // external_sync_units must NOT appear in the payload sent to the platform
-    // (it would be too large for SQS — that is the entire reason this path exists).
-    const { emit: mockEmit } = require('../../common/control-protocol');
-    const emittedData = mockEmit.mock.calls[0][0].data as Record<
-      string,
-      unknown
-    >;
-    expect(emittedData).not.toHaveProperty('external_sync_units');
   });
 });
 

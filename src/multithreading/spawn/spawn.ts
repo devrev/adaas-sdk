@@ -2,7 +2,6 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../../common/control-protocol';
-import { translateIncomingEventType } from '../../common/event-type-translation';
 import { getMemoryUsage } from '../../common/helpers';
 import { Logger, serializeError } from '../../logger/logger';
 import { AirdropEvent, EventType } from '../../types/extraction';
@@ -67,26 +66,16 @@ function getWorkerPath({
  * @param {SpawnFactoryInterface} options - The options to create a new instance of Spawn class
  * @param {AirdropEvent} options.event - The event object received from the platform
  * @param {object} options.initialState - The initial state of the adapter
- * @param {string} [options.workerPath] Remove getWorkerPath function and use baseWorkerPath: __dirname instead of workerPath
  * @param {string} [options.baseWorkerPath] - The base path for the worker files, usually `__dirname`
  * @returns {Promise<Spawn>} - A new instance of Spawn class
  */
 export async function spawn<ConnectorState>({
   event,
   initialState,
-  workerPath,
   initialDomainMapping,
   options,
   baseWorkerPath,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
-  // Translate incoming event type for backwards compatibility. This allows the
-  // SDK to accept both old and new event type formats. Then update the event with the translated event type.
-  const originalEventType = event.payload.event_type;
-  const translatedEventType = translateIncomingEventType(
-    event.payload.event_type as string
-  );
-  event.payload.event_type = translatedEventType;
-
   // Read the command line arguments to check if the local flag is passed.
   const argv = await yargs(hideBin(process.argv)).argv;
   if (argv._.includes('local') || argv.local) {
@@ -100,26 +89,19 @@ export async function spawn<ConnectorState>({
   // eslint-disable-next-line no-global-assign
   console = new Logger({ event, options });
 
-  if (translatedEventType !== originalEventType) {
-    console.log(
-      `Event type translated from ${originalEventType} to ${translatedEventType}.`
-    );
-  }
   if (options?.isLocalDevelopment) {
     console.log('Snap-in is running in local development mode.');
   }
 
+  const eventType = event.payload.event_type;
   let script = null;
-  if (workerPath != null) {
-    script = workerPath;
-  } else if (
+  if (
     baseWorkerPath != null &&
     options?.workerPathOverrides != null &&
-    options.workerPathOverrides[translatedEventType as EventType] != null
+    options.workerPathOverrides[eventType as EventType] != null
   ) {
     script =
-      baseWorkerPath +
-      options.workerPathOverrides[translatedEventType as EventType];
+      baseWorkerPath + options.workerPathOverrides[eventType as EventType];
   } else {
     script = getWorkerPath({
       event,

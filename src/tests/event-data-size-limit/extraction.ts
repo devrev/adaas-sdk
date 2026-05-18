@@ -1,4 +1,5 @@
-import { AirdropEvent, spawn } from '../../index';
+import path from 'path';
+import { AirdropEvent, EventType, spawn } from '../../index';
 
 interface ExtractorState {
   [key: string]: unknown;
@@ -14,15 +15,21 @@ const initialDomainMapping = {};
  * Each artifact metadata is ~55 bytes, so 3000 * 55 = 165KB > 160KB threshold.
  */
 const run = async (events: AirdropEvent[], workerPath: string) => {
+  const baseWorkerPath = path.dirname(workerPath);
+  const workerFileName = '/' + path.basename(workerPath);
+
   for (const event of events) {
     await spawn<ExtractorState>({
       event,
       initialState,
-      workerPath,
+      baseWorkerPath,
       initialDomainMapping,
       options: {
         batchSize: 1, // Batch size of 1 to generate many artifacts
         isLocalDevelopment: true,
+        workerPathOverrides: {
+          [event.payload.event_type as EventType]: workerFileName,
+        },
       },
     });
   }

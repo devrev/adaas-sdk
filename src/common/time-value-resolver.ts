@@ -134,11 +134,6 @@ export function resolveTimeValue(
 
     case TimeValueType.WORKERS_NEWEST: {
       if (!state.workersNewest) {
-        // To support backwards-compatibility for the old state
-        if (state.lastSuccessfulSyncStarted) {
-          return state.lastSuccessfulSyncStarted;
-        }
-
         throw new Error(
           'Field workersNewest is not set in state. Cannot resolve TimeValue of type WORKERS_NEWEST without a prior extraction boundary.'
         );
@@ -166,11 +161,6 @@ export function resolveTimeValue(
         );
       }
       if (!state.workersNewest) {
-        // To support backwards-compatibility for the old state
-        if (state.lastSuccessfulSyncStarted) {
-          return state.lastSuccessfulSyncStarted;
-        }
-
         throw new Error(
           'Field workersNewest is not set in state. Cannot resolve TimeValue of type WORKERS_NEWEST_PLUS_WINDOW without a prior extraction boundary.'
         );

@@ -18,7 +18,7 @@ describe(Repo.name, () => {
     normalize = jest.fn();
     repo = new Repo({
       event: createMockEvent(mockServer.baseUrl, {
-        payload: { event_type: EventType.ExtractionDataStart },
+        payload: { event_type: EventType.StartExtractingData },
       }),
       itemType: 'test_item_type',
       normalize,
@@ -47,7 +47,7 @@ describe(Repo.name, () => {
     // Arrange
     repo = new Repo({
       event: createMockEvent(mockServer.baseUrl, {
-        payload: { event_type: EventType.ExtractionDataStart },
+        payload: { event_type: EventType.StartExtractingData },
       }),
       itemType: 'test_item_type',
       onUpload: jest.fn(),
@@ -74,7 +74,7 @@ describe(Repo.name, () => {
     // Arrange
     repo = new Repo({
       event: createMockEvent(mockServer.baseUrl, {
-        payload: { event_type: EventType.ExtractionDataStart },
+        payload: { event_type: EventType.StartExtractingData },
       }),
       itemType: AirSyncDefaultItemTypes.EXTERNAL_DOMAIN_METADATA,
       normalize,
@@ -94,7 +94,7 @@ describe(Repo.name, () => {
     // Arrange
     repo = new Repo({
       event: createMockEvent(mockServer.baseUrl, {
-        payload: { event_type: EventType.ExtractionDataStart },
+        payload: { event_type: EventType.StartExtractingData },
       }),
       itemType: SSOR_ATTACHMENT,
       normalize,
@@ -160,7 +160,7 @@ describe(Repo.name, () => {
     beforeEach(() => {
       repo = new Repo({
         event: createMockEvent(mockServer.baseUrl, {
-          payload: { event_type: EventType.ExtractionDataStart },
+          payload: { event_type: EventType.StartExtractingData },
         }),
         itemType: 'test_item_type',
         normalize,

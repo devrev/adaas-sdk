@@ -58,7 +58,6 @@ import {
 } from '../../types/workers';
 import { Uploader } from '../../uploader/uploader';
 import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
-import { translateOutgoingEventType } from '../../common/event-type-translation';
 import { truncateMessage } from '../../common/helpers';
 
 export function createWorkerAdapter<ConnectorState>({
@@ -244,42 +243,11 @@ export class WorkerAdapter<ConnectorState> {
     data?: EventData
   ): Promise<void> {
     return runWithSdkLogContext(async () => {
-      newEventType = translateOutgoingEventType(newEventType);
-
       if (this.hasWorkerEmitted) {
         console.warn(
           `Trying to emit event with event type: ${newEventType}. Ignoring emit request because it has already been emitted.`
         );
         return;
-      }
-
-      // If the event is ExternalSyncUnitExtractionDone, upload external sync units via a Repo before emitting
-      // TODO: Remove in v2.0.0
-      if (
-        newEventType === ExtractorEventType.ExternalSyncUnitExtractionDone &&
-        data?.external_sync_units &&
-        data.external_sync_units.length > 0
-      ) {
-        console.log(
-          `Uploading ${data.external_sync_units.length} external sync units via repo before emitting event.`
-        );
-
-        this.initializeRepos([
-          {
-            itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
-            overridenOptions: {
-              batchSize: 25000,
-              skipConfirmation: true,
-            },
-          },
-        ]);
-
-        await this.getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)?.push(
-          data.external_sync_units
-        );
-
-        // Remove inline external_sync_units from data to avoid SQS size issues
-        delete data.external_sync_units;
       }
 
       // Upload all repos before emitting the event
@@ -296,15 +264,7 @@ export class WorkerAdapter<ConnectorState> {
         return;
       }
 
-      // If the extraction is done, we want to save the timestamp of the last successful sync
       if (newEventType === ExtractorEventType.AttachmentExtractionDone) {
-        console.log(
-          `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${this.state.lastSyncStarted}).`
-        );
-
-        this.state.lastSuccessfulSyncStarted = this.state.lastSyncStarted;
-        this.state.lastSyncStarted = '';
-
         // Clear pending extraction boundaries now that the cycle is complete
         this.state.pendingWorkersOldest = '';
         this.state.pendingWorkersNewest = '';

@@ -137,7 +137,16 @@ describe('spawn() factory', () => {
 
     // Act & Assert
     await expect(
-      spawn({ event, initialState: {}, workerPath: '/fake/path.js' })
+      spawn({
+        event,
+        initialState: {},
+        baseWorkerPath: '/fake',
+        options: {
+          workerPathOverrides: {
+            [EventType.StartExtractingData]: '/path.js',
+          },
+        },
+      })
     ).rejects.toThrow('worker boom');
   });
 });

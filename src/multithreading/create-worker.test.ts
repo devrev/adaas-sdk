@@ -10,7 +10,7 @@ describe(createWorker.name, () => {
     // Arrange
     const workerPath = __dirname + '../tests/dummy-worker.ts';
     const event = createMockEvent(mockServer.baseUrl, {
-      payload: { event_type: EventType.ExtractionExternalSyncUnitsStart },
+      payload: { event_type: EventType.StartExtractingExternalSyncUnits },
     });
 
     // Act
@@ -38,7 +38,7 @@ describe(createWorker.name, () => {
     (isMainThread as any) = false;
     const workerPath = __dirname + '../tests/dummy-worker.ts';
     const event = createMockEvent(mockServer.baseUrl, {
-      payload: { event_type: EventType.ExtractionExternalSyncUnitsStart },
+      payload: { event_type: EventType.StartExtractingExternalSyncUnits },
     });
 
     // Act & Assert
@@ -58,7 +58,7 @@ describe(createWorker.name, () => {
     // Arrange
     const workerPath = __dirname + '../tests/dummy-worker.ts';
     const event = createMockEvent(mockServer.baseUrl, {
-      payload: { event_type: EventType.ExtractionExternalSyncUnitsStart },
+      payload: { event_type: EventType.StartExtractingExternalSyncUnits },
     });
 
     if (isMainThread) {
@@ -85,7 +85,7 @@ describe(createWorker.name, () => {
       },
     };
     const event = createMockEvent(mockServer.baseUrl, {
-      payload: { event_type: EventType.ExtractionDataStart },
+      payload: { event_type: EventType.StartExtractingData },
     });
 
     if (isMainThread) {
@@ -106,7 +106,7 @@ describe(createWorker.name, () => {
     // Arrange
     const workerPath = __dirname + '../tests/dummy-worker.ts';
     const event = createMockEvent(mockServer.baseUrl, {
-      payload: { event_type: EventType.ExtractionMetadataStart },
+      payload: { event_type: EventType.StartExtractingMetadata },
     });
 
     if (isMainThread) {

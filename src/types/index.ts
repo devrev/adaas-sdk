@@ -1,21 +1,11 @@
 // Common
-export {
-  AdapterUpdateParams,
-  ErrorLevel,
-  ErrorRecord,
-  InitialDomainMapping,
-  LogRecord,
-  SyncMode,
-} from './common';
+export { ErrorRecord, InitialDomainMapping, SyncMode } from './common';
 
 // Extraction
 export {
   AirdropEvent,
   AirdropMessage,
   ConnectionData,
-  DomainObjectState,
-  EventContextIn,
-  EventContextOut,
   EventContext,
   EventData,
   EventType,
@@ -26,7 +16,6 @@ export {
   ExternalSystemAttachmentStreamingFunction,
   ExternalSystemAttachmentStreamingParams,
   ExternalSystemAttachmentStreamingResponse,
-  ExtractionMode,
   ExtractorEvent,
   ExtractorEventType,
   InitialSyncScope,

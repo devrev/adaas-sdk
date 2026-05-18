@@ -25,7 +25,3 @@ npm install @devrev/airsync-sdk@beta
 ## Changelog
 
 See [CHANGELOG.md](./CHANGELOG.md) for release notes and migration guides.
-
-## Reference
-
-Please refer to the [REFERENCE.md](./REFERENCE.md) file for more information on the types, interfaces and functions used in the library.
