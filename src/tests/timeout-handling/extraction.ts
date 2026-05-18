@@ -1,4 +1,5 @@
-import { AirdropEvent, spawn } from '../../index';
+import path from 'path';
+import { AirSyncEvent, EventType, spawn } from '../../index';
 
 interface ExtractorState {
   [key: string]: unknown;
@@ -7,17 +8,23 @@ interface ExtractorState {
 const initialState = {};
 const initialDomainMapping = {};
 
-const run = async (events: AirdropEvent[], workerPath: string) => {
+const run = async (events: AirSyncEvent[], workerPath: string) => {
+  const baseWorkerPath = path.dirname(workerPath);
+  const workerFileName = '/' + path.basename(workerPath);
+
   for (const event of events) {
     await spawn<ExtractorState>({
       event,
       initialState,
-      workerPath,
+      baseWorkerPath,
       initialDomainMapping,
       options: {
         batchSize: 1000,
         timeout: 5 * 1000, // 5 seconds
         isLocalDevelopment: true,
+        workerPathOverrides: {
+          [event.payload.event_type as EventType]: workerFileName,
+        },
       },
     });
   }

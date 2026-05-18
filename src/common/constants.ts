@@ -66,11 +66,13 @@ export const EVENT_SIZE_THRESHOLD_BYTES = Math.floor(
   MAX_EVENT_SIZE_BYTES * 0.8
 );
 
-export const AIRDROP_DEFAULT_ITEM_TYPES = {
-  EXTERNAL_DOMAIN_METADATA: 'external_domain_metadata',
-  ATTACHMENTS: 'attachments',
-  SSOR_ATTACHMENT: 'ssor_attachment',
-};
+export const SSOR_ATTACHMENT: string = 'ssor_attachment';
+
+export enum AirSyncDefaultItemTypes {
+  EXTERNAL_DOMAIN_METADATA = 'external_domain_metadata',
+  ATTACHMENTS = 'attachments',
+  EXTERNAL_SYNC_UNITS = 'external_sync_units',
+}
 
 export const LIBRARY_VERSION = getLibraryVersion();
 
@@ -79,3 +81,12 @@ export const HARD_TIMEOUT_MULTIPLIER = 1.3;
 export const MEMORY_LOG_INTERVAL = 30 * 1000; // 30 seconds
 
 export const DEFAULT_SLEEP_DELAY_MS = 3 * 60 * 1000; // 3 minutes
+
+/**
+ * Sentinel value representing an unbounded (no limit) extraction timestamp.
+ * Used as the resolved value for TimeValueType.UNBOUNDED, stored as workersOldest
+ * when the initial import has no lower time bound. The Unix epoch ensures that
+ * no real extraction timestamp can be earlier, preventing accidental overwrites
+ * of the boundary by subsequent syncs (e.g. reconciliation with absolute dates).
+ */
+export const UNBOUNDED_DATE_TIME_VALUE = '1970-01-01T00:00:00.000Z';

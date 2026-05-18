@@ -381,6 +381,35 @@ describe('ExternalDomainMetadata schema-type consistency', () => {
       });
     });
 
+    describe('attachments', () => {
+      it('record type with attachments', () => {
+        const data: ExternalDomainMetadata = {
+          record_types: {
+            issue: {
+              fields: { title: { type: 'text' } },
+              attachments: {
+                is_extractable: true,
+                is_loadable: false,
+              },
+            },
+          },
+        };
+        expectSchemaValid(data);
+      });
+
+      it('record type with empty attachments', () => {
+        const data: ExternalDomainMetadata = {
+          record_types: {
+            issue: {
+              fields: { title: { type: 'text' } },
+              attachments: {},
+            },
+          },
+        };
+        expectSchemaValid(data);
+      });
+    });
+
     describe('custom link data', () => {
       it('link naming data with direction names', () => {
         const data: ExternalDomainMetadata = {
@@ -453,6 +482,12 @@ describe('ExternalDomainMetadata schema-type consistency', () => {
 
     it('rejects typed_reference field missing typed_reference data', () => {
       expectSchemaInvalid(edmWithField({ type: 'typed_reference' }));
+    });
+
+    it('rejects participation field missing refers_to', () => {
+      expectSchemaInvalid(
+        edmWithField({ type: 'participation', participation: {} })
+      );
     });
 
     it('rejects struct field missing struct data', () => {
@@ -584,6 +619,15 @@ describe('ExternalDomainMetadata schema-type consistency', () => {
 
     it('schema rejects float values in IntData (TS number allows floats)', () => {
       const field: Field = { type: 'int', int: { min: 1.5, max: 10.7 } };
+      expectSchemaInvalid(edmWithField(field));
+    });
+
+    it('[schema bug] participation type always fails schema validation (no oneOf variant)', () => {
+      // participation was added to FieldType enum and as a property, but no oneOf variant exists.
+      const field: Field = {
+        type: 'participation',
+        participation: { refers_to: { user: { by_field: 'email' } } },
+      };
       expectSchemaInvalid(edmWithField(field));
     });
 

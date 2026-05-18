@@ -1,8 +1,9 @@
 import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
 import { LIBRARY_VERSION } from '../common/constants';
-import { createEvent } from '../tests/test-helpers';
-import { AirdropEvent, EventType } from '../types/extraction';
+import { mockServer } from '../tests/jest.setup';
+import { createMockEvent } from '../common/test-utils';
+import { AirSyncEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import {
   getPrintableState,
@@ -31,30 +32,14 @@ jest.mock('node:worker_threads', () => {
 });
 
 describe(Logger.name, () => {
-  let mockEvent: AirdropEvent;
+  let mockEvent: AirSyncEvent;
   let mockOptions: WorkerAdapterOptions;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockEvent = createEvent({
-      eventType: EventType.StartExtractingData,
-      eventContextOverrides: {
-        dev_org: 'DEV-test',
-        dev_org_id: 'DEV-test-id',
-        dev_user: 'DEVU-test',
-        dev_user_id: 'DEVU-test-id',
-        external_sync_unit: 'test-unit',
-        external_sync_unit_id: 'test-unit-id',
-        external_sync_unit_name: 'test-unit-name',
-        external_system: 'test-system',
-        external_system_type: 'test-type',
-        import_slug: 'test-import',
-        request_id: 'test-request-id',
-        snap_in_slug: 'test-snap-slug',
-        sync_run: 'test-sync-run',
-        sync_run_id: 'test-sync-run-id',
-      },
+    mockEvent = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingData },
     });
 
     mockOptions = {

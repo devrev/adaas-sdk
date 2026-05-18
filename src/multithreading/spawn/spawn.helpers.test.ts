@@ -21,7 +21,7 @@ describe(getTimeoutErrorEventType.name, () => {
 
     it('should return MetadataExtractionError for deprecated ExtractionMetadataStart', () => {
       // Arrange
-      const eventType = EventType.ExtractionMetadataStart;
+      const eventType = EventType.StartExtractingMetadata;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -56,7 +56,7 @@ describe(getTimeoutErrorEventType.name, () => {
 
     it('should return DataExtractionError for deprecated ExtractionDataStart', () => {
       // Arrange
-      const eventType = EventType.ExtractionDataStart;
+      const eventType = EventType.StartExtractingData;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -67,7 +67,7 @@ describe(getTimeoutErrorEventType.name, () => {
 
     it('should return DataExtractionError for deprecated ExtractionDataContinue', () => {
       // Arrange
-      const eventType = EventType.ExtractionDataContinue;
+      const eventType = EventType.ContinueExtractingData;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -93,7 +93,7 @@ describe(getTimeoutErrorEventType.name, () => {
 
     it('should return ExtractorStateDeletionError for deprecated ExtractionDataDelete', () => {
       // Arrange
-      const eventType = EventType.ExtractionDataDelete;
+      const eventType = EventType.StartDeletingExtractorState;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -134,7 +134,7 @@ describe(getTimeoutErrorEventType.name, () => {
 
     it('should return AttachmentExtractionError for deprecated ExtractionAttachmentsStart', () => {
       // Arrange
-      const eventType = EventType.ExtractionAttachmentsStart;
+      const eventType = EventType.StartExtractingAttachments;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -147,7 +147,7 @@ describe(getTimeoutErrorEventType.name, () => {
 
     it('should return AttachmentExtractionError for deprecated ExtractionAttachmentsContinue', () => {
       // Arrange
-      const eventType = EventType.ExtractionAttachmentsContinue;
+      const eventType = EventType.ContinueExtractingAttachments;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -175,7 +175,7 @@ describe(getTimeoutErrorEventType.name, () => {
 
     it('should return ExtractorAttachmentsStateDeletionError for deprecated ExtractionAttachmentsDelete', () => {
       // Arrange
-      const eventType = EventType.ExtractionAttachmentsDelete;
+      const eventType = EventType.StartDeletingExtractorAttachmentsState;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -203,7 +203,7 @@ describe(getTimeoutErrorEventType.name, () => {
 
     it('should return ExternalSyncUnitExtractionError for deprecated ExtractionExternalSyncUnitsStart', () => {
       // Arrange
-      const eventType = EventType.ExtractionExternalSyncUnitsStart;
+      const eventType = EventType.StartExtractingExternalSyncUnits;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);

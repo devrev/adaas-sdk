@@ -1,6 +1,6 @@
 import { Artifact } from '../uploader/uploader.interfaces';
 
-import { AirdropEvent } from '../types/extraction';
+import { AirSyncEvent } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 
 /**
@@ -9,13 +9,14 @@ import { WorkerAdapterOptions } from '../types/workers';
 export interface RepoInterface {
   itemType: string;
   normalize?: (record: object) => NormalizedItem | NormalizedAttachment;
+  overridenOptions?: WorkerAdapterOptions;
 }
 
 /**
  * RepoFactoryInterface is an interface that defines the structure of a repo factory which is used to create a repo.
  */
 export interface RepoFactoryInterface {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   itemType: string;
   normalize?: (record: object) => NormalizedItem | NormalizedAttachment;
   onUpload: (artifact: Artifact) => void;
@@ -42,6 +43,7 @@ export interface NormalizedAttachment {
   parent_id: string;
   author_id?: string;
   inline?: boolean;
+  content_type?: string;
 
   // This should be a string, but it was a number in the past. Due to backwards
   // compatibility we are keeping it also as a number.

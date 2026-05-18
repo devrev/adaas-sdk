@@ -1,12 +1,6 @@
 # Contributing
 
-All changes must be made through Pull Requests. Direct commits to `main` or `stable` branches are not allowed.
-
-## Branching Strategy
-
-- **`main`** is the development branch. All feature PRs target `main`.
-- **`stable`** is the release branch. All stable npm releases are made exclusively from `stable`.
-- **`v2`** is the development branch for the next major version (`@devrev/airsync-sdk`).
+All changes must be made through Pull Requests. Direct commits to main or release branches are not allowed.
 
 ## Versioning
 
@@ -15,31 +9,6 @@ We follow Semantic Versioning (SemVer) for versioning, with the format `MAJOR.MI
 - `MAJOR` - Breaking changes, incompatible API changes
 - `MINOR` - New features, backwards compatible
 - `PATCH` - Bug fixes, no new features
-
-## Releasing
-
-### Stable Release
-
-1. Open a PR from `main` to `stable`.
-2. In that PR, update the version in `package.json` and `package-lock.json` to the desired release version.
-3. Once the PR is approved and merged, the release workflow runs automatically. It compares the version in `package.json` against the latest version on npm and, if changed, publishes the new version with the `latest` tag.
-4. The workflow creates a git tag and generates GitHub release notes.
-5. The workflow opens a PR to merge `stable` back into `main`. Review and merge this PR to keep the branches in sync.
-
-### Hotfix
-
-1. Branch off `stable` (e.g., `hotfix/fix-description`).
-2. Fix the bug and bump the patch version in `package.json` and `package-lock.json`.
-3. Open a PR into `stable`.
-4. Once merged, the release workflow runs automatically and publishes the hotfix.
-5. Review and merge the auto-created PR from `stable` back into `main`.
-
-### Beta Release
-
-1. Trigger the "Release beta" workflow manually from the GitHub Actions UI.
-2. Beta releases can be made from any branch **except** `stable`.
-3. When run from `v2`, the workflow publishes to `@devrev/airsync-sdk`. From all other branches, it publishes to `@devrev/ts-adaas`.
-4. The beta version is automatically bumped (prerelease increment) and published with the `beta` tag on npm.
 
 ## Testing
 

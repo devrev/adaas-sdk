@@ -2,10 +2,9 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../../common/control-protocol';
-import { translateIncomingEventType } from '../../common/event-type-translation';
 import { getMemoryUsage } from '../../common/helpers';
 import { Logger, serializeError } from '../../logger/logger';
-import { AirdropEvent, EventType } from '../../types/extraction';
+import { AirSyncEvent, EventType } from '../../types/extraction';
 import {
   GetWorkerPathInterface,
   SpawnFactoryInterface,
@@ -65,31 +64,21 @@ function getWorkerPath({
  * The class provides utilities to emit control events to the platform and exit the worker gracefully.
  * In case of lambda timeout, the class emits a lambda timeout event to the platform.
  * @param {SpawnFactoryInterface} options - The options to create a new instance of Spawn class
- * @param {AirdropEvent} options.event - The event object received from the platform
+ * @param {AirSyncEvent} options.event - The event object received from the platform
  * @param {object} options.initialState - The initial state of the adapter
- * @param {string} [options.workerPath] Remove getWorkerPath function and use baseWorkerPath: __dirname instead of workerPath
  * @param {string} [options.baseWorkerPath] - The base path for the worker files, usually `__dirname`
  * @returns {Promise<Spawn>} - A new instance of Spawn class
  */
 export async function spawn<ConnectorState>({
   event,
   initialState,
-  workerPath,
   initialDomainMapping,
   options,
   baseWorkerPath,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
-  // Translate incoming event type for backwards compatibility. This allows the
-  // SDK to accept both old and new event type formats. Then update the event with the translated event type.
-  const originalEventType = event.payload.event_type;
-  const translatedEventType = translateIncomingEventType(
-    event.payload.event_type as string
-  );
-  event.payload.event_type = translatedEventType;
-
   // Read the command line arguments to check if the local flag is passed.
   const argv = await yargs(hideBin(process.argv)).argv;
-  if (argv._.includes('local')) {
+  if (argv._.includes('local') || argv.local) {
     options = {
       ...(options || {}),
       isLocalDevelopment: true,
@@ -100,26 +89,19 @@ export async function spawn<ConnectorState>({
   // eslint-disable-next-line no-global-assign
   console = new Logger({ event, options });
 
-  if (translatedEventType !== originalEventType) {
-    console.log(
-      `Event type translated from ${originalEventType} to ${translatedEventType}.`
-    );
-  }
   if (options?.isLocalDevelopment) {
     console.log('Snap-in is running in local development mode.');
   }
 
+  const eventType = event.payload.event_type;
   let script = null;
-  if (workerPath != null) {
-    script = workerPath;
-  } else if (
+  if (
     baseWorkerPath != null &&
     options?.workerPathOverrides != null &&
-    options.workerPathOverrides[translatedEventType as EventType] != null
+    options.workerPathOverrides[eventType as EventType] != null
   ) {
     script =
-      baseWorkerPath +
-      options.workerPathOverrides[translatedEventType as EventType];
+      baseWorkerPath + options.workerPathOverrides[eventType as EventType];
   } else {
     script = getWorkerPath({
       event,
@@ -169,7 +151,7 @@ export async function spawn<ConnectorState>({
 }
 
 export class Spawn {
-  private event: AirdropEvent;
+  private event: AirSyncEvent;
   private alreadyEmitted: boolean;
   private softTimeoutSent: boolean;
   private defaultLambdaTimeout: number = DEFAULT_LAMBDA_TIMEOUT;
@@ -180,6 +162,7 @@ export class Spawn {
   private resolve: (value: void | PromiseLike<void>) => void;
   private originalConsole: Console;
   private logger: Logger;
+  private workerFailedMessage: string | undefined;
   constructor({
     event,
     worker,
@@ -262,14 +245,19 @@ export class Spawn {
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
         const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
-        const isSdkLog = message.payload?.isSdkLog ?? false;
+        const isSdkLog = message.payload?.isSdkLog ?? true;
         this.logger.logFn(stringifiedArgs, level, isSdkLog);
       }
 
       // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.
       if (message?.subject === WorkerMessageSubject.WorkerMessageEmitted) {
-        console.info('Worker has emitted message to ADaaS.');
+        console.info('Worker has emitted message to the AirSync platform.');
         this.alreadyEmitted = true;
+      }
+
+      // If worker sends a failure message before exiting, capture it for use in the error event.
+      if (message?.subject === WorkerMessageSubject.WorkerMessageFailed) {
+        this.workerFailedMessage = message.payload?.message;
       }
     });
 
@@ -328,8 +316,11 @@ export class Spawn {
         event: this.event,
         data: {
           error: {
-            message:
-              'Worker exited the process without emitting an event. Check other logs for more information.',
+            message: `Worker exited without emitting event. ${
+              this.workerFailedMessage
+                ? `Error: ${this.workerFailedMessage}`
+                : 'Check the logs for more information.'
+            }`,
           },
         },
       });

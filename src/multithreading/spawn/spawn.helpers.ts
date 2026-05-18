@@ -10,48 +10,40 @@ export function getTimeoutErrorEventType(eventType: EventType): {
   eventType: ExtractorEventType | LoaderEventType;
 } {
   switch (eventType) {
-    // Metadata extraction (handles both old and new enum members)
+    // Metadata extraction
     case EventType.StartExtractingMetadata:
-    case EventType.ExtractionMetadataStart:
       return {
         eventType: ExtractorEventType.MetadataExtractionError,
       };
 
-    // Data extraction (handles both old and new enum members)
+    // Data extraction
     case EventType.StartExtractingData:
     case EventType.ContinueExtractingData:
-    case EventType.ExtractionDataStart:
-    case EventType.ExtractionDataContinue:
       return {
         eventType: ExtractorEventType.DataExtractionError,
       };
 
-    // Data deletion (handles both old and new enum members)
+    // Data deletion
     case EventType.StartDeletingExtractorState:
-    case EventType.ExtractionDataDelete:
       return {
         eventType: ExtractorEventType.ExtractorStateDeletionError,
       };
 
-    // Attachments extraction (handles both old and new enum members)
+    // Attachments extraction
     case EventType.StartExtractingAttachments:
     case EventType.ContinueExtractingAttachments:
-    case EventType.ExtractionAttachmentsStart:
-    case EventType.ExtractionAttachmentsContinue:
       return {
         eventType: ExtractorEventType.AttachmentExtractionError,
       };
 
-    // Attachments deletion (handles both old and new enum members)
+    // Attachments deletion
     case EventType.StartDeletingExtractorAttachmentsState:
-    case EventType.ExtractionAttachmentsDelete:
       return {
         eventType: ExtractorEventType.ExtractorAttachmentsStateDeletionError,
       };
 
-    // External sync units (handles both old and new enum members)
+    // External sync units
     case EventType.StartExtractingExternalSyncUnits:
-    case EventType.ExtractionExternalSyncUnitsStart:
       return {
         eventType: ExtractorEventType.ExternalSyncUnitExtractionError,
       };

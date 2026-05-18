@@ -11,11 +11,12 @@
     "start": "ts-node src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint .  --fix",
-    "test": "jest --forceExit --maxWorkers=50% --selectProjects default --",
-    "test:backwards-compatibility": "jest --forceExit --selectProjects backwards-compatibility --",
-    "test:timeout-handling": "jest --forceExit --selectProjects timeout-handling --",
-    "test:slow": "jest --forceExit --selectProjects slow --",
-    "test:coverage": "jest --forceExit --coverage --runInBand --"
+    "test": "jest --silent --forceExit --maxWorkers=50% --selectProjects default --",
+    "test:backwards-compatibility": "jest --silent --forceExit --selectProjects backwards-compatibility --",
+    "test:timeout-handling": "jest --silent --forceExit --selectProjects timeout-handling --",
+    "test:slow": "jest --silent --forceExit --selectProjects slow --",
+    "test:coverage": "jest --silent --forceExit --coverage --runInBand --",
+    "test:debug": "jest --forceExit --selectProjects default --"
   },
   "repository": {
     "type": "git",
@@ -30,7 +31,6 @@
   "devDependencies": {
     "@microsoft/api-extractor": "^7.57.6",
     "@microsoft/api-extractor-model": "^7.30.7",
-    "@types/express": "^5.0.3",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.18.0",
     "@types/yargs": "^17.0.33",
@@ -38,7 +38,6 @@
     "eslint": "9.32.0",
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-prettier": "4.0.0",
-    "express": "^5.2.1",
     "jest": "^29.7.0",
     "jiti": "^2.6.1",
     "prettier": "^2.8.3",
@@ -47,8 +46,8 @@
     "typescript-eslint": "^8.46.1"
   },
   "dependencies": {
-    "@devrev/typescript-sdk": "^1.1.59",
-    "axios": "^1.13.5",
+    "@devrev/typescript-sdk": "^1.1.74",
+    "axios": "^1.15.2",
     "axios-retry": "^4.5.0",
     "form-data": "^4.0.4",
     "js-jsonl": "^1.1.1",

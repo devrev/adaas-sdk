@@ -1,12 +1,12 @@
 import { sleep } from '../common/helpers';
+import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { ProcessedAttachment } from '../state/state.interfaces';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
   ProcessAttachmentReturnType,
 } from '../types';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
-import { ProcessedAttachment } from 'state/state.interfaces';
 
 export class AttachmentsStreamingPool<ConnectorState> {
   private adapter: WorkerAdapter<ConnectorState>;
@@ -166,8 +166,12 @@ export class AttachmentsStreamingPool<ConnectorState> {
             ? `and size ${response.error.fileSize} bytes `
             : '';
 
+          const contentTypeInfo = attachment.content_type
+            ? `and content_type ${attachment.content_type} `
+            : '';
+
           console.warn(
-            `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} ${fileSizeInfo}due to error returned by the stream function`,
+            `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} ${fileSizeInfo}${contentTypeInfo}due to error returned by the stream function`,
             response.error.message
           );
           await this.updateProgress();
@@ -188,8 +192,12 @@ export class AttachmentsStreamingPool<ConnectorState> {
       } catch (error) {
         const fileExtension = attachment.file_name.split('.').pop() || '';
 
+        const contentTypeInfo = attachment.content_type
+          ? ` and content_type ${attachment.content_type}`
+          : '';
+
         console.warn(
-          `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} due to error in processAttachment function`,
+          `Skipping attachment with ID ${attachment.id} with extension ${fileExtension}${contentTypeInfo} due to error in processAttachment function`,
           error
         );
 

@@ -4,7 +4,7 @@ import type { LogLevel } from '../logger/logger.interfaces';
 import { State } from '../state/state';
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 
-import { AirdropEvent, EventType, ExtractorEventType } from './extraction';
+import { AirSyncEvent, EventType, ExtractorEventType } from './extraction';
 
 import { LoaderEventType } from './loading';
 
@@ -14,15 +14,21 @@ import { InitialDomainMapping } from './common';
  * WorkerAdapterInterface is an interface for WorkerAdapter class.
  * @interface WorkerAdapterInterface
  * @constructor
- * @param {AirdropEvent} event - The event object received from the platform
+ * @param {AirSyncEvent} event - The event object received from the platform
  * @param {object=} initialState - The initial state of the adapter
  * @param {WorkerAdapterInterface} options - The options to create a new instance of WorkerAdapter class
  */
 export interface WorkerAdapterInterface<ConnectorState> {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   adapterState: State<ConnectorState>;
   options?: WorkerAdapterOptions;
 }
+
+/**
+ * ExtractionScope represents the parsed extraction scope from the platform.
+ * Each key is an item type name, and the value indicates whether it should be extracted.
+ */
+export type ExtractionScope = Record<string, { extract: boolean }>;
 
 /**
  * WorkerAdapterOptions represents the options for WorkerAdapter class.
@@ -38,17 +44,18 @@ export interface WorkerAdapterOptions {
   timeout?: number;
   batchSize?: number;
   workerPathOverrides?: WorkerPathOverrides;
+  skipConfirmation?: boolean;
 }
 
 /**
  * SpawnInterface is an interface for Spawn class.
  * @interface SpawnInterface
  * @constructor
- * @param {AirdropEvent} event - The event object received from the platform
+ * @param {AirSyncEvent} event - The event object received from the platform
  * @param {Worker} worker - The worker thread
  */
 export interface SpawnInterface {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   worker: Worker;
   options?: WorkerAdapterOptions;
   resolve: (value: void | PromiseLike<void>) => void;
@@ -62,19 +69,15 @@ export interface SpawnInterface {
  * In case of lambda timeout, the class emits a lambda timeout event to the platform.
  * @interface SpawnFactoryInterface
  * @constructor
- * @param {AirdropEvent} event - The event object received from the platform
+ * @param {AirSyncEvent} event - The event object received from the platform
  * @param {object=} initialState - The initial state of the adapter
- * @param {string} workerPath - The path to the worker file
  * @param {string} initialDomainMapping - The initial domain mapping
  * @param {WorkerAdapterOptions} options - The options to create a new instance of Spawn class
  * @param {string=} baseWorkerPath - The base path for the worker files, usually `__dirname`
  */
 export interface SpawnFactoryInterface<ConnectorState> {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   initialState: ConnectorState;
-
-  /** @deprecated Remove getWorkerPath function and use baseWorkerPath: __dirname instead of workerPath */
-  workerPath?: string;
   options?: WorkerAdapterOptions;
   initialDomainMapping?: InitialDomainMapping;
   baseWorkerPath?: string;
@@ -119,6 +122,7 @@ export enum WorkerMessageSubject {
   WorkerMessageEmitted = 'emit',
   WorkerMessageExit = 'exit',
   WorkerMessageLog = 'log',
+  WorkerMessageFailed = 'failed',
 }
 
 /**
@@ -151,18 +155,29 @@ export interface WorkerMessageLog {
 }
 
 /**
+ * WorkerMessageFailed interface represents the structure of the worker failed message.
+ * Sent from the worker thread before calling process.exit(1) to convey the specific
+ * error reason to the main thread.
+ */
+export interface WorkerMessageFailed {
+  subject: WorkerMessageSubject.WorkerMessageFailed;
+  payload: { message: string };
+}
+
+/**
  * WorkerMessage represents the structure of the worker message.
  */
 export type WorkerMessage =
   | WorkerMessageEmitted
   | WorkerMessageExit
-  | WorkerMessageLog;
+  | WorkerMessageLog
+  | WorkerMessageFailed;
 
 /**
  * WorkerData represents the structure of the worker data object.
  */
 export interface WorkerData<ConnectorState> {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   initialState: ConnectorState;
   workerPath: string;
   initialDomainMapping?: InitialDomainMapping;
@@ -173,7 +188,7 @@ export interface WorkerData<ConnectorState> {
  * GetWorkerPathInterface is an interface for getting the worker path.
  */
 export interface GetWorkerPathInterface {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   workerBasePath?: string | null;
 }
 

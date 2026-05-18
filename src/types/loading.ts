@@ -1,6 +1,6 @@
 import { Mappers } from '../mappers/mappers';
 import { ErrorRecord } from './common';
-import { AirdropEvent } from './extraction';
+import { AirSyncEvent } from './extraction';
 
 export interface StatsFileObject {
   id: string;
@@ -60,7 +60,7 @@ export interface ExternalSystemItem {
 export interface ExternalSystemItemLoadingParams<Type> {
   item: Type;
   mappers: Mappers;
-  event: AirdropEvent;
+  event: AirSyncEvent;
 }
 
 export interface ExternalSystemItemLoadingResponse {
@@ -135,13 +135,9 @@ export type SyncMapperRecord = {
   input_file?: string;
 };
 
-/* eslint-disable @typescript-eslint/no-duplicate-enum-values */
 export enum LoaderEventType {
   DataLoadingProgress = 'DATA_LOADING_PROGRESS',
-  /**
-   * @deprecated This was a typo. Use DataLoadingDelayed for the corrected spelling
-   */
-  DataLoadingDelay = 'DATA_LOADING_DELAYED',
+  DataLoadingDelayed = 'DATA_LOADING_DELAYED',
   DataLoadingDone = 'DATA_LOADING_DONE',
   DataLoadingError = 'DATA_LOADING_ERROR',
 
@@ -157,22 +153,4 @@ export enum LoaderEventType {
   LoaderAttachmentStateDeletionError = 'LOADER_ATTACHMENT_STATE_DELETION_ERROR',
 
   UnknownEventType = 'UNKNOWN_EVENT_TYPE',
-  DataLoadingDelayed = 'DATA_LOADING_DELAYED',
-
-  /**
-   * @deprecated Use AttachmentsLoadingProgress instead (note: singular changed to plural)
-   */
-  AttachmentsLoadingProgress = 'ATTACHMENT_LOADING_PROGRESS',
-  /**
-   * @deprecated Use AttachmentsLoadingDelayed instead (note: singular changed to plural)
-   */
-  AttachmentsLoadingDelayed = 'ATTACHMENT_LOADING_DELAYED',
-  /**
-   * @deprecated Use AttachmentsLoadingDone instead (note: singular changed to plural)
-   */
-  AttachmentsLoadingDone = 'ATTACHMENT_LOADING_DONE',
-  /**
-   * @deprecated Use AttachmentsLoadingError instead (note: singular changed to plural)
-   */
-  AttachmentsLoadingError = 'ATTACHMENT_LOADING_ERROR',
 }

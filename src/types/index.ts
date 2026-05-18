@@ -1,21 +1,12 @@
 // Common
-export {
-  AdapterUpdateParams,
-  ErrorLevel,
-  ErrorRecord,
-  InitialDomainMapping,
-  LogRecord,
-  SyncMode,
-} from './common';
+export { ErrorRecord, InitialDomainMapping, SyncMode } from './common';
 
 // Extraction
 export {
-  AirdropEvent,
-  AirdropMessage,
+  AirSyncEvent,
+  AirSyncMessage,
   ConnectionData,
-  DomainObjectState,
-  EventContextIn,
-  EventContextOut,
+  EventContext,
   EventData,
   EventType,
   ExternalProcessAttachmentFunction,
@@ -25,10 +16,13 @@ export {
   ExternalSystemAttachmentStreamingFunction,
   ExternalSystemAttachmentStreamingParams,
   ExternalSystemAttachmentStreamingResponse,
-  ExtractionMode,
   ExtractorEvent,
   ExtractorEventType,
+  InitialSyncScope,
   ProcessAttachmentReturnType,
+  TimeUnit,
+  TimeValue,
+  TimeValueType,
 } from './extraction';
 
 // Loading
@@ -49,6 +43,8 @@ export {
 
 // State
 export { AdapterState } from '../state/state.interfaces';
+
+export { UNBOUNDED_DATE_TIME_VALUE } from '../common/constants';
 
 // Uploader
 export {

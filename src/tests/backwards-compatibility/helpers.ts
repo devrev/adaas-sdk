@@ -21,9 +21,13 @@ import * as fs from 'fs';
 import { execSync } from 'node:child_process';
 import * as path from 'path';
 
-export const newApiMdPath = path.join(__dirname, 'temp', 'ts-adaas.md');
-export const currentApiMdPath = path.join(__dirname, 'ts-adaas.md');
-export const newApiJsonPath = path.join(__dirname, 'temp', 'ts-adaas.api.json');
+export const newApiMdPath = path.join(__dirname, 'temp', 'airsync-sdk.api.md');
+export const currentApiMdPath = path.join(__dirname, 'airsync-sdk.api.md');
+export const newApiJsonPath = path.join(
+  __dirname,
+  'temp',
+  'airsync-sdk.api.json'
+);
 export const currentApiJsonPath = path.join(__dirname, 'latest.json');
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

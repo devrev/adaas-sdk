@@ -1,11 +1,19 @@
 import { InitialDomainMapping } from '../types/common';
-import { AirdropEvent } from '../types/extraction';
+import { AirSyncEvent } from '../types/extraction';
 import { FileToLoad } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
 export interface SdkState {
-  lastSyncStarted?: string;
-  lastSuccessfulSyncStarted?: string;
+  /** The pending (not yet committed) oldest extraction boundary (ISO 8601 timestamp).
+   *  Set on StartExtractingMetadata, reused across subsequent phases, cleared on AttachmentExtractionDone. */
+  pendingWorkersOldest?: string;
+  /** The pending (not yet committed) newest extraction boundary (ISO 8601 timestamp).
+   *  Set on StartExtractingMetadata, reused across subsequent phases, cleared on AttachmentExtractionDone. */
+  pendingWorkersNewest?: string;
+  /** The oldest point of extraction (ISO 8601 timestamp). */
+  workersOldest?: string;
+  /** The newest point of extraction (ISO 8601 timestamp). */
+  workersNewest?: string;
   toDevRev?: ToDevRev;
   fromDevRev?: FromDevRev;
   snapInVersionId?: string;
@@ -13,7 +21,7 @@ export interface SdkState {
 
 /**
  * AdapterState is an interface that defines the structure of the adapter state that is used by the external extractor.
- * It extends the connector state with additional fields: lastSyncStarted, lastSuccessfulSyncStarted, snapInVersionId and attachmentsMetadata.
+ * It extends the connector state with additional fields including snapInVersionId and attachmentsMetadata.
  */
 export type AdapterState<ConnectorState> = ConnectorState & SdkState;
 
@@ -38,15 +46,17 @@ export interface FromDevRev {
 }
 
 export interface StateInterface<ConnectorState> {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   initialState: ConnectorState;
   initialDomainMapping?: InitialDomainMapping;
   options?: WorkerAdapterOptions;
 }
 
 export const extractionSdkState = {
-  lastSyncStarted: '',
-  lastSuccessfulSyncStarted: '',
+  pendingWorkersOldest: '',
+  pendingWorkersNewest: '',
+  workersOldest: '',
+  workersNewest: '',
   snapInVersionId: '',
   toDevRev: {
     attachmentsMetadata: {
