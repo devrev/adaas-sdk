@@ -1,12 +1,11 @@
+import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
   ProcessAttachmentReturnType,
-} from 'types';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+} from '../types';
 import { AttachmentsStreamingPool } from './attachments-streaming-pool';
 
-// Mock types
 interface TestState {
   attachments: { completed: boolean };
 }
@@ -58,11 +57,6 @@ describe(AttachmentsStreamingPool.name, () => {
         parent_id: 'parent-3',
       },
     ];
-
-    // Mock console methods
-    jest.spyOn(console, 'log').mockImplementation();
-    jest.spyOn(console, 'error').mockImplementation();
-    jest.spyOn(console, 'warn').mockImplementation();
   });
 
   afterEach(() => {
@@ -78,7 +72,6 @@ describe(AttachmentsStreamingPool.name, () => {
         stream: mockStream,
       });
 
-      expect(pool).toBeDefined();
       expect(pool['adapter']).toBe(mockAdapter);
       expect(pool['attachments']).toEqual(mockAttachments);
       expect(pool['batchSize']).toBe(10);
@@ -295,6 +288,7 @@ describe(AttachmentsStreamingPool.name, () => {
     });
 
     it('should handle processing errors gracefully', async () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const error = new Error('Processing failed');
       mockAdapter.processAttachment
         .mockResolvedValueOnce({}) // First attachment succeeds
@@ -309,7 +303,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       await pool.streamAll();
 
-      expect(console.warn).toHaveBeenCalledWith(
+      expect(warnSpy).toHaveBeenCalledWith(
         'Skipping attachment with ID attachment-2 with extension jpg due to error in processAttachment function',
         error
       );
@@ -437,6 +431,164 @@ describe(AttachmentsStreamingPool.name, () => {
     expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
   });
 
+  describe('content_type handling', () => {
+    it('should pass attachment with content_type to processAttachment', async () => {
+      mockAdapter.processAttachment.mockResolvedValue({});
+
+      const attachmentWithContentType: NormalizedAttachment = {
+        id: 'attachment-ct',
+        url: 'https://example.com/report.pdf',
+        file_name: 'report.pdf',
+        parent_id: 'parent-ct',
+        content_type: 'application/pdf',
+      };
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: [attachmentWithContentType],
+        stream: mockStream,
+      });
+
+      await pool.streamAll();
+
+      expect(mockAdapter.processAttachment).toHaveBeenCalledWith(
+        attachmentWithContentType,
+        mockStream
+      );
+      expect(mockAdapter.processAttachment.mock.calls[0][0].content_type).toBe(
+        'application/pdf'
+      );
+    });
+
+    it('should handle mixed attachments with and without content_type', async () => {
+      mockAdapter.processAttachment.mockResolvedValue({});
+
+      const mixedAttachments: NormalizedAttachment[] = [
+        {
+          id: 'att-with-ct',
+          url: 'https://example.com/image.png',
+          file_name: 'image.png',
+          parent_id: 'parent-1',
+          content_type: 'image/png',
+        },
+        {
+          id: 'att-without-ct',
+          url: 'https://example.com/file.bin',
+          file_name: 'file.bin',
+          parent_id: 'parent-2',
+        },
+        {
+          id: 'att-with-ct-2',
+          url: 'https://example.com/doc.pdf',
+          file_name: 'doc.pdf',
+          parent_id: 'parent-3',
+          content_type: 'application/pdf',
+        },
+      ];
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: mixedAttachments,
+        batchSize: 1,
+        stream: mockStream,
+      });
+
+      await pool.streamAll();
+
+      expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
+      expect(mockAdapter.processAttachment.mock.calls[0][0].content_type).toBe(
+        'image/png'
+      );
+      expect(
+        mockAdapter.processAttachment.mock.calls[1][0].content_type
+      ).toBeUndefined();
+      expect(mockAdapter.processAttachment.mock.calls[2][0].content_type).toBe(
+        'application/pdf'
+      );
+    });
+
+    it('should include content_type in error log when processAttachment returns error', async () => {
+      mockAdapter.processAttachment.mockResolvedValue({
+        error: { message: 'Upload failed' },
+      });
+
+      const warnSpy = jest.spyOn(console, 'warn');
+
+      const attachmentWithContentType: NormalizedAttachment = {
+        id: 'att-error-ct',
+        url: 'https://example.com/file.pdf',
+        file_name: 'file.pdf',
+        parent_id: 'parent-err',
+        content_type: 'application/pdf',
+      };
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: [attachmentWithContentType],
+        batchSize: 1,
+        stream: mockStream,
+      });
+
+      await pool.streamAll();
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('content_type application/pdf'),
+        expect.any(String)
+      );
+    });
+
+    it('should include content_type in error log when processAttachment throws', async () => {
+      const error = new Error('Processing crashed');
+      mockAdapter.processAttachment.mockRejectedValue(error);
+
+      const warnSpy = jest.spyOn(console, 'warn');
+
+      const attachmentWithContentType: NormalizedAttachment = {
+        id: 'att-throw-ct',
+        url: 'https://example.com/file.png',
+        file_name: 'file.png',
+        parent_id: 'parent-throw',
+        content_type: 'image/png',
+      };
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: [attachmentWithContentType],
+        batchSize: 1,
+        stream: mockStream,
+      });
+
+      await pool.streamAll();
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('content_type image/png'),
+        error
+      );
+    });
+
+    it('should not include content_type in error log when content_type is not set', async () => {
+      mockAdapter.processAttachment.mockResolvedValue({
+        error: { message: 'Upload failed' },
+      });
+
+      const warnSpy = jest.spyOn(console, 'warn');
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: [mockAttachments[0]],
+        batchSize: 1,
+        stream: mockStream,
+      });
+
+      await pool.streamAll();
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.not.stringContaining('content_type'),
+        expect.any(String)
+      );
+    });
+  });
+
   describe('concurrency behavior', () => {
     it('should process attachments concurrently within batch size', async () => {
       let processCallCount = 0;
@@ -469,6 +621,67 @@ describe(AttachmentsStreamingPool.name, () => {
 
       // Should complete in roughly 200ms (2 batches of 100ms each) rather than 300ms (sequential)
       expect(endTime - startTime).toBeLessThan(250);
+    });
+  });
+
+  describe('log context attribution', () => {
+    it('should emit SDK-generated logs from pool (Starting download message)', async () => {
+      const logSpy = jest.spyOn(console, 'log');
+      mockAdapter.processAttachment.mockResolvedValue({});
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: mockAttachments.slice(0, 1),
+        stream: mockStream,
+      });
+
+      // Call streamAll - it should log "Starting download of N attachments..."
+      await pool.streamAll();
+
+      // Verify the SDK-generated "Starting download" message was logged
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Starting download of 1 attachments')
+      );
+    });
+
+    it('should process user stream callback correctly while maintaining context isolation', async () => {
+      let userCallbackExecuted = false;
+
+      // Mock stream to capture context info
+      const mockStreamFn: ExternalSystemAttachmentStreamingFunction = jest
+        .fn()
+        .mockImplementation(async () => {
+          await Promise.resolve();
+          userCallbackExecuted = true;
+          // Record that the callback executed
+          return Promise.resolve({
+            httpStream: undefined,
+            error: undefined,
+          });
+        });
+
+      mockAdapter.processAttachment.mockImplementation(
+        async (attachment, stream) => {
+          // processAttachment should be called with the user's stream function
+          const result = await stream({
+            item: attachment,
+            event: {} as any,
+          });
+          return result;
+        }
+      );
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: mockAttachments.slice(0, 1),
+        stream: mockStreamFn,
+      });
+
+      await pool.streamAll();
+
+      // Verify the user callback was executed
+      expect(userCallbackExecuted).toBe(true);
+      expect(mockStreamFn).toHaveBeenCalled();
     });
   });
 });

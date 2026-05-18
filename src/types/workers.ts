@@ -25,6 +25,12 @@ export interface WorkerAdapterInterface<ConnectorState> {
 }
 
 /**
+ * ExtractionScope represents the parsed extraction scope from the platform.
+ * Each key is an item type name, and the value indicates whether it should be extracted.
+ */
+export type ExtractionScope = Record<string, { extract: boolean }>;
+
+/**
  * WorkerAdapterOptions represents the options for WorkerAdapter class.
  * @interface WorkerAdapterOptions
  * @constructor
@@ -38,6 +44,7 @@ export interface WorkerAdapterOptions {
   timeout?: number;
   batchSize?: number;
   workerPathOverrides?: WorkerPathOverrides;
+  skipConfirmation?: boolean;
 }
 
 /**
@@ -119,6 +126,7 @@ export enum WorkerMessageSubject {
   WorkerMessageEmitted = 'emit',
   WorkerMessageExit = 'exit',
   WorkerMessageLog = 'log',
+  WorkerMessageFailed = 'failed',
 }
 
 /**
@@ -151,12 +159,23 @@ export interface WorkerMessageLog {
 }
 
 /**
+ * WorkerMessageFailed interface represents the structure of the worker failed message.
+ * Sent from the worker thread before calling process.exit(1) to convey the specific
+ * error reason to the main thread.
+ */
+export interface WorkerMessageFailed {
+  subject: WorkerMessageSubject.WorkerMessageFailed;
+  payload: { message: string };
+}
+
+/**
  * WorkerMessage represents the structure of the worker message.
  */
 export type WorkerMessage =
   | WorkerMessageEmitted
   | WorkerMessageExit
-  | WorkerMessageLog;
+  | WorkerMessageLog
+  | WorkerMessageFailed;
 
 /**
  * WorkerData represents the structure of the worker data object.

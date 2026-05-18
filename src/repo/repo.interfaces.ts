@@ -9,6 +9,7 @@ import { WorkerAdapterOptions } from '../types/workers';
 export interface RepoInterface {
   itemType: string;
   normalize?: (record: object) => NormalizedItem | NormalizedAttachment;
+  overridenOptions?: WorkerAdapterOptions;
 }
 
 /**
@@ -42,6 +43,7 @@ export interface NormalizedAttachment {
   parent_id: string;
   author_id?: string;
   inline?: boolean;
+  content_type?: string;
 
   // This should be a string, but it was a number in the past. Due to backwards
   // compatibility we are keeping it also as a number.

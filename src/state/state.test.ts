@@ -2,7 +2,8 @@ import {
   STATEFUL_EVENT_TYPES,
   STATELESS_EVENT_TYPES,
 } from '../common/constants';
-import { createEvent } from '../tests/test-helpers';
+import { mockServer } from '../tests/jest.setup';
+import { createMockEvent } from '../common/test-utils';
 import { EventType } from '../types/extraction';
 import { State, createAdapterState } from './state';
 import { extractionSdkState } from './state.interfaces';
@@ -36,8 +37,8 @@ describe(State.name, () => {
     'should not init, fetch, post or install IDM for stateless event type %s',
     async (eventType) => {
       // Arrange
-      const event = createEvent({
-        eventType: eventType,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: eventType },
       });
 
       // Act
@@ -56,17 +57,16 @@ describe(State.name, () => {
   );
 
   it.each(STATEFUL_EVENT_TYPES)(
-    'should exit the process if fetching the state fails',
+    'should exit the process if fetching the state fails for event type %s',
     async (eventType) => {
       // Arrange
-      const event = createEvent({
-        eventType: eventType,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: eventType },
       });
       fetchStateSpy.mockRejectedValue({
         isAxiosError: true,
         response: { status: 500 },
       });
-      jest.spyOn(console, 'error').mockImplementation(() => {});
 
       // Act & Assert
       await expect(
@@ -81,14 +81,13 @@ describe(State.name, () => {
   );
 
   it.each(STATEFUL_EVENT_TYPES)(
-    'should exit the process if parsing the state fails',
+    'should exit the process if parsing the state fails for event type %s',
     async (eventType) => {
       // Arrange
-      const event = createEvent({
-        eventType: eventType,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: eventType },
       });
-      fetchStateSpy.mockResolvedValue('invalid-json');
-      jest.spyOn(console, 'error').mockImplementation(() => {});
+      fetchStateSpy.mockResolvedValue({ state: 'invalid-json' });
 
       // Act & Assert
       await expect(
@@ -103,14 +102,13 @@ describe(State.name, () => {
   );
 
   it.each(STATEFUL_EVENT_TYPES)(
-    'should exit the process if fetching is successful but there is no state in the response',
+    'should exit the process if fetching is successful but there is no state in the response for event type %s',
     async (eventType) => {
       // Arrange
-      const event = createEvent({
-        eventType: eventType,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: eventType },
       });
-      fetchStateSpy.mockResolvedValue(null);
-      jest.spyOn(console, 'error').mockImplementation(() => {});
+      fetchStateSpy.mockResolvedValue({ state: null });
 
       // Act & Assert
       await expect(
@@ -135,11 +133,11 @@ describe(State.name, () => {
       const initialState = {
         test: 'test',
       };
-      const event = createEvent({
-        eventType: eventType,
-        contextOverrides: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
           snap_in_version_id: '',
         },
+        payload: { event_type: eventType },
       });
       fetchStateSpy.mockRejectedValue({
         isAxiosError: true,
@@ -151,7 +149,6 @@ describe(State.name, () => {
       postStateSpy.mockResolvedValue({
         success: true,
       });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
       await createAdapterState({
@@ -173,11 +170,11 @@ describe(State.name, () => {
     const initialState = {
       test: 'test',
     };
-    const event = createEvent({
-      eventType: EventType.StartExtractingData,
-      contextOverrides: {
+    const event = createMockEvent(mockServer.baseUrl, {
+      context: {
         snap_in_version_id: '',
       },
+      payload: { event_type: EventType.StartExtractingData },
     });
     fetchStateSpy.mockRejectedValue({
       isAxiosError: true,
@@ -189,7 +186,6 @@ describe(State.name, () => {
     postStateSpy.mockResolvedValue({
       success: true,
     });
-    jest.spyOn(console, 'log').mockImplementation(() => {});
 
     // Act
     await createAdapterState({
@@ -212,17 +208,15 @@ describe(State.name, () => {
     'should exit the process if initialDomainMapping is not provided for event type %s',
     async (eventType) => {
       // Arrange
-      const event = createEvent({
-        eventType: eventType,
+      const event = createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: eventType },
       });
 
-      fetchStateSpy.mockResolvedValue(
-        JSON.stringify({
+      fetchStateSpy.mockResolvedValue({
+        state: JSON.stringify({
           test: 'test',
-        })
-      );
-      jest.spyOn(console, 'log').mockImplementation(() => {});
-      jest.spyOn(console, 'error').mockImplementation(() => {});
+        }),
+      });
 
       // Act & Assert
       await expect(
@@ -240,19 +234,18 @@ describe(State.name, () => {
     'should not install IDM if version matches for event type %s',
     async (eventType) => {
       // Arrange
-      const event = createEvent({
-        eventType: eventType,
-        contextOverrides: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
           snap_in_version_id: '1.0.0',
         },
+        payload: { event_type: eventType },
       });
 
       const stringifiedState = JSON.stringify({
         test: 'test',
         snapInVersionId: '1.0.0',
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
-      jest.spyOn(console, 'log').mockImplementation(() => {});
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
       // Act & Assert
       await createAdapterState({
@@ -270,22 +263,21 @@ describe(State.name, () => {
     'should install IDM if version does not match for event type %s',
     async (eventType) => {
       // Arrange
-      const event = createEvent({
-        eventType: eventType,
-        contextOverrides: {
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
           snap_in_version_id: '2.0.0',
         },
+        payload: { event_type: eventType },
       });
 
       const stringifiedState = JSON.stringify({
         test: 'test',
         snapInVersionId: '1.0.0',
       });
-      fetchStateSpy.mockResolvedValue(stringifiedState);
+      fetchStateSpy.mockResolvedValue({ state: stringifiedState });
       installInitialDomainMappingSpy.mockResolvedValue({
         success: true,
       });
-      jest.spyOn(console, 'log').mockImplementation(() => {});
 
       // Act
       await createAdapterState({
@@ -298,4 +290,100 @@ describe(State.name, () => {
       expect(installInitialDomainMappingSpy).toHaveBeenCalled();
     }
   );
+
+  it('should populate extractionScope from API response', async () => {
+    // Arrange
+    const event = createMockEvent(mockServer.baseUrl, {
+      context: {
+        snap_in_version_id: '1.0.0',
+      },
+      payload: { event_type: EventType.StartExtractingData },
+    });
+    fetchStateSpy.mockResolvedValue({
+      state: JSON.stringify({ snapInVersionId: '1.0.0' }),
+      objects: JSON.stringify({
+        tasks: { extract: true },
+        users: { extract: true },
+      }),
+    });
+
+    // Act
+    const result = await createAdapterState({
+      event,
+      initialState: {},
+      initialDomainMapping: {},
+    });
+
+    // Assert
+    expect(result.extractionScope).toEqual({
+      tasks: { extract: true },
+      users: { extract: true },
+    });
+  });
+
+  it('should have empty extractionScope on 404', async () => {
+    // Arrange
+    const event = createMockEvent(mockServer.baseUrl, {
+      context: {
+        snap_in_version_id: '',
+      },
+      payload: { event_type: EventType.StartExtractingMetadata },
+    });
+    fetchStateSpy.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 404 },
+    });
+    installInitialDomainMappingSpy.mockResolvedValue({ success: true });
+    postStateSpy.mockResolvedValue({ success: true });
+
+    // Act
+    const result = await createAdapterState({
+      event,
+      initialState: {},
+      initialDomainMapping: {},
+    });
+
+    // Assert
+    expect(result.extractionScope).toEqual({});
+  });
+
+  it('should have empty extractionScope for stateless events', async () => {
+    // Arrange
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingExternalSyncUnits },
+    });
+
+    // Act
+    const result = await createAdapterState({
+      event,
+      initialState: {},
+      initialDomainMapping: {},
+    });
+
+    // Assert
+    expect(result.extractionScope).toEqual({});
+  });
+
+  it('should continue with empty extractionScope when objects field contains invalid JSON', async () => {
+    // Arrange
+    const event = createMockEvent(mockServer.baseUrl, {
+      context: { snap_in_version_id: '1.0.0' },
+      payload: { event_type: EventType.StartExtractingData },
+    });
+    fetchStateSpy.mockResolvedValue({
+      state: JSON.stringify({ snapInVersionId: '1.0.0' }),
+      objects: 'NOT_VALID_JSON',
+    });
+
+    // Act
+    const result = await createAdapterState({
+      event,
+      initialState: {},
+      initialDomainMapping: {},
+    });
+
+    // Assert: should not crash, extractionScope is empty (default)
+    expect(result.extractionScope).toEqual({});
+    expect(processExitSpy).not.toHaveBeenCalled();
+  });
 });

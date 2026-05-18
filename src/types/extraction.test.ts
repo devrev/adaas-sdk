@@ -1,32 +1,27 @@
-import { createEvent } from '../tests/test-helpers';
-import { EventContext, EventType, InitialSyncScope } from './extraction';
+import { createMockEvent } from '../common/test-utils';
+import { mockServer } from '../tests/jest.setup';
+import { EventType, InitialSyncScope, TimeValueType } from './extraction';
 
-// Test the EventContext interface and related extraction types
 describe('ExtractionTypes', () => {
-  const baseEvent = createEvent({ eventType: EventType.ExtractionDataStart });
-
-  it('should create event context without optional fields', () => {
-    const event = { ...baseEvent };
-
-    // If this compiles, the test passes
-    expect(event).toBeDefined();
-    expect(event.payload.event_context).toBeDefined();
-  });
-
   it('should create event context with all optional fields', () => {
-    const event = { ...baseEvent };
+    // Arrange & Act
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
+        event_context: {
+          extract_from: '2024-01-01T00:00:00Z',
+          extract_to: '2024-06-01T00:00:00Z',
+          initial_sync_scope: InitialSyncScope.TIME_SCOPED,
+          reset_extract_from: true,
+        },
+      },
+    });
 
-    event.payload.event_context = {
-      ...baseEvent.payload.event_context,
-      extract_from: '2024-01-01T00:00:00Z',
-      initial_sync_scope: InitialSyncScope.TIME_SCOPED,
-      reset_extract_from: true,
-    } as EventContext;
-
-    expect(event).toBeDefined();
+    // Assert
     expect(event.payload.event_context.extract_from).toBe(
       '2024-01-01T00:00:00Z'
     );
+    expect(event.payload.event_context.extract_to).toBe('2024-06-01T00:00:00Z');
     expect(event.payload.event_context.initial_sync_scope).toBe(
       InitialSyncScope.TIME_SCOPED
     );
@@ -34,85 +29,94 @@ describe('ExtractionTypes', () => {
   });
 
   it('should create event context with partial optional fields', () => {
-    const event = { ...baseEvent };
+    // Arrange & Act
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
+        event_context: {
+          extract_from: '2024-01-01T00:00:00Z',
+        },
+      },
+    });
 
-    event.payload.event_context = {
-      ...baseEvent.payload.event_context,
-      extract_from: '2024-01-01T00:00:00Z',
-    } as EventContext;
-
-    expect(event).toBeDefined();
+    // Assert
     expect(event.payload.event_context.extract_from).toBe(
       '2024-01-01T00:00:00Z'
     );
   });
 
   it('should handle different InitialSyncScope values', () => {
-    const event = { ...baseEvent };
+    // Arrange & Act
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
+        event_context: {
+          initial_sync_scope: InitialSyncScope.FULL_HISTORY,
+        },
+      },
+    });
 
-    event.payload.event_context = {
-      ...baseEvent.payload.event_context,
-      initial_sync_scope: InitialSyncScope.FULL_HISTORY,
-    } as EventContext;
-
+    // Assert
     expect(event.payload.event_context.initial_sync_scope).toBe(
       InitialSyncScope.FULL_HISTORY
     );
   });
 
   it('[edge] should handle null event context gracefully', () => {
-    const event = { ...baseEvent };
+    // Arrange
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: { event_type: EventType.StartExtractingData },
+    });
 
+    // Act
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     event.payload.event_context = null as any;
 
+    // Assert
     expect(event.payload.event_context).toBeNull();
   });
 
   it('[edge] should handle undefined optional fields', () => {
-    const event = { ...baseEvent };
+    // Arrange & Act
+    const event = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
+        event_context: {
+          extract_from: undefined,
+          extract_to: undefined,
+          initial_sync_scope: undefined,
+          reset_extract_from: undefined,
+        },
+      },
+    });
 
-    event.payload.event_context = {
-      ...baseEvent.payload.event_context,
-      extract_from: undefined,
-      initial_sync_scope: undefined,
-      reset_extract_from: undefined,
-    } as EventContext;
-
+    // Assert
     expect(event.payload.event_context.extract_from).toBeUndefined();
+    expect(event.payload.event_context.extract_to).toBeUndefined();
     expect(event.payload.event_context.initial_sync_scope).toBeUndefined();
     expect(event.payload.event_context.reset_extract_from).toBeUndefined();
   });
 
-  it('[edge] should handle invalid date format in extract_from', () => {
-    const event = { ...baseEvent };
-
-    event.payload.event_context = {
-      ...baseEvent.payload.event_context,
-      extract_from: 'invalid-date-format',
-    } as EventContext;
-
-    expect(event.payload.event_context.extract_from).toBe(
-      'invalid-date-format'
-    );
-    // Note: Type validation would typically happen at runtime, not compile time
-  });
-
   it('[edge] should handle explicit boolean values for reset_extract_from', () => {
-    const eventWithTrue = createEvent({
-      eventType: EventType.ExtractionDataStart,
-      eventContextOverrides: {
-        reset_extract_from: true,
+    // Arrange & Act
+    const eventWithTrue = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
+        event_context: {
+          reset_extract_from: true,
+        },
+      },
+    });
+    const eventWithFalse = createMockEvent(mockServer.baseUrl, {
+      payload: {
+        event_type: EventType.StartExtractingData,
+        event_context: {
+          reset_extract_from: false,
+        },
       },
     });
 
-    const eventWithFalse = createEvent({
-      eventType: EventType.ExtractionDataStart,
-      eventContextOverrides: {
-        reset_extract_from: false,
-      },
-    });
-
+    // Assert
     expect(eventWithTrue.payload.event_context.reset_extract_from).toBe(true);
     expect(eventWithFalse.payload.event_context.reset_extract_from).toBe(false);
     expect(typeof eventWithTrue.payload.event_context.reset_extract_from).toBe(
@@ -121,5 +125,30 @@ describe('ExtractionTypes', () => {
     expect(typeof eventWithFalse.payload.event_context.reset_extract_from).toBe(
       'boolean'
     );
+  });
+
+  describe('TimeValueType enum', () => {
+    it('should have all expected values', () => {
+      // Assert
+      expect(TimeValueType.WORKERS_OLDEST).toBe('workers_oldest');
+      expect(TimeValueType.WORKERS_OLDEST_MINUS_WINDOW).toBe(
+        'workers_oldest_minus_window'
+      );
+      expect(TimeValueType.WORKERS_NEWEST).toBe('workers_newest');
+      expect(TimeValueType.WORKERS_NEWEST_PLUS_WINDOW).toBe(
+        'workers_newest_plus_window'
+      );
+      expect(TimeValueType.CURRENT_TIME).toBe('current_time');
+      expect(TimeValueType.ABSOLUTE_TIME).toBe('absolute_time');
+      expect(TimeValueType.UNBOUNDED).toBe('unbounded');
+    });
+
+    it('should have exactly seven values', () => {
+      // Act
+      const values = Object.values(TimeValueType);
+
+      // Assert
+      expect(values.length).toBe(7);
+    });
   });
 });

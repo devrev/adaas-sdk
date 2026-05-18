@@ -9,11 +9,12 @@ import {
   createArtifact,
   createAxiosResponse,
   createDownloadUrlResponse,
-  createEvent,
   createFileBuffer,
   createFileStream,
   spyOnPrivateMethod,
 } from '../tests/test-helpers';
+import { mockServer } from '../tests/jest.setup';
+import { createMockEvent } from '../common/test-utils';
 
 import { compressGzip, downloadToLocal } from './uploader.helpers';
 import { ArtifactToUpload, UploaderResult } from './uploader.interfaces';
@@ -42,7 +43,7 @@ type UploaderPrivateMethods = {
 };
 
 describe(Uploader.name, () => {
-  const mockEvent = createEvent();
+  const mockEvent = createMockEvent(mockServer.baseUrl);
   let uploader: Uploader;
 
   beforeEach(() => {
@@ -140,7 +141,6 @@ describe(Uploader.name, () => {
       const result = await uploader.upload(itemType, fetchedObjects);
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.artifact).toBeUndefined();
     });
@@ -161,7 +161,6 @@ describe(Uploader.name, () => {
       const result = await uploader.upload(itemType, fetchedObjects);
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.artifact).toBeUndefined();
     });
@@ -182,7 +181,6 @@ describe(Uploader.name, () => {
       const result = await uploader.upload(itemType, fetchedObjects);
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.artifact).toBeUndefined();
     });
@@ -197,7 +195,6 @@ describe(Uploader.name, () => {
       const result = await uploader.upload(itemType, fetchedObjects);
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.artifact).toBeUndefined();
     });
@@ -373,7 +370,6 @@ describe(Uploader.name, () => {
 
       // Assert
       expect(result.response).toBeUndefined();
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
     });
   });
@@ -698,7 +694,6 @@ describe(Uploader.name, () => {
       });
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.attachments).toBeUndefined();
     });
@@ -715,7 +710,6 @@ describe(Uploader.name, () => {
       });
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.attachments).toBeUndefined();
     });
@@ -734,7 +728,6 @@ describe(Uploader.name, () => {
       });
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.attachments).toBeUndefined();
     });
@@ -754,7 +747,6 @@ describe(Uploader.name, () => {
       });
 
       // Assert
-      expect(result.error).toBeDefined();
       expect(result.error).toHaveProperty('message');
       expect(result.attachments).toBeUndefined();
     });

@@ -184,4 +184,28 @@ describe('Internal Axios Client', () => {
 
     expect(mockServer.getRequestCount('GET', '/test-endpoint')).toBe(1);
   });
+
+  it('should retry on request timeout (ECONNABORTED)', async () => {
+    // The mock server delays the first response by 500ms, but we set a per-request
+    // timeout of 150ms so the first request times out with ECONNABORTED.
+    // After the 1 timed-out failure, the server responds immediately (no delay),
+    // so the retry succeeds quickly without waiting for full exponential backoff.
+    mockServer.setRoute({
+      path: '/test-endpoint',
+      method: 'GET',
+      status: 200,
+      retry: {
+        failureCount: 1,
+        errorStatus: 200,
+        delay: 500,
+      },
+    });
+
+    await axiosClient.get(mockServer.baseUrl + '/test-endpoint', {
+      timeout: 150,
+    });
+
+    // Should have made 2 requests: 1 that timed out + 1 successful retry
+    expect(mockServer.getRequestCount('GET', '/test-endpoint')).toBe(2);
+  });
 });

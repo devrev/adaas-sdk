@@ -89,7 +89,7 @@ export async function spawn<ConnectorState>({
 
   // Read the command line arguments to check if the local flag is passed.
   const argv = await yargs(hideBin(process.argv)).argv;
-  if (argv._.includes('local')) {
+  if (argv._.includes('local') || argv.local) {
     options = {
       ...(options || {}),
       isLocalDevelopment: true,
@@ -180,6 +180,7 @@ export class Spawn {
   private resolve: (value: void | PromiseLike<void>) => void;
   private originalConsole: Console;
   private logger: Logger;
+  private workerFailedMessage: string | undefined;
   constructor({
     event,
     worker,
@@ -262,7 +263,7 @@ export class Spawn {
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
         const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
-        const isSdkLog = message.payload?.isSdkLog ?? false;
+        const isSdkLog = message.payload?.isSdkLog ?? true;
         this.logger.logFn(stringifiedArgs, level, isSdkLog);
       }
 
@@ -270,6 +271,11 @@ export class Spawn {
       if (message?.subject === WorkerMessageSubject.WorkerMessageEmitted) {
         console.info('Worker has emitted message to ADaaS.');
         this.alreadyEmitted = true;
+      }
+
+      // If worker sends a failure message before exiting, capture it for use in the error event.
+      if (message?.subject === WorkerMessageSubject.WorkerMessageFailed) {
+        this.workerFailedMessage = message.payload?.message;
       }
     });
 
@@ -328,8 +334,11 @@ export class Spawn {
         event: this.event,
         data: {
           error: {
-            message:
-              'Worker exited the process without emitting an event. Check other logs for more information.',
+            message: `Worker exited without emitting event. ${
+              this.workerFailedMessage
+                ? `Error: ${this.workerFailedMessage}`
+                : 'Check the logs for more information.'
+            }`,
           },
         },
       });

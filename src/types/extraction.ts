@@ -194,6 +194,60 @@ export enum InitialSyncScope {
 }
 
 /**
+ * TimeUnit is an enum that defines the supported Go duration units for time window calculations.
+ * These correspond directly to Go's time.ParseDuration units.
+ */
+export enum TimeUnit {
+  /** Nanoseconds */
+  NANOSECONDS = 'ns',
+  /** Microseconds (ASCII alias) */
+  MICROSECONDS = 'us',
+  /** Microseconds (Unicode alias) */
+  MICROSECONDS_MU = 'µs',
+  /** Milliseconds */
+  MILLISECONDS = 'ms',
+  /** Seconds */
+  SECONDS = 's',
+  /** Minutes */
+  MINUTES = 'm',
+  /** Hours */
+  HOURS = 'h',
+}
+
+/**
+ * TimeValueType is an enum that defines the type of a time value used in extraction start/end times.
+ * The platform sends these types to indicate how the extraction time should be resolved by the SDK.
+ */
+export enum TimeValueType {
+  /** Oldest timestamp from worker state */
+  WORKERS_OLDEST = 'workers_oldest',
+  /** Oldest timestamp from worker state minus a duration window */
+  WORKERS_OLDEST_MINUS_WINDOW = 'workers_oldest_minus_window',
+  /** Newest timestamp from worker state */
+  WORKERS_NEWEST = 'workers_newest',
+  /** Newest timestamp from worker state plus a duration window */
+  WORKERS_NEWEST_PLUS_WINDOW = 'workers_newest_plus_window',
+  /** Current time */
+  CURRENT_TIME = 'current_time',
+  /** User-specified absolute timestamp */
+  ABSOLUTE_TIME = 'absolute_time',
+  /** No bound - extract all available data */
+  UNBOUNDED = 'unbounded',
+}
+
+/**
+ * TimeValue is an interface that represents a time value used in extraction start/end times.
+ * It contains a type (which denotes how the value should be resolved) and an optional value.
+ * - For ABSOLUTE: value is an ISO 8601 timestamp
+ * - For *_WINDOW types: value is a Go duration string (e.g. '500ms', '30s', '5m', '2h')
+ * - For other types: value is not used
+ */
+export interface TimeValue {
+  type: TimeValueType;
+  value?: string;
+}
+
+/**
  * EventContextIn is an interface that defines the structure of the input event context that is sent to the external extractor from ADaaS.
  * @deprecated
  */
@@ -265,6 +319,11 @@ export interface EventContext {
   external_system_id: string;
   external_system_name: string;
   external_system_type: string;
+  /**
+   * Resolved start timestamp of extraction (ISO 8601 format).
+   * Automatically computed by the SDK from extraction_start_time and worker state.
+   * This is the field developers should read to know when to start extracting from.
+   */
   extract_from?: string;
   import_slug: string;
   initial_sync_scope?: InitialSyncScope;
@@ -272,9 +331,13 @@ export interface EventContext {
   request_id: string;
   request_id_adaas: string;
   /**
-   * @deprecated reset_extraction is deprecated and should not be used. Use reset_extract_from instead.
+   * @deprecated reset_extraction is deprecated and should not be used.
    */
   reset_extraction?: boolean;
+  /**
+   * @deprecated reset_extract_from is deprecated. Use extraction_start_time/extraction_end_time instead,
+   * which are automatically resolved into extract_from and extract_to.
+   */
   reset_extract_from?: boolean;
   run_id: string;
   sequence_version: string;
@@ -296,6 +359,22 @@ export interface EventContext {
    */
   uuid: string;
   worker_data_url: string;
+  /**
+   * Start time value for extraction, as sent by the platform.
+   * The SDK resolves this into a concrete ISO 8601 timestamp on extract_from.
+   */
+  extraction_start_time?: TimeValue;
+  /**
+   * End time value for extraction, as sent by the platform.
+   * The SDK resolves this into a concrete ISO 8601 timestamp on extract_to.
+   */
+  extraction_end_time?: TimeValue;
+  /**
+   * Resolved end timestamp of extraction (ISO 8601 format).
+   * Automatically computed by the SDK from extraction_end_time and worker state.
+   * This is the field developers should read to know when to stop extracting at.
+   */
+  extract_to?: string;
 }
 
 /**
@@ -313,6 +392,10 @@ export interface ConnectionData {
  * EventData is an interface that defines the structure of the event data that is sent from the external extractor to ADaaS.
  */
 export interface EventData {
+  /**
+   * @deprecated This field is deprecated and should not be used. External sync units should be pushed to the AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS repo.
+   *
+   */
   external_sync_units?: ExternalSyncUnit[];
   /**
    * @deprecated This field is deprecated and should not be used. Progress is

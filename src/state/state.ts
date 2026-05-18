@@ -1,11 +1,14 @@
 import axios from 'axios';
+import { parentPort } from 'node:worker_threads';
 
 import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
+import { resolveTimeValue } from '../common/time-value-resolver';
 import { axiosClient } from '../http/axios-client-internal';
 import { getPrintableState, serializeError } from '../logger/logger';
 import { SyncMode } from '../types/common';
 import { EventType } from '../types/extraction';
+import { WorkerMessageSubject } from '../types/workers';
 
 import {
   AdapterState,
@@ -14,6 +17,7 @@ import {
   SdkState,
   StateInterface,
 } from './state.interfaces';
+import { ExtractionScope } from '../types/workers';
 
 export async function createAdapterState<ConnectorState>({
   event,
@@ -59,10 +63,14 @@ export async function createAdapterState<ConnectorState>({
           );
         }
       } catch (error) {
-        console.error(
-          'Error while installing initial domain mapping.',
-          serializeError(error)
-        );
+        const errorMessage = `Error while installing initial domain mapping. ${serializeError(
+          error
+        )}`;
+        console.error(errorMessage);
+        parentPort?.postMessage({
+          subject: WorkerMessageSubject.WorkerMessageFailed,
+          payload: { message: errorMessage },
+        });
         process.exit(1);
       }
     }
@@ -75,6 +83,85 @@ export async function createAdapterState<ConnectorState>({
       as.state.lastSyncStarted = new Date().toISOString();
       console.log(`Setting lastSyncStarted to ${as.state.lastSyncStarted}.`);
     }
+
+    // Resolve extraction timestamps from TimeValue objects, or reuse pending values from a prior invocation.
+    // On StartExtractingMetadata: resolve fresh from TimeValue objects and store in pending state (always overwrite).
+    // On all other events: reuse the pending values cached during StartExtractingMetadata.
+    const eventContext = event.payload.event_context;
+
+    if (event.payload.event_type === EventType.StartExtractingMetadata) {
+      const timeFields = [
+        {
+          source: 'extraction_start_time',
+          target: 'extract_from',
+          pending: 'pendingWorkersOldest',
+        },
+        {
+          source: 'extraction_end_time',
+          target: 'extract_to',
+          pending: 'pendingWorkersNewest',
+        },
+      ] as const;
+
+      for (const { source, target, pending } of timeFields) {
+        const timeValue = eventContext[source];
+        if (timeValue && timeValue.type) {
+          try {
+            const resolved = resolveTimeValue(timeValue, as.state);
+            eventContext[target] = resolved;
+            as.state[pending] = resolved;
+            console.log(
+              `Resolved ${target} to ${resolved}. Stored in ${pending}.`
+            );
+          } catch (error) {
+            const errorMessage = `Failed to resolve ${source}: ${serializeError(
+              error
+            )}`;
+            console.error(errorMessage);
+            parentPort?.postMessage({
+              subject: WorkerMessageSubject.WorkerMessageFailed,
+              payload: { message: errorMessage },
+            });
+            process.exit(1);
+          }
+        }
+      }
+    } else {
+      // Non-StartExtractingMetadata events: reuse pending values from state
+      if (as.state.pendingWorkersOldest) {
+        eventContext.extract_from = as.state.pendingWorkersOldest;
+        console.log(
+          `Reusing pendingWorkersOldest as extract_from: ${as.state.pendingWorkersOldest}.`
+        );
+      } else {
+        console.log(
+          'pendingWorkersOldest is not set in state. extract_from will not be populated for this invocation.'
+        );
+      }
+      if (as.state.pendingWorkersNewest) {
+        eventContext.extract_to = as.state.pendingWorkersNewest;
+        console.log(
+          `Reusing pendingWorkersNewest as extract_to: ${as.state.pendingWorkersNewest}.`
+        );
+      } else {
+        console.log(
+          'pendingWorkersNewest is not set in state. extract_to will not be populated for this invocation.'
+        );
+      }
+    }
+
+    // Validate that extract_from is before extract_to
+    if (eventContext.extract_from && eventContext.extract_to) {
+      if (eventContext.extract_from >= eventContext.extract_to) {
+        const errorMessage = `Invalid extraction window: extract_from (${eventContext.extract_from}) must be older than extract_to (${eventContext.extract_to}). This indicates an error in the platform.`;
+        console.error(errorMessage);
+        parentPort?.postMessage({
+          subject: WorkerMessageSubject.WorkerMessageFailed,
+          payload: { message: errorMessage },
+        });
+        process.exit(1);
+      }
+    }
   }
 
   return as;
@@ -82,6 +169,7 @@ export async function createAdapterState<ConnectorState>({
 
 export class State<ConnectorState> {
   private _state: AdapterState<ConnectorState>;
+  private _extractionScope: ExtractionScope = {};
   private initialSdkState: SdkState;
   private workerUrl: string;
   private devrevToken: string;
@@ -111,6 +199,10 @@ export class State<ConnectorState> {
     this._state = value;
   }
 
+  get extractionScope(): ExtractionScope {
+    return this._extractionScope;
+  }
+
   /**
    * Initializes the state for this adapter instance by fetching from API
    * or creating an initial state if none exists (404).
@@ -118,7 +210,7 @@ export class State<ConnectorState> {
    */
   async init(initialState: ConnectorState): Promise<void> {
     try {
-      const stringifiedState = await this.fetchState();
+      const { state: stringifiedState, objects } = await this.fetchState();
       if (!stringifiedState) {
         throw new Error('No state found in response.');
       }
@@ -135,6 +227,14 @@ export class State<ConnectorState> {
         'State fetched successfully. Current state',
         getPrintableState(this.state)
       );
+
+      if (objects) {
+        try {
+          this._extractionScope = JSON.parse(objects);
+        } catch (error) {
+          console.warn(`Failed to parse extractionScope. ${error}`);
+        }
+      }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         console.log('State not found. Initializing state with initial state.');
@@ -146,7 +246,12 @@ export class State<ConnectorState> {
         this.state = initialAdapterState;
         await this.postState(initialAdapterState);
       } else {
-        console.error('Failed to init state.', serializeError(error));
+        const errorMessage = `Failed to init state. ${serializeError(error)}`;
+        console.error(errorMessage);
+        parentPort?.postMessage({
+          subject: WorkerMessageSubject.WorkerMessageFailed,
+          payload: { message: errorMessage },
+        });
         process.exit(1);
       }
     }
@@ -164,7 +269,14 @@ export class State<ConnectorState> {
     try {
       stringifiedState = JSON.stringify(this.state);
     } catch (error) {
-      console.error('Failed to stringify state.', serializeError(error));
+      const errorMessage = `Failed to stringify state. ${serializeError(
+        error
+      )}`;
+      console.error(errorMessage);
+      parentPort?.postMessage({
+        subject: WorkerMessageSubject.WorkerMessageFailed,
+        payload: { message: errorMessage },
+      });
       process.exit(1);
     }
 
@@ -190,7 +302,14 @@ export class State<ConnectorState> {
         getPrintableState(this.state)
       );
     } catch (error) {
-      console.error('Failed to update the state.', serializeError(error));
+      const errorMessage = `Failed to update the state. ${serializeError(
+        error
+      )}`;
+      console.error(errorMessage);
+      parentPort?.postMessage({
+        subject: WorkerMessageSubject.WorkerMessageFailed,
+        payload: { message: errorMessage },
+      });
       process.exit(1);
     }
   }
@@ -199,7 +318,7 @@ export class State<ConnectorState> {
    *  Fetches the state of the adapter from API.
    * @return  The raw state data from API
    */
-  async fetchState(): Promise<string> {
+  async fetchState(): Promise<{ state: string; objects?: string }> {
     console.log(
       `Fetching state with sync unit id ${this.syncUnitId} and request id ${this.requestId}.`
     );
@@ -215,6 +334,9 @@ export class State<ConnectorState> {
       },
     });
 
-    return response.data?.state;
+    return {
+      state: response.data?.state,
+      objects: response.data?.objects,
+    };
   }
 }

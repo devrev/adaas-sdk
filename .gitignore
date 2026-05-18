@@ -131,6 +131,8 @@ dist
 
 .npmrc
 .idea
+.claude
+.cursor
 
 
 src/tests/backwards-compatibility/temp/
