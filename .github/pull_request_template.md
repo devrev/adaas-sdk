@@ -3,6 +3,10 @@
 <!--
     A brief description of what the PR does/changes.
     Use active voice and present tense, e.g., This PR fixes ...
+
+    PR titles must use Conventional Commits (e.g. feat: ..., fix: ...).
+    Maintainer-only release commands (beta/..., release/..., patch/...) are
+    documented in CONTRIBUTING.md — do not use those titles on normal feature PRs.
 -->
 
 ## Connected Issues

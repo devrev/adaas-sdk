@@ -1,6 +1,9 @@
-# This workflow is used to release a new version of @devrev/ts-adaas package to
-# npm registry and generate release notes using softprops/action-gh-release
-# action. It consists of two jobs:
+# EMERGENCY ONLY — normal releases use commit-message automation (see
+# .github/workflows/release-automation.yml and CONTRIBUTING.md).
+#
+# This workflow is used to manually release a new version of @devrev/ts-adaas
+# to the npm registry and generate release notes using softprops/action-gh-release.
+# It consists of two jobs:
 #
 # - release:
 # 1. User runs the "Release package" workflow manually via the GitHub Actions UI.
@@ -21,14 +24,14 @@
 # 1. Generates release notes using softprops/action-gh-release action and updates
 #    the GitHub release documentation.
 
-name: Release package
-run-name: "Release ${{ inputs.release-type }} by ${{ github.actor }}${{ inputs.dry-run && ' --dry-run' || '' }}"
+name: "Emergency release (manual)"
+run-name: "Emergency release ${{ inputs.release-type }} by ${{ github.actor }}${{ inputs.dry-run && ' --dry-run' || '' }}"
 
 on:
   workflow_dispatch:
     inputs:
       release-type:
-        description: "Release type"
+        description: "Release type (emergency use only — prefer commit-message releases)"
         type: choice
         required: true
         options: [patch, minor, beta]
