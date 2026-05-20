@@ -56,23 +56,19 @@ export class Repo {
 
     if (itemsToUpload.length > 0) {
       for (const item of itemsToUpload) {
-        if (
-          item != null &&
-          'created_date' in item &&
-          item.created_date != null
-        ) {
-          const created_date = new Date(item['created_date']).getTime();
+        if (item?.created_date != null) {
+          const createdDate = new Date(item.created_date).getTime();
           if (
             this.itemTimestamps.min == 0 ||
-            created_date < this.itemTimestamps.min
+            createdDate < this.itemTimestamps.min
           ) {
-            this.itemTimestamps.min = created_date;
+            this.itemTimestamps.min = createdDate;
           }
           if (
             this.itemTimestamps.max == 0 ||
-            created_date > this.itemTimestamps.max
+            createdDate > this.itemTimestamps.max
           ) {
-            this.itemTimestamps.max = created_date;
+            this.itemTimestamps.max = createdDate;
           }
         }
       }
