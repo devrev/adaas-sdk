@@ -3,12 +3,30 @@ import { createItems, normalizeItem } from '../tests/test-helpers';
 import { mockServer } from '../tests/jest.setup';
 import { createMockEvent } from '../common/test-utils';
 import { EventType } from '../types';
+import { NormalizedAttachment, NormalizedItem } from './repo.interfaces';
 import { Repo } from './repo';
 
 jest.mock('../tests/test-helpers', () => ({
   ...jest.requireActual('../tests/test-helpers'),
   normalizeItem: jest.fn(),
 }));
+
+const mockUploadFn = jest.fn().mockResolvedValue({
+  error: null,
+  artifact: { id: 'art-1', item_type: 'test', item_count: 0 },
+});
+
+jest.mock('../uploader/uploader', () => ({
+  Uploader: jest.fn().mockImplementation(() => ({
+    upload: mockUploadFn,
+  })),
+}));
+
+function itemWithDate(id: string, created_date: string): NormalizedItem {
+  return { id, created_date, modified_date: created_date, data: {} };
+}
+
+const ts = (iso: string) => new Date(iso).getTime();
 
 describe(Repo.name, () => {
   let repo: Repo;
@@ -226,6 +244,135 @@ describe(Repo.name, () => {
 
       // Assert
       expect(repo.getItems().length).toBe(5);
+    });
+  });
+
+  describe('itemTimestamps', () => {
+    beforeEach(() => {
+      mockUploadFn.mockResolvedValue({
+        error: null,
+        artifact: { id: 'art-1', item_type: 'test', item_count: 0 },
+      });
+    });
+
+    it('should track min and max created_date from a single upload batch', async () => {
+      await repo.upload([
+        itemWithDate('1', '2023-06-15T12:00:00.000Z'),
+        itemWithDate('2', '2020-01-01T00:00:00.000Z'),
+        itemWithDate('3', '2021-03-01T00:00:00.000Z'),
+      ]);
+
+      expect(repo.itemTimestamps.min).toBe(ts('2020-01-01T00:00:00.000Z'));
+      expect(repo.itemTimestamps.max).toBe(ts('2023-06-15T12:00:00.000Z'));
+    });
+
+    it('should skip items without created_date', async () => {
+      const attachmentWithoutDate: NormalizedAttachment = {
+        id: 'att-1',
+        url: 'https://example.com/file',
+        file_name: 'file.txt',
+        parent_id: 'parent-1',
+      };
+
+      await repo.upload([
+        itemWithDate('1', '2022-06-01T00:00:00.000Z'),
+        { id: '2', created_date: null, modified_date: '', data: {} },
+        { id: '3', modified_date: '', data: {} },
+        attachmentWithoutDate,
+      ]);
+
+      expect(repo.itemTimestamps.min).toBe(ts('2022-06-01T00:00:00.000Z'));
+      expect(repo.itemTimestamps.max).toBe(ts('2022-06-01T00:00:00.000Z'));
+    });
+
+    it('should leave timestamps at zero when no items have created_date', async () => {
+      await repo.upload([
+        { id: '1', modified_date: '', data: {} },
+        {
+          id: 'att-1',
+          url: 'https://example.com/file',
+          file_name: 'file.txt',
+          parent_id: 'parent-1',
+        },
+      ]);
+
+      expect(repo.itemTimestamps).toEqual({ min: 0, max: 0 });
+    });
+
+    it('should not update timestamps or call uploader on empty upload', async () => {
+      await repo.upload([]);
+
+      expect(repo.itemTimestamps).toEqual({ min: 0, max: 0 });
+      expect(mockUploadFn).not.toHaveBeenCalled();
+    });
+
+    it('should accumulate min and max across multiple upload batches via push', async () => {
+      repo = new Repo({
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: { event_type: EventType.ExtractionDataStart },
+        }),
+        itemType: 'test_item_type',
+        onUpload: jest.fn(),
+        options: { batchSize: 3 },
+      });
+
+      const dates = [
+        '2020-01-01T00:00:00.000Z',
+        '2021-01-01T00:00:00.000Z',
+        '2022-01-01T00:00:00.000Z',
+        '2023-01-01T00:00:00.000Z',
+        '2024-06-01T00:00:00.000Z',
+        '2024-12-01T00:00:00.000Z',
+        '2024-12-31T00:00:00.000Z',
+      ];
+      const items = dates.map((created_date, index) =>
+        itemWithDate(String(index), created_date)
+      );
+
+      await repo.push(items);
+
+      expect(repo.getItems()).toHaveLength(1);
+      expect(repo.itemTimestamps.min).toBe(ts('2020-01-01T00:00:00.000Z'));
+      expect(repo.itemTimestamps.max).toBe(ts('2024-12-01T00:00:00.000Z'));
+
+      await repo.push([
+        itemWithDate('7', '2019-01-01T00:00:00.000Z'),
+        itemWithDate('8', '2025-01-01T00:00:00.000Z'),
+      ]);
+
+      expect(repo.getItems()).toHaveLength(0);
+      expect(repo.itemTimestamps.min).toBe(ts('2019-01-01T00:00:00.000Z'));
+      expect(repo.itemTimestamps.max).toBe(ts('2025-01-01T00:00:00.000Z'));
+    });
+
+    it('should extend min and max when subsequent batches have wider date range', async () => {
+      await repo.upload([
+        itemWithDate('1', '2022-06-01T00:00:00.000Z'),
+        itemWithDate('2', '2023-06-01T00:00:00.000Z'),
+      ]);
+
+      expect(repo.itemTimestamps.min).toBe(ts('2022-06-01T00:00:00.000Z'));
+      expect(repo.itemTimestamps.max).toBe(ts('2023-06-01T00:00:00.000Z'));
+
+      await repo.upload([
+        itemWithDate('3', '2020-01-01T00:00:00.000Z'),
+        itemWithDate('4', '2024-01-01T00:00:00.000Z'),
+      ]);
+
+      expect(repo.itemTimestamps.min).toBe(ts('2020-01-01T00:00:00.000Z'));
+      expect(repo.itemTimestamps.max).toBe(ts('2024-01-01T00:00:00.000Z'));
+    });
+
+    it('should update timestamps even when upload fails', async () => {
+      mockUploadFn.mockResolvedValueOnce({
+        error: new Error('fail'),
+        artifact: null,
+      });
+
+      await repo.upload([itemWithDate('1', '2022-01-01T00:00:00.000Z')]);
+
+      expect(repo.itemTimestamps.min).toBe(ts('2022-01-01T00:00:00.000Z'));
+      expect(repo.itemTimestamps.max).toBe(ts('2022-01-01T00:00:00.000Z'));
     });
   });
 });
