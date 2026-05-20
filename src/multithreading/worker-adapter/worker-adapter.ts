@@ -366,6 +366,19 @@ export class WorkerAdapter<ConnectorState> {
           newEventType as LoaderEventType
         );
 
+        const itemTimestamps: Record<string, { min: number; max: number }> = {};
+        if (
+          isExtractionEvent &&
+          (newEventType == ExtractorEventType.DataExtractionDone ||
+            newEventType == ExtractorEventType.DataExtractionProgress ||
+            newEventType == ExtractorEventType.AttachmentExtractionDone ||
+            newEventType == ExtractorEventType.AttachmentExtractionProgress)
+        ) {
+          for (const repo of this.repos) {
+            itemTimestamps[repo.itemType] = repo.itemTimestamps;
+          }
+        }
+
         await emit({
           eventType: newEventType,
           event: this.event,
@@ -376,6 +389,7 @@ export class WorkerAdapter<ConnectorState> {
               ? { reports: this.reports, processed_files: this.processedFiles }
               : {}),
           },
+          worker_metadata: { progress_data: itemTimestamps },
         });
 
         const message: WorkerMessageEmitted = {

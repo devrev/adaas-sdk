@@ -15,12 +15,16 @@ export interface EmitInterface {
   event: AirdropEvent;
   eventType: ExtractorEventType | LoaderEventType;
   data?: EventData;
+  worker_metadata?: {
+    progress_data: Record<string, { min: number; max: number }>;
+  };
 }
 
 export const emit = async ({
   event,
   eventType,
   data,
+  worker_metadata,
 }: EmitInterface): Promise<AxiosResponse> => {
   // Translate outgoing event type to ensure we always send new event types
   // TODO: Remove when the old types are completely phased out
@@ -33,6 +37,7 @@ export const emit = async ({
       ...data,
     },
     worker_metadata: {
+      ...worker_metadata,
       adaas_library_version: LIBRARY_VERSION,
     },
   };
