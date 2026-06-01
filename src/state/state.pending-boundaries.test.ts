@@ -68,8 +68,10 @@ describe('State — pending extraction boundaries', () => {
     });
 
     // Assert
-    expect(state.state.pendingWorkersOldest).toBe('1970-01-01T00:00:00.000Z');
-    expect(state.state.pendingWorkersNewest).toBe(FIXED_NOW);
+    expect(state.sdkState.pendingWorkersOldest).toBe(
+      '1970-01-01T00:00:00.000Z'
+    );
+    expect(state.sdkState.pendingWorkersNewest).toBe(FIXED_NOW);
     expect(event.payload.event_context.extract_from).toBe(
       '1970-01-01T00:00:00.000Z'
     );
@@ -113,9 +115,11 @@ describe('State — pending extraction boundaries', () => {
     });
 
     // Assert: pending values are overwritten with fresh resolution, not stale values
-    expect(state.state.pendingWorkersOldest).toBe('1970-01-01T00:00:00.000Z');
-    expect(state.state.pendingWorkersNewest).toBe(FIXED_NOW);
-    expect(state.state.pendingWorkersNewest).not.toBe(staleNewest);
+    expect(state.sdkState.pendingWorkersOldest).toBe(
+      '1970-01-01T00:00:00.000Z'
+    );
+    expect(state.sdkState.pendingWorkersNewest).toBe(FIXED_NOW);
+    expect(state.sdkState.pendingWorkersNewest).not.toBe(staleNewest);
   });
 
   it('should reuse pending values from state on ContinueExtractingData instead of re-resolving', async () => {
@@ -159,8 +163,8 @@ describe('State — pending extraction boundaries', () => {
     expect(event.payload.event_context.extract_from).toBe(pendingOldest);
     expect(event.payload.event_context.extract_to).toBe(pendingNewest);
     // Pending values in state remain unchanged
-    expect(state.state.pendingWorkersOldest).toBe(pendingOldest);
-    expect(state.state.pendingWorkersNewest).toBe(pendingNewest);
+    expect(state.sdkState.pendingWorkersOldest).toBe(pendingOldest);
+    expect(state.sdkState.pendingWorkersNewest).toBe(pendingNewest);
   });
 
   it('should not set extract_from/extract_to on ContinueExtractingData if no pending values exist', async () => {

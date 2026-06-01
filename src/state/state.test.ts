@@ -151,17 +151,17 @@ describe(State.name, () => {
       });
 
       // Act
-      await createAdapterState({
+      const adapterState = await createAdapterState({
         event,
         initialState,
         initialDomainMapping: {},
       });
 
-      const expectedState = {
-        ...initialState,
-        ...extractionSdkState,
-      };
-      expect(postStateSpy).toHaveBeenCalledWith(expectedState);
+      // On 404, init() persists the v2 envelope: connector state untouched,
+      // SDK bookkeeping seeded from defaults.
+      expect(postStateSpy).toHaveBeenCalled();
+      expect(adapterState.state).toEqual(initialState);
+      expect(adapterState.sdkState).toEqual(extractionSdkState);
     }
   );
 

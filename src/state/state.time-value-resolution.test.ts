@@ -121,7 +121,9 @@ describe('State — TimeValue resolution', () => {
       expect(event.payload.event_context.extract_to).toBe(
         '2025-06-01T00:00:00.000Z'
       );
-      expect(state.state.pendingWorkersNewest).toBe('2025-06-01T00:00:00.000Z');
+      expect(state.sdkState.pendingWorkersNewest).toBe(
+        '2025-06-01T00:00:00.000Z'
+      );
     });
 
     it('should skip resolution when extraction_end_time has no type', async () => {

@@ -5,6 +5,7 @@ import {
   ProcessAttachmentReturnType,
 } from '../types';
 import { AttachmentsStreamingPool } from './attachments-streaming-pool';
+import { ToDevRev } from '../state/state.interfaces';
 
 interface TestState {
   attachments: { completed: boolean };
@@ -16,17 +17,20 @@ describe(AttachmentsStreamingPool.name, () => {
   let mockAdapter: jest.Mocked<WorkerAdapter<TestState>>;
   let mockStream: jest.MockedFunction<ExternalSystemAttachmentStreamingFunction>;
   let mockAttachments: NormalizedAttachment[];
+  let attachmentsMetadata: ToDevRev['attachmentsMetadata'];
 
   beforeEach(() => {
+    // SDK-owned attachments bookkeeping, passed into the pool directly.
+    attachmentsMetadata = {
+      artifactIds: [],
+      lastProcessed: 0,
+      lastProcessedAttachmentsIdsList: [],
+    };
+
     // Create mock adapter
     mockAdapter = {
       state: {
         attachments: { completed: false },
-        toDevRev: {
-          attachmentsMetadata: {
-            lastProcessedAttachmentsIdsList: [],
-          },
-        },
       },
       processAttachment: jest
         .fn()
@@ -68,6 +72,7 @@ describe(AttachmentsStreamingPool.name, () => {
     it('should initialize with default values', () => {
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments,
         stream: mockStream,
       });
@@ -81,6 +86,7 @@ describe(AttachmentsStreamingPool.name, () => {
     it('should initialize with custom batch size', () => {
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments,
         batchSize: 5,
         stream: mockStream,
@@ -92,6 +98,7 @@ describe(AttachmentsStreamingPool.name, () => {
     it('should create a copy of attachments array', () => {
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments,
         stream: mockStream,
       });
@@ -103,12 +110,12 @@ describe(AttachmentsStreamingPool.name, () => {
 
   describe(AttachmentsStreamingPool.prototype.streamAll.name, () => {
     it('should initialize lastProcessedAttachmentsIdsList if it does not exist', async () => {
-      mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
-        undefined as any;
+      attachmentsMetadata.lastProcessedAttachmentsIdsList = undefined as any;
       mockAdapter.processAttachment.mockResolvedValue({});
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments,
         stream: mockStream,
       });
@@ -120,10 +127,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       await pool.streamAll();
 
-      expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata
-          .lastProcessedAttachmentsIdsList
-      ).toEqual([]);
+      expect(attachmentsMetadata.lastProcessedAttachmentsIdsList).toEqual([]);
     });
 
     it('should process all attachments successfully', async () => {
@@ -131,6 +135,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments,
         stream: mockStream,
       });
@@ -144,6 +149,7 @@ describe(AttachmentsStreamingPool.name, () => {
     it('should handle empty attachments array', async () => {
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: [],
         stream: mockStream,
       });
@@ -160,6 +166,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments,
         stream: mockStream,
       });
@@ -172,21 +179,21 @@ describe(AttachmentsStreamingPool.name, () => {
     it('should resume attachment extraction if it encounters old ids', async () => {
       // Test migration from old string[] format to new ProcessedAttachment[] format
       // Using 'as any' because we're intentionally testing legacy data format
-      mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
-        ['attachment-1', 'attachment-2'] as any;
+      attachmentsMetadata.lastProcessedAttachmentsIdsList = [
+        'attachment-1',
+        'attachment-2',
+      ] as any;
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments,
         stream: mockStream,
       });
 
       const result = await pool.streamAll();
 
-      expect(
-        mockAdapter.state.toDevRev?.attachmentsMetadata
-          .lastProcessedAttachmentsIdsList
-      ).toEqual([
+      expect(attachmentsMetadata.lastProcessedAttachmentsIdsList).toEqual([
         { id: 'attachment-1', parent_id: '' },
         { id: 'attachment-2', parent_id: '' },
         { id: 'attachment-1', parent_id: 'parent-1' },
@@ -232,6 +239,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: largeAttachments,
         stream: mockStream,
       });
@@ -242,21 +250,20 @@ describe(AttachmentsStreamingPool.name, () => {
       // Since there are 3 parallel workers (one per attachment), each logs its own failed attachment
       expect(warnSpy).toHaveBeenCalledTimes(3);
 
-      expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata
-          .lastProcessedAttachmentsIdsList
-      ).toEqual([]);
+      expect(attachmentsMetadata.lastProcessedAttachmentsIdsList).toEqual([]);
     });
   });
 
   describe(AttachmentsStreamingPool.prototype.startPoolStreaming.name, () => {
     it('should skip already processed attachments', async () => {
-      mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
-        [{ id: 'attachment-1', parent_id: 'parent-1' }];
+      attachmentsMetadata.lastProcessedAttachmentsIdsList = [
+        { id: 'attachment-1', parent_id: 'parent-1' },
+      ];
       mockAdapter.processAttachment.mockResolvedValue({});
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments,
         stream: mockStream,
       });
@@ -271,16 +278,14 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments,
         stream: mockStream,
       });
 
       await pool.streamAll();
 
-      expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata
-          .lastProcessedAttachmentsIdsList
-      ).toEqual([
+      expect(attachmentsMetadata.lastProcessedAttachmentsIdsList).toEqual([
         { id: 'attachment-1', parent_id: 'parent-1' },
         { id: 'attachment-2', parent_id: 'parent-2' },
         { id: 'attachment-3', parent_id: 'parent-3' },
@@ -297,6 +302,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments,
         stream: mockStream,
       });
@@ -307,10 +313,7 @@ describe(AttachmentsStreamingPool.name, () => {
         'Skipping attachment with ID attachment-2 with extension jpg due to error in processAttachment function',
         error
       );
-      expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata
-          .lastProcessedAttachmentsIdsList
-      ).toEqual([
+      expect(attachmentsMetadata.lastProcessedAttachmentsIdsList).toEqual([
         {
           id: 'attachment-1',
           parent_id: 'parent-1',
@@ -330,6 +333,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments,
         stream: mockStream,
       });
@@ -337,10 +341,7 @@ describe(AttachmentsStreamingPool.name, () => {
       await pool.streamAll();
 
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
-      expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata
-          .lastProcessedAttachmentsIdsList
-      ).toEqual([
+      expect(attachmentsMetadata.lastProcessedAttachmentsIdsList).toEqual([
         { id: 'attachment-1', parent_id: 'parent-1' },
         { id: 'attachment-3', parent_id: 'parent-3' },
       ]);
@@ -351,6 +352,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: [mockAttachments[0]],
         stream: mockStream,
       });
@@ -369,6 +371,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
     const pool = new AttachmentsStreamingPool({
       adapter: mockAdapter,
+      attachmentsMetadata,
       attachments: [mockAttachments[0]],
       stream: mockStream,
     });
@@ -384,6 +387,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
     const pool = new AttachmentsStreamingPool({
       adapter: mockAdapter,
+      attachmentsMetadata,
       attachments: mockAttachments,
       batchSize: 100,
       stream: mockStream,
@@ -406,6 +410,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
     const pool = new AttachmentsStreamingPool({
       adapter: mockAdapter,
+      attachmentsMetadata,
       attachments: mockAttachments,
       batchSize: 1,
       stream: mockStream,
@@ -421,6 +426,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
     const pool = new AttachmentsStreamingPool({
       adapter: mockAdapter,
+      attachmentsMetadata,
       attachments: mockAttachments,
       batchSize: 1,
       stream: mockStream,
@@ -445,6 +451,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: [attachmentWithContentType],
         stream: mockStream,
       });
@@ -488,6 +495,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mixedAttachments,
         batchSize: 1,
         stream: mockStream,
@@ -524,6 +532,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: [attachmentWithContentType],
         batchSize: 1,
         stream: mockStream,
@@ -553,6 +562,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: [attachmentWithContentType],
         batchSize: 1,
         stream: mockStream,
@@ -575,6 +585,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: [mockAttachments[0]],
         batchSize: 1,
         stream: mockStream,
@@ -607,6 +618,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments,
         batchSize: 2,
         stream: mockStream,
@@ -631,6 +643,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments.slice(0, 1),
         stream: mockStream,
       });
@@ -673,6 +686,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
+        attachmentsMetadata,
         attachments: mockAttachments.slice(0, 1),
         stream: mockStreamFn,
       });

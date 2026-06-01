@@ -3,7 +3,6 @@ import { State } from '../../state/state';
 import { mockServer } from '../../tests/jest.setup';
 import { createMockEvent } from '../../common/test-utils';
 import {
-  AdapterState,
   AirSyncEvent,
   Artifact,
   EventType,
@@ -43,18 +42,18 @@ function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
   const event = createMockEvent(mockServer.baseUrl, {
     payload: { event_type: eventType },
   });
-  const initialState: AdapterState<TestState> = {
+  const initialState: TestState = {
     attachments: { completed: false },
-    snapInVersionId: '',
-    toDevRev: {
-      attachmentsMetadata: {
-        artifactIds: [],
-        lastProcessed: 0,
-        lastProcessedAttachmentsIdsList: [],
-      },
-    },
   };
   const adapterState = new State<TestState>({ event, initialState });
+  adapterState.sdkState.snapInVersionId = '';
+  adapterState.sdkState.toDevRev = {
+    attachmentsMetadata: {
+      artifactIds: [],
+      lastProcessed: 0,
+      lastProcessedAttachmentsIdsList: [],
+    },
+  };
   const adapter = new WorkerAdapter<TestState>({ event, adapterState });
   return { adapter, event, adapterState };
 }
@@ -317,11 +316,12 @@ describe(`${WorkerAdapter.name}.emit`, () => {
 
 describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () => {
   let adapter: WorkerAdapter<TestState>;
+  let adapterState: State<TestState>;
   let mockPostMessage: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    ({ adapter } = makeAdapter());
+    ({ adapter, adapterState } = makeAdapter());
 
     const workerThreads = require('node:worker_threads');
     mockPostMessage = jest.fn();
@@ -365,8 +365,12 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
         '2025-06-01T00:00:00.000Z'
       );
 
-      expect(adapter.state.workersOldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
-      expect(adapter.state.workersNewest).toBe('2025-06-01T00:00:00.000Z');
+      expect(adapterState.sdkState.workersOldest).toBe(
+        UNBOUNDED_DATE_TIME_VALUE
+      );
+      expect(adapterState.sdkState.workersNewest).toBe(
+        '2025-06-01T00:00:00.000Z'
+      );
     });
   });
 
@@ -384,8 +388,12 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
         '2025-03-01T00:00:00.000Z'
       );
 
-      expect(adapter.state.workersOldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
-      expect(adapter.state.workersNewest).toBe('2025-06-01T00:00:00.000Z');
+      expect(adapterState.sdkState.workersOldest).toBe(
+        UNBOUNDED_DATE_TIME_VALUE
+      );
+      expect(adapterState.sdkState.workersNewest).toBe(
+        '2025-06-01T00:00:00.000Z'
+      );
     });
 
     it('should NOT overwrite workersOldest even when reconciliation start is very early', async () => {
@@ -401,8 +409,12 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
         '1990-01-01T00:00:00.000Z'
       );
 
-      expect(adapter.state.workersOldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
-      expect(adapter.state.workersNewest).toBe('2025-06-01T00:00:00.000Z');
+      expect(adapterState.sdkState.workersOldest).toBe(
+        UNBOUNDED_DATE_TIME_VALUE
+      );
+      expect(adapterState.sdkState.workersNewest).toBe(
+        '2025-06-01T00:00:00.000Z'
+      );
     });
   });
 
@@ -420,8 +432,12 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
         '2025-07-01T00:00:00.000Z'
       );
 
-      expect(adapter.state.workersOldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
-      expect(adapter.state.workersNewest).toBe('2025-07-01T00:00:00.000Z');
+      expect(adapterState.sdkState.workersOldest).toBe(
+        UNBOUNDED_DATE_TIME_VALUE
+      );
+      expect(adapterState.sdkState.workersNewest).toBe(
+        '2025-07-01T00:00:00.000Z'
+      );
     });
   });
 
@@ -439,8 +455,12 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
         '2025-08-01T00:00:00.000Z'
       );
 
-      expect(adapter.state.workersOldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
-      expect(adapter.state.workersNewest).toBe('2025-08-01T00:00:00.000Z');
+      expect(adapterState.sdkState.workersOldest).toBe(
+        UNBOUNDED_DATE_TIME_VALUE
+      );
+      expect(adapterState.sdkState.workersNewest).toBe(
+        '2025-08-01T00:00:00.000Z'
+      );
     });
   });
 
@@ -452,8 +472,12 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
         '2025-03-01T00:00:00.000Z'
       );
 
-      expect(adapter.state.workersOldest).toBe('2025-01-01T00:00:00.000Z');
-      expect(adapter.state.workersNewest).toBe('2025-03-01T00:00:00.000Z');
+      expect(adapterState.sdkState.workersOldest).toBe(
+        '2025-01-01T00:00:00.000Z'
+      );
+      expect(adapterState.sdkState.workersNewest).toBe(
+        '2025-03-01T00:00:00.000Z'
+      );
     });
   });
 
@@ -471,8 +495,12 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
         '2025-02-01T00:00:00.000Z'
       );
 
-      expect(adapter.state.workersOldest).toBe('2024-06-01T00:00:00.000Z');
-      expect(adapter.state.workersNewest).toBe('2025-03-01T00:00:00.000Z');
+      expect(adapterState.sdkState.workersOldest).toBe(
+        '2024-06-01T00:00:00.000Z'
+      );
+      expect(adapterState.sdkState.workersNewest).toBe(
+        '2025-03-01T00:00:00.000Z'
+      );
     });
 
     it('should NOT change boundaries when reconciliation is within existing range', async () => {
@@ -488,8 +516,12 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
         '2025-02-15T00:00:00.000Z'
       );
 
-      expect(adapter.state.workersOldest).toBe('2025-01-01T00:00:00.000Z');
-      expect(adapter.state.workersNewest).toBe('2025-03-01T00:00:00.000Z');
+      expect(adapterState.sdkState.workersOldest).toBe(
+        '2025-01-01T00:00:00.000Z'
+      );
+      expect(adapterState.sdkState.workersNewest).toBe(
+        '2025-03-01T00:00:00.000Z'
+      );
     });
 
     it('should expand both boundaries when reconciliation exceeds both', async () => {
@@ -505,8 +537,12 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
         '2025-09-01T00:00:00.000Z'
       );
 
-      expect(adapter.state.workersOldest).toBe('2024-06-01T00:00:00.000Z');
-      expect(adapter.state.workersNewest).toBe('2025-09-01T00:00:00.000Z');
+      expect(adapterState.sdkState.workersOldest).toBe(
+        '2024-06-01T00:00:00.000Z'
+      );
+      expect(adapterState.sdkState.workersNewest).toBe(
+        '2025-09-01T00:00:00.000Z'
+      );
     });
   });
 
@@ -523,16 +559,22 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
         '2025-06-01T00:00:00.000Z',
         '2025-07-01T00:00:00.000Z'
       );
-      expect(adapter.state.workersNewest).toBe('2025-07-01T00:00:00.000Z');
+      expect(adapterState.sdkState.workersNewest).toBe(
+        '2025-07-01T00:00:00.000Z'
+      );
 
       await emitDone(
         adapter,
         '2025-07-01T00:00:00.000Z',
         '2025-08-01T00:00:00.000Z'
       );
-      expect(adapter.state.workersNewest).toBe('2025-08-01T00:00:00.000Z');
+      expect(adapterState.sdkState.workersNewest).toBe(
+        '2025-08-01T00:00:00.000Z'
+      );
 
-      expect(adapter.state.workersOldest).toBe(UNBOUNDED_DATE_TIME_VALUE);
+      expect(adapterState.sdkState.workersOldest).toBe(
+        UNBOUNDED_DATE_TIME_VALUE
+      );
     });
   });
 
@@ -543,8 +585,8 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
       ExtractorEventType.MetadataExtractionError,
       ExtractorEventType.AttachmentExtractionError,
     ])('should not update boundaries on %s', async (eventType) => {
-      adapter.state.workersOldest = '2025-01-01T00:00:00.000Z';
-      adapter.state.workersNewest = '2025-03-01T00:00:00.000Z';
+      adapterState.sdkState.workersOldest = '2025-01-01T00:00:00.000Z';
+      adapterState.sdkState.workersNewest = '2025-03-01T00:00:00.000Z';
       adapter.event.payload.event_context.extract_from =
         '2024-01-01T00:00:00.000Z';
       adapter.event.payload.event_context.extract_to =
@@ -555,8 +597,12 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
         processed_files: [],
       });
 
-      expect(adapter.state.workersOldest).toBe('2025-01-01T00:00:00.000Z');
-      expect(adapter.state.workersNewest).toBe('2025-03-01T00:00:00.000Z');
+      expect(adapterState.sdkState.workersOldest).toBe(
+        '2025-01-01T00:00:00.000Z'
+      );
+      expect(adapterState.sdkState.workersNewest).toBe(
+        '2025-03-01T00:00:00.000Z'
+      );
     });
   });
 });

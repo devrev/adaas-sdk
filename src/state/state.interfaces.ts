@@ -20,10 +20,21 @@ export interface SdkState {
 }
 
 /**
- * AdapterState is an interface that defines the structure of the adapter state that is used by the external extractor.
- * It extends the connector state with additional fields including snapInVersionId and attachmentsMetadata.
+ * AdapterState is the legacy (v1) flat state shape: connector state merged with
+ * SDK bookkeeping fields. Retained internally only to type the flat on-disk blob
+ * the migration shim reads. Not part of the v2 public API.
  */
 export type AdapterState<ConnectorState> = ConnectorState & SdkState;
+
+/**
+ * AdapterStateEnvelope is the v2 on-disk state shape: connector state and SDK
+ * bookkeeping are stored as disjoint sub-objects so SDK internals stay
+ * encapsulated and never collide with connector keys.
+ */
+export interface AdapterStateEnvelope<ConnectorState> {
+  connectorState: ConnectorState;
+  sdkState: SdkState;
+}
 
 export interface ToDevRev {
   attachmentsMetadata: {
@@ -73,3 +84,15 @@ export const loadingSdkState = {
     filesToLoad: [],
   },
 };
+
+/**
+ * The set of top-level state keys owned by the SDK. Derived from the initial
+ * SDK state constants so it auto-updates whenever a new SDK field is added.
+ * Used by the migration shim to split a flat v1 state blob into the
+ * `{ connectorState, sdkState }` envelope: keys in this set go to `sdkState`,
+ * everything else is connector state.
+ */
+export const V1_SDK_STATE_KEYS: ReadonlySet<string> = new Set([
+  ...Object.keys(extractionSdkState),
+  ...Object.keys(loadingSdkState),
+]);
