@@ -3,7 +3,7 @@ import { Worker } from 'worker_threads';
 import type { LogLevel } from '../logger/logger.interfaces';
 import { BaseState } from '../state/base-state';
 import { BaseSdkState } from '../state/state.interfaces';
-import { BaseAdapter } from '../multithreading/worker-adapter/base-adapter';
+import { BaseAdapter } from '../multithreading/adapters/base-adapter';
 
 import { AirSyncEvent, EventType, ExtractorEventType } from './extraction';
 

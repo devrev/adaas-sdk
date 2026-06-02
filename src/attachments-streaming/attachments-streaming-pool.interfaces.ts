@@ -2,7 +2,7 @@ import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
 } from '../types';
-import { ExtractionAdapter } from '../multithreading/worker-adapter/extraction-adapter';
+import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
 import { ToDevRev } from '../state/state.interfaces';
 
 export interface AttachmentsStreamingPoolParams<ConnectorState> {

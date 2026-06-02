@@ -14,8 +14,8 @@ export {
   processLoadingTask,
 } from './multithreading/process-task';
 export { spawn } from './multithreading/spawn/spawn';
-export { ExtractionAdapter } from './multithreading/worker-adapter/extraction-adapter';
-export { LoadingAdapter } from './multithreading/worker-adapter/loading-adapter';
+export { ExtractionAdapter } from './multithreading/adapters/extraction-adapter';
+export { LoadingAdapter } from './multithreading/adapters/loading-adapter';
 export { createMockEvent, MOCK_SERVER_DEFAULT_URL } from './common/test-utils';
 export type { DeepPartial } from './common/test-utils';
 export * from './types';

@@ -13,9 +13,9 @@ import {
   WorkerMessageSubject,
 } from '../types/workers';
 
-import { BaseAdapter } from './worker-adapter/base-adapter';
-import { ExtractionAdapter } from './worker-adapter/extraction-adapter';
-import { LoadingAdapter } from './worker-adapter/loading-adapter';
+import { BaseAdapter } from './adapters/base-adapter';
+import { ExtractionAdapter } from './adapters/extraction-adapter';
+import { LoadingAdapter } from './adapters/loading-adapter';
 
 /**
  * Shared worker-thread driver. Builds the logger context, runs the task and

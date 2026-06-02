@@ -54,7 +54,7 @@ jest.mock('../state/extraction-state', () => ({
   createExtractionState: jest.fn(),
 }));
 
-jest.mock('./worker-adapter/extraction-adapter', () => ({
+jest.mock('./adapters/extraction-adapter', () => ({
   ExtractionAdapter: jest.fn().mockImplementation(() => ({
     isTimeout: false,
     hasWorkerEmitted: false,
@@ -63,7 +63,7 @@ jest.mock('./worker-adapter/extraction-adapter', () => ({
 
 import { processExtractionTask } from './process-task';
 import { createExtractionState } from '../state/extraction-state';
-import { ExtractionAdapter } from './worker-adapter/extraction-adapter';
+import { ExtractionAdapter } from './adapters/extraction-adapter';
 import { createMockEvent } from '../common/test-utils';
 
 function setWorkerData(data: Record<string, unknown>) {

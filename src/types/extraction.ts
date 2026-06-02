@@ -6,7 +6,7 @@ import { ErrorRecord } from './common';
 
 import { AxiosResponse } from 'axios';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
-import { ExtractionAdapter } from '../multithreading/worker-adapter/extraction-adapter';
+import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
 import { DonV2, LoaderReport, RateLimited } from './loading';
 
 /**

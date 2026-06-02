@@ -1,4 +1,4 @@
-import { ExtractionAdapter } from '../multithreading/worker-adapter/extraction-adapter';
+import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,

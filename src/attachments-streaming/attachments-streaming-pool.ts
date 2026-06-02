@@ -1,5 +1,5 @@
 import { sleep } from '../common/helpers';
-import { ExtractionAdapter } from '../multithreading/worker-adapter/extraction-adapter';
+import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
 import { ProcessedAttachment, ToDevRev } from '../state/state.interfaces';
 import {
   ExternalSystemAttachmentStreamingFunction,
