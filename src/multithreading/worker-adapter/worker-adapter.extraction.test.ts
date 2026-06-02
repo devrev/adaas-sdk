@@ -1,5 +1,5 @@
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
-import { State } from '../../state/state';
+import { ExtractionState } from '../../state/extraction-state';
 import { mockServer } from '../../tests/jest.setup';
 import { createMockEvent } from '../../common/test-utils';
 import {
@@ -8,7 +8,7 @@ import {
   EventType,
   ExtractorEventType,
 } from '../../types';
-import { WorkerAdapter } from './worker-adapter';
+import { ExtractionAdapter } from './extraction-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 
@@ -33,9 +33,9 @@ interface TestState {
 }
 
 function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
-  adapter: WorkerAdapter<TestState>;
+  adapter: ExtractionAdapter<TestState>;
   event: AirSyncEvent;
-  adapterState: State<TestState>;
+  adapterState: ExtractionState<TestState>;
 } {
   const event = createMockEvent(mockServer.baseUrl, {
     payload: { event_type: eventType },
@@ -43,7 +43,7 @@ function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
   const initialState: TestState = {
     attachments: { completed: false },
   };
-  const adapterState = new State<TestState>({ event, initialState });
+  const adapterState = new ExtractionState<TestState>({ event, initialState });
   adapterState.sdkState.snapInVersionId = '';
   adapterState.sdkState.toDevRev = {
     attachmentsMetadata: {
@@ -52,13 +52,13 @@ function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
       lastProcessedAttachmentsIdsList: [],
     },
   };
-  const adapter = new WorkerAdapter<TestState>({ event, adapterState });
+  const adapter = new ExtractionAdapter<TestState>({ event, adapterState });
   return { adapter, event, adapterState };
 }
 
-describe(`${WorkerAdapter.name}.streamAttachments`, () => {
-  let adapter: WorkerAdapter<TestState>;
-  let adapterState: State<TestState>;
+describe(`${ExtractionAdapter.name}.streamAttachments`, () => {
+  let adapter: ExtractionAdapter<TestState>;
+  let adapterState: ExtractionState<TestState>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -587,8 +587,8 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
   });
 });
 
-describe(`${WorkerAdapter.name}.processAttachment`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${ExtractionAdapter.name}.processAttachment`, () => {
+  let adapter: ExtractionAdapter<TestState>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -858,7 +858,7 @@ describe(`${WorkerAdapter.name}.processAttachment`, () => {
   });
 });
 
-describe(`${WorkerAdapter.name}.initializeRepos — event size threshold`, () => {
+describe(`${ExtractionAdapter.name}.initializeRepos — event size threshold`, () => {
   it('should set isTimeout=true once the cumulative artifact payload exceeds EVENT_SIZE_THRESHOLD_BYTES', () => {
     // Arrange
     const { adapter } = makeAdapter();
@@ -886,7 +886,7 @@ describe(`${WorkerAdapter.name}.initializeRepos — event size threshold`, () =>
   });
 });
 
-describe(`${WorkerAdapter.name}.getRepo`, () => {
+describe(`${ExtractionAdapter.name}.getRepo`, () => {
   it('should return undefined when the requested repo was never initialised', () => {
     // Arrange
     const { adapter } = makeAdapter();
@@ -899,8 +899,8 @@ describe(`${WorkerAdapter.name}.getRepo`, () => {
   });
 });
 
-describe(`${WorkerAdapter.name}.destroyHttpStream`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${ExtractionAdapter.name}.destroyHttpStream`, () => {
+  let adapter: ExtractionAdapter<TestState>;
 
   beforeEach(() => {
     ({ adapter } = makeAdapter());
@@ -967,7 +967,7 @@ describe(`${WorkerAdapter.name}.destroyHttpStream`, () => {
   });
 });
 
-describe(`${WorkerAdapter.name} — extractionScope`, () => {
+describe(`${ExtractionAdapter.name} — extractionScope`, () => {
   it('should return empty object by default', () => {
     const { adapter } = makeAdapter();
     expect(adapter.extractionScope).toEqual({});
@@ -990,7 +990,7 @@ describe(`${WorkerAdapter.name} — extractionScope`, () => {
   });
 });
 
-describe(`${WorkerAdapter.name} — shouldExtract`, () => {
+describe(`${ExtractionAdapter.name} — shouldExtract`, () => {
   it('should return true when extraction scope is empty', () => {
     const { adapter } = makeAdapter();
     expect(adapter.shouldExtract('tasks')).toBe(true);

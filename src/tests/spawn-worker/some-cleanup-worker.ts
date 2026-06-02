@@ -1,6 +1,6 @@
-import { ExtractorEventType, processTask } from '../../index';
+import { ExtractorEventType, processExtractionTask } from '../../index';
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     console.log('Some cleanup logic executed.');
     await adapter.emit(ExtractorEventType.ExtractorStateDeletionDone);

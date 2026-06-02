@@ -3,7 +3,17 @@ import { AirSyncEvent } from '../types/extraction';
 import { FileToLoad } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
-export interface SdkState {
+/**
+ * BaseSdkState holds SDK bookkeeping common to every sync mode.
+ */
+export interface BaseSdkState {
+  snapInVersionId?: string;
+}
+
+/**
+ * ExtractionSdkState holds SDK bookkeeping owned by the extraction modes.
+ */
+export interface ExtractionSdkState extends BaseSdkState {
   /** The pending (not yet committed) oldest extraction boundary (ISO 8601 timestamp).
    *  Set on StartExtractingMetadata, reused across subsequent phases, cleared on AttachmentExtractionDone. */
   pendingWorkersOldest?: string;
@@ -15,23 +25,24 @@ export interface SdkState {
   /** The newest point of extraction (ISO 8601 timestamp). */
   workersNewest?: string;
   toDevRev?: ToDevRev;
-  fromDevRev?: FromDevRev;
-  snapInVersionId?: string;
 }
 
 /**
- * AdapterState is the legacy (v1) flat state shape: connector state merged with
- * SDK bookkeeping fields. Retained internally only to type the flat on-disk blob
- * the migration shim reads. Not part of the v2 public API.
+ * LoadingSdkState holds SDK bookkeeping owned by the loading modes.
  */
-export type AdapterState<ConnectorState> = ConnectorState & SdkState;
+export interface LoadingSdkState extends BaseSdkState {
+  fromDevRev?: FromDevRev;
+}
 
 /**
  * AdapterStateEnvelope is the v2 on-disk state shape: connector state and SDK
  * bookkeeping are stored as disjoint sub-objects so SDK internals stay
  * encapsulated and never collide with connector keys.
  */
-export interface AdapterStateEnvelope<ConnectorState> {
+export interface AdapterStateEnvelope<
+  ConnectorState,
+  SdkState extends BaseSdkState
+> {
   connectorState: ConnectorState;
   sdkState: SdkState;
 }
@@ -63,12 +74,12 @@ export interface StateInterface<ConnectorState> {
   options?: WorkerAdapterOptions;
 }
 
-export const extractionSdkState = {
+export const initialExtractionSdkState: ExtractionSdkState = {
+  snapInVersionId: '',
   pendingWorkersOldest: '',
   pendingWorkersNewest: '',
   workersOldest: '',
   workersNewest: '',
-  snapInVersionId: '',
   toDevRev: {
     attachmentsMetadata: {
       artifactIds: [],
@@ -78,7 +89,7 @@ export const extractionSdkState = {
   },
 };
 
-export const loadingSdkState = {
+export const initialLoadingSdkState: LoadingSdkState = {
   snapInVersionId: '',
   fromDevRev: {
     filesToLoad: [],
@@ -93,6 +104,6 @@ export const loadingSdkState = {
  * everything else is connector state.
  */
 export const V1_SDK_STATE_KEYS: ReadonlySet<string> = new Set([
-  ...Object.keys(extractionSdkState),
-  ...Object.keys(loadingSdkState),
+  ...Object.keys(initialExtractionSdkState),
+  ...Object.keys(initialLoadingSdkState),
 ]);

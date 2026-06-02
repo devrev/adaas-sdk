@@ -1,4 +1,4 @@
-import { ExtractorEventType, processTask } from '../../index';
+import { ExtractorEventType, processExtractionTask } from '../../index';
 
 /**
  * Test worker that generates items to trigger the SQS size limit.
@@ -8,7 +8,7 @@ import { ExtractorEventType, processTask } from '../../index';
  * Each artifact metadata is ~55 bytes (id, item_type, item_count).
  * We need ~2857 artifacts to reach 160KB, so generating 3000 items.
  */
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     // Using external_domain_metadata itemType which doesn't require normalize
     adapter.initializeRepos([

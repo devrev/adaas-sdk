@@ -1,4 +1,4 @@
-import { ExtractorEventType, processTask } from '../../index';
+import { ExtractorEventType, processExtractionTask } from '../../index';
 
 const repos = [
   {
@@ -6,7 +6,7 @@ const repos = [
   },
 ];
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     adapter.initializeRepos(repos);
 

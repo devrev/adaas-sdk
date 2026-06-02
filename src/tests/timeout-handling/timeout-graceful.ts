@@ -1,7 +1,7 @@
 import { sleep } from '../../common/helpers';
-import { ExtractorEventType, processTask } from '../../index';
+import { ExtractorEventType, processExtractionTask } from '../../index';
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     // Use async delays that allow the event loop to process timeout messages
     for (let i = 0; i < 10; i++) {

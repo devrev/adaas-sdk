@@ -1,5 +1,5 @@
 import { TimeValueType } from '../types/extraction';
-import { SdkState } from '../state/state.interfaces';
+import { ExtractionSdkState } from '../state/state.interfaces';
 import { UNBOUNDED_DATE_TIME_VALUE } from './constants';
 import {
   parseDuration,
@@ -153,7 +153,7 @@ describe('time-value-resolver', () => {
   });
 
   describe('resolveTimeValue', () => {
-    const baseState: SdkState = {
+    const baseState: ExtractionSdkState = {
       workersOldest: '2024-01-01T00:00:00.000Z',
       workersNewest: '2024-06-01T00:00:00.000Z',
     };
@@ -364,7 +364,7 @@ describe('time-value-resolver', () => {
     describe('Real-world scenarios', () => {
       const FIXED_NOW = '2026-02-26T15:30:00.000Z';
 
-      const scenarioState: SdkState = {
+      const scenarioState: ExtractionSdkState = {
         workersOldest: '2024-01-01T00:00:00.000Z',
         workersNewest: '2024-06-01T00:00:00.000Z',
       };

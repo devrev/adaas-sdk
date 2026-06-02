@@ -1,6 +1,6 @@
-import { processTask } from '../../index';
+import { processExtractionTask } from '../../index';
 
-processTask({
+processExtractionTask({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/require-await
   task: async ({ adapter }) => {
     console.log('task should not be called.');

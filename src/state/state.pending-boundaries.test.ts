@@ -1,7 +1,7 @@
 import { mockServer } from '../tests/jest.setup';
 import { createMockEvent } from '../common/test-utils';
 import { EventType, TimeValueType } from '../types/extraction';
-import { State, createAdapterState } from './state';
+import { ExtractionState, createExtractionState } from './extraction-state';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 
@@ -16,8 +16,8 @@ describe('State — pending extraction boundaries', () => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
 
-    postStateSpy = jest.spyOn(State.prototype, 'postState');
-    fetchStateSpy = jest.spyOn(State.prototype, 'fetchState');
+    postStateSpy = jest.spyOn(ExtractionState.prototype, 'postState');
+    fetchStateSpy = jest.spyOn(ExtractionState.prototype, 'fetchState');
     installInitialDomainMappingSpy = jest.spyOn(
       require('../common/install-initial-domain-mapping'),
       'installInitialDomainMapping'
@@ -61,7 +61,7 @@ describe('State — pending extraction boundaries', () => {
     postStateSpy.mockResolvedValue({ success: true });
 
     // Act
-    const state = await createAdapterState({
+    const state = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},
@@ -108,7 +108,7 @@ describe('State — pending extraction boundaries', () => {
     fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
     // Act
-    const state = await createAdapterState({
+    const state = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},
@@ -153,7 +153,7 @@ describe('State — pending extraction boundaries', () => {
     fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
     // Act
-    const state = await createAdapterState({
+    const state = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},
@@ -182,7 +182,7 @@ describe('State — pending extraction boundaries', () => {
     fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
     // Act
-    await createAdapterState({
+    await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},
@@ -213,7 +213,7 @@ describe('State — pending extraction boundaries', () => {
     fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
     // Act
-    await createAdapterState({
+    await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},

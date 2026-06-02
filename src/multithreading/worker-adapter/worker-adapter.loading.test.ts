@@ -1,4 +1,4 @@
-import { State } from '../../state/state';
+import { LoadingState } from '../../state/loading-state';
 import { mockServer } from '../../tests/jest.setup';
 import { createMockEvent } from '../../common/test-utils';
 import { AirSyncEvent, EventType, LoaderEventType } from '../../types';
@@ -7,7 +7,7 @@ import {
   ExternalSystemAttachment,
   ExternalSystemItem,
 } from '../../types/loading';
-import { WorkerAdapter } from './worker-adapter';
+import { LoadingAdapter } from './loading-adapter';
 
 jest.mock('../../common/control-protocol', () => ({
   emit: jest.fn().mockResolvedValue({}),
@@ -30,9 +30,9 @@ interface TestState {
 }
 
 function makeAdapter(eventType: EventType): {
-  adapter: WorkerAdapter<TestState>;
+  adapter: LoadingAdapter<TestState>;
   event: AirSyncEvent;
-  adapterState: State<TestState>;
+  adapterState: LoadingState<TestState>;
 } {
   const event = createMockEvent(mockServer.baseUrl, {
     payload: { event_type: eventType },
@@ -40,9 +40,9 @@ function makeAdapter(eventType: EventType): {
   const initialState: TestState = {
     attachments: { completed: false },
   };
-  const adapterState = new State<TestState>({ event, initialState });
+  const adapterState = new LoadingState<TestState>({ event, initialState });
   adapterState.sdkState.snapInVersionId = '';
-  const adapter = new WorkerAdapter<TestState>({ event, adapterState });
+  const adapter = new LoadingAdapter<TestState>({ event, adapterState });
   return { adapter, event, adapterState };
 }
 
@@ -56,7 +56,7 @@ function makeLoaderItem(devrevId = 'dev-1'): ExternalSystemItem {
 }
 
 function setupLoaderFile(
-  adapter: WorkerAdapter<TestState>,
+  adapter: LoadingAdapter<TestState>,
   items: ExternalSystemItem[],
   itemType = 'tasks'
 ) {
@@ -77,8 +77,8 @@ function setupLoaderFile(
     .mockResolvedValue({ response: items });
 }
 
-describe(`${WorkerAdapter.name}.loadItemTypes — timeout and unexpected errors`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${LoadingAdapter.name}.loadItemTypes — timeout and unexpected errors`, () => {
+  let adapter: LoadingAdapter<TestState>;
   let exitSpy: jest.SpyInstance;
   let emitSpy: jest.SpyInstance;
 
@@ -183,8 +183,8 @@ describe(`${WorkerAdapter.name}.loadItemTypes — timeout and unexpected errors`
   });
 });
 
-describe(`${WorkerAdapter.name}.loadItemTypes — loadItem branch coverage via public API`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${LoadingAdapter.name}.loadItemTypes — loadItem branch coverage via public API`, () => {
+  let adapter: LoadingAdapter<TestState>;
   let emitSpy: jest.SpyInstance;
   let exitSpy: jest.SpyInstance;
 
@@ -330,8 +330,8 @@ describe(`${WorkerAdapter.name}.loadItemTypes — loadItem branch coverage via p
   });
 });
 
-describe(`${WorkerAdapter.name}.loadItemTypes — additional branches`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${LoadingAdapter.name}.loadItemTypes — additional branches`, () => {
+  let adapter: LoadingAdapter<TestState>;
   let emitSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -397,13 +397,13 @@ describe(`${WorkerAdapter.name}.loadItemTypes — additional branches`, () => {
   });
 });
 
-describe(`${WorkerAdapter.name}.loadAttachments — timeout, transformer errors, unexpected errors`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${LoadingAdapter.name}.loadAttachments — timeout, transformer errors, unexpected errors`, () => {
+  let adapter: LoadingAdapter<TestState>;
   let exitSpy: jest.SpyInstance;
   let emitSpy: jest.SpyInstance;
 
   function setupFilesToLoad(
-    a: WorkerAdapter<TestState>,
+    a: LoadingAdapter<TestState>,
     items: ExternalSystemAttachment[]
   ) {
     a['adapterState'].sdkState.fromDevRev = {
@@ -547,8 +547,8 @@ describe(`${WorkerAdapter.name}.loadAttachments — timeout, transformer errors,
   });
 });
 
-describe(`${WorkerAdapter.name}.loadAttachments — additional branches`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${LoadingAdapter.name}.loadAttachments — additional branches`, () => {
+  let adapter: LoadingAdapter<TestState>;
   let emitSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -623,8 +623,8 @@ describe(`${WorkerAdapter.name}.loadAttachments — additional branches`, () => 
   });
 });
 
-describe(`${WorkerAdapter.name}.loadAttachment`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${LoadingAdapter.name}.loadAttachment`, () => {
+  let adapter: LoadingAdapter<TestState>;
 
   beforeEach(() => {
     jest.clearAllMocks();

@@ -50,20 +50,20 @@ jest.mock('../logger/logger.context', () => ({
   runWithUserLogContext: jest.fn((fn: () => unknown) => fn()),
 }));
 
-jest.mock('../state/state', () => ({
-  createAdapterState: jest.fn(),
+jest.mock('../state/extraction-state', () => ({
+  createExtractionState: jest.fn(),
 }));
 
-jest.mock('./worker-adapter/worker-adapter', () => ({
-  WorkerAdapter: jest.fn().mockImplementation(() => ({
+jest.mock('./worker-adapter/extraction-adapter', () => ({
+  ExtractionAdapter: jest.fn().mockImplementation(() => ({
     isTimeout: false,
     hasWorkerEmitted: false,
   })),
 }));
 
-import { processTask } from './process-task';
-import { createAdapterState } from '../state/state';
-import { WorkerAdapter } from './worker-adapter/worker-adapter';
+import { processExtractionTask } from './process-task';
+import { createExtractionState } from '../state/extraction-state';
+import { ExtractionAdapter } from './worker-adapter/extraction-adapter';
 import { createMockEvent } from '../common/test-utils';
 
 function setWorkerData(data: Record<string, unknown>) {
@@ -76,10 +76,10 @@ function makeEvent(eventType = EventType.StartExtractingData) {
   });
 }
 
-// Flush the microtask queue enough to let the async IIFE inside processTask run.
+// Flush the microtask queue enough to let the async IIFE inside processExtractionTask run.
 const flush = async () => new Promise((r) => setTimeout(r, 0));
 
-describe(processTask.name, () => {
+describe(processExtractionTask.name, () => {
   let processExitSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -90,7 +90,7 @@ describe(processTask.name, () => {
       .spyOn(process, 'exit')
       .mockImplementation((() => {}) as () => never);
 
-    (createAdapterState as jest.Mock).mockResolvedValue({});
+    (createExtractionState as jest.Mock).mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -105,12 +105,12 @@ describe(processTask.name, () => {
     // onTimeout must be skipped. This is the guard the integration suite cannot
     // target cleanly because it requires a precise race between emit and timeout.
     const mockAdapter = { isTimeout: true, hasWorkerEmitted: true };
-    (WorkerAdapter as jest.Mock).mockImplementation(() => mockAdapter);
+    (ExtractionAdapter as jest.Mock).mockImplementation(() => mockAdapter);
     const task = jest.fn().mockResolvedValue(undefined);
     const onTimeout = jest.fn().mockResolvedValue(undefined);
 
     // Act
-    processTask({ task, onTimeout });
+    processExtractionTask({ task, onTimeout });
     await flush();
 
     // Assert
@@ -123,12 +123,12 @@ describe(processTask.name, () => {
     const event = makeEvent();
     setWorkerData({ event, initialState: {}, options: {} });
     const mockAdapter = { isTimeout: false, hasWorkerEmitted: false };
-    (WorkerAdapter as jest.Mock).mockImplementation(() => mockAdapter);
+    (ExtractionAdapter as jest.Mock).mockImplementation(() => mockAdapter);
     const task = jest.fn().mockResolvedValue(undefined);
     const onTimeout = jest.fn().mockResolvedValue(undefined);
 
     // Act
-    processTask({ task, onTimeout });
+    processExtractionTask({ task, onTimeout });
     await flush();
 
     // Grab the handler registered for WorkerMessage events and invoke it with
@@ -151,13 +151,13 @@ describe(processTask.name, () => {
     const event = makeEvent();
     setWorkerData({ event, initialState: {}, options: {} });
     const mockAdapter = { isTimeout: false, hasWorkerEmitted: false };
-    (WorkerAdapter as jest.Mock).mockImplementation(() => mockAdapter);
+    (ExtractionAdapter as jest.Mock).mockImplementation(() => mockAdapter);
     const taskError = new Error('task boom');
     const task = jest.fn().mockRejectedValue(taskError);
     const onTimeout = jest.fn().mockResolvedValue(undefined);
 
     // Act
-    processTask({ task, onTimeout });
+    processExtractionTask({ task, onTimeout });
     await flush();
 
     // Assert

@@ -1,11 +1,11 @@
 import { AirSyncDefaultItemTypes } from '../../common/constants';
-import { State } from '../../state/state';
+import { ExtractionState } from '../../state/extraction-state';
 import { mockServer } from '../../tests/jest.setup';
 import { createItems } from '../../tests/test-helpers';
 import { createMockEvent } from '../../common/test-utils';
 import { Artifact, EventType } from '../../types';
 import { ExternalSyncUnit } from '../../types/extraction';
-import { WorkerAdapter } from './worker-adapter';
+import { ExtractionAdapter } from './extraction-adapter';
 
 // 1. Create a mock function for the method you want to override.
 const mockUpload = (itemType: string, objects: object[]) => {
@@ -57,19 +57,19 @@ describe('Artifact ordering when artifacts overflow batch sizes in repositories'
   interface TestState {
     attachments: { completed: boolean };
   }
-  let testAdapter: WorkerAdapter<TestState>;
+  let testAdapter: ExtractionAdapter<TestState>;
 
   beforeEach(() => {
     // Create a fresh adapter instance for this test to avoid mocking conflicts
     const mockEvent = createMockEvent(mockServer.baseUrl, {
       payload: { event_type: EventType.StartExtractingData },
     });
-    const mockAdapterState = new State<TestState>({
+    const mockAdapterState = new ExtractionState<TestState>({
       event: mockEvent,
       initialState: { attachments: { completed: false } },
     });
 
-    testAdapter = new WorkerAdapter({
+    testAdapter = new ExtractionAdapter({
       event: mockEvent,
       adapterState: mockAdapterState,
       options: {
@@ -162,18 +162,18 @@ describe('Artifact ordering when artifacts overflow batch sizes in repositories'
 });
 
 describe('External sync units splitting into artifacts', () => {
-  let testAdapter: WorkerAdapter<Record<string, unknown>>;
+  let testAdapter: ExtractionAdapter<Record<string, unknown>>;
 
   beforeEach(() => {
     const mockEvent = createMockEvent(mockServer.baseUrl, {
       payload: { event_type: EventType.StartExtractingExternalSyncUnits },
     });
-    const mockAdapterState = new State<Record<string, unknown>>({
+    const mockAdapterState = new ExtractionState<Record<string, unknown>>({
       event: mockEvent,
       initialState: {},
     });
 
-    testAdapter = new WorkerAdapter({
+    testAdapter = new ExtractionAdapter({
       event: mockEvent,
       adapterState: mockAdapterState,
     });

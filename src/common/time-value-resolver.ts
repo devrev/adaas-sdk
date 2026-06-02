@@ -1,5 +1,5 @@
 import { TimeUnit, TimeValue, TimeValueType } from '../types/extraction';
-import { SdkState } from '../state/state.interfaces';
+import { ExtractionSdkState } from '../state/state.interfaces';
 import { UNBOUNDED_DATE_TIME_VALUE } from './constants';
 
 /**
@@ -96,7 +96,7 @@ export function applyDuration(
  */
 export function resolveTimeValue(
   timeValue: TimeValue,
-  state: SdkState
+  state: ExtractionSdkState
 ): string {
   switch (timeValue.type) {
     case TimeValueType.ABSOLUTE_TIME: {

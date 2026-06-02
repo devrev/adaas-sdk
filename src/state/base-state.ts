@@ -1,182 +1,51 @@
 import axios from 'axios';
 import { parentPort } from 'node:worker_threads';
 
-import { STATELESS_EVENT_TYPES } from '../common/constants';
 import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
-import { resolveTimeValue } from '../common/time-value-resolver';
 import { axiosClient } from '../http/axios-client-internal';
 import { getPrintableState, serializeError } from '../logger/logger';
-import { SyncMode } from '../types/common';
-import { EventType } from '../types/extraction';
+import { InitialDomainMapping } from '../types/common';
+import { AirSyncEvent } from '../types/extraction';
 import { WorkerMessageSubject } from '../types/workers';
+import { ExtractionScope } from '../types/workers';
 
 import {
   AdapterStateEnvelope,
-  extractionSdkState,
-  loadingSdkState,
-  SdkState,
+  BaseSdkState,
   StateInterface,
   V1_SDK_STATE_KEYS,
 } from './state.interfaces';
-import { ExtractionScope } from '../types/workers';
 
-export async function createAdapterState<ConnectorState>({
-  event,
-  initialState,
-  initialDomainMapping,
-  options,
-}: StateInterface<ConnectorState>): Promise<State<ConnectorState>> {
-  // Deep clone the initial state to avoid mutating the original state
-  const deepCloneInitialState: ConnectorState = structuredClone(initialState);
-
-  const as = new State<ConnectorState>({
-    event,
-    initialState: deepCloneInitialState,
-    initialDomainMapping,
-    options,
-  });
-
-  if (!STATELESS_EVENT_TYPES.includes(event.payload.event_type)) {
-    await as.init(deepCloneInitialState);
-
-    // Check if IDM needs to be updated
-    const snapInVersionId = event.context.snap_in_version_id;
-    const hasSnapInVersionInState = 'snapInVersionId' in as.sdkState;
-    const shouldUpdateIDM =
-      !hasSnapInVersionInState ||
-      as.sdkState.snapInVersionId !== snapInVersionId;
-
-    if (!shouldUpdateIDM) {
-      console.log(
-        `Snap-in version in state matches the version in event context "${snapInVersionId}". Skipping initial domain mapping installation.`
-      );
-    } else {
-      try {
-        console.log(
-          `Snap-in version in state "${as.sdkState.snapInVersionId}" does not match the version in event context "${snapInVersionId}". Installing initial domain mapping.`
-        );
-
-        if (initialDomainMapping) {
-          await installInitialDomainMapping(event, initialDomainMapping);
-          as.sdkState.snapInVersionId = snapInVersionId;
-        } else {
-          throw new Error(
-            'No initial domain mapping was passed to spawn function. Skipping initial domain mapping installation.'
-          );
-        }
-      } catch (error) {
-        const errorMessage = `Error while installing initial domain mapping. ${serializeError(
-          error
-        )}`;
-        console.error(errorMessage);
-        parentPort?.postMessage({
-          subject: WorkerMessageSubject.WorkerMessageFailed,
-          payload: { message: errorMessage },
-        });
-        process.exit(1);
-      }
-    }
-
-    // Resolve extraction timestamps from TimeValue objects, or reuse pending values from a prior invocation.
-    // On StartExtractingMetadata: resolve fresh from TimeValue objects and store in pending state (always overwrite).
-    // On all other events: reuse the pending values cached during StartExtractingMetadata.
-    const eventContext = event.payload.event_context;
-
-    if (event.payload.event_type === EventType.StartExtractingMetadata) {
-      const timeFields = [
-        {
-          source: 'extraction_start_time',
-          target: 'extract_from',
-          pending: 'pendingWorkersOldest',
-        },
-        {
-          source: 'extraction_end_time',
-          target: 'extract_to',
-          pending: 'pendingWorkersNewest',
-        },
-      ] as const;
-
-      for (const { source, target, pending } of timeFields) {
-        const timeValue = eventContext[source];
-        if (timeValue && timeValue.type) {
-          try {
-            const resolved = resolveTimeValue(timeValue, as.sdkState);
-            eventContext[target] = resolved;
-            as.sdkState[pending] = resolved;
-            console.log(
-              `Resolved ${target} to ${resolved}. Stored in ${pending}.`
-            );
-          } catch (error) {
-            const errorMessage = `Failed to resolve ${source}: ${serializeError(
-              error
-            )}`;
-            console.error(errorMessage);
-            parentPort?.postMessage({
-              subject: WorkerMessageSubject.WorkerMessageFailed,
-              payload: { message: errorMessage },
-            });
-            process.exit(1);
-          }
-        }
-      }
-    } else {
-      // Non-StartExtractingMetadata events: reuse pending values from state
-      if (as.sdkState.pendingWorkersOldest) {
-        eventContext.extract_from = as.sdkState.pendingWorkersOldest;
-        console.log(
-          `Reusing pendingWorkersOldest as extract_from: ${as.sdkState.pendingWorkersOldest}.`
-        );
-      } else {
-        console.log(
-          'pendingWorkersOldest is not set in state. extract_from will not be populated for this invocation.'
-        );
-      }
-      if (as.sdkState.pendingWorkersNewest) {
-        eventContext.extract_to = as.sdkState.pendingWorkersNewest;
-        console.log(
-          `Reusing pendingWorkersNewest as extract_to: ${as.sdkState.pendingWorkersNewest}.`
-        );
-      } else {
-        console.log(
-          'pendingWorkersNewest is not set in state. extract_to will not be populated for this invocation.'
-        );
-      }
-    }
-
-    // Validate that extract_from is before extract_to
-    if (eventContext.extract_from && eventContext.extract_to) {
-      if (eventContext.extract_from >= eventContext.extract_to) {
-        const errorMessage = `Invalid extraction window: extract_from (${eventContext.extract_from}) must be older than extract_to (${eventContext.extract_to}). This indicates an error in the platform.`;
-        console.error(errorMessage);
-        parentPort?.postMessage({
-          subject: WorkerMessageSubject.WorkerMessageFailed,
-          payload: { message: errorMessage },
-        });
-        process.exit(1);
-      }
-    }
-  }
-
-  return as;
-}
-
-export class State<ConnectorState> {
-  private _connectorState: ConnectorState;
-  private _sdkState: SdkState;
-  private _extractionScope: ExtractionScope = {};
-  private initialSdkState: SdkState;
+/**
+ * BaseState owns the state lifecycle shared by every sync mode: connector vs.
+ * SDK state separation, fetch/init/post against the platform, the v1->v2
+ * migration shim, and the snap-in-version-gated initial domain mapping install.
+ *
+ * Mode-specific subclasses (`ExtractionState`, `LoadingState`) narrow `sdkState`
+ * to their own SDK state shape and add mode-specific setup in their factories.
+ *
+ * @typeParam ConnectorState - the connector-owned state shape
+ * @typeParam SdkState - the SDK bookkeeping shape for this mode
+ */
+export abstract class BaseState<ConnectorState, SdkState extends BaseSdkState> {
+  protected _connectorState: ConnectorState;
+  protected _sdkState: SdkState;
+  protected _extractionScope: ExtractionScope = {};
+  protected readonly initialSdkState: SdkState;
+  protected readonly event: AirSyncEvent;
   private workerUrl: string;
   private devrevToken: string;
   private syncUnitId: string;
   private requestId: string;
 
-  constructor({ event, initialState }: StateInterface<ConnectorState>) {
-    this.initialSdkState =
-      event.payload.event_context.mode === SyncMode.LOADING
-        ? loadingSdkState
-        : extractionSdkState;
+  constructor(
+    { event, initialState }: StateInterface<ConnectorState>,
+    initialSdkState: SdkState
+  ) {
+    this.event = event;
+    this.initialSdkState = initialSdkState;
     this._connectorState = initialState;
-    this._sdkState = { ...this.initialSdkState };
+    this._sdkState = { ...initialSdkState };
     this.workerUrl = event.payload.event_context.worker_data_url;
     this.devrevToken = event.context.secrets.service_account_token;
     this.syncUnitId = event.payload.event_context.sync_unit_id;
@@ -203,6 +72,53 @@ export class State<ConnectorState> {
 
   get extractionScope(): ExtractionScope {
     return this._extractionScope;
+  }
+
+  /**
+   * Installs the initial domain mapping when the snap-in version in state does
+   * not match the version in the event context. Shared by all modes so that a
+   * loading run still installs the mapping if extraction has not done so.
+   */
+  async installInitialDomainMappingIfNeeded(
+    initialDomainMapping?: InitialDomainMapping
+  ): Promise<void> {
+    const snapInVersionId = this.event.context.snap_in_version_id;
+    const hasSnapInVersionInState = 'snapInVersionId' in this.sdkState;
+    const shouldUpdateIDM =
+      !hasSnapInVersionInState ||
+      this.sdkState.snapInVersionId !== snapInVersionId;
+
+    if (!shouldUpdateIDM) {
+      console.log(
+        `Snap-in version in state matches the version in event context "${snapInVersionId}". Skipping initial domain mapping installation.`
+      );
+      return;
+    }
+
+    try {
+      console.log(
+        `Snap-in version in state "${this.sdkState.snapInVersionId}" does not match the version in event context "${snapInVersionId}". Installing initial domain mapping.`
+      );
+
+      if (initialDomainMapping) {
+        await installInitialDomainMapping(this.event, initialDomainMapping);
+        this.sdkState.snapInVersionId = snapInVersionId;
+      } else {
+        throw new Error(
+          'No initial domain mapping was passed to spawn function. Skipping initial domain mapping installation.'
+        );
+      }
+    } catch (error) {
+      const errorMessage = `Error while installing initial domain mapping. ${serializeError(
+        error
+      )}`;
+      console.error(errorMessage);
+      parentPort?.postMessage({
+        subject: WorkerMessageSubject.WorkerMessageFailed,
+        payload: { message: errorMessage },
+      });
+      process.exit(1);
+    }
   }
 
   /**
@@ -323,7 +239,7 @@ export class State<ConnectorState> {
     const url = this.workerUrl + '.update';
     this.state = state || this.state;
 
-    const envelope: AdapterStateEnvelope<ConnectorState> = {
+    const envelope: AdapterStateEnvelope<ConnectorState, SdkState> = {
       connectorState: this.state,
       sdkState: this.sdkState,
     };

@@ -6,7 +6,7 @@ import { ErrorRecord } from './common';
 
 import { AxiosResponse } from 'axios';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { ExtractionAdapter } from '../multithreading/worker-adapter/extraction-adapter';
 import { DonV2, LoaderReport, RateLimited } from './loading';
 
 /**
@@ -314,7 +314,7 @@ export type ExternalSystemAttachmentReducerFunction<
   batchSize,
 }: {
   attachments: Batch;
-  adapter: WorkerAdapter<ConnectorState>;
+  adapter: ExtractionAdapter<ConnectorState>;
   batchSize?: number;
 }) => NewBatch;
 
@@ -333,7 +333,7 @@ export type ExternalSystemAttachmentIteratorFunction<NewBatch, ConnectorState> =
     stream,
   }: {
     reducedAttachments: NewBatch;
-    adapter: WorkerAdapter<ConnectorState>;
+    adapter: ExtractionAdapter<ConnectorState>;
     stream: ExternalSystemAttachmentStreamingFunction;
   }) => Promise<ProcessAttachmentReturnType>;
 

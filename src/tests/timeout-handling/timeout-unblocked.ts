@@ -1,7 +1,7 @@
 import { sleep } from '../../common/helpers';
-import { ExtractorEventType, processTask } from '../../index';
+import { ExtractorEventType, processExtractionTask } from '../../index';
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     // CPU-intensive nested loops that yield control after logging
     // This allows the event loop to process timeout messages

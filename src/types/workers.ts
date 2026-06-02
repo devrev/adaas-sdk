@@ -1,8 +1,9 @@
 import { Worker } from 'worker_threads';
 
 import type { LogLevel } from '../logger/logger.interfaces';
-import { State } from '../state/state';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { BaseState } from '../state/base-state';
+import { BaseSdkState } from '../state/state.interfaces';
+import { BaseAdapter } from '../multithreading/worker-adapter/base-adapter';
 
 import { AirSyncEvent, EventType, ExtractorEventType } from './extraction';
 
@@ -11,16 +12,19 @@ import { LoaderEventType } from './loading';
 import { InitialDomainMapping } from './common';
 
 /**
- * WorkerAdapterInterface is an interface for WorkerAdapter class.
+ * WorkerAdapterInterface is the constructor parameter shape for an adapter.
  * @interface WorkerAdapterInterface
  * @constructor
  * @param {AirSyncEvent} event - The event object received from the platform
- * @param {object=} initialState - The initial state of the adapter
- * @param {WorkerAdapterInterface} options - The options to create a new instance of WorkerAdapter class
+ * @param {BaseState} adapterState - The state instance for the adapter
+ * @param {WorkerAdapterOptions} options - The options to create a new adapter
  */
-export interface WorkerAdapterInterface<ConnectorState> {
+export interface WorkerAdapterInterface<
+  ConnectorState,
+  StateClass extends BaseState<ConnectorState, BaseSdkState>
+> {
   event: AirSyncEvent;
-  adapterState: State<ConnectorState>;
+  adapterState: StateClass;
   options?: WorkerAdapterOptions;
 }
 
@@ -84,25 +88,29 @@ export interface SpawnFactoryInterface<ConnectorState> {
 }
 
 /**
- * TaskAdapterInterface is an interface for TaskAdapter class.
+ * TaskAdapterInterface is the parameter shape passed to a task callback.
  * @interface TaskAdapterInterface
  * @constructor
- * @param {WorkerAdapter} adapter - The adapter object
+ * @param {BaseAdapter} adapter - The adapter object
  */
-export interface TaskAdapterInterface<ConnectorState> {
-  adapter: WorkerAdapter<ConnectorState>;
+export interface TaskAdapterInterface<
+  Adapter extends BaseAdapter<unknown, BaseState<unknown, BaseSdkState>>
+> {
+  adapter: Adapter;
 }
 
 /**
- * ProcessTaskInterface is an interface for ProcessTask class.
+ * ProcessTaskInterface is the parameter shape for the process-task entry points.
  * @interface ProcessTaskInterface
  * @constructor
  * @param {function} task - The task to be executed, returns exit code
  * @param {function} onTimeout - The task to be executed on timeout, returns exit code
  */
-export interface ProcessTaskInterface<ConnectorState> {
-  task: (params: TaskAdapterInterface<ConnectorState>) => Promise<void>;
-  onTimeout: (params: TaskAdapterInterface<ConnectorState>) => Promise<void>;
+export interface ProcessTaskInterface<
+  Adapter extends BaseAdapter<unknown, BaseState<unknown, BaseSdkState>>
+> {
+  task: (params: TaskAdapterInterface<Adapter>) => Promise<void>;
+  onTimeout: (params: TaskAdapterInterface<Adapter>) => Promise<void>;
 }
 
 /**

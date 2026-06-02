@@ -1,4 +1,4 @@
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { ExtractionAdapter } from '../multithreading/worker-adapter/extraction-adapter';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
@@ -14,7 +14,7 @@ interface TestState {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 describe(AttachmentsStreamingPool.name, () => {
-  let mockAdapter: jest.Mocked<WorkerAdapter<TestState>>;
+  let mockAdapter: jest.Mocked<ExtractionAdapter<TestState>>;
   let mockStream: jest.MockedFunction<ExternalSystemAttachmentStreamingFunction>;
   let mockAttachments: NormalizedAttachment[];
   let attachmentsMetadata: ToDevRev['attachmentsMetadata'];

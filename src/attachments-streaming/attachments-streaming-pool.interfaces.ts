@@ -2,11 +2,11 @@ import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
 } from '../types';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { ExtractionAdapter } from '../multithreading/worker-adapter/extraction-adapter';
 import { ToDevRev } from '../state/state.interfaces';
 
 export interface AttachmentsStreamingPoolParams<ConnectorState> {
-  adapter: WorkerAdapter<ConnectorState>;
+  adapter: ExtractionAdapter<ConnectorState>;
   attachments: NormalizedAttachment[];
   /**
    * SDK-owned attachments bookkeeping. Passed in directly so the pool does not

@@ -5,12 +5,12 @@ import {
 import { mockServer } from '../tests/jest.setup';
 import { createMockEvent } from '../common/test-utils';
 import { EventType } from '../types/extraction';
-import { State, createAdapterState } from './state';
-import { extractionSdkState } from './state.interfaces';
+import { ExtractionState, createExtractionState } from './extraction-state';
+import { initialExtractionSdkState } from './state.interfaces';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 
-describe(State.name, () => {
+describe(ExtractionState.name, () => {
   let initSpy: jest.SpyInstance;
   let postStateSpy: jest.SpyInstance;
   let fetchStateSpy: jest.SpyInstance;
@@ -21,9 +21,9 @@ describe(State.name, () => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
 
-    initSpy = jest.spyOn(State.prototype, 'init');
-    postStateSpy = jest.spyOn(State.prototype, 'postState');
-    fetchStateSpy = jest.spyOn(State.prototype, 'fetchState');
+    initSpy = jest.spyOn(ExtractionState.prototype, 'init');
+    postStateSpy = jest.spyOn(ExtractionState.prototype, 'postState');
+    fetchStateSpy = jest.spyOn(ExtractionState.prototype, 'fetchState');
     installInitialDomainMappingSpy = jest.spyOn(
       require('../common/install-initial-domain-mapping'),
       'installInitialDomainMapping'
@@ -42,7 +42,7 @@ describe(State.name, () => {
       });
 
       // Act
-      await createAdapterState({
+      await createExtractionState({
         event,
         initialState: {},
         initialDomainMapping: {},
@@ -70,7 +70,7 @@ describe(State.name, () => {
 
       // Act & Assert
       await expect(
-        createAdapterState({
+        createExtractionState({
           event,
           initialState: {},
           initialDomainMapping: {},
@@ -91,7 +91,7 @@ describe(State.name, () => {
 
       // Act & Assert
       await expect(
-        createAdapterState({
+        createExtractionState({
           event,
           initialState: {},
           initialDomainMapping: {},
@@ -112,7 +112,7 @@ describe(State.name, () => {
 
       // Act & Assert
       await expect(
-        createAdapterState({
+        createExtractionState({
           event,
           initialState: {},
           initialDomainMapping: {},
@@ -151,7 +151,7 @@ describe(State.name, () => {
       });
 
       // Act
-      const adapterState = await createAdapterState({
+      const adapterState = await createExtractionState({
         event,
         initialState,
         initialDomainMapping: {},
@@ -161,7 +161,7 @@ describe(State.name, () => {
       // SDK bookkeeping seeded from defaults.
       expect(postStateSpy).toHaveBeenCalled();
       expect(adapterState.state).toEqual(initialState);
-      expect(adapterState.sdkState).toEqual(extractionSdkState);
+      expect(adapterState.sdkState).toEqual(initialExtractionSdkState);
     }
   );
 
@@ -181,7 +181,7 @@ describe(State.name, () => {
 
       // Act & Assert
       await expect(
-        createAdapterState({
+        createExtractionState({
           event,
           initialState: {},
           initialDomainMapping: undefined,
@@ -209,7 +209,7 @@ describe(State.name, () => {
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
       // Act & Assert
-      await createAdapterState({
+      await createExtractionState({
         event,
         initialState: {},
         initialDomainMapping: {},
@@ -241,7 +241,7 @@ describe(State.name, () => {
       });
 
       // Act
-      await createAdapterState({
+      await createExtractionState({
         event,
         initialState: {},
         initialDomainMapping: {},
@@ -269,7 +269,7 @@ describe(State.name, () => {
     });
 
     // Act
-    const result = await createAdapterState({
+    const result = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},
@@ -298,7 +298,7 @@ describe(State.name, () => {
     postStateSpy.mockResolvedValue({ success: true });
 
     // Act
-    const result = await createAdapterState({
+    const result = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},
@@ -315,7 +315,7 @@ describe(State.name, () => {
     });
 
     // Act
-    const result = await createAdapterState({
+    const result = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},
@@ -337,7 +337,7 @@ describe(State.name, () => {
     });
 
     // Act
-    const result = await createAdapterState({
+    const result = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},

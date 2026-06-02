@@ -2,10 +2,10 @@ import {
   AirSyncDefaultItemTypes,
   ExternalSyncUnit,
   ExtractorEventType,
-  processTask,
+  processExtractionTask,
 } from '../../index';
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     const dummyExternalSyncUnits: ExternalSyncUnit[] = [
       {

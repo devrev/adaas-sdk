@@ -1,5 +1,5 @@
 import { sleep } from '../common/helpers';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { ExtractionAdapter } from '../multithreading/worker-adapter/extraction-adapter';
 import { ProcessedAttachment, ToDevRev } from '../state/state.interfaces';
 import {
   ExternalSystemAttachmentStreamingFunction,
@@ -9,7 +9,7 @@ import {
 import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 
 export class AttachmentsStreamingPool<ConnectorState> {
-  private adapter: WorkerAdapter<ConnectorState>;
+  private adapter: ExtractionAdapter<ConnectorState>;
   private attachments: NormalizedAttachment[];
   private attachmentsMetadata: ToDevRev['attachmentsMetadata'] | undefined;
   private batchSize: number;

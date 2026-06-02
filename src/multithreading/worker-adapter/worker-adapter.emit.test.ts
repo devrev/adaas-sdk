@@ -1,5 +1,6 @@
 import { UNBOUNDED_DATE_TIME_VALUE } from '../../common/constants';
-import { State } from '../../state/state';
+import { ExtractionState } from '../../state/extraction-state';
+import { LoadingState } from '../../state/loading-state';
 import { mockServer } from '../../tests/jest.setup';
 import { createMockEvent } from '../../common/test-utils';
 import {
@@ -10,7 +11,8 @@ import {
   LoaderEventType,
 } from '../../types';
 import { ActionType, LoaderReport } from '../../types/loading';
-import { WorkerAdapter } from './worker-adapter';
+import { ExtractionAdapter } from './extraction-adapter';
+import { LoadingAdapter } from './loading-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 
@@ -35,9 +37,9 @@ interface TestState {
 }
 
 function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
-  adapter: WorkerAdapter<TestState>;
+  adapter: ExtractionAdapter<TestState>;
   event: AirSyncEvent;
-  adapterState: State<TestState>;
+  adapterState: ExtractionState<TestState>;
 } {
   const event = createMockEvent(mockServer.baseUrl, {
     payload: { event_type: eventType },
@@ -45,7 +47,7 @@ function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
   const initialState: TestState = {
     attachments: { completed: false },
   };
-  const adapterState = new State<TestState>({ event, initialState });
+  const adapterState = new ExtractionState<TestState>({ event, initialState });
   adapterState.sdkState.snapInVersionId = '';
   adapterState.sdkState.toDevRev = {
     attachmentsMetadata: {
@@ -54,12 +56,31 @@ function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
       lastProcessedAttachmentsIdsList: [],
     },
   };
-  const adapter = new WorkerAdapter<TestState>({ event, adapterState });
+  const adapter = new ExtractionAdapter<TestState>({ event, adapterState });
   return { adapter, event, adapterState };
 }
 
-describe(`${WorkerAdapter.name}.emit`, () => {
-  let adapter: WorkerAdapter<TestState>;
+function makeLoadingAdapter(
+  eventType: EventType = EventType.StartLoadingData
+): {
+  adapter: LoadingAdapter<TestState>;
+  event: AirSyncEvent;
+  adapterState: LoadingState<TestState>;
+} {
+  const event = createMockEvent(mockServer.baseUrl, {
+    payload: { event_type: eventType },
+  });
+  const initialState: TestState = {
+    attachments: { completed: false },
+  };
+  const adapterState = new LoadingState<TestState>({ event, initialState });
+  adapterState.sdkState.snapInVersionId = '';
+  const adapter = new LoadingAdapter<TestState>({ event, adapterState });
+  return { adapter, event, adapterState };
+}
+
+describe(`${ExtractionAdapter.name}.emit`, () => {
+  let adapter: ExtractionAdapter<TestState>;
   let mockPostMessage: jest.Mock;
 
   beforeEach(() => {
@@ -187,15 +208,17 @@ describe(`${WorkerAdapter.name}.emit`, () => {
   it('should include reports and processed_files in data for loader events', async () => {
     // Arrange
     const { emit: mockEmit } = require('../../common/control-protocol');
-    adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
-    adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
-    adapter['loaderReports'] = [
+    const { adapter: loadingAdapter } = makeLoadingAdapter();
+    loadingAdapter['adapterState'].postState = jest
+      .fn()
+      .mockResolvedValue(undefined);
+    loadingAdapter['loaderReports'] = [
       { item_type: 'tasks', [ActionType.CREATED]: 5 },
     ] as LoaderReport[];
-    adapter['_processedFiles'] = ['file-1', 'file-2'];
+    loadingAdapter['_processedFiles'] = ['file-1', 'file-2'];
 
     // Act
-    await adapter.emit(LoaderEventType.DataLoadingDone);
+    await loadingAdapter.emit(LoaderEventType.DataLoadingDone);
 
     // Assert
     expect(mockEmit).toHaveBeenCalledWith(
@@ -220,10 +243,6 @@ describe(`${WorkerAdapter.name}.emit`, () => {
     adapter['_artifacts'] = [
       { id: 'art-1', item_count: 10, item_type: 'issues' },
     ] as Artifact[];
-    adapter['loaderReports'] = [
-      { item_type: 'tasks', [ActionType.CREATED]: 5 },
-    ] as LoaderReport[];
-    adapter['_processedFiles'] = ['file-1'];
 
     // Act
     await adapter.emit('SOME_UNKNOWN_EVENT' as ExtractorEventType);
@@ -275,16 +294,17 @@ describe(`${WorkerAdapter.name}.emit`, () => {
       LoaderEventType.AttachmentLoadingProgress,
     ];
 
+    const { adapter: loadingAdapter } = makeLoadingAdapter();
+    loadingAdapter['adapterState'].postState = jest
+      .fn()
+      .mockResolvedValue(undefined);
+
     for (const eventType of loaderEvents) {
       jest.clearAllMocks();
-      adapter.hasWorkerEmitted = false;
-      adapter['adapterState'].postState = jest
-        .fn()
-        .mockResolvedValue(undefined);
-      adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+      loadingAdapter.hasWorkerEmitted = false;
 
       // Act
-      await adapter.emit(eventType);
+      await loadingAdapter.emit(eventType);
 
       // Assert
       const callData = mockEmit.mock.calls[0]?.[0]?.data;
@@ -315,8 +335,8 @@ describe(`${WorkerAdapter.name}.emit`, () => {
 });
 
 describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () => {
-  let adapter: WorkerAdapter<TestState>;
-  let adapterState: State<TestState>;
+  let adapter: ExtractionAdapter<TestState>;
+  let adapterState: ExtractionState<TestState>;
   let mockPostMessage: jest.Mock;
 
   beforeEach(() => {
@@ -342,7 +362,7 @@ describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () 
   });
 
   async function emitDone(
-    adapterInstance: WorkerAdapter<TestState>,
+    adapterInstance: ExtractionAdapter<TestState>,
     extractionStart: string | undefined,
     extractionEnd: string | undefined
   ) {
