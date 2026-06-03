@@ -12,11 +12,6 @@ import { InputData } from '@devrev/typescript-sdk/dist/snap-ins';
 import type { RawAxiosResponseHeaders } from 'axios';
 import { Worker as Worker_2 } from 'worker_threads';
 
-// Warning: (ae-forgotten-export) The symbol "SdkState" needs to be exported by the entry point index.d.ts
-//
-// @public
-export type AdapterState<ConnectorState> = ConnectorState & SdkState;
-
 // @public (undocumented)
 export enum AirSyncDefaultItemTypes {
     // (undocumented)
@@ -341,14 +336,14 @@ export interface ExternalSystemAttachment {
 // @public (undocumented)
 export type ExternalSystemAttachmentIteratorFunction<NewBatch, ConnectorState> = (input: {
     reducedAttachments: NewBatch;
-    adapter: WorkerAdapter<ConnectorState>;
+    adapter: ExtractionAdapter<ConnectorState>;
     stream: ExternalSystemAttachmentStreamingFunction;
 }) => Promise<ProcessAttachmentReturnType>;
 
 // @public (undocumented)
 export type ExternalSystemAttachmentReducerFunction<Batch, NewBatch, ConnectorState> = (input: {
     attachments: Batch;
-    adapter: WorkerAdapter<ConnectorState>;
+    adapter: ExtractionAdapter<ConnectorState>;
     batchSize?: number;
 }) => NewBatch;
 
@@ -425,6 +420,46 @@ export interface ExternalSystemItemLoadingResponse {
     id?: string;
     // (undocumented)
     modifiedDate?: string;
+}
+
+// Warning: (ae-forgotten-export) The symbol "BaseAdapter" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ExtractionState" needs to be exported by the entry point index.d.ts
+//
+// @public
+export class ExtractionAdapter<ConnectorState> extends BaseAdapter<ConnectorState, ExtractionState<ConnectorState>> {
+    constructor(params: {
+        event: AirSyncEvent;
+        adapterState: ExtractionState<ConnectorState>;
+        options?: WorkerAdapterOptions;
+    });
+    // (undocumented)
+    protected afterEmit(): void;
+    // (undocumented)
+    get artifacts(): Artifact[];
+    set artifacts(artifacts: Artifact[]);
+    // (undocumented)
+    protected beforeEmit(newEventType: ExtractorEventType | LoaderEventType): Promise<void>;
+    // (undocumented)
+    protected buildEmitPayload(newEventType: ExtractorEventType | LoaderEventType): EventData;
+    // (undocumented)
+    get extractionScope(): ExtractionScope;
+    // Warning: (ae-forgotten-export) The symbol "Repo" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    getRepo(itemType: string): Repo | undefined;
+    // (undocumented)
+    initializeRepos(repos: RepoInterface[]): void;
+    // (undocumented)
+    processAttachment(attachment: NormalizedAttachment, stream: ExternalSystemAttachmentStreamingFunction): Promise<ProcessAttachmentReturnType>;
+    shouldExtract(itemType: string): boolean;
+    // Warning: (ae-forgotten-export) The symbol "StreamAttachmentsReturnType" needs to be exported by the entry point index.d.ts
+    streamAttachments<NewBatch>(input: {
+        stream: ExternalSystemAttachmentStreamingFunction;
+        processors?: ExternalSystemAttachmentProcessors<ConnectorState, NormalizedAttachment[], NewBatch>;
+        batchSize?: number;
+    }): Promise<StreamAttachmentsReturnType>;
+    // (undocumented)
+    uploadAllRepos(): Promise<void>;
 }
 
 // @public (undocumented)
@@ -646,6 +681,56 @@ export enum LoaderEventType {
     UnknownEventType = "UNKNOWN_EVENT_TYPE"
 }
 
+// Warning: (ae-forgotten-export) The symbol "LoadingState" needs to be exported by the entry point index.d.ts
+//
+// @public
+export class LoadingAdapter<ConnectorState> extends BaseAdapter<ConnectorState, LoadingState<ConnectorState>> {
+    constructor(params: {
+        event: AirSyncEvent;
+        adapterState: LoadingState<ConnectorState>;
+        options?: WorkerAdapterOptions;
+    });
+    // (undocumented)
+    protected afterEmit(): void;
+    // (undocumented)
+    protected beforeEmit(): Promise<void>;
+    // (undocumented)
+    protected buildEmitPayload(newEventType: ExtractorEventType | LoaderEventType): EventData;
+    // Warning: (ae-forgotten-export) The symbol "FileToLoad" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    getLoaderBatches(input: {
+        supportedItemTypes: string[];
+    }): Promise<FileToLoad[]>;
+    // (undocumented)
+    loadAttachment(input: {
+        item: ExternalSystemAttachment;
+        create: ExternalSystemLoadingFunction<ExternalSystemAttachment>;
+    }): Promise<LoadItemResponse>;
+    // (undocumented)
+    loadAttachments(input: {
+        create: ExternalSystemLoadingFunction<ExternalSystemAttachment>;
+    }): Promise<LoadItemTypesResponse>;
+    // Warning: (ae-forgotten-export) The symbol "LoadItemResponse" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    loadItem(input: {
+        item: ExternalSystemItem;
+        itemTypeToLoad: ItemTypeToLoad;
+    }): Promise<LoadItemResponse>;
+    // Warning: (ae-forgotten-export) The symbol "ItemTypesToLoadParams" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "LoadItemTypesResponse" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    loadItemTypes(input: ItemTypesToLoadParams): Promise<LoadItemTypesResponse>;
+    // (undocumented)
+    get mappers(): Mappers;
+    // (undocumented)
+    get processedFiles(): string[];
+    // (undocumented)
+    get reports(): LoaderReport[];
+}
+
 // @public
 export interface MappersCreateParams {
     external_ids: string[];
@@ -765,15 +850,21 @@ export type ProcessAttachmentReturnType = {
     };
 } | undefined;
 
-// @public (undocumented)
-export function processTask<ConnectorState>(input: ProcessTaskInterface<ConnectorState>): void;
+// @public
+export function processExtractionTask<ConnectorState>(input: ProcessTaskInterface<ExtractionAdapter<ConnectorState>>): void;
 
 // @public
-export interface ProcessTaskInterface<ConnectorState> {
+export function processLoadingTask<ConnectorState>(input: ProcessTaskInterface<LoadingAdapter<ConnectorState>>): void;
+
+// Warning: (ae-forgotten-export) The symbol "BaseState" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "BaseSdkState" needs to be exported by the entry point index.d.ts
+//
+// @public
+export interface ProcessTaskInterface<Adapter extends BaseAdapter<unknown, BaseState<unknown, BaseSdkState>>> {
     // (undocumented)
-    onTimeout: (params: TaskAdapterInterface<ConnectorState>) => Promise<void>;
+    onTimeout: (params: TaskAdapterInterface<Adapter>) => Promise<void>;
     // (undocumented)
-    task: (params: TaskAdapterInterface<ConnectorState>) => Promise<void>;
+    task: (params: TaskAdapterInterface<Adapter>) => Promise<void>;
 }
 
 // @public
@@ -1046,9 +1137,9 @@ export interface TargetTypeKeyData {
 }
 
 // @public
-export interface TaskAdapterInterface<ConnectorState> {
+export interface TaskAdapterInterface<Adapter extends BaseAdapter<unknown, BaseState<unknown, BaseSdkState>>> {
     // (undocumented)
-    adapter: WorkerAdapter<ConnectorState>;
+    adapter: Adapter;
 }
 
 // @public
@@ -1107,85 +1198,9 @@ export interface UploadResponse {
 }
 
 // @public
-export class WorkerAdapter<ConnectorState> {
-    constructor(input: WorkerAdapterInterface<ConnectorState>);
+export interface WorkerAdapterInterface<ConnectorState, StateClass extends BaseState<ConnectorState, BaseSdkState>> {
     // (undocumented)
-    get artifacts(): Artifact[];
-    set artifacts(artifacts: Artifact[]);
-    emit(newEventType: ExtractorEventType | LoaderEventType, data?: EventData): Promise<void>;
-    // (undocumented)
-    readonly event: AirSyncEvent;
-    // (undocumented)
-    get extractionScope(): ExtractionScope;
-    // Warning: (ae-forgotten-export) The symbol "FileToLoad" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    getLoaderBatches(input: {
-        supportedItemTypes: string[];
-    }): Promise<FileToLoad[]>;
-    // Warning: (ae-forgotten-export) The symbol "Repo" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    getRepo(itemType: string): Repo | undefined;
-    // (undocumented)
-    hasWorkerEmitted: boolean;
-    // (undocumented)
-    initializeRepos(repos: RepoInterface[]): void;
-    // (undocumented)
-    isTimeout: boolean;
-    // (undocumented)
-    loadAttachment(input: {
-        item: ExternalSystemAttachment;
-        create: ExternalSystemLoadingFunction<ExternalSystemAttachment>;
-    }): Promise<LoadItemResponse>;
-    // (undocumented)
-    loadAttachments(input: {
-        create: ExternalSystemLoadingFunction<ExternalSystemAttachment>;
-    }): Promise<LoadItemTypesResponse>;
-    // Warning: (ae-forgotten-export) The symbol "LoadItemResponse" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    loadItem(input: {
-        item: ExternalSystemItem;
-        itemTypeToLoad: ItemTypeToLoad;
-    }): Promise<LoadItemResponse>;
-    // Warning: (ae-forgotten-export) The symbol "ItemTypesToLoadParams" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "LoadItemTypesResponse" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    loadItemTypes(input: ItemTypesToLoadParams): Promise<LoadItemTypesResponse>;
-    // (undocumented)
-    get mappers(): Mappers;
-    // (undocumented)
-    readonly options?: WorkerAdapterOptions;
-    // (undocumented)
-    postState(): Promise<void>;
-    // (undocumented)
-    processAttachment(attachment: NormalizedAttachment, stream: ExternalSystemAttachmentStreamingFunction): Promise<ProcessAttachmentReturnType>;
-    // (undocumented)
-    get processedFiles(): string[];
-    // (undocumented)
-    get reports(): LoaderReport[];
-    shouldExtract(itemType: string): boolean;
-    // (undocumented)
-    get state(): AdapterState<ConnectorState>;
-    set state(value: AdapterState<ConnectorState>);
-    // Warning: (ae-forgotten-export) The symbol "StreamAttachmentsReturnType" needs to be exported by the entry point index.d.ts
-    streamAttachments<NewBatch>(input: {
-        stream: ExternalSystemAttachmentStreamingFunction;
-        processors?: ExternalSystemAttachmentProcessors<ConnectorState, NormalizedAttachment[], NewBatch>;
-        batchSize?: number;
-    }): Promise<StreamAttachmentsReturnType>;
-    // (undocumented)
-    uploadAllRepos(): Promise<void>;
-}
-
-// @public
-export interface WorkerAdapterInterface<ConnectorState> {
-    // Warning: (ae-forgotten-export) The symbol "State" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    adapterState: State<ConnectorState>;
+    adapterState: StateClass;
     // (undocumented)
     event: AirSyncEvent;
     // (undocumented)
@@ -1290,10 +1305,10 @@ export type WorkerPathOverrides = Partial<Record<EventType, string>>;
 
 // Warnings were encountered during analysis:
 //
-// src/multithreading/worker-adapter/worker-adapter.ts:542:5 - (ae-forgotten-export) The symbol "ExternalSystemLoadingFunction" needs to be exported by the entry point index.d.ts
-// src/multithreading/worker-adapter/worker-adapter.ts:653:5 - (ae-forgotten-export) The symbol "ItemTypeToLoad" needs to be exported by the entry point index.d.ts
-// src/multithreading/worker-adapter/worker-adapter.ts:1060:5 - (ae-forgotten-export) The symbol "ExternalSystemAttachmentProcessors" needs to be exported by the entry point index.d.ts
-// src/types/workers.ts:152:5 - (ae-forgotten-export) The symbol "LogLevel" needs to be exported by the entry point index.d.ts
+// src/multithreading/adapters/extraction-adapter.ts:347:5 - (ae-forgotten-export) The symbol "ExternalSystemAttachmentProcessors" needs to be exported by the entry point index.d.ts
+// src/multithreading/adapters/loading-adapter.ts:274:5 - (ae-forgotten-export) The symbol "ExternalSystemLoadingFunction" needs to be exported by the entry point index.d.ts
+// src/multithreading/adapters/loading-adapter.ts:385:5 - (ae-forgotten-export) The symbol "ItemTypeToLoad" needs to be exported by the entry point index.d.ts
+// src/types/workers.ts:160:5 - (ae-forgotten-export) The symbol "LogLevel" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

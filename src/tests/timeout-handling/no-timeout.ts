@@ -1,6 +1,6 @@
-import { ExtractorEventType, processTask } from '../../index';
+import { ExtractorEventType, processExtractionTask } from '../../index';
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     for (let i = 0; i < 10; i++) {
       console.log('no-timeout iteration', i);

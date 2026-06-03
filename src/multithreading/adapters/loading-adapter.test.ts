@@ -1,18 +1,13 @@
-import { State } from '../../state/state';
+import { LoadingState } from '../../state/loading-state';
 import { mockServer } from '../../tests/jest.setup';
 import { createMockEvent } from '../../common/test-utils';
-import {
-  AdapterState,
-  AirSyncEvent,
-  EventType,
-  LoaderEventType,
-} from '../../types';
+import { AirSyncEvent, EventType, LoaderEventType } from '../../types';
 import {
   ActionType,
   ExternalSystemAttachment,
   ExternalSystemItem,
 } from '../../types/loading';
-import { WorkerAdapter } from './worker-adapter';
+import { LoadingAdapter } from './loading-adapter';
 
 jest.mock('../../common/control-protocol', () => ({
   emit: jest.fn().mockResolvedValue({}),
@@ -35,26 +30,19 @@ interface TestState {
 }
 
 function makeAdapter(eventType: EventType): {
-  adapter: WorkerAdapter<TestState>;
+  adapter: LoadingAdapter<TestState>;
   event: AirSyncEvent;
-  adapterState: State<TestState>;
+  adapterState: LoadingState<TestState>;
 } {
   const event = createMockEvent(mockServer.baseUrl, {
     payload: { event_type: eventType },
   });
-  const initialState: AdapterState<TestState> = {
+  const initialState: TestState = {
     attachments: { completed: false },
-    snapInVersionId: '',
-    toDevRev: {
-      attachmentsMetadata: {
-        artifactIds: [],
-        lastProcessed: 0,
-        lastProcessedAttachmentsIdsList: [],
-      },
-    },
   };
-  const adapterState = new State<TestState>({ event, initialState });
-  const adapter = new WorkerAdapter<TestState>({ event, adapterState });
+  const adapterState = new LoadingState<TestState>({ event, initialState });
+  adapterState.sdkState.snapInVersionId = '';
+  const adapter = new LoadingAdapter<TestState>({ event, adapterState });
   return { adapter, event, adapterState };
 }
 
@@ -68,11 +56,11 @@ function makeLoaderItem(devrevId = 'dev-1'): ExternalSystemItem {
 }
 
 function setupLoaderFile(
-  adapter: WorkerAdapter<TestState>,
+  adapter: LoadingAdapter<TestState>,
   items: ExternalSystemItem[],
   itemType = 'tasks'
 ) {
-  adapter['adapterState'].state.fromDevRev = {
+  adapter['adapterState'].sdkState.fromDevRev = {
     filesToLoad: [
       {
         id: 'artifact-1',
@@ -89,8 +77,8 @@ function setupLoaderFile(
     .mockResolvedValue({ response: items });
 }
 
-describe(`${WorkerAdapter.name}.loadItemTypes — timeout and unexpected errors`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${LoadingAdapter.name}.loadItemTypes — timeout and unexpected errors`, () => {
+  let adapter: LoadingAdapter<TestState>;
   let exitSpy: jest.SpyInstance;
   let emitSpy: jest.SpyInstance;
 
@@ -160,7 +148,7 @@ describe(`${WorkerAdapter.name}.loadItemTypes — timeout and unexpected errors`
 
   it('should emit DataLoadingError and exit(1) on unexpected error', async () => {
     // Arrange
-    adapter['adapterState'].state.fromDevRev = {
+    adapter['adapterState'].sdkState.fromDevRev = {
       filesToLoad: [
         {
           id: 'artifact-1',
@@ -195,8 +183,8 @@ describe(`${WorkerAdapter.name}.loadItemTypes — timeout and unexpected errors`
   });
 });
 
-describe(`${WorkerAdapter.name}.loadItemTypes — loadItem branch coverage via public API`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${LoadingAdapter.name}.loadItemTypes — loadItem branch coverage via public API`, () => {
+  let adapter: LoadingAdapter<TestState>;
   let emitSpy: jest.SpyInstance;
   let exitSpy: jest.SpyInstance;
 
@@ -342,8 +330,8 @@ describe(`${WorkerAdapter.name}.loadItemTypes — loadItem branch coverage via p
   });
 });
 
-describe(`${WorkerAdapter.name}.loadItemTypes — additional branches`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${LoadingAdapter.name}.loadItemTypes — additional branches`, () => {
+  let adapter: LoadingAdapter<TestState>;
   let emitSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -358,7 +346,7 @@ describe(`${WorkerAdapter.name}.loadItemTypes — additional branches`, () => {
 
   it('should return immediately with empty reports when filesToLoad is empty', async () => {
     // Arrange
-    adapter['adapterState'].state.fromDevRev = { filesToLoad: [] };
+    adapter['adapterState'].sdkState.fromDevRev = { filesToLoad: [] };
 
     // Act
     const result = await adapter.loadItemTypes({
@@ -374,7 +362,7 @@ describe(`${WorkerAdapter.name}.loadItemTypes — additional branches`, () => {
 
   it('should emit DataLoadingError when a file references an item type not in itemTypesToLoad', async () => {
     // Arrange
-    adapter['adapterState'].state.fromDevRev = {
+    adapter['adapterState'].sdkState.fromDevRev = {
       filesToLoad: [
         {
           id: 'art-1',
@@ -409,16 +397,16 @@ describe(`${WorkerAdapter.name}.loadItemTypes — additional branches`, () => {
   });
 });
 
-describe(`${WorkerAdapter.name}.loadAttachments — timeout, transformer errors, unexpected errors`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${LoadingAdapter.name}.loadAttachments — timeout, transformer errors, unexpected errors`, () => {
+  let adapter: LoadingAdapter<TestState>;
   let exitSpy: jest.SpyInstance;
   let emitSpy: jest.SpyInstance;
 
   function setupFilesToLoad(
-    a: WorkerAdapter<TestState>,
+    a: LoadingAdapter<TestState>,
     items: ExternalSystemAttachment[]
   ) {
-    a['adapterState'].state.fromDevRev = {
+    a['adapterState'].sdkState.fromDevRev = {
       filesToLoad: [
         {
           id: 'artifact-1',
@@ -485,7 +473,7 @@ describe(`${WorkerAdapter.name}.loadAttachments — timeout, transformer errors,
 
   it('should emit AttachmentLoadingError on transformer file error', async () => {
     // Arrange
-    adapter['adapterState'].state.fromDevRev = {
+    adapter['adapterState'].sdkState.fromDevRev = {
       filesToLoad: [
         {
           id: 'bad-artifact',
@@ -559,8 +547,8 @@ describe(`${WorkerAdapter.name}.loadAttachments — timeout, transformer errors,
   });
 });
 
-describe(`${WorkerAdapter.name}.loadAttachments — additional branches`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${LoadingAdapter.name}.loadAttachments — additional branches`, () => {
+  let adapter: LoadingAdapter<TestState>;
   let emitSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -575,7 +563,7 @@ describe(`${WorkerAdapter.name}.loadAttachments — additional branches`, () => 
 
   it('should return immediately with empty reports when fromDevRev is not set', async () => {
     // Arrange
-    adapter['adapterState'].state.fromDevRev = undefined;
+    adapter['adapterState'].sdkState.fromDevRev = undefined;
 
     // Act
     const result = await adapter.loadAttachments({ create: jest.fn() });
@@ -587,7 +575,7 @@ describe(`${WorkerAdapter.name}.loadAttachments — additional branches`, () => 
 
   it('should emit AttachmentLoadingDelayed and stop the loop when the connector signals a rate-limit delay', async () => {
     // Arrange
-    adapter['adapterState'].state.fromDevRev = {
+    adapter['adapterState'].sdkState.fromDevRev = {
       filesToLoad: [
         {
           id: 'art-1',
@@ -635,8 +623,8 @@ describe(`${WorkerAdapter.name}.loadAttachments — additional branches`, () => 
   });
 });
 
-describe(`${WorkerAdapter.name}.loadAttachment`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${LoadingAdapter.name}.loadAttachment`, () => {
+  let adapter: LoadingAdapter<TestState>;
 
   beforeEach(() => {
     jest.clearAllMocks();

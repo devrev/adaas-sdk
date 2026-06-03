@@ -41,9 +41,6 @@ export {
   RepoInterface,
 } from '../repo/repo.interfaces';
 
-// State
-export { AdapterState } from '../state/state.interfaces';
-
 export { UNBOUNDED_DATE_TIME_VALUE } from '../common/constants';
 
 // Uploader

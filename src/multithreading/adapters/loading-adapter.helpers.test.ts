@@ -8,7 +8,7 @@ import {
 import {
   addReportToLoaderReport,
   getFilesToLoad,
-} from './worker-adapter.helpers';
+} from './loading-adapter.helpers';
 
 describe(getFilesToLoad.name, () => {
   let statsFile: StatsFileObject[];

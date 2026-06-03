@@ -1,15 +1,14 @@
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
-import { State } from '../../state/state';
+import { ExtractionState } from '../../state/extraction-state';
 import { mockServer } from '../../tests/jest.setup';
 import { createMockEvent } from '../../common/test-utils';
 import {
-  AdapterState,
   AirSyncEvent,
   Artifact,
   EventType,
   ExtractorEventType,
 } from '../../types';
-import { WorkerAdapter } from './worker-adapter';
+import { ExtractionAdapter } from './extraction-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 
@@ -34,42 +33,43 @@ interface TestState {
 }
 
 function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
-  adapter: WorkerAdapter<TestState>;
+  adapter: ExtractionAdapter<TestState>;
   event: AirSyncEvent;
-  adapterState: State<TestState>;
+  adapterState: ExtractionState<TestState>;
 } {
   const event = createMockEvent(mockServer.baseUrl, {
     payload: { event_type: eventType },
   });
-  const initialState: AdapterState<TestState> = {
+  const initialState: TestState = {
     attachments: { completed: false },
-    snapInVersionId: '',
-    toDevRev: {
-      attachmentsMetadata: {
-        artifactIds: [],
-        lastProcessed: 0,
-        lastProcessedAttachmentsIdsList: [],
-      },
+  };
+  const adapterState = new ExtractionState<TestState>({ event, initialState });
+  adapterState.sdkState.snapInVersionId = '';
+  adapterState.sdkState.toDevRev = {
+    attachmentsMetadata: {
+      artifactIds: [],
+      lastProcessed: 0,
+      lastProcessedAttachmentsIdsList: [],
     },
   };
-  const adapterState = new State<TestState>({ event, initialState });
-  const adapter = new WorkerAdapter<TestState>({ event, adapterState });
+  const adapter = new ExtractionAdapter<TestState>({ event, adapterState });
   return { adapter, event, adapterState };
 }
 
-describe(`${WorkerAdapter.name}.streamAttachments`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${ExtractionAdapter.name}.streamAttachments`, () => {
+  let adapter: ExtractionAdapter<TestState>;
+  let adapterState: ExtractionState<TestState>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    ({ adapter } = makeAdapter());
+    ({ adapter, adapterState } = makeAdapter());
   });
 
   it('should process all artifact batches successfully', async () => {
     // Arrange
     const mockStream = jest.fn();
 
-    adapter.state.toDevRev = {
+    adapterState.sdkState.toDevRev = {
       attachmentsMetadata: {
         artifactIds: ['artifact1', 'artifact2'],
         lastProcessed: 0,
@@ -122,8 +122,12 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
       adapter['uploader'].getAttachmentsFromArtifactId
     ).toHaveBeenCalledTimes(2);
 
-    expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([]);
-    expect(adapter.state.toDevRev.attachmentsMetadata.lastProcessed).toBe(0);
+    expect(
+      adapterState.sdkState.toDevRev.attachmentsMetadata.artifactIds
+    ).toEqual([]);
+    expect(
+      adapterState.sdkState.toDevRev.attachmentsMetadata.lastProcessed
+    ).toBe(0);
     expect(result).toBeUndefined();
   });
 
@@ -131,7 +135,7 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
     // Arrange
     const mockStream = jest.fn();
 
-    adapter.state.toDevRev = {
+    adapterState.sdkState.toDevRev = {
       attachmentsMetadata: {
         artifactIds: ['artifact1'],
         lastProcessed: 0,
@@ -168,7 +172,7 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
     // Arrange
     const mockStream = jest.fn();
 
-    adapter.state.toDevRev = {
+    adapterState.sdkState.toDevRev = {
       attachmentsMetadata: {
         artifactIds: ['artifact1'],
         lastProcessed: 0,
@@ -205,7 +209,7 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
     // Arrange
     const mockStream = jest.fn();
 
-    adapter.state.toDevRev = {
+    adapterState.sdkState.toDevRev = {
       attachmentsMetadata: {
         artifactIds: [],
         lastProcessed: 0,
@@ -225,7 +229,7 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
     // Arrange
     const mockStream = jest.fn();
 
-    adapter.state.toDevRev = {
+    adapterState.sdkState.toDevRev = {
       attachmentsMetadata: {
         artifactIds: ['artifact1'],
         lastProcessed: 0,
@@ -257,7 +261,7 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
     // Arrange
     const mockStream = jest.fn();
 
-    adapter.state.toDevRev = {
+    adapterState.sdkState.toDevRev = {
       attachmentsMetadata: {
         artifactIds: ['artifact1'],
         lastProcessed: 0,
@@ -279,7 +283,9 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
     });
 
     // Assert
-    expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([]);
+    expect(
+      adapterState.sdkState.toDevRev.attachmentsMetadata.artifactIds
+    ).toEqual([]);
     expect(result).toBeUndefined();
   });
 
@@ -289,7 +295,7 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
     const mockReducer = jest.fn().mockReturnValue(['custom-reduced']);
     const mockIterator = jest.fn().mockResolvedValue({});
 
-    adapter.state.toDevRev = {
+    adapterState.sdkState.toDevRev = {
       attachmentsMetadata: {
         artifactIds: ['artifact1'],
         lastProcessed: 0,
@@ -336,7 +342,7 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
       streamAll: jest.fn().mockResolvedValue({ delay: 30 }),
     }));
 
-    adapter.state.toDevRev = {
+    adapterState.sdkState.toDevRev = {
       attachmentsMetadata: {
         artifactIds: ['artifact1'],
         lastProcessed: 0,
@@ -359,9 +365,9 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
 
     // Assert
     expect(result).toEqual({ delay: 30 });
-    expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([
-      'artifact1',
-    ]);
+    expect(
+      adapterState.sdkState.toDevRev.attachmentsMetadata.artifactIds
+    ).toEqual(['artifact1']);
   });
 
   it('should handle error from iterator', async () => {
@@ -374,7 +380,7 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
       }),
     }));
 
-    adapter.state.toDevRev = {
+    adapterState.sdkState.toDevRev = {
       attachmentsMetadata: {
         artifactIds: ['artifact1'],
         lastProcessed: 0,
@@ -397,9 +403,9 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
 
     // Assert
     expect(result).toEqual({ error: 'Mock error' });
-    expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([
-      'artifact1',
-    ]);
+    expect(
+      adapterState.sdkState.toDevRev.attachmentsMetadata.artifactIds
+    ).toEqual(['artifact1']);
   });
 
   it('should emit progress event and exit process on timeout, preserving state for resumption', async () => {
@@ -410,7 +416,7 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
       .spyOn(process, 'exit')
       .mockImplementation(() => undefined as never);
 
-    adapter.state.toDevRev = {
+    adapterState.sdkState.toDevRev = {
       attachmentsMetadata: {
         artifactIds: ['artifact1', 'artifact2', 'artifact3'],
         lastProcessed: 0,
@@ -452,11 +458,9 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
       ExtractorEventType.AttachmentExtractionProgress
     );
     expect(exitSpy).toHaveBeenCalledWith(0);
-    expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([
-      'artifact1',
-      'artifact2',
-      'artifact3',
-    ]);
+    expect(
+      adapterState.sdkState.toDevRev.attachmentsMetadata.artifactIds
+    ).toEqual(['artifact1', 'artifact2', 'artifact3']);
     expect(
       adapter['uploader'].getAttachmentsFromArtifactId
     ).toHaveBeenCalledTimes(1);
@@ -473,7 +477,7 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
       .spyOn(process, 'exit')
       .mockImplementation(() => undefined as never);
 
-    adapter.state.toDevRev = {
+    adapterState.sdkState.toDevRev = {
       attachmentsMetadata: {
         artifactIds: ['artifact1', 'artifact2', 'artifact3'],
         lastProcessed: 0,
@@ -524,10 +528,9 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
     expect(exitSpy).toHaveBeenCalledWith(0);
     // - Artifact 1 was shifted out cleanly; artifact 2 remains (timeout caught
     //   before its shift) along with the untouched artifact 3
-    expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toEqual([
-      'artifact2',
-      'artifact3',
-    ]);
+    expect(
+      adapterState.sdkState.toDevRev.attachmentsMetadata.artifactIds
+    ).toEqual(['artifact2', 'artifact3']);
 
     exitSpy.mockRestore();
   });
@@ -535,7 +538,7 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
   it('should reset lastProcessed and attachment IDs list after processing all artifacts', async () => {
     // Arrange
     const mockStream = jest.fn();
-    adapter.state.toDevRev = {
+    adapterState.sdkState.toDevRev = {
       attachmentsMetadata: {
         artifactIds: ['artifact1'],
         lastProcessed: 0,
@@ -575,15 +578,17 @@ describe(`${WorkerAdapter.name}.streamAttachments`, () => {
     });
 
     // Assert
-    expect(adapter.state.toDevRev.attachmentsMetadata.artifactIds).toHaveLength(
-      0
-    );
-    expect(adapter.state.toDevRev.attachmentsMetadata.lastProcessed).toBe(0);
+    expect(
+      adapterState.sdkState.toDevRev.attachmentsMetadata.artifactIds
+    ).toHaveLength(0);
+    expect(
+      adapterState.sdkState.toDevRev.attachmentsMetadata.lastProcessed
+    ).toBe(0);
   });
 });
 
-describe(`${WorkerAdapter.name}.processAttachment`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${ExtractionAdapter.name}.processAttachment`, () => {
+  let adapter: ExtractionAdapter<TestState>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -853,7 +858,7 @@ describe(`${WorkerAdapter.name}.processAttachment`, () => {
   });
 });
 
-describe(`${WorkerAdapter.name}.initializeRepos — event size threshold`, () => {
+describe(`${ExtractionAdapter.name}.initializeRepos — event size threshold`, () => {
   it('should set isTimeout=true once the cumulative artifact payload exceeds EVENT_SIZE_THRESHOLD_BYTES', () => {
     // Arrange
     const { adapter } = makeAdapter();
@@ -881,7 +886,7 @@ describe(`${WorkerAdapter.name}.initializeRepos — event size threshold`, () =>
   });
 });
 
-describe(`${WorkerAdapter.name}.getRepo`, () => {
+describe(`${ExtractionAdapter.name}.getRepo`, () => {
   it('should return undefined when the requested repo was never initialised', () => {
     // Arrange
     const { adapter } = makeAdapter();
@@ -894,8 +899,8 @@ describe(`${WorkerAdapter.name}.getRepo`, () => {
   });
 });
 
-describe(`${WorkerAdapter.name}.destroyHttpStream`, () => {
-  let adapter: WorkerAdapter<TestState>;
+describe(`${ExtractionAdapter.name}.destroyHttpStream`, () => {
+  let adapter: ExtractionAdapter<TestState>;
 
   beforeEach(() => {
     ({ adapter } = makeAdapter());
@@ -962,7 +967,7 @@ describe(`${WorkerAdapter.name}.destroyHttpStream`, () => {
   });
 });
 
-describe(`${WorkerAdapter.name} — extractionScope`, () => {
+describe(`${ExtractionAdapter.name} — extractionScope`, () => {
   it('should return empty object by default', () => {
     const { adapter } = makeAdapter();
     expect(adapter.extractionScope).toEqual({});
@@ -985,7 +990,7 @@ describe(`${WorkerAdapter.name} — extractionScope`, () => {
   });
 });
 
-describe(`${WorkerAdapter.name} — shouldExtract`, () => {
+describe(`${ExtractionAdapter.name} — shouldExtract`, () => {
   it('should return true when extraction scope is empty', () => {
     const { adapter } = makeAdapter();
     expect(adapter.shouldExtract('tasks')).toBe(true);

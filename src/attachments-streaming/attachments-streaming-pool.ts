@@ -1,6 +1,6 @@
 import { sleep } from '../common/helpers';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
-import { ProcessedAttachment } from '../state/state.interfaces';
+import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
+import { ProcessedAttachment, ToDevRev } from '../state/state.interfaces';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
@@ -9,8 +9,9 @@ import {
 import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 
 export class AttachmentsStreamingPool<ConnectorState> {
-  private adapter: WorkerAdapter<ConnectorState>;
+  private adapter: ExtractionAdapter<ConnectorState>;
   private attachments: NormalizedAttachment[];
+  private attachmentsMetadata: ToDevRev['attachmentsMetadata'] | undefined;
   private batchSize: number;
   private delay: number | undefined;
   private stream: ExternalSystemAttachmentStreamingFunction;
@@ -21,11 +22,13 @@ export class AttachmentsStreamingPool<ConnectorState> {
   constructor({
     adapter,
     attachments,
+    attachmentsMetadata,
     batchSize = 10,
     stream,
   }: AttachmentsStreamingPoolParams<ConnectorState>) {
     this.adapter = adapter;
     this.attachments = [...attachments]; // Create a copy we can mutate
+    this.attachmentsMetadata = attachmentsMetadata;
     this.batchSize = batchSize;
     this.delay = undefined;
     this.stream = stream;
@@ -74,7 +77,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
       `Starting download of ${this.attachments.length} attachments, streaming ${this.batchSize} at once.`
     );
 
-    if (!this.adapter.state.toDevRev) {
+    if (!this.attachmentsMetadata) {
       const error = new Error('toDevRev state is not initialized');
       console.error(error);
       return { error };
@@ -82,19 +85,14 @@ export class AttachmentsStreamingPool<ConnectorState> {
 
     // Get the list of successfully processed attachments in previous (possibly incomplete) batch extraction.
     // If no such list exists, create an empty one.
-    if (
-      !this.adapter.state.toDevRev.attachmentsMetadata
-        .lastProcessedAttachmentsIdsList
-    ) {
-      this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList =
-        [];
+    if (!this.attachmentsMetadata.lastProcessedAttachmentsIdsList) {
+      this.attachmentsMetadata.lastProcessedAttachmentsIdsList = [];
     }
 
     // Migrate old processed attachments to the new format.
-    this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList =
+    this.attachmentsMetadata.lastProcessedAttachmentsIdsList =
       this.migrateProcessedAttachments(
-        this.adapter.state.toDevRev.attachmentsMetadata
-          .lastProcessedAttachmentsIdsList
+        this.attachmentsMetadata.lastProcessedAttachmentsIdsList
       );
 
     // Start initial batch of promises up to batchSize limit
@@ -139,8 +137,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
       }
 
       if (
-        this.adapter.state.toDevRev &&
-        this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList?.some(
+        this.attachmentsMetadata?.lastProcessedAttachmentsIdsList?.some(
           (it) => it.id == attachment.id && it.parent_id == attachment.parent_id
         )
       ) {
@@ -179,13 +176,11 @@ export class AttachmentsStreamingPool<ConnectorState> {
         }
 
         // No rate limiting, process normally
-        if (
-          this.adapter.state.toDevRev?.attachmentsMetadata
-            ?.lastProcessedAttachmentsIdsList
-        ) {
-          this.adapter.state.toDevRev?.attachmentsMetadata.lastProcessedAttachmentsIdsList.push(
-            { id: attachment.id, parent_id: attachment.parent_id }
-          );
+        if (this.attachmentsMetadata?.lastProcessedAttachmentsIdsList) {
+          this.attachmentsMetadata.lastProcessedAttachmentsIdsList.push({
+            id: attachment.id,
+            parent_id: attachment.parent_id,
+          });
         }
 
         await this.updateProgress();

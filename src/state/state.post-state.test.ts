@@ -1,7 +1,7 @@
 import { mockServer } from '../tests/jest.setup';
 import { createMockEvent } from '../common/test-utils';
 import { EventType } from '../types/extraction';
-import { State, createAdapterState } from './state';
+import { ExtractionState, createExtractionState } from './extraction-state';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 
@@ -14,8 +14,8 @@ describe('State.postState', () => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
 
-    postStateSpy = jest.spyOn(State.prototype, 'postState');
-    fetchStateSpy = jest.spyOn(State.prototype, 'fetchState');
+    postStateSpy = jest.spyOn(ExtractionState.prototype, 'postState');
+    fetchStateSpy = jest.spyOn(ExtractionState.prototype, 'fetchState');
     processExitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {
       throw new Error('process.exit called');
     });
@@ -37,7 +37,7 @@ describe('State.postState', () => {
 
     postStateSpy.mockRestore();
 
-    const adapterState = await createAdapterState({
+    const adapterState = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},
@@ -51,11 +51,15 @@ describe('State.postState', () => {
     expect(requests).toHaveLength(1);
 
     const body = requests[0].body as { state: string };
-    // Body must contain the stringified state, preserving the original fields
+    // Body must contain the stringified v2 envelope: connector state and SDK
+    // bookkeeping stored as disjoint sub-objects.
     expect(typeof body.state).toBe('string');
-    const parsed = JSON.parse(body.state) as Record<string, unknown>;
-    expect(parsed.foo).toBe('bar');
-    expect(parsed.snapInVersionId).toBe('1.0.0');
+    const parsed = JSON.parse(body.state) as {
+      connectorState: Record<string, unknown>;
+      sdkState: Record<string, unknown>;
+    };
+    expect(parsed.connectorState.foo).toBe('bar');
+    expect(parsed.sdkState.snapInVersionId).toBe('1.0.0');
   });
 
   it('should exit(1) when postState HTTP request fails', async () => {
@@ -70,7 +74,7 @@ describe('State.postState', () => {
 
     postStateSpy.mockRestore();
 
-    const adapterState = await createAdapterState({
+    const adapterState = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},

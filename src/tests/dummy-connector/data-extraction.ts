@@ -1,7 +1,7 @@
 import {
   ExtractorEventType,
   NormalizedItem,
-  processTask,
+  processExtractionTask,
   RepoInterface,
 } from '../../index';
 
@@ -25,7 +25,7 @@ const repos: RepoInterface[] = [
   },
 ];
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     adapter.initializeRepos(repos);
 

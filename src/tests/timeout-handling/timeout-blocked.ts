@@ -1,6 +1,6 @@
-import { ExtractorEventType, processTask } from '../../index';
+import { ExtractorEventType, processExtractionTask } from '../../index';
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     // Simple CPU-intensive nested loops that block the event loop
     let result = 0;
