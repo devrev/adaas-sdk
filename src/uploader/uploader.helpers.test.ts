@@ -230,8 +230,6 @@ describe('uploader.helpers', () => {
   });
 
   describe(computeArtifactDateRanges.name, () => {
-    const emptyRange = { min: 0, max: 0 };
-
     it('should compute min and max across multiple items', () => {
       // Arrange
       const items = [
@@ -253,14 +251,18 @@ describe('uploader.helpers', () => {
       const result = computeArtifactDateRanges(items);
 
       // Assert
-      expect(result.created_date).toEqual({
-        min: Date.parse('2020-01-01T00:00:00.000Z'),
-        max: Date.parse('2022-03-15T12:00:00.000Z'),
-      });
-      expect(result.modified_date).toEqual({
-        min: Date.parse('2020-12-31T23:59:59.000Z'),
-        max: Date.parse('2021-06-01T00:00:00.000Z'),
-      });
+      expect(result.oldest_created_date).toBe(
+        Date.parse('2020-01-01T00:00:00.000Z')
+      );
+      expect(result.newest_created_date).toBe(
+        Date.parse('2022-03-15T12:00:00.000Z')
+      );
+      expect(result.oldest_modified_date).toBe(
+        Date.parse('2020-12-31T23:59:59.000Z')
+      );
+      expect(result.newest_modified_date).toBe(
+        Date.parse('2021-06-01T00:00:00.000Z')
+      );
     });
 
     it('should return zeros when no items have date fields', () => {
@@ -274,8 +276,7 @@ describe('uploader.helpers', () => {
       const result = computeArtifactDateRanges(items);
 
       // Assert
-      expect(result.created_date).toEqual(emptyRange);
-      expect(result.modified_date).toEqual(emptyRange);
+      expect(result).toEqual({});
     });
 
     it('should aggregate only fields that are present on items', () => {
@@ -297,14 +298,18 @@ describe('uploader.helpers', () => {
       const result = computeArtifactDateRanges(items);
 
       // Assert
-      expect(result.created_date).toEqual({
-        min: Date.parse('2021-01-01T00:00:00.000Z'),
-        max: Date.parse('2021-01-01T00:00:00.000Z'),
-      });
-      expect(result.modified_date).toEqual({
-        min: Date.parse('2023-01-01T00:00:00.000Z'),
-        max: Date.parse('2023-01-01T00:00:00.000Z'),
-      });
+      expect(result.oldest_created_date).toBe(
+        Date.parse('2021-01-01T00:00:00.000Z')
+      );
+      expect(result.newest_created_date).toBe(
+        Date.parse('2021-01-01T00:00:00.000Z')
+      );
+      expect(result.oldest_modified_date).toBe(
+        Date.parse('2023-01-01T00:00:00.000Z')
+      );
+      expect(result.newest_modified_date).toBe(
+        Date.parse('2023-01-01T00:00:00.000Z')
+      );
     });
 
     it('should handle single object input', () => {
@@ -321,8 +326,10 @@ describe('uploader.helpers', () => {
 
       // Assert
       const ts = Date.parse('2019-05-10T08:30:00.000Z');
-      expect(result.created_date).toEqual({ min: ts, max: ts });
-      expect(result.modified_date).toEqual({ min: ts, max: ts });
+      expect(result.oldest_created_date).toBe(ts);
+      expect(result.newest_created_date).toBe(ts);
+      expect(result.oldest_modified_date).toBe(ts);
+      expect(result.newest_modified_date).toBe(ts);
     });
 
     it('[edge] should skip non-object entries in an array', () => {
@@ -342,10 +349,10 @@ describe('uploader.helpers', () => {
       const result = computeArtifactDateRanges(items);
 
       // Assert
-      expect(result.created_date!.min).toBe(
+      expect(result.oldest_created_date).toBe(
         Date.parse('2024-01-01T00:00:00.000Z')
       );
-      expect(result.created_date!.max).toBe(
+      expect(result.newest_created_date).toBe(
         Date.parse('2024-01-01T00:00:00.000Z')
       );
     });

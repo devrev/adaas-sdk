@@ -23,8 +23,10 @@ export interface Artifact {
   id: string;
   item_type: string;
   item_count: number;
-  created_date?: { min: number; max: number };
-  modified_date?: { min: number; max: number };
+  oldest_created_date?: number;
+  newest_created_date?: number;
+  oldest_modified_date?: number;
+  newest_modified_date?: number;
 }
 
 /**

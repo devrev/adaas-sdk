@@ -81,14 +81,12 @@ describe(Uploader.name, () => {
           id: 'art_123',
           item_type: itemType,
           item_count: 2,
-          created_date: { min: 0, max: 0 },
-          modified_date: { min: 0, max: 0 },
         },
       });
       expect(result.error).toBeUndefined();
     });
 
-    it('should compute created_date and modified_date min/max from normalized items', async () => {
+    it('should compute oldest/newest created and modified dates from normalized items', async () => {
       // Arrange
       const itemType = 'tasks';
       const fetchedObjects = [
@@ -115,14 +113,18 @@ describe(Uploader.name, () => {
       const result = await uploader.upload(itemType, fetchedObjects);
 
       // Assert
-      expect(result.artifact?.created_date).toEqual({
-        min: Date.parse('2019-03-01T08:00:00.000Z'),
-        max: Date.parse('2020-06-15T10:00:00.000Z'),
-      });
-      expect(result.artifact?.modified_date).toEqual({
-        min: Date.parse('2021-01-20T10:00:00.000Z'),
-        max: Date.parse('2022-11-30T18:00:00.000Z'),
-      });
+      expect(result.artifact?.oldest_created_date).toBe(
+        Date.parse('2019-03-01T08:00:00.000Z')
+      );
+      expect(result.artifact?.newest_created_date).toBe(
+        Date.parse('2020-06-15T10:00:00.000Z')
+      );
+      expect(result.artifact?.oldest_modified_date).toBe(
+        Date.parse('2021-01-20T10:00:00.000Z')
+      );
+      expect(result.artifact?.newest_modified_date).toBe(
+        Date.parse('2022-11-30T18:00:00.000Z')
+      );
       expect(result.error).toBeUndefined();
     });
 
@@ -147,14 +149,10 @@ describe(Uploader.name, () => {
       // Assert
       const createdTs = Date.parse('2018-12-25T00:00:00.000Z');
       const modifiedTs = Date.parse('2018-12-26T00:00:00.000Z');
-      expect(result.artifact?.created_date).toEqual({
-        min: createdTs,
-        max: createdTs,
-      });
-      expect(result.artifact?.modified_date).toEqual({
-        min: modifiedTs,
-        max: modifiedTs,
-      });
+      expect(result.artifact?.oldest_created_date).toBe(createdTs);
+      expect(result.artifact?.newest_created_date).toBe(createdTs);
+      expect(result.artifact?.oldest_modified_date).toBe(modifiedTs);
+      expect(result.artifact?.newest_modified_date).toBe(modifiedTs);
     });
 
     it('should report item_count as 1 when uploading single object', async () => {

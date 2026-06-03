@@ -9,15 +9,21 @@ import {
 import { NormalizedItem } from '../repo/repo.interfaces';
 import { Artifact, UploaderResult } from './uploader.interfaces';
 
-const EMPTY_DATE_RANGE = { min: 0, max: 0 };
+type ArtifactDateRanges = Pick<
+  Artifact,
+  | 'oldest_created_date'
+  | 'newest_created_date'
+  | 'oldest_modified_date'
+  | 'newest_modified_date'
+>;
 
 /**
- * Computes min/max created and modified timestamps (epoch ms) across uploaded items.
+ * Computes oldest/newest created and modified timestamps (epoch ms) across uploaded items.
  * @param fetchedObjects - Single object or array of objects (e.g. NormalizedItem[])
  */
 export function computeArtifactDateRanges(
   fetchedObjects: object[] | object
-): Pick<Artifact, 'created_date' | 'modified_date'> {
+): ArtifactDateRanges {
   const items = Array.isArray(fetchedObjects)
     ? fetchedObjects
     : [fetchedObjects];
@@ -60,10 +66,18 @@ export function computeArtifactDateRanges(
     }
   }
 
-  return {
-    created_date: hasCreated ? created : { ...EMPTY_DATE_RANGE },
-    modified_date: hasModified ? modified : { ...EMPTY_DATE_RANGE },
-  };
+  const result: ArtifactDateRanges = {};
+
+  if (hasCreated) {
+    result.oldest_created_date = created.min;
+    result.newest_created_date = created.max;
+  }
+  if (hasModified) {
+    result.oldest_modified_date = modified.min;
+    result.newest_modified_date = modified.max;
+  }
+
+  return result;
 }
 
 /**

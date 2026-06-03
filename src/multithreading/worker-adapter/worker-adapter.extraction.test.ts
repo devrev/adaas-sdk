@@ -876,8 +876,6 @@ describe(`${WorkerAdapter.name}.initializeRepos — event size threshold`, () =>
       id: 'artifact-x',
       item_count: 1,
       item_type: 'x'.repeat(200_000),
-      created_date: { min: 0, max: 0 },
-      modified_date: { min: 0, max: 0 },
     });
 
     // Assert

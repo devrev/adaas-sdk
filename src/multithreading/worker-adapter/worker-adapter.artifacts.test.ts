@@ -15,8 +15,6 @@ const mockUpload = (itemType: string, objects: object[]) => {
       id: `artifact-${itemType}-${Math.random().toString(36).substring(2, 15)}`,
       item_type: itemType,
       item_count: objects.length,
-      created_date: { min: 0, max: 0 },
-      modified_date: { min: 0, max: 0 },
     },
   };
 };
