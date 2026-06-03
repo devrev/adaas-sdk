@@ -41,7 +41,7 @@ describe('size-limit-1: SQS size limit early exit', () => {
     expect(firstArtifact).toHaveProperty('id');
     expect(firstArtifact).toHaveProperty('item_type');
     expect(firstArtifact).toHaveProperty('item_count');
-    expect(Object.keys(firstArtifact || {}).length).toBe(3);
+    expect(Object.keys(firstArtifact || {}).length).toBe(5);
 
     // Verify the total size of all artifact metadata exceeds the 160KB threshold
     const totalArtifactsSize = Buffer.byteLength(
