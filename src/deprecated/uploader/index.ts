@@ -76,6 +76,8 @@ export class Uploader {
       id: preparedArtifact.id,
       item_type: entity,
       item_count: itemCount,
+      created_date: {min: 0, max: 0},
+      modified_date: {min: 0, max: 0},
     };
 
     console.log(`Artifact uploaded successfully: ${artifact.id}`);
