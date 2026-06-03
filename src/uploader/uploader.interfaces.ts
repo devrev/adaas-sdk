@@ -23,6 +23,8 @@ export interface Artifact {
   id: string;
   item_type: string;
   item_count: number;
+  created_date: { min: number; max: number };
+  modified_date: { min: number; max: number };
 }
 
 /**

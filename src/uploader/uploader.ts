@@ -4,11 +4,12 @@ import { jsonl } from 'js-jsonl';
 import { axiosClient } from '../http/axios-client-internal';
 
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
-import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { serializeError } from '../logger/logger';
+import { NormalizedAttachment } from '../repo/repo.interfaces';
 
 import {
   compressGzip,
+  computeArtifactDateRanges,
   decompressGzip,
   downloadToLocal,
   parseJsonl,
@@ -116,11 +117,14 @@ export class Uploader {
       }
     }
 
+    const dates = computeArtifactDateRanges(fetchedObjects);
+
     // Return the artifact information to the platform
     const artifact: Artifact = {
       id: preparedArtifact!.artifact_id,
       item_type: itemType,
       item_count: Array.isArray(fetchedObjects) ? fetchedObjects.length : 1,
+      ...dates,
     };
 
     return { artifact };

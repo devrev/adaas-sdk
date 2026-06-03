@@ -1,7 +1,7 @@
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
+import { createMockEvent } from '../../common/test-utils';
 import { State } from '../../state/state';
 import { mockServer } from '../../tests/jest.setup';
-import { createMockEvent } from '../../common/test-utils';
 import {
   AdapterState,
   AirdropEvent,
@@ -876,6 +876,8 @@ describe(`${WorkerAdapter.name}.initializeRepos — event size threshold`, () =>
       id: 'artifact-x',
       item_count: 1,
       item_type: 'x'.repeat(200_000),
+      created_date: { min: 0, max: 0 },
+      modified_date: { min: 0, max: 0 },
     });
 
     // Assert

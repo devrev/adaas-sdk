@@ -6,7 +6,65 @@ import {
   MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
   MAX_DEVREV_FILENAME_LENGTH,
 } from '../common/constants';
-import { UploaderResult } from './uploader.interfaces';
+import { NormalizedItem } from '../repo/repo.interfaces';
+import { Artifact, UploaderResult } from './uploader.interfaces';
+
+const EMPTY_DATE_RANGE = { min: 0, max: 0 };
+
+/**
+ * Computes min/max created and modified timestamps (epoch ms) across uploaded items.
+ * @param fetchedObjects - Single object or array of objects (e.g. NormalizedItem[])
+ */
+export function computeArtifactDateRanges(
+  fetchedObjects: object[] | object
+): Pick<Artifact, 'created_date' | 'modified_date'> {
+  const items = Array.isArray(fetchedObjects)
+    ? fetchedObjects
+    : [fetchedObjects];
+
+  const created = {
+    min: Number.POSITIVE_INFINITY,
+    max: Number.NEGATIVE_INFINITY,
+  };
+  const modified = {
+    min: Number.POSITIVE_INFINITY,
+    max: Number.NEGATIVE_INFINITY,
+  };
+  let hasCreated = false;
+  let hasModified = false;
+
+  for (const obj of items) {
+    if (!obj || typeof obj !== 'object') {
+      continue;
+    }
+    const item = obj as NormalizedItem;
+    if (item.created_date != undefined) {
+      const ts = new Date(item.created_date).getTime();
+      if (ts < created.min) {
+        created.min = ts;
+      }
+      if (ts > created.max) {
+        created.max = ts;
+      }
+      hasCreated = true;
+    }
+    if (item.modified_date != undefined) {
+      const ts = new Date(item.modified_date).getTime();
+      if (ts < modified.min) {
+        modified.min = ts;
+      }
+      if (ts > modified.max) {
+        modified.max = ts;
+      }
+      hasModified = true;
+    }
+  }
+
+  return {
+    created_date: hasCreated ? created : { ...EMPTY_DATE_RANGE },
+    modified_date: hasModified ? modified : { ...EMPTY_DATE_RANGE },
+  };
+}
 
 /**
  * Compresses a JSONL string using gzip compression.

@@ -1,8 +1,8 @@
 import { AirSyncDefaultItemTypes } from '../../common/constants';
+import { createMockEvent } from '../../common/test-utils';
 import { State } from '../../state/state';
 import { mockServer } from '../../tests/jest.setup';
 import { createItems } from '../../tests/test-helpers';
-import { createMockEvent } from '../../common/test-utils';
 import { Artifact, EventType } from '../../types';
 import { ExternalSyncUnit } from '../../types/extraction';
 import { WorkerAdapter } from './worker-adapter';
@@ -15,6 +15,8 @@ const mockUpload = (itemType: string, objects: object[]) => {
       id: `artifact-${itemType}-${Math.random().toString(36).substring(2, 15)}`,
       item_type: itemType,
       item_count: objects.length,
+      created_date: { min: 0, max: 0 },
+      modified_date: { min: 0, max: 0 },
     },
   };
 };
