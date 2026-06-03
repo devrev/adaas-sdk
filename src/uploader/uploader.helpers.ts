@@ -7,15 +7,11 @@ import {
   MAX_DEVREV_FILENAME_LENGTH,
 } from '../common/constants';
 import { NormalizedItem } from '../repo/repo.interfaces';
-import { Artifact, UploaderResult } from './uploader.interfaces';
-
-type ArtifactDateRanges = Pick<
-  Artifact,
-  | 'oldest_created_date'
-  | 'newest_created_date'
-  | 'oldest_modified_date'
-  | 'newest_modified_date'
->;
+import {
+  ArtifactDateField,
+  ArtifactDateRanges,
+  UploaderResult,
+} from './uploader.interfaces';
 
 /**
  * Computes oldest/newest created and modified timestamps (epoch ms) across uploaded items.
@@ -69,12 +65,12 @@ export function computeArtifactDateRanges(
   const result: ArtifactDateRanges = {};
 
   if (hasCreated) {
-    result.oldest_created_date = created.min;
-    result.newest_created_date = created.max;
+    result[ArtifactDateField.OldestCreatedDate] = created.min;
+    result[ArtifactDateField.NewestCreatedDate] = created.max;
   }
   if (hasModified) {
-    result.oldest_modified_date = modified.min;
-    result.newest_modified_date = modified.max;
+    result[ArtifactDateField.OldestModifiedDate] = modified.min;
+    result[ArtifactDateField.NewestModifiedDate] = modified.max;
   }
 
   return result;

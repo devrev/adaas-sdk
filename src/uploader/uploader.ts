@@ -117,14 +117,14 @@ export class Uploader {
       }
     }
 
-    const dates = computeArtifactDateRanges(fetchedObjects);
+    const artifactDateRanges = computeArtifactDateRanges(fetchedObjects);
 
     // Return the artifact information to the platform
     const artifact: Artifact = {
       id: preparedArtifact!.artifact_id,
       item_type: itemType,
       item_count: Array.isArray(fetchedObjects) ? fetchedObjects.length : 1,
-      ...dates,
+      ...artifactDateRanges,
     };
 
     return { artifact };
