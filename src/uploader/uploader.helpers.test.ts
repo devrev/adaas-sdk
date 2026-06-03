@@ -342,10 +342,10 @@ describe('uploader.helpers', () => {
       const result = computeArtifactDateRanges(items);
 
       // Assert
-      expect(result.created_date.min).toBe(
+      expect(result.created_date!.min).toBe(
         Date.parse('2024-01-01T00:00:00.000Z')
       );
-      expect(result.created_date.max).toBe(
+      expect(result.created_date!.max).toBe(
         Date.parse('2024-01-01T00:00:00.000Z')
       );
     });
