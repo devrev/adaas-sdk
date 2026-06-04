@@ -60,6 +60,7 @@ import { Uploader } from '../../uploader/uploader';
 import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
 import { translateOutgoingEventType } from '../../common/event-type-translation';
 import { truncateMessage } from '../../common/helpers';
+import { getTimeoutErrorEventType } from '../spawn/spawn.helpers';
 
 function toRfc3339Timestamp(ms: number): string | undefined {
   if (!Number.isFinite(ms) || ms === 0) {
@@ -302,8 +303,7 @@ export class WorkerAdapter<ConnectorState> {
         await this.uploadAllRepos();
       } catch (error) {
         console.error('Error while uploading repos', error);
-        parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
-        this.hasWorkerEmitted = true;
+        await this.emitUploadFailureError(error);
         return;
       }
 
@@ -450,11 +450,70 @@ export class WorkerAdapter<ConnectorState> {
 
   async uploadAllRepos(): Promise<void> {
     for (const repo of this.repos) {
-      const error = await repo.upload();
+      await repo.upload();
       this.artifacts.push(...repo.uploadedArtifacts);
-      if (error) {
-        throw error;
+    }
+  }
+
+  /**
+   * Emits the extraction/loading error event for the current worker phase after
+   * a repo upload failure, without re-running uploadAllRepos.
+   */
+  private async emitUploadFailureError(uploadError: unknown): Promise<void> {
+    const { eventType } = getTimeoutErrorEventType(
+      this.event.payload.event_type
+    );
+    const errorMessage = truncateMessage(serializeError(uploadError));
+
+    if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
+      console.log(
+        `Saving state before emitting upload failure event with event type: ${eventType}.`
+      );
+
+      try {
+        await this.adapterState.postState(this.state);
+      } catch (error) {
+        console.error('Error while posting state', error);
+        parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+        this.hasWorkerEmitted = true;
+        return;
       }
+    }
+
+    try {
+      const isExtractionEvent = Object.values(ExtractorEventType).includes(
+        eventType as ExtractorEventType
+      );
+      const isLoaderEvent = Object.values(LoaderEventType).includes(
+        eventType as LoaderEventType
+      );
+
+      await emit({
+        eventType,
+        event: this.event,
+        data: {
+          error: { message: errorMessage },
+          ...(isExtractionEvent ? { artifacts: this.artifacts } : {}),
+          ...(isLoaderEvent
+            ? { reports: this.reports, processed_files: this.processedFiles }
+            : {}),
+        },
+      });
+
+      const message: WorkerMessageEmitted = {
+        subject: WorkerMessageSubject.WorkerMessageEmitted,
+        payload: { eventType },
+      };
+      this.artifacts = [];
+      parentPort?.postMessage(message);
+      this.hasWorkerEmitted = true;
+    } catch (error) {
+      console.error(
+        `Error while emitting upload failure event with event type: ${eventType}.`,
+        serializeError(error)
+      );
+      parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+      this.hasWorkerEmitted = true;
     }
   }
 
