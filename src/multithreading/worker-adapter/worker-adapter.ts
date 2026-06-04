@@ -307,6 +307,9 @@ export class WorkerAdapter<ConnectorState> {
         await this.uploadAllRepos();
       } catch (error) {
         console.error('Error while uploading repos', error);
+        for (const repo of this.repos) {
+          this.artifacts.push(...repo.uploadedArtifacts);
+        }
         const { eventType } = getTimeoutErrorEventType(
           this.event.payload.event_type
         );

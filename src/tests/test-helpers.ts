@@ -179,3 +179,39 @@ export function spyOnPrivateMethod<TPrivateMethods>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return jest.spyOn(instance as any, methodName as string);
 }
+
+export interface CallbackEventBody {
+  event_type: string;
+  event_data?: {
+    error?: { message: string };
+    artifacts?: { id: string; item_type: string; item_count: number }[];
+  };
+}
+
+export function getCallbackEventBodies(
+  requests: { body?: unknown }[]
+): CallbackEventBody[] {
+  return requests.map((req) => req.body as CallbackEventBody);
+}
+
+export function expectNoCallbackWithEventType(
+  bodies: CallbackEventBody[],
+  eventType: string
+): void {
+  expect(bodies.some((b) => b.event_type === eventType)).toBe(false);
+}
+
+export function expectLastCallbackError(
+  bodies: CallbackEventBody[],
+  expectedEventType: string,
+  messageSubstring?: string
+): void {
+  expect(bodies.length).toBeGreaterThan(0);
+  const last = bodies[bodies.length - 1];
+  expect(last.event_type).toBe(expectedEventType);
+  expect(last.event_data?.error?.message).toEqual(expect.any(String));
+  expect(last.event_data?.error?.message?.length).toBeGreaterThan(0);
+  if (messageSubstring) {
+    expect(last.event_data?.error?.message).toContain(messageSubstring);
+  }
+}
