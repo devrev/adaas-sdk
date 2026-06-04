@@ -1,12 +1,33 @@
 import axios, { AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
+import { isMainThread, workerData } from 'node:worker_threads';
+
+/** Production default; tests may lower via workerData.options.httpRetries or ADAAS_TEST_HTTP_RETRIES. */
+function getHttpRetryCount(): number {
+  if (
+    !isMainThread &&
+    workerData?.options?.httpRetries !== undefined &&
+    workerData.options.httpRetries >= 0
+  ) {
+    return workerData.options.httpRetries;
+  }
+
+  const fromEnv = process.env.ADAAS_TEST_HTTP_RETRIES;
+  if (fromEnv !== undefined) {
+    const parsed = parseInt(fromEnv, 10);
+    if (!isNaN(parsed) && parsed >= 0) {
+      return parsed;
+    }
+  }
+  return 5;
+}
 
 const axiosClient = axios.create({
   timeout: 30 * 1000,
 });
 
 axiosRetry(axiosClient, {
-  retries: 5,
+  retries: getHttpRetryCount(),
   shouldResetTimeout: true,
   retryDelay: (retryCount, error) => {
     let delay;

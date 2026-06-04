@@ -52,6 +52,15 @@ export interface RouteConfig {
   headers?: Record<string, string>;
   /** Optional retry configuration for simulating failures before success */
   retry?: RetryConfig;
+  /**
+   * Respond successfully for the first N requests, then return an error.
+   * Useful for partial-upload scenarios (first batch succeeds, second fails).
+   */
+  succeedThenFail?: {
+    successCount: number;
+    errorStatus?: number;
+    errorBody?: unknown;
+  };
   /** Optional delay in milliseconds before sending the response */
   delay?: number;
 }

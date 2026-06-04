@@ -5,6 +5,7 @@ import { emit } from '../../common/control-protocol';
 import { translateIncomingEventType } from '../../common/event-type-translation';
 import { getMemoryUsage } from '../../common/helpers';
 import { Logger, serializeError } from '../../logger/logger';
+import type { Logger as LoggerType } from '../../logger/logger';
 import { AirdropEvent, EventType } from '../../types/extraction';
 import {
   GetWorkerPathInterface,
@@ -97,8 +98,9 @@ export async function spawn<ConnectorState>({
   }
 
   const originalConsole = console;
+  const logger = new Logger({ event, options });
   // eslint-disable-next-line no-global-assign
-  console = new Logger({ event, options });
+  console = logger;
 
   if (translatedEventType !== originalEventType) {
     console.log(
@@ -145,6 +147,7 @@ export async function spawn<ConnectorState>({
           options,
           resolve,
           originalConsole,
+          logger,
         });
       });
     } catch (error) {
@@ -179,7 +182,7 @@ export class Spawn {
   private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
   private resolve: (value: void | PromiseLike<void>) => void;
   private originalConsole: Console;
-  private logger: Logger;
+  private logger: LoggerType;
   private workerFailedMessage: string | undefined;
   constructor({
     event,
@@ -187,9 +190,11 @@ export class Spawn {
     options,
     resolve,
     originalConsole,
+    logger,
   }: SpawnInterface) {
     this.originalConsole = originalConsole || console;
-    this.logger = console as Logger;
+    this.logger =
+      logger ?? (console as LoggerType);
     this.alreadyEmitted = false;
     this.softTimeoutSent = false;
     this.event = event;
@@ -264,7 +269,9 @@ export class Spawn {
         const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
         const isSdkLog = message.payload?.isSdkLog ?? true;
-        this.logger.logFn(stringifiedArgs, level, isSdkLog);
+        if (typeof this.logger?.logFn === 'function') {
+          this.logger.logFn(stringifiedArgs, level, isSdkLog);
+        }
       }
 
       // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.
