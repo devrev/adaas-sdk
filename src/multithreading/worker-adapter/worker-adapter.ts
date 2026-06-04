@@ -307,7 +307,12 @@ export class WorkerAdapter<ConnectorState> {
         await this.uploadAllRepos();
       } catch (error) {
         console.error('Error while uploading repos', error);
-        await this.emitUploadFailureError(error);
+        const { eventType } = getTimeoutErrorEventType(
+          this.event.payload.event_type
+        );
+        await this.emitToPlatform(eventType, {
+          error: { message: serializeError(error) },
+        });
         return;
       }
 
@@ -352,62 +357,7 @@ export class WorkerAdapter<ConnectorState> {
         }
       }
 
-      // We want to save the state every time we emit an event, except for the start and delete events
-      if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
-        console.log(
-          `Saving state before emitting event with event type: ${newEventType}.`
-        );
-
-        try {
-          await this.adapterState.postState(this.state);
-        } catch (error) {
-          console.error('Error while posting state', error);
-          parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
-          this.hasWorkerEmitted = true;
-          return;
-        }
-      }
-
-      try {
-        // Always prune error messages to make them shorter before emit
-        if (data?.error?.message) {
-          data.error.message = truncateMessage(data.error.message);
-        }
-
-        const isExtractionEvent = Object.values(ExtractorEventType).includes(
-          newEventType as ExtractorEventType
-        );
-        const isLoaderEvent = Object.values(LoaderEventType).includes(
-          newEventType as LoaderEventType
-        );
-
-        await emit({
-          eventType: newEventType,
-          event: this.event,
-          data: {
-            ...data,
-            ...(isExtractionEvent ? { artifacts: this.artifacts } : {}),
-            ...(isLoaderEvent
-              ? { reports: this.reports, processed_files: this.processedFiles }
-              : {}),
-          },
-        });
-
-        const message: WorkerMessageEmitted = {
-          subject: WorkerMessageSubject.WorkerMessageEmitted,
-          payload: { eventType: newEventType },
-        };
-        this.artifacts = [];
-        parentPort?.postMessage(message);
-        this.hasWorkerEmitted = true;
-      } catch (error) {
-        console.error(
-          `Error while emitting event with event type: ${newEventType}.`,
-          serializeError(error)
-        );
-        parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
-        this.hasWorkerEmitted = true;
-      }
+      await this.emitToPlatform(newEventType, data);
     });
   }
 
@@ -419,31 +369,48 @@ export class WorkerAdapter<ConnectorState> {
   }
 
   /**
-   * Emits the extraction/loading error event for the current worker phase after
-   * a repo upload failure, without re-running uploadAllRepos.
+   * Persists adapter state before emitting, except for stateless worker phases.
    */
-  private async emitUploadFailureError(uploadError: unknown): Promise<void> {
-    const { eventType } = getTimeoutErrorEventType(
-      this.event.payload.event_type
+  private async postStateBeforeEmit(
+    eventType: ExtractorEventType | LoaderEventType
+  ): Promise<boolean> {
+    if (STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
+      return true;
+    }
+
+    console.log(
+      `Saving state before emitting event with event type: ${eventType}.`
     );
-    const errorMessage = truncateMessage(serializeError(uploadError));
 
-    if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
-      console.log(
-        `Saving state before emitting upload failure event with event type: ${eventType}.`
-      );
+    try {
+      await this.adapterState.postState(this.state);
+      return true;
+    } catch (error) {
+      console.error('Error while posting state', error);
+      parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
+      this.hasWorkerEmitted = true;
+      return false;
+    }
+  }
 
-      try {
-        await this.adapterState.postState(this.state);
-      } catch (error) {
-        console.error('Error while posting state', error);
-        parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
-        this.hasWorkerEmitted = true;
-        return;
-      }
+  /**
+   * Posts state (when required), emits to the platform, and notifies the parent
+   * worker that an event was emitted.
+   */
+  private async emitToPlatform(
+    eventType: ExtractorEventType | LoaderEventType,
+    data?: EventData
+  ): Promise<void> {
+    const posted = await this.postStateBeforeEmit(eventType);
+    if (!posted) {
+      return;
     }
 
     try {
+      if (data?.error?.message) {
+        data.error.message = truncateMessage(data.error.message);
+      }
+
       const isExtractionEvent = Object.values(ExtractorEventType).includes(
         eventType as ExtractorEventType
       );
@@ -455,7 +422,7 @@ export class WorkerAdapter<ConnectorState> {
         eventType,
         event: this.event,
         data: {
-          error: { message: errorMessage },
+          ...data,
           ...(isExtractionEvent ? { artifacts: this.artifacts } : {}),
           ...(isLoaderEvent
             ? { reports: this.reports, processed_files: this.processedFiles }
@@ -472,7 +439,7 @@ export class WorkerAdapter<ConnectorState> {
       this.hasWorkerEmitted = true;
     } catch (error) {
       console.error(
-        `Error while emitting upload failure event with event type: ${eventType}.`,
+        `Error while emitting event with event type: ${eventType}.`,
         serializeError(error)
       );
       parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
