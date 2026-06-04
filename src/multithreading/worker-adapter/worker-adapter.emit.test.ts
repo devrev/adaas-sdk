@@ -143,21 +143,31 @@ describe(`${WorkerAdapter.name}.emit`, () => {
     expect(mockPostMessage).toHaveBeenCalledTimes(1);
   });
 
-  it('should correctly emit one event even if uploadAllRepos errors', async () => {
-    // Arrange
+  it('should emit phase extraction error when uploadAllRepos fails', async () => {
+    const { emit: mockEmit } = require('../../common/control-protocol');
     adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
     adapter.uploadAllRepos = jest
       .fn()
       .mockRejectedValue(new Error('uploadAllRepos error'));
 
-    // Act
-    await adapter.emit(ExtractorEventType.MetadataExtractionError, {
-      reports: [],
-      processed_files: [],
-    });
+    await adapter.emit(ExtractorEventType.DataExtractionDone);
 
-    // Assert
-    expect(mockPostMessage).toHaveBeenCalledTimes(1);
+    expect(mockEmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: ExtractorEventType.DataExtractionError,
+        data: expect.objectContaining({
+          error: expect.objectContaining({
+            message: expect.stringContaining('uploadAllRepos error'),
+          }),
+        }),
+      })
+    );
+    expect(mockPostMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: 'emit',
+        payload: { eventType: ExtractorEventType.DataExtractionError },
+      })
+    );
   });
 
   it('should include artifacts in data for extraction events', async () => {
