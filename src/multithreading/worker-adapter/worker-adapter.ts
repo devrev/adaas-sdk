@@ -7,7 +7,7 @@ import {
   SSOR_ATTACHMENT,
   STATELESS_EVENT_TYPES,
 } from '../../common/constants';
-import { emit } from '../../common/control-protocol';
+import { emit, ProgressData } from '../../common/control-protocol';
 import {
   addReportToLoaderReport,
   getFilesToLoad,
@@ -97,6 +97,7 @@ export class WorkerAdapter<ConnectorState> {
   private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];
   private repos: Repo[] = [];
+  private lastExtractedItemType?: string;
   private currentEventDataLength: number = 0;
 
   // Loader
@@ -176,6 +177,8 @@ export class WorkerAdapter<ConnectorState> {
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
+          this.lastExtractedItemType = repo.itemType;
+
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AirSyncDefaultItemTypes.ATTACHMENTS) {
             this.state.toDevRev?.attachmentsMetadata.artifactIds.push(
@@ -366,7 +369,7 @@ export class WorkerAdapter<ConnectorState> {
           newEventType as LoaderEventType
         );
 
-        const itemTimestamps: Record<string, { min: number; max: number }> = {};
+        const progress_data: ProgressData = {};
         if (
           isExtractionEvent &&
           (newEventType == ExtractorEventType.DataExtractionDone ||
@@ -374,8 +377,13 @@ export class WorkerAdapter<ConnectorState> {
             newEventType == ExtractorEventType.AttachmentExtractionDone ||
             newEventType == ExtractorEventType.AttachmentExtractionProgress)
         ) {
-          for (const repo of this.repos) {
-            itemTimestamps[repo.itemType] = repo.itemTimestamps;
+          const repo = this.lastExtractedItemType
+            ? this.repos.find((r) => r.itemType === this.lastExtractedItemType)
+            : undefined;
+          if (repo) {
+            progress_data.item_type = repo.itemType;
+            progress_data.creationDate = repo.dateRanges.creationDate;
+            progress_data.modifiedDate = repo.dateRanges.modifiedDate;
           }
         }
 
@@ -389,7 +397,7 @@ export class WorkerAdapter<ConnectorState> {
               ? { reports: this.reports, processed_files: this.processedFiles }
               : {}),
           },
-          worker_metadata: { progress_data: itemTimestamps },
+          worker_metadata: { progress_data },
         });
 
         const message: WorkerMessageEmitted = {

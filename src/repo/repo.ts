@@ -16,6 +16,18 @@ import {
   RepoFactoryInterface,
 } from './repo.interfaces';
 
+function updateRange(
+  range: { oldest: number; newest: number },
+  ms: number
+): void {
+  if (range.oldest === 0 || ms < range.oldest) {
+    range.oldest = ms;
+  }
+  if (range.newest === 0 || ms > range.newest) {
+    range.newest = ms;
+  }
+}
+
 export class Repo {
   readonly itemType: string;
   private items: (NormalizedItem | NormalizedAttachment | Item)[];
@@ -24,9 +36,9 @@ export class Repo {
   private onUpload: (artifact: Artifact) => void;
   private options?: WorkerAdapterOptions;
   public uploadedArtifacts: Artifact[];
-  public itemTimestamps: { min: number; max: number } = {
-    min: 0,
-    max: 0,
+  public dateRanges = {
+    creationDate: { oldest: 0, newest: 0 },
+    modifiedDate: { oldest: 0, newest: 0 },
   };
 
   constructor({
@@ -57,19 +69,16 @@ export class Repo {
     if (itemsToUpload.length > 0) {
       for (const item of itemsToUpload) {
         if (item?.created_date != null) {
-          const createdDate = new Date(item.created_date).getTime();
-          if (
-            this.itemTimestamps.min == 0 ||
-            createdDate < this.itemTimestamps.min
-          ) {
-            this.itemTimestamps.min = createdDate;
-          }
-          if (
-            this.itemTimestamps.max == 0 ||
-            createdDate > this.itemTimestamps.max
-          ) {
-            this.itemTimestamps.max = createdDate;
-          }
+          updateRange(
+            this.dateRanges.creationDate,
+            new Date(item.created_date).getTime()
+          );
+        }
+        if (item?.modified_date != null && item.modified_date !== '') {
+          updateRange(
+            this.dateRanges.modifiedDate,
+            new Date(item.modified_date).getTime()
+          );
         }
       }
 

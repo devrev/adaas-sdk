@@ -317,6 +317,84 @@ describe(`${WorkerAdapter.name}.emit`, () => {
   });
 });
 
+describe(`${WorkerAdapter.name}.emit — progress_data`, () => {
+  let adapter: WorkerAdapter<TestState>;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    ({ adapter } = makeAdapter());
+    adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
+    adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+  });
+
+  function setupRepos(
+    adapterInstance: WorkerAdapter<TestState>,
+    lastExtractedItemType: string
+  ) {
+    adapterInstance['repos'] = [
+      {
+        itemType: 'issues',
+        dateRanges: {
+          creationDate: { oldest: 100, newest: 200 },
+          modifiedDate: { oldest: 150, newest: 250 },
+        },
+      },
+      {
+        itemType: 'tasks',
+        dateRanges: {
+          creationDate: { oldest: 300, newest: 400 },
+          modifiedDate: { oldest: 350, newest: 450 },
+        },
+      },
+    ] as never;
+    adapterInstance['lastExtractedItemType'] = lastExtractedItemType;
+  }
+
+  it('should emit flat progress_data for the latest extracted item type only', async () => {
+    setupRepos(adapter, 'tasks');
+
+    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit.mock.calls[0][0].worker_metadata.progress_data).toEqual({
+      item_type: 'tasks',
+      creationDate: { oldest: 300, newest: 400 },
+      modifiedDate: { oldest: 350, newest: 450 },
+    });
+  });
+
+  it('should send empty progress_data when no item type has been extracted', async () => {
+    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit.mock.calls[0][0].worker_metadata.progress_data).toEqual(
+      {}
+    );
+  });
+
+  it('should send empty progress_data for loader events', async () => {
+    setupRepos(adapter, 'tasks');
+
+    await adapter.emit(LoaderEventType.DataLoadingProgress);
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit.mock.calls[0][0].worker_metadata.progress_data).toEqual(
+      {}
+    );
+  });
+
+  it('should send empty progress_data for non-progress extraction events', async () => {
+    setupRepos(adapter, 'tasks');
+
+    await adapter.emit(ExtractorEventType.DataExtractionError);
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit.mock.calls[0][0].worker_metadata.progress_data).toEqual(
+      {}
+    );
+  });
+});
+
 describe(`${WorkerAdapter.name}.emit — ExternalSyncUnitExtractionDone legacy path`, () => {
   it('should upload ESUs via a repo and strip external_sync_units from the emitted payload', async () => {
     // Arrange

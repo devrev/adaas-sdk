@@ -26,6 +26,14 @@ function itemWithDate(id: string, created_date: string): NormalizedItem {
   return { id, created_date, modified_date: created_date, data: {} };
 }
 
+function itemWithDates(
+  id: string,
+  created_date: string,
+  modified_date: string
+): NormalizedItem {
+  return { id, created_date, modified_date, data: {} };
+}
+
 const ts = (iso: string) => new Date(iso).getTime();
 
 describe(Repo.name, () => {
@@ -247,7 +255,7 @@ describe(Repo.name, () => {
     });
   });
 
-  describe('itemTimestamps', () => {
+  describe('dateRanges', () => {
     beforeEach(() => {
       mockUploadFn.mockResolvedValue({
         error: null,
@@ -262,8 +270,18 @@ describe(Repo.name, () => {
         itemWithDate('3', '2021-03-01T00:00:00.000Z'),
       ]);
 
-      expect(repo.itemTimestamps.min).toBe(ts('2020-01-01T00:00:00.000Z'));
-      expect(repo.itemTimestamps.max).toBe(ts('2023-06-15T12:00:00.000Z'));
+      expect(repo.dateRanges.creationDate.oldest).toBe(
+        ts('2020-01-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.creationDate.newest).toBe(
+        ts('2023-06-15T12:00:00.000Z')
+      );
+      expect(repo.dateRanges.modifiedDate.oldest).toBe(
+        ts('2020-01-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.modifiedDate.newest).toBe(
+        ts('2023-06-15T12:00:00.000Z')
+      );
     });
 
     it('should skip items without created_date', async () => {
@@ -281,8 +299,12 @@ describe(Repo.name, () => {
         attachmentWithoutDate,
       ]);
 
-      expect(repo.itemTimestamps.min).toBe(ts('2022-06-01T00:00:00.000Z'));
-      expect(repo.itemTimestamps.max).toBe(ts('2022-06-01T00:00:00.000Z'));
+      expect(repo.dateRanges.creationDate.oldest).toBe(
+        ts('2022-06-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.creationDate.newest).toBe(
+        ts('2022-06-01T00:00:00.000Z')
+      );
     });
 
     it('should leave timestamps at zero when no items have created_date', async () => {
@@ -296,13 +318,19 @@ describe(Repo.name, () => {
         },
       ]);
 
-      expect(repo.itemTimestamps).toEqual({ min: 0, max: 0 });
+      expect(repo.dateRanges).toEqual({
+        creationDate: { oldest: 0, newest: 0 },
+        modifiedDate: { oldest: 0, newest: 0 },
+      });
     });
 
     it('should not update timestamps or call uploader on empty upload', async () => {
       await repo.upload([]);
 
-      expect(repo.itemTimestamps).toEqual({ min: 0, max: 0 });
+      expect(repo.dateRanges).toEqual({
+        creationDate: { oldest: 0, newest: 0 },
+        modifiedDate: { oldest: 0, newest: 0 },
+      });
       expect(mockUploadFn).not.toHaveBeenCalled();
     });
 
@@ -332,8 +360,12 @@ describe(Repo.name, () => {
       await repo.push(items);
 
       expect(repo.getItems()).toHaveLength(1);
-      expect(repo.itemTimestamps.min).toBe(ts('2020-01-01T00:00:00.000Z'));
-      expect(repo.itemTimestamps.max).toBe(ts('2024-12-01T00:00:00.000Z'));
+      expect(repo.dateRanges.creationDate.oldest).toBe(
+        ts('2020-01-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.creationDate.newest).toBe(
+        ts('2024-12-01T00:00:00.000Z')
+      );
 
       await repo.push([
         itemWithDate('7', '2019-01-01T00:00:00.000Z'),
@@ -341,8 +373,12 @@ describe(Repo.name, () => {
       ]);
 
       expect(repo.getItems()).toHaveLength(0);
-      expect(repo.itemTimestamps.min).toBe(ts('2019-01-01T00:00:00.000Z'));
-      expect(repo.itemTimestamps.max).toBe(ts('2025-01-01T00:00:00.000Z'));
+      expect(repo.dateRanges.creationDate.oldest).toBe(
+        ts('2019-01-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.creationDate.newest).toBe(
+        ts('2025-01-01T00:00:00.000Z')
+      );
     });
 
     it('should extend min and max when subsequent batches have wider date range', async () => {
@@ -351,16 +387,24 @@ describe(Repo.name, () => {
         itemWithDate('2', '2023-06-01T00:00:00.000Z'),
       ]);
 
-      expect(repo.itemTimestamps.min).toBe(ts('2022-06-01T00:00:00.000Z'));
-      expect(repo.itemTimestamps.max).toBe(ts('2023-06-01T00:00:00.000Z'));
+      expect(repo.dateRanges.creationDate.oldest).toBe(
+        ts('2022-06-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.creationDate.newest).toBe(
+        ts('2023-06-01T00:00:00.000Z')
+      );
 
       await repo.upload([
         itemWithDate('3', '2020-01-01T00:00:00.000Z'),
         itemWithDate('4', '2024-01-01T00:00:00.000Z'),
       ]);
 
-      expect(repo.itemTimestamps.min).toBe(ts('2020-01-01T00:00:00.000Z'));
-      expect(repo.itemTimestamps.max).toBe(ts('2024-01-01T00:00:00.000Z'));
+      expect(repo.dateRanges.creationDate.oldest).toBe(
+        ts('2020-01-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.creationDate.newest).toBe(
+        ts('2024-01-01T00:00:00.000Z')
+      );
     });
 
     it('should update timestamps even when upload fails', async () => {
@@ -371,8 +415,32 @@ describe(Repo.name, () => {
 
       await repo.upload([itemWithDate('1', '2022-01-01T00:00:00.000Z')]);
 
-      expect(repo.itemTimestamps.min).toBe(ts('2022-01-01T00:00:00.000Z'));
-      expect(repo.itemTimestamps.max).toBe(ts('2022-01-01T00:00:00.000Z'));
+      expect(repo.dateRanges.creationDate.oldest).toBe(
+        ts('2022-01-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.creationDate.newest).toBe(
+        ts('2022-01-01T00:00:00.000Z')
+      );
+    });
+
+    it('should track modified_date independently from created_date', async () => {
+      await repo.upload([
+        itemWithDates('1', '2020-01-01T00:00:00.000Z', '2023-01-01T00:00:00.000Z'),
+        itemWithDates('2', '2024-01-01T00:00:00.000Z', '2021-06-01T00:00:00.000Z'),
+      ]);
+
+      expect(repo.dateRanges.creationDate.oldest).toBe(
+        ts('2020-01-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.creationDate.newest).toBe(
+        ts('2024-01-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.modifiedDate.oldest).toBe(
+        ts('2021-06-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.modifiedDate.newest).toBe(
+        ts('2023-01-01T00:00:00.000Z')
+      );
     });
   });
 });

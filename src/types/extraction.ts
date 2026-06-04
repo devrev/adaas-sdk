@@ -420,6 +420,11 @@ export interface EventData {
  */
 export interface WorkerMetadata {
   adaas_library_version: string;
+  progress_data?: {
+    item_type?: string;
+    creationDate?: { oldest: number; newest: number };
+    modifiedDate?: { oldest: number; newest: number };
+  };
 }
 
 /**

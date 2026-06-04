@@ -11,12 +11,23 @@ import { LoaderEventType } from '../types/loading';
 import { LIBRARY_VERSION } from './constants';
 import { translateOutgoingEventType } from './event-type-translation';
 
+export interface DateRange {
+  oldest: number;
+  newest: number;
+}
+
+export interface ProgressData {
+  item_type?: string;
+  creationDate?: DateRange;
+  modifiedDate?: DateRange;
+}
+
 export interface EmitInterface {
   event: AirdropEvent;
   eventType: ExtractorEventType | LoaderEventType;
   data?: EventData;
   worker_metadata?: {
-    progress_data: Record<string, { min: number; max: number }>;
+    progress_data: ProgressData;
   };
 }
 
