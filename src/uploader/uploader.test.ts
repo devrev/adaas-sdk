@@ -114,16 +114,16 @@ describe(Uploader.name, () => {
 
       // Assert
       expect(result.artifact?.oldest_created_date).toBe(
-        Date.parse('2019-03-01T08:00:00.000Z')
+        '2019-03-01T08:00:00.000Z'
       );
       expect(result.artifact?.newest_created_date).toBe(
-        Date.parse('2020-06-15T10:00:00.000Z')
+        '2020-06-15T10:00:00.000Z'
       );
       expect(result.artifact?.oldest_modified_date).toBe(
-        Date.parse('2021-01-20T10:00:00.000Z')
+        '2021-01-20T10:00:00.000Z'
       );
       expect(result.artifact?.newest_modified_date).toBe(
-        Date.parse('2022-11-30T18:00:00.000Z')
+        '2022-11-30T18:00:00.000Z'
       );
       expect(result.error).toBeUndefined();
     });
@@ -147,8 +147,8 @@ describe(Uploader.name, () => {
       const result = await uploader.upload(itemType, fetchedObject);
 
       // Assert
-      const createdTs = Date.parse('2018-12-25T00:00:00.000Z');
-      const modifiedTs = Date.parse('2018-12-26T00:00:00.000Z');
+      const createdTs = '2018-12-25T00:00:00.000Z';
+      const modifiedTs = '2018-12-26T00:00:00.000Z';
       expect(result.artifact?.oldest_created_date).toBe(createdTs);
       expect(result.artifact?.newest_created_date).toBe(createdTs);
       expect(result.artifact?.oldest_modified_date).toBe(modifiedTs);

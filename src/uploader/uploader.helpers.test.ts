@@ -252,16 +252,16 @@ describe('uploader.helpers', () => {
 
       // Assert
       expect(result.oldest_created_date).toBe(
-        Date.parse('2020-01-01T00:00:00.000Z')
+        '2020-01-01T00:00:00.000Z'
       );
       expect(result.newest_created_date).toBe(
-        Date.parse('2022-03-15T12:00:00.000Z')
+        '2022-03-15T12:00:00.000Z'
       );
       expect(result.oldest_modified_date).toBe(
-        Date.parse('2020-12-31T23:59:59.000Z')
+        '2020-12-31T23:59:59.000Z'
       );
       expect(result.newest_modified_date).toBe(
-        Date.parse('2021-06-01T00:00:00.000Z')
+        '2021-06-01T00:00:00.000Z'
       );
     });
 
@@ -299,16 +299,16 @@ describe('uploader.helpers', () => {
 
       // Assert
       expect(result.oldest_created_date).toBe(
-        Date.parse('2021-01-01T00:00:00.000Z')
+        '2021-01-01T00:00:00.000Z'
       );
       expect(result.newest_created_date).toBe(
-        Date.parse('2021-01-01T00:00:00.000Z')
+        '2021-01-01T00:00:00.000Z'
       );
       expect(result.oldest_modified_date).toBe(
-        Date.parse('2023-01-01T00:00:00.000Z')
+        '2023-01-01T00:00:00.000Z'
       );
       expect(result.newest_modified_date).toBe(
-        Date.parse('2023-01-01T00:00:00.000Z')
+        '2023-01-01T00:00:00.000Z'
       );
     });
 
@@ -325,11 +325,29 @@ describe('uploader.helpers', () => {
       const result = computeArtifactDateRanges(item);
 
       // Assert
-      const ts = Date.parse('2019-05-10T08:30:00.000Z');
+      const ts = '2019-05-10T08:30:00.000Z';
       expect(result.oldest_created_date).toBe(ts);
       expect(result.newest_created_date).toBe(ts);
       expect(result.oldest_modified_date).toBe(ts);
       expect(result.newest_modified_date).toBe(ts);
+    });
+
+    it('should skip invalid date values', () => {
+      const items = [
+        {
+          id: '1',
+          created_date: 'not-a-date',
+          modified_date: '2024-01-01T00:00:00.000Z',
+          data: {},
+        },
+      ];
+
+      const result = computeArtifactDateRanges(items);
+
+      expect(result).toEqual({
+        oldest_modified_date: '2024-01-01T00:00:00.000Z',
+        newest_modified_date: '2024-01-01T00:00:00.000Z',
+      });
     });
 
     it('[edge] should skip non-object entries in an array', () => {
@@ -350,10 +368,10 @@ describe('uploader.helpers', () => {
 
       // Assert
       expect(result.oldest_created_date).toBe(
-        Date.parse('2024-01-01T00:00:00.000Z')
+        '2024-01-01T00:00:00.000Z'
       );
       expect(result.newest_created_date).toBe(
-        Date.parse('2024-01-01T00:00:00.000Z')
+        '2024-01-01T00:00:00.000Z'
       );
     });
   });

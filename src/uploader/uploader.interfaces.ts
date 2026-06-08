@@ -30,10 +30,10 @@ export interface Artifact {
   id: string;
   item_type: string;
   item_count: number;
-  [ArtifactDateField.OldestCreatedDate]?: number;
-  [ArtifactDateField.NewestCreatedDate]?: number;
-  [ArtifactDateField.OldestModifiedDate]?: number;
-  [ArtifactDateField.NewestModifiedDate]?: number;
+  [ArtifactDateField.OldestCreatedDate]?: string;
+  [ArtifactDateField.NewestCreatedDate]?: string;
+  [ArtifactDateField.OldestModifiedDate]?: string;
+  [ArtifactDateField.NewestModifiedDate]?: string;
 }
 
 export type ArtifactDateRanges = Pick<

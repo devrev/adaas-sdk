@@ -14,7 +14,7 @@ import {
 } from './uploader.interfaces';
 
 /**
- * Computes oldest/newest created and modified timestamps (epoch ms) across uploaded items.
+ * Computes oldest/newest created and modified timestamps (RFC3339) across uploaded items.
  * @param fetchedObjects - Single object or array of objects (e.g. NormalizedItem[])
  */
 export function computeArtifactDateRanges(
@@ -35,42 +35,59 @@ export function computeArtifactDateRanges(
   let hasCreated = false;
   let hasModified = false;
 
+  const parseTimestamp = (value: string): number | undefined => {
+    const ts = new Date(value).getTime();
+    return Number.isNaN(ts) ? undefined : ts;
+  };
+
   for (const obj of items) {
     if (!obj || typeof obj !== 'object') {
       continue;
     }
     const item = obj as NormalizedItem;
     if (item.created_date != undefined) {
-      const ts = new Date(item.created_date).getTime();
-      if (ts < created.min) {
-        created.min = ts;
+      const ts = parseTimestamp(item.created_date);
+      if (ts != undefined) {
+        if (ts < created.min) {
+          created.min = ts;
+        }
+        if (ts > created.max) {
+          created.max = ts;
+        }
+        hasCreated = true;
       }
-      if (ts > created.max) {
-        created.max = ts;
-      }
-      hasCreated = true;
     }
     if (item.modified_date != undefined) {
-      const ts = new Date(item.modified_date).getTime();
-      if (ts < modified.min) {
-        modified.min = ts;
+      const ts = parseTimestamp(item.modified_date);
+      if (ts != undefined) {
+        if (ts < modified.min) {
+          modified.min = ts;
+        }
+        if (ts > modified.max) {
+          modified.max = ts;
+        }
+        hasModified = true;
       }
-      if (ts > modified.max) {
-        modified.max = ts;
-      }
-      hasModified = true;
     }
   }
 
   const result: ArtifactDateRanges = {};
 
   if (hasCreated) {
-    result[ArtifactDateField.OldestCreatedDate] = created.min;
-    result[ArtifactDateField.NewestCreatedDate] = created.max;
+    result[ArtifactDateField.OldestCreatedDate] = new Date(
+      created.min
+    ).toISOString();
+    result[ArtifactDateField.NewestCreatedDate] = new Date(
+      created.max
+    ).toISOString();
   }
   if (hasModified) {
-    result[ArtifactDateField.OldestModifiedDate] = modified.min;
-    result[ArtifactDateField.NewestModifiedDate] = modified.max;
+    result[ArtifactDateField.OldestModifiedDate] = new Date(
+      modified.min
+    ).toISOString();
+    result[ArtifactDateField.NewestModifiedDate] = new Date(
+      modified.max
+    ).toISOString();
   }
 
   return result;
