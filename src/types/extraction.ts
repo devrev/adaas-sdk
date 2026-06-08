@@ -3,6 +3,7 @@ import { InputData } from '@devrev/typescript-sdk/dist/snap-ins';
 import { Artifact } from '../uploader/uploader.interfaces';
 
 import { ErrorRecord } from './common';
+import type { ProgressData } from '../common/control-protocol';
 
 import { AxiosResponse } from 'axios';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
@@ -420,11 +421,7 @@ export interface EventData {
  */
 export interface WorkerMetadata {
   adaas_library_version: string;
-  progress_data?: {
-    item_type?: string;
-    creationDate?: { oldest: number; newest: number };
-    modifiedDate?: { oldest: number; newest: number };
-  };
+  progress_data?: ProgressData;
 }
 
 /**

@@ -61,6 +61,8 @@ function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
   return { adapter, event, adapterState };
 }
 
+const iso = (ms: number) => new Date(ms).toISOString();
+
 describe(`${WorkerAdapter.name}.emit`, () => {
   let adapter: WorkerAdapter<TestState>;
   let mockPostMessage: jest.Mock;
@@ -358,8 +360,28 @@ describe(`${WorkerAdapter.name}.emit — progress_data`, () => {
     const { emit: mockEmit } = require('../../common/control-protocol');
     expect(mockEmit.mock.calls[0][0].worker_metadata.progress_data).toEqual({
       item_type: 'tasks',
-      creationDate: { oldest: 300, newest: 400 },
-      modifiedDate: { oldest: 350, newest: 450 },
+      creationDate: { oldest: iso(300), newest: iso(400) },
+      modifiedDate: { oldest: iso(350), newest: iso(450) },
+    });
+  });
+
+  it('should omit unset RFC3339 bounds from progress_data', async () => {
+    adapter['repos'] = [
+      {
+        itemType: 'tasks',
+        dateRanges: {
+          creationDate: { oldest: 0, newest: 0 },
+          modifiedDate: { oldest: 0, newest: 0 },
+        },
+      },
+    ] as never;
+    adapter['lastExtractedItemType'] = 'tasks';
+
+    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit.mock.calls[0][0].worker_metadata.progress_data).toEqual({
+      item_type: 'tasks',
     });
   });
 

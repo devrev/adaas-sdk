@@ -12,8 +12,8 @@ import { LIBRARY_VERSION } from './constants';
 import { translateOutgoingEventType } from './event-type-translation';
 
 export interface DateRange {
-  oldest: number;
-  newest: number;
+  oldest?: string;
+  newest?: string;
 }
 
 export interface ProgressData {

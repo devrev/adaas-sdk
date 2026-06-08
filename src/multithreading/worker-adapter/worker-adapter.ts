@@ -61,6 +61,31 @@ import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
 import { translateOutgoingEventType } from '../../common/event-type-translation';
 import { truncateMessage } from '../../common/helpers';
 
+function toRfc3339Timestamp(ms: number): string | undefined {
+  if (!Number.isFinite(ms) || ms === 0) {
+    return undefined;
+  }
+
+  return new Date(ms).toISOString();
+}
+
+function toRfc3339DateRange(range: {
+  oldest: number;
+  newest: number;
+}): ProgressData['creationDate'] {
+  const oldest = toRfc3339Timestamp(range.oldest);
+  const newest = toRfc3339Timestamp(range.newest);
+
+  if (!oldest && !newest) {
+    return undefined;
+  }
+
+  return {
+    ...(oldest ? { oldest } : {}),
+    ...(newest ? { newest } : {}),
+  };
+}
+
 export function createWorkerAdapter<ConnectorState>({
   event,
   adapterState,
@@ -382,8 +407,20 @@ export class WorkerAdapter<ConnectorState> {
             : undefined;
           if (repo) {
             progress_data.item_type = repo.itemType;
-            progress_data.creationDate = repo.dateRanges.creationDate;
-            progress_data.modifiedDate = repo.dateRanges.modifiedDate;
+            progress_data.creationDate = toRfc3339DateRange(
+              repo.dateRanges.creationDate
+            );
+            progress_data.modifiedDate = toRfc3339DateRange(
+              repo.dateRanges.modifiedDate
+            );
+
+            if (!progress_data.creationDate) {
+              delete progress_data.creationDate;
+            }
+
+            if (!progress_data.modifiedDate) {
+              delete progress_data.modifiedDate;
+            }
           }
         }
 
