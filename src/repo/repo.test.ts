@@ -423,6 +423,35 @@ describe(Repo.name, () => {
       );
     });
 
+    it('should ignore invalid created_date and modified_date values', async () => {
+      await repo.upload([
+        {
+          id: '1',
+          created_date: 'not-a-date',
+          modified_date: 'still-not-a-date',
+          data: {},
+        },
+        itemWithDates(
+          '2',
+          '2022-01-01T00:00:00.000Z',
+          '2023-01-01T00:00:00.000Z'
+        ),
+      ]);
+
+      expect(repo.dateRanges.creationDate.oldest).toBe(
+        ts('2022-01-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.creationDate.newest).toBe(
+        ts('2022-01-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.modifiedDate.oldest).toBe(
+        ts('2023-01-01T00:00:00.000Z')
+      );
+      expect(repo.dateRanges.modifiedDate.newest).toBe(
+        ts('2023-01-01T00:00:00.000Z')
+      );
+    });
+
     it('should track modified_date independently from created_date', async () => {
       await repo.upload([
         itemWithDates('1', '2020-01-01T00:00:00.000Z', '2023-01-01T00:00:00.000Z'),

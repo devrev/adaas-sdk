@@ -28,6 +28,11 @@ function updateRange(
   }
 }
 
+function toValidTimestamp(value: string): number | undefined {
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : undefined;
+}
+
 export class Repo {
   readonly itemType: string;
   private items: (NormalizedItem | NormalizedAttachment | Item)[];
@@ -68,17 +73,19 @@ export class Repo {
 
     if (itemsToUpload.length > 0) {
       for (const item of itemsToUpload) {
-        if (item?.created_date != null) {
-          updateRange(
-            this.dateRanges.creationDate,
-            new Date(item.created_date).getTime()
-          );
+        const createdDate = item?.created_date;
+        if (createdDate != null) {
+          const createdMs = toValidTimestamp(createdDate);
+          if (createdMs !== undefined) {
+            updateRange(this.dateRanges.creationDate, createdMs);
+          }
         }
-        if (item?.modified_date != null && item.modified_date !== '') {
-          updateRange(
-            this.dateRanges.modifiedDate,
-            new Date(item.modified_date).getTime()
-          );
+        const modifiedDate = item?.modified_date;
+        if (modifiedDate != null && modifiedDate !== '') {
+          const modifiedMs = toValidTimestamp(modifiedDate);
+          if (modifiedMs !== undefined) {
+            updateRange(this.dateRanges.modifiedDate, modifiedMs);
+          }
         }
       }
 
