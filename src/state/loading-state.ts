@@ -4,9 +4,13 @@ import { BaseState } from './base-state';
 import { loadingSdkState, StateInterface } from './state.interfaces';
 
 /**
- * LoadingState is the per-mode state for loading workers. It seeds the loading
- * SDK state (files-to-load bookkeeping) on top of the shared lifecycle provided
- * by `BaseState`. Loading has no extraction-window resolution.
+ * Per-mode adapter state for loading workers.
+ *
+ * Used to seed the loading SDK state (files-to-load bookkeeping) on top of the
+ * shared lifecycle provided by `BaseState`. Loading has no extraction-window
+ * resolution.
+ *
+ * @typeParam ConnectorState - the connector-owned state shape
  */
 export class LoadingState<ConnectorState> extends BaseState<ConnectorState> {
   constructor(params: StateInterface<ConnectorState>) {
@@ -17,8 +21,13 @@ export class LoadingState<ConnectorState> extends BaseState<ConnectorState> {
 /**
  * Creates and initializes a `LoadingState` for a loading worker.
  *
- * For non-stateless events this fetches persisted state and installs the
- * initial domain mapping if the snap-in version changed.
+ * Used by the state dispatcher to build loading-mode state. The initial state is
+ * deep-cloned to avoid mutating the caller's object; for non-stateless events
+ * this fetches persisted state and installs the initial domain mapping if the
+ * snap-in version changed.
+ *
+ * @param params - The state factory parameters of type StateInterface (event, initial connector state, optional domain mapping and worker options)
+ * @returns Promise resolving to the initialized LoadingState
  */
 export async function createLoadingState<ConnectorState>({
   event,

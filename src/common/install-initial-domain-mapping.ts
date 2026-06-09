@@ -4,6 +4,19 @@ import { AirSyncEvent } from '../types/extraction';
 import { serializeError } from '../logger/logger';
 import { InitialDomainMapping } from '../types/common';
 
+/**
+ * Installs the connector's initial domain mapping into the sync.
+ *
+ * Used the first time a sync needs the mapping that describes how external record types/fields map
+ * to DevRev. It resolves the snap-in's import and version slugs, optionally creates the starting
+ * recipe blueprint, then installs the initial domain mapping (plus any additional mappings) via the
+ * airdrop recipe API. If no mapping JSON is provided the call is a no-op; blueprint creation failures
+ * are logged and the install continues without a blueprint.
+ *
+ * @param event - The AirSyncEvent providing the DevRev endpoint, service account token, and snap-in ID.
+ * @param initialDomainMappingJson - The InitialDomainMapping JSON containing the starting recipe blueprint and additional mappings.
+ * @returns Promise that resolves once the mapping has been installed (or early-returns if none is provided).
+ */
 export async function installInitialDomainMapping(
   event: AirSyncEvent,
   initialDomainMappingJson: InitialDomainMapping

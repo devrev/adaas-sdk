@@ -10,11 +10,13 @@ export { ExtractionState, createExtractionState } from './extraction-state';
 export { LoadingState, createLoadingState } from './loading-state';
 
 /**
- * Creates and initializes the adapter state for the current worker, dispatching
- * to the extraction or loading state based on the event's sync mode.
+ * Creates and initializes the adapter state for the current worker.
  *
- * @param params The state factory parameters (event, initial state, options)
- * @returns The initialized mode-specific state
+ * Used as the single entry point that dispatches to either `createLoadingState`
+ * or `createExtractionState` based on `event.payload.event_context.mode`.
+ *
+ * @param params - The state factory parameters of type StateInterface (event, initial state, optional domain mapping and worker options)
+ * @returns Promise resolving to the initialized mode-specific state (LoadingState when mode is LOADING, otherwise ExtractionState)
  */
 export async function createAdapterState<ConnectorState>(
   params: StateInterface<ConnectorState>

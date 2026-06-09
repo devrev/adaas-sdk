@@ -6,10 +6,15 @@ import {
 } from '../../types/loading';
 
 /**
- * Gets the files to load for the loader.
- * @param {string[]} supportedItemTypes - The supported item types
- * @param {StatsFileObject[]} statsFile - The stats file
- * @returns {FileToLoad[]} The files to load
+ * Builds the ordered list of files to load from a stats file.
+ *
+ * Used by the loading adapter to filter the stats file down to the supported
+ * item types, order the entries to match that item-type order, and shape each
+ * into a FileToLoad with progress fields reset.
+ *
+ * @param supportedItemTypes - The supported item type names, in desired load order.
+ * @param statsFile - The StatsFileObject entries describing available files.
+ * @returns The FileToLoad entries to process, ordered by supported item type.
  */
 export function getFilesToLoad({
   supportedItemTypes,
@@ -50,10 +55,15 @@ export function getFilesToLoad({
 }
 
 /**
- * Adds a report to the loader report.
- * @param {LoaderReport[]} loaderReports - The loader reports
- * @param {LoaderReport} report - The report to add
- * @returns {LoaderReport[]} The updated loader reports
+ * Merges a report into the accumulated loader reports.
+ *
+ * Used to keep one running report per item type: when a report for the same
+ * item type already exists its created/updated/failed counts are summed,
+ * otherwise the report is appended.
+ *
+ * @param loaderReports - The existing LoaderReport accumulator (mutated in place).
+ * @param report - The LoaderReport to merge in.
+ * @returns The updated LoaderReport accumulator.
  */
 export function addReportToLoaderReport({
   loaderReports,

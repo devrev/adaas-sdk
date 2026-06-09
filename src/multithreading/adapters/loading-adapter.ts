@@ -36,9 +36,14 @@ import {
 } from './loading-adapter.helpers';
 
 /**
- * LoadingAdapter is the adapter passed to loading tasks. It exposes the loading
- * surface (item/attachment loading, mappers, loader reports).
+ * Worker adapter passed to loading tasks, exposing the loading surface
+ * (item/attachment loading, mappers, loader reports).
  *
+ * Used during the loading phases to push transformed DevRev items into the
+ * external system, maintaining sync mapper records and accumulating per-item-type
+ * loader reports across emits.
+ *
+ * @typeParam ConnectorState - the connector-owned state shape
  * @public
  */
 export class LoadingAdapter<
@@ -62,22 +67,43 @@ export class LoadingAdapter<
     });
   }
 
+  /** Per-item-type loader reports accumulated across loads, sent with each emit. */
   get reports(): LoaderReport[] {
     return this.loaderReports;
   }
 
+  /** Artifact IDs of transformer files that have been fully loaded. */
   get processedFiles(): string[] {
     return this._processedFiles;
   }
 
+  /** Mappers client for reading/writing sync mapper records. */
   get mappers(): Mappers {
     return this._mappers;
   }
 
+  /**
+   * Pre-emit hook for loading; intentionally a no-op.
+   *
+   * Used as the loading implementation of the `BaseAdapter` template hook;
+   * loading has no repos to upload and no extraction boundaries to advance.
+   *
+   * @returns Promise that resolves immediately.
+   */
   protected async beforeEmit(): Promise<void> {
     // Loading has no pre-emit work (no repos, no extraction boundaries).
   }
 
+  /**
+   * Builds the loading-specific extras merged into the emitted event payload.
+   *
+   * Used as the loading implementation of the `BaseAdapter` template hook;
+   * returns the accumulated reports and processed files for loader events and
+   * nothing otherwise.
+   *
+   * @param newEventType - The event type about to be emitted.
+   * @returns EventData carrying loader reports and processed files for loader events.
+   */
   protected buildEmitPayload(
     newEventType: ExtractorEventType | LoaderEventType
   ): EventData {
@@ -92,10 +118,29 @@ export class LoadingAdapter<
       : {};
   }
 
+  /**
+   * Post-emit hook for loading; intentionally a no-op.
+   *
+   * Used as the loading implementation of the `BaseAdapter` template hook;
+   * loading keeps its accumulated reports and processed files across emits.
+   */
   protected afterEmit(): void {
     // Loading keeps its accumulated reports/processed files across emits.
   }
 
+  /**
+   * Loads all supported item types into the external system and returns the
+   * phase outcome.
+   *
+   * Used as the entry point for the data-loading phase: on `StartLoadingData` it
+   * resolves the batches of transformer files to load from the stats file, then
+   * for each file loads every item via `loadItem`, tracking progress per line so
+   * a fresh invocation can resume. Returns `delay` on a rate limit, `progress`
+   * on timeout, `error` on failure, and `success` once all files are processed.
+   *
+   * @param itemTypesToLoad - The ItemTypeToLoad definitions (create/update handlers per item type).
+   * @returns Promise with the TaskResult describing the phase outcome.
+   */
   async loadItemTypes({
     itemTypesToLoad,
   }: ItemTypesToLoadParams): Promise<TaskResult> {
@@ -216,6 +261,17 @@ export class LoadingAdapter<
     });
   }
 
+  /**
+   * Resolves the ordered list of transformer files to load for the given item
+   * types.
+   *
+   * Used by `loadItemTypes`/`loadAttachments` to turn the event's stats file
+   * into `FileToLoad` batches, filtered to the supported item types; returns an
+   * empty list when there is no stats file, it cannot be fetched, or it is empty.
+   *
+   * @param supportedItemTypes - The item type names to include, in load order.
+   * @returns Promise with the FileToLoad batches to process.
+   */
   async getLoaderBatches({
     supportedItemTypes,
   }: {
@@ -248,6 +304,18 @@ export class LoadingAdapter<
     });
   }
 
+  /**
+   * Loads attachments into the external system and returns the phase outcome.
+   *
+   * Used as the entry point for the attachment-loading phase: on
+   * `StartLoadingAttachments` it resolves the attachment transformer files to
+   * load, then creates each attachment via `loadAttachment`, tracking progress
+   * per line for resumption. Returns `delay` on a rate limit, `progress` on
+   * timeout, `error` on failure, and `success` once all files are processed.
+   *
+   * @param create - The ExternalSystemLoadingFunction that creates an attachment in the external system.
+   * @returns Promise with the TaskResult describing the phase outcome.
+   */
   async loadAttachments({
     create,
   }: {
@@ -344,6 +412,19 @@ export class LoadingAdapter<
     });
   }
 
+  /**
+   * Loads a single item into the external system, creating or updating as needed.
+   *
+   * Used per item by `loadItemTypes`: it looks up the sync mapper record by
+   * DevRev target ID and calls the item type's `update` handler; if no mapper
+   * record exists (404) it falls back to the `create` handler. On success it
+   * creates or updates the sync mapper record and reports the action; a rate
+   * limit surfaces a delay and other failures are reported as failed.
+   *
+   * @param item - The ExternalSystemItem to load.
+   * @param itemTypeToLoad - The ItemTypeToLoad providing the create/update handlers.
+   * @returns Promise with a LoadItemResponse carrying a report, a rateLimit delay, or an error.
+   */
   async loadItem({
     item,
     itemTypeToLoad,
@@ -550,6 +631,18 @@ export class LoadingAdapter<
     });
   }
 
+  /**
+   * Creates a single attachment in the external system.
+   *
+   * Used per attachment by `loadAttachments`: it calls the `create` handler and,
+   * on success, creates a sync mapper record linking the new external ID to the
+   * attachment's reference ID and reports it as created. A rate limit surfaces a
+   * delay; a missing ID is reported as failed (attachments are create-only).
+   *
+   * @param item - The ExternalSystemAttachment to create.
+   * @param create - The ExternalSystemLoadingFunction that creates the attachment.
+   * @returns Promise with a LoadItemResponse carrying a report or a rateLimit delay.
+   */
   async loadAttachment({
     item,
     create,

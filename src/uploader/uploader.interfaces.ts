@@ -3,8 +3,15 @@ import { AirSyncEvent } from '../types/extraction';
 import { ExternalSystemItem, StatsFileObject } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
+/**
+ * Construction parameters used to create an Uploader instance.
+ *
+ * Used to supply the triggering event (platform endpoint, token, request id) and optional adapter options.
+ */
 export interface UploaderFactoryInterface {
+  /** The AirSync event supplying the DevRev endpoint, service account token, and request id. */
   event: AirSyncEvent;
+  /** Optional worker adapter options (e.g. local development and skip-confirmation flags). */
   options?: WorkerAdapterOptions;
 }
 
@@ -90,12 +97,26 @@ export interface SsorAttachment {
   inline?: boolean;
 }
 
+/**
+ * Result of fetching and parsing a loading stats file artifact.
+ *
+ * Used to return the per-item-type stats produced by the loading phase, or an error if it could not be read.
+ */
 export interface StatsFileResponse {
+  /** Error describing why the stats file could not be retrieved or parsed. */
   error?: ErrorRecord;
+  /** Parsed stats file entries, one per item type. */
   statsFile?: StatsFileObject[];
 }
 
+/**
+ * Result of fetching and parsing a transformer file artifact.
+ *
+ * Used to return the transformed external system items to be loaded into DevRev, or an error if it could not be read.
+ */
 export interface TransformerFileResponse {
+  /** Error describing why the transformer file could not be retrieved or parsed. */
   error?: ErrorRecord;
+  /** Parsed external system items to load. */
   transformerFile?: ExternalSystemItem[];
 }

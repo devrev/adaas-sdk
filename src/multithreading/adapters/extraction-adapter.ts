@@ -32,10 +32,14 @@ import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
 import { BaseAdapter } from './base-adapter';
 
 /**
- * ExtractionAdapter is the adapter passed to extraction tasks. It exposes the
- * extraction surface (repos, artifacts, attachment streaming) and uploads
- * pending repos and updates the extraction boundaries before emitting.
+ * Worker adapter passed to extraction tasks, exposing the extraction surface
+ * (repos, artifacts, attachment streaming).
  *
+ * Used during the extraction phases; before emitting it uploads all pending
+ * repos and, on `AttachmentExtractionDone`, advances the sync boundaries on
+ * `sdkState`.
+ *
+ * @typeParam ConnectorState - the connector-owned state shape
  * @public
  */
 export class ExtractionAdapter<
@@ -56,7 +60,12 @@ export class ExtractionAdapter<
 
   /**
    * Returns whether the given item type should be extracted.
-   * Defaults to true if the scope is empty or the item type is not listed.
+   *
+   * Used to honor the per-item-type extraction scope; defaults to true when the
+   * scope is empty or the item type is not listed.
+   *
+   * @param itemType - The item type name to check.
+   * @returns True if the item type should be extracted.
    */
   shouldExtract(itemType: string): boolean {
     const scope = this.extractionScope;
@@ -65,6 +74,17 @@ export class ExtractionAdapter<
     return scope[itemType].extract;
   }
 
+  /**
+   * Initializes the adapter's repos from the given repo definitions.
+   *
+   * Used to set up the in-memory item buffers an extraction task pushes to;
+   * each repo normalizes items (except external domain metadata and SSOR
+   * attachments) and, on upload, records attachment artifact IDs in state and
+   * tracks event payload size to trigger a timeout when the SQS size threshold
+   * is exceeded.
+   *
+   * @param repos - The RepoInterface definitions to build repos from.
+   */
   initializeRepos(repos: RepoInterface[]) {
     this.repos = repos.map((repo) => {
       const shouldNormalize =
@@ -104,6 +124,15 @@ export class ExtractionAdapter<
     });
   }
 
+  /**
+   * Looks up an initialized repo by item type.
+   *
+   * Used by extraction tasks to get the buffer they push normalized items into;
+   * logs an error and returns undefined when no repo matches.
+   *
+   * @param itemType - The item type name of the repo to find.
+   * @returns The matching Repo, or undefined if none was initialized.
+   */
   getRepo(itemType: string): Repo | undefined {
     return runWithSdkLogContext(() => {
       const repo = this.repos.find((repo) => repo.itemType === itemType);
@@ -117,16 +146,32 @@ export class ExtractionAdapter<
     });
   }
 
+  /** Artifacts accumulated since the last emit, sent with the next event. */
   get artifacts(): Artifact[] {
     return this._artifacts;
   }
 
+  /** Appends artifacts to the accumulator, de-duplicating by reference. */
   set artifacts(artifacts: Artifact[]) {
     this._artifacts = this._artifacts
       .concat(artifacts)
       .filter((value, index, self) => self.indexOf(value) === index);
   }
 
+  /**
+   * Pre-emit hook: uploads all repos and, when extraction completes, advances
+   * the sync boundaries.
+   *
+   * Used as the extraction implementation of the `BaseAdapter` template hook.
+   * Always uploads pending repos; on `AttachmentExtractionDone` it promotes
+   * `lastSyncStarted` to `lastSuccessfulSyncStarted`, clears the pending worker
+   * boundaries, and expands `workersOldest`/`workersNewest` from the event's
+   * extract-from/extract-to window.
+   *
+   * @param newEventType - The event type about to be emitted.
+   * @returns Promise that resolves once pre-emit work is done; rejects (aborting
+   * the emit) if a repo upload fails.
+   */
   protected async beforeEmit(
     newEventType: ExtractorEventType | LoaderEventType
   ): Promise<void> {
@@ -178,6 +223,15 @@ export class ExtractionAdapter<
     }
   }
 
+  /**
+   * Builds the extraction-specific extras merged into the emitted event payload.
+   *
+   * Used as the extraction implementation of the `BaseAdapter` template hook;
+   * returns the accumulated artifacts for extraction events and nothing otherwise.
+   *
+   * @param newEventType - The event type about to be emitted.
+   * @returns EventData carrying the accumulated artifacts for extraction events.
+   */
   protected buildEmitPayload(
     newEventType: ExtractorEventType | LoaderEventType
   ): EventData {
@@ -187,10 +241,24 @@ export class ExtractionAdapter<
     return isExtractionEvent ? { artifacts: this.artifacts } : {};
   }
 
+  /**
+   * Post-emit hook: clears the accumulated artifacts after a successful emit.
+   *
+   * Used as the extraction implementation of the `BaseAdapter` template hook so
+   * artifacts are not re-sent on a subsequent emit.
+   */
   protected afterEmit(): void {
     this.artifacts = [];
   }
 
+  /**
+   * Uploads all initialized repos and collects their resulting artifacts.
+   *
+   * Used by `beforeEmit` to flush buffered items to artifacts before an event is
+   * sent; throws on the first repo that fails to upload.
+   *
+   * @returns Promise that resolves once every repo has been uploaded.
+   */
   async uploadAllRepos(): Promise<void> {
     for (const repo of this.repos) {
       const error = await repo.upload();
@@ -201,6 +269,20 @@ export class ExtractionAdapter<
     }
   }
 
+  /**
+   * Streams a single attachment from the external system into a DevRev artifact
+   * and records the SSOR attachment mapping.
+   *
+   * Used while streaming attachments: it opens the external stream, requests an
+   * artifact upload URL, streams the bytes, confirms the upload, then pushes an
+   * `ssor_attachment` linking the external and DevRev IDs. A delay or error from
+   * the stream is surfaced back to the caller and the HTTP stream is destroyed.
+   *
+   * @param attachment - The NormalizedAttachment to fetch and upload.
+   * @param stream - The ExternalSystemAttachmentStreamingFunction that opens the source stream.
+   * @returns Promise with undefined on success, or a ProcessAttachmentReturnType
+   * carrying a delay or error.
+   */
   async processAttachment(
     attachment: NormalizedAttachment,
     stream: ExternalSystemAttachmentStreamingFunction
@@ -316,8 +398,12 @@ export class ExtractionAdapter<
   }
 
   /**
-   * Destroys a stream to prevent memory leaks.
-   * @param httpStream - The axios response stream to destroy
+   * Destroys an HTTP response stream to prevent memory leaks.
+   *
+   * Used to release an open attachment source stream when uploading fails;
+   * swallows any error raised while destroying.
+   *
+   * @param httpStream - The AxiosResponse stream to destroy.
    */
   private destroyHttpStream(httpStream: AxiosResponse): void {
     try {
@@ -334,11 +420,20 @@ export class ExtractionAdapter<
   }
 
   /**
-   * Streams the attachments to the DevRev platform.
-   * The attachments are streamed to the platform and the artifact information is returned.
-   * @param params - The parameters to stream the attachments
-   * @returns The response object containing the ssorAttachment artifact information
-   * or error information if there was an error
+   * Streams all pending attachments to the DevRev platform and returns the phase
+   * outcome.
+   *
+   * Used as the entry point for the attachment-streaming phase: it iterates the
+   * attachments-metadata artifact IDs recorded in state, fetches each batch, and
+   * streams them either through caller-provided processors or the default
+   * streaming pool (with batch size clamped to 1..50). Returns `delay` on a
+   * rate limit, `error` on failure, `progress` on timeout (to resume in a fresh
+   * invocation), and `success` once every artifact ID is processed.
+   *
+   * @param stream - The ExternalSystemAttachmentStreamingFunction used to open each source stream.
+   * @param processors - Optional ExternalSystemAttachmentProcessors (reducer + iterator) overriding the default pool.
+   * @param batchSize - Number of attachments to stream concurrently; defaults to 1, clamped to 1..50.
+   * @returns Promise with the TaskResult describing the phase outcome.
    */
   async streamAttachments<NewBatch>({
     stream,

@@ -16,6 +16,12 @@ import {
   RepoFactoryInterface,
 } from './repo.interfaces';
 
+/**
+ * In-memory buffer that accumulates normalized items of a single item type during extraction.
+ *
+ * Used to batch pushed items (ARTIFACT_BATCH_SIZE per batch), normalize them, and upload them as
+ * artifacts to the DevRev platform, firing the onUpload callback for each uploaded artifact.
+ */
 export class Repo {
   readonly itemType: string;
   private items: (NormalizedItem | NormalizedAttachment | Item)[];
@@ -41,10 +47,20 @@ export class Repo {
     this.uploadedArtifacts = [];
   }
 
+  /** Returns the items currently buffered in the repo (not yet uploaded). */
   getItems(): (NormalizedItem | NormalizedAttachment | Item)[] {
     return this.items;
   }
 
+  /**
+   * Uploads a batch of items (or all buffered items) as a single artifact.
+   *
+   * Used to flush buffered items to the DevRev platform; on success the artifact is passed to
+   * onUpload and recorded in uploadedArtifacts. When no explicit batch is given the buffer is cleared.
+   *
+   * @param batch - Optional explicit array of NormalizedItem, NormalizedAttachment, or Item to upload; defaults to all buffered items.
+   * @returns Promise that resolves to void on success, or an ErrorRecord describing the upload failure.
+   */
   async upload(
     batch?: (NormalizedItem | NormalizedAttachment | Item)[]
   ): Promise<void | ErrorRecord> {
@@ -84,6 +100,16 @@ export class Repo {
     }
   }
 
+  /**
+   * Normalizes and buffers items, uploading full batches as they accumulate.
+   *
+   * Used by connectors to feed extracted items into the repo; items are normalized (unless the item
+   * type is external domain metadata or SSOR attachments) and any complete batches of batchSize are
+   * uploaded immediately, leaving the remainder buffered for a later flush.
+   *
+   * @param items - Array of raw Item records to normalize and buffer.
+   * @returns Promise that resolves to true when items were buffered/uploaded successfully, or false if a batch upload threw.
+   */
   async push(items: Item[]): Promise<boolean> {
     let recordsToPush: (NormalizedItem | NormalizedAttachment | Item)[];
 

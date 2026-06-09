@@ -22,6 +22,12 @@ import {
   UploaderResult,
 } from './uploader.interfaces';
 
+/**
+ * Uploads extraction artifacts to the DevRev platform and reads them back.
+ *
+ * Used to compress and upload JSON batches and streamed attachment binaries, obtain upload/download
+ * URLs, confirm uploads, and download and parse previously uploaded artifacts during sync.
+ */
 export class Uploader {
   private isLocalDevelopment?: boolean;
   private devrevApiEndpoint: string;
@@ -42,10 +48,14 @@ export class Uploader {
   }
 
   /**
-   * Uploads the fetched objects to the DevRev platform. Fetched objects are compressed to a gzipped jsonl object and uploaded to the platform.
-   * @param {string} itemType - The type of the item to be uploaded
-   * @param {object[] | object} fetchedObjects - The objects to be uploaded
-   * @returns {Promise<UploadResponse>} - The response object containing the artifact information or error information if there was an error
+   * Uploads fetched objects to the DevRev platform as a single artifact.
+   *
+   * Used to compress the objects into a gzipped JSONL file, request an upload URL, push the file, and
+   * (unless skipped) confirm the upload, returning the resulting artifact descriptor.
+   *
+   * @param itemType - The string item type of the objects being uploaded.
+   * @param fetchedObjects - The object or array of objects to upload.
+   * @returns Promise resolving to an UploadResponse with the artifact descriptor, or an error message on failure.
    */
   async upload(
     itemType: string,
@@ -127,11 +137,14 @@ export class Uploader {
   }
 
   /**
-   * Gets the upload URL for an artifact from the DevRev API.
-   * @param {string} filename - The name of the file to upload
-   * @param {string} fileType - The MIME type of the file
-   * @param {number} [fileSize] - Optional file size in bytes
-   * @returns {Promise<ArtifactToUpload | void>} The artifact upload information or undefined on error
+   * Requests a pre-signed upload URL and form data for a new artifact.
+   *
+   * Used before uploading or streaming a file so the binary can be POSTed to the returned URL.
+   *
+   * @param filename - The string file name to register (truncated if it exceeds the platform limit).
+   * @param fileType - The string MIME type of the file.
+   * @param fileSize - Optional number of bytes; rejected if 0 or less.
+   * @returns Promise resolving to an UploaderResult wrapping the ArtifactToUpload, or an error on failure.
    */
   async getArtifactUploadUrl(
     filename: string,
@@ -165,10 +178,13 @@ export class Uploader {
   }
 
   /**
-   * Uploads an artifact file to the provided upload URL using multipart form data.
-   * @param {ArtifactToUpload} artifact - The artifact upload information containing upload URL and form data
-   * @param {Buffer} file - The file buffer to upload
-   * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
+   * Uploads an in-memory file buffer to a pre-signed artifact upload URL.
+   *
+   * Used to push a fully buffered artifact (e.g. a compressed JSON batch) as multipart form data.
+   *
+   * @param artifact - The ArtifactToUpload descriptor holding the upload URL and form fields.
+   * @param file - The Buffer containing the file contents to upload.
+   * @returns Promise resolving to an UploaderResult wrapping the AxiosResponse, or an error on failure.
    */
   async uploadArtifact(
     artifact: ArtifactToUpload,
@@ -193,10 +209,14 @@ export class Uploader {
   }
 
   /**
-   * Streams an artifact file from an axios response to the upload URL.
-   * @param {ArtifactToUpload} artifact - The artifact upload information containing upload URL and form data
-   * @param {AxiosResponse} fileStream - The axios response stream containing the file data
-   * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
+   * Streams a file directly from a source response into a pre-signed artifact upload URL.
+   *
+   * Used to upload attachment binaries without buffering them in memory; falls back to the max
+   * artifact size for Content-Length when the source omits it, and always destroys the source stream.
+   *
+   * @param artifact - The ArtifactToUpload descriptor holding the upload URL and form fields.
+   * @param fileStream - The AxiosResponse whose data stream supplies the file contents.
+   * @returns Promise resolving to an UploaderResult wrapping the AxiosResponse, or an error on failure.
    */
   async streamArtifact(
     artifact: ArtifactToUpload,
@@ -232,9 +252,12 @@ export class Uploader {
   }
 
   /**
-   * Confirms that an artifact upload has been completed successfully.
-   * @param {string} artifactId - The ID of the artifact to confirm
-   * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
+   * Confirms with the platform that an artifact upload has finished.
+   *
+   * Used after pushing the binary so the platform finalizes and accepts the artifact.
+   *
+   * @param artifactId - The string ID of the uploaded artifact to confirm.
+   * @returns Promise resolving to an object with the AxiosResponse on a 2xx, or an error otherwise.
    */
   async confirmArtifactUpload(artifactId: string): Promise<{
     response?: AxiosResponse;
@@ -273,8 +296,11 @@ export class Uploader {
   }
 
   /**
-   * Destroys a stream to prevent resource leaks.
-   * @param {any} fileStream - The axios response stream to destroy
+   * Destroys a source stream to prevent resource leaks after streaming an artifact.
+   *
+   * Used internally by streamArtifact to close the AxiosResponse data stream on both success and error.
+   *
+   * @param fileStream - The AxiosResponse whose underlying data stream should be destroyed/closed.
    */
   private destroyStream(fileStream: AxiosResponse): void {
     try {
@@ -292,10 +318,13 @@ export class Uploader {
   }
 
   /**
-   * Retrieves attachment metadata from an artifact by downloading and parsing it.
-   * @param {object} param0 - Configuration object
-   * @param {string} param0.artifact - The artifact ID to download attachments from
-   * @returns {Promise<{attachments?: NormalizedAttachment[], error?: {message: string}}>} The attachments array or error object
+   * Downloads an attachments-metadata artifact and parses it into normalized attachments.
+   *
+   * Used during attachment extraction to read back the previously uploaded attachment metadata so its
+   * binaries can be streamed; resolves the download URL, downloads, gunzips, and parses the JSONL.
+   *
+   * @param param0 - Object with `artifact`, the string artifact ID of the attachments-metadata artifact.
+   * @returns Promise resolving to an object with the NormalizedAttachment array, or an error message on failure.
    */
   async getAttachmentsFromArtifactId({
     artifact,
@@ -364,9 +393,12 @@ export class Uploader {
   }
 
   /**
-   * Gets the download URL for an artifact from the DevRev API.
-   * @param {string} artifactId - The ID of the artifact to download
-   * @returns {Promise<string | void>} The download URL or undefined on error
+   * Requests a pre-signed download URL for an artifact from the platform.
+   *
+   * Used internally before downloading an artifact's contents back from object storage.
+   *
+   * @param artifactId - The string ID of the artifact to download.
+   * @returns Promise resolving to an UploaderResult wrapping the download URL string, or an error on failure.
    */
   private async getArtifactDownloadUrl(
     artifactId: string
@@ -391,9 +423,12 @@ export class Uploader {
   }
 
   /**
-   * Downloads an artifact file from the given URL.
-   * @param {string} artifactUrl - The URL to download the artifact from
-   * @returns {Promise<Buffer | void>} The artifact file buffer or undefined on error
+   * Downloads an artifact's raw bytes from a pre-signed URL.
+   *
+   * Used internally to fetch artifact contents as a Buffer for later decompression and parsing.
+   *
+   * @param artifactUrl - The string pre-signed URL to download the artifact from.
+   * @returns Promise resolving to an UploaderResult wrapping the file Buffer, or an error on failure.
    */
   private async downloadArtifact(
     artifactUrl: string
@@ -410,11 +445,12 @@ export class Uploader {
   }
 
   /**
-   * Retrieves and parses JSON objects from an artifact by artifact ID.
-   * @param {object} param0 - Configuration object
-   * @param {string} param0.artifactId - The artifact ID to download and parse
-   * @param {boolean} [param0.isGzipped=false] - Whether the artifact is gzipped
-   * @returns {Promise<object[] | object | void>} The parsed JSON objects or undefined on error
+   * Downloads an artifact by ID and parses its JSONL contents into objects.
+   *
+   * Used to read back a previously uploaded JSON batch; optionally gunzips the bytes first.
+   *
+   * @param param0 - Object with `artifactId` (string artifact ID) and optional `isGzipped` (boolean, default false) flag.
+   * @returns Promise resolving to an UploaderResult wrapping the parsed object or object array, or an error on failure.
    */
   async getJsonObjectByArtifactId({
     artifactId,

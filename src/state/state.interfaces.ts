@@ -3,6 +3,13 @@ import { AirSyncEvent } from '../types/extraction';
 import { FileToLoad } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
+/**
+ * The SDK-owned portion of the persisted adapter state.
+ *
+ * Used to hold bookkeeping the SDK manages itself (extraction-window boundaries,
+ * attachments/files progress, installed snap-in version) separately from
+ * connector-owned state, so SDK internals never collide with connector keys.
+ */
 export interface SdkState {
   /**
    * @deprecated Use extract_from and extract_to from the event context instead,
@@ -20,12 +27,15 @@ export interface SdkState {
   /** The pending (not yet committed) newest extraction boundary (ISO 8601 timestamp).
    *  Set on StartExtractingMetadata, reused across subsequent phases, cleared on AttachmentExtractionDone. */
   pendingWorkersNewest?: string;
-  /** The oldest point of extraction (ISO 8601 timestamp). */
+  /** The committed oldest point of extraction (ISO 8601 timestamp). */
   workersOldest?: string;
-  /** The newest point of extraction (ISO 8601 timestamp). */
+  /** The committed newest point of extraction (ISO 8601 timestamp). */
   workersNewest?: string;
+  /** Attachments-extraction bookkeeping (artifact ids, progress cursor). Extraction mode only. */
   toDevRev?: ToDevRev;
+  /** Loading bookkeeping (files still to load into DevRev). Loading mode only. */
   fromDevRev?: FromDevRev;
+  /** The snap-in version id whose initial domain mapping is installed; drives reinstall on change. */
   snapInVersionId?: string;
 }
 
@@ -49,6 +59,12 @@ export interface AdapterStateEnvelope<ConnectorState> {
   sdkState: SdkState;
 }
 
+/**
+ * SDK-owned attachments-extraction state (external system -> DevRev direction).
+ *
+ * Used to track which attachment artifacts have been streamed and how far the
+ * attachments phase has progressed so it can resume after a timeout.
+ */
 export interface ToDevRev {
   attachmentsMetadata: {
     artifactIds: string[];
@@ -65,10 +81,23 @@ export interface ProcessedAttachment {
   parent_id: string;
 }
 
+/**
+ * SDK-owned loading state (DevRev -> external system direction).
+ *
+ * Used to track which files still need to be loaded into the external system so
+ * the loading phase can resume after a timeout.
+ */
 export interface FromDevRev {
   filesToLoad: FileToLoad[];
 }
 
+/**
+ * Constructor/factory parameters for building an adapter state instance.
+ *
+ * Used by `createAdapterState` and the per-mode factories to carry the AirSync
+ * event, the connector's seed state, and the optional initial domain mapping and
+ * worker options.
+ */
 export interface StateInterface<ConnectorState> {
   event: AirSyncEvent;
   initialState: ConnectorState;
@@ -76,6 +105,12 @@ export interface StateInterface<ConnectorState> {
   options?: WorkerAdapterOptions;
 }
 
+/**
+ * The initial SDK state seeded for extraction-mode workers.
+ *
+ * Used by `ExtractionState` as the baseline `sdkState` (extraction-window
+ * boundaries plus attachments bookkeeping) before any persisted state is merged in.
+ */
 export const extractionSdkState = {
   lastSyncStarted: '',
   lastSuccessfulSyncStarted: '',
@@ -93,6 +128,12 @@ export const extractionSdkState = {
   },
 };
 
+/**
+ * The initial SDK state seeded for loading-mode workers.
+ *
+ * Used by `LoadingState` as the baseline `sdkState` (files-to-load bookkeeping)
+ * before any persisted state is merged in.
+ */
 export const loadingSdkState = {
   snapInVersionId: '',
   fromDevRev: {

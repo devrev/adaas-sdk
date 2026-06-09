@@ -59,7 +59,15 @@ export function getEventTypeForResult(
 
 /**
  * Per-phase outgoing event types, keyed by the incoming {@link EventType}.
- * `resumable` phases define progress/delayed events; non-resumable ones do not.
+ *
+ * Each entry maps a phase to its outgoing events: every phase has a `done`
+ * (success) and `error` event. `resumable` phases (data/attachment extraction,
+ * data/attachment loading) additionally define `progress` and `delayed` events
+ * and accept all four statuses. Non-resumable phases (external sync units,
+ * metadata, state deletions) omit `progress`/`delayed`; a `progress`/`delay`
+ * status there is illegal and {@link getEventTypeForResult} collapses it to the
+ * `error` event while flagging it. Event types absent from this partial map are
+ * treated as unrecognized.
  */
 const EVENT_PHASE_MAP: Partial<
   Record<
