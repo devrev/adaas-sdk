@@ -11,7 +11,9 @@ export type {
 } from './mock-server/mock-server.interfaces';
 export { processTask } from './multithreading/process-task';
 export { spawn } from './multithreading/spawn/spawn';
-export { WorkerAdapter } from './multithreading/worker-adapter/worker-adapter';
+export { BaseAdapter } from './multithreading/adapters/base-adapter';
+export { ExtractionAdapter } from './multithreading/adapters/extraction-adapter';
+export { LoadingAdapter } from './multithreading/adapters/loading-adapter';
 export { createMockEvent, MOCK_SERVER_DEFAULT_URL } from './common/test-utils';
 export type { DeepPartial } from './common/test-utils';
 export * from './types';

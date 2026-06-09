@@ -5,12 +5,15 @@ import {
   runWithUserLogContext,
 } from '../logger/logger.context';
 import { createAdapterState } from '../state/state';
+import { SyncMode } from '../types/common';
 import {
   ProcessTaskInterface,
+  WorkerAdapter,
   WorkerEvent,
   WorkerMessageSubject,
 } from '../types/workers';
-import { WorkerAdapter } from './worker-adapter/worker-adapter';
+import { ExtractionAdapter } from './adapters/extraction-adapter';
+import { LoadingAdapter } from './adapters/loading-adapter';
 
 export function processTask<ConnectorState>({
   task,
@@ -38,11 +41,18 @@ export function processTask<ConnectorState>({
           options,
         });
 
-        const adapter = new WorkerAdapter<ConnectorState>({
-          event,
-          adapterState,
-          options,
-        });
+        const adapter: WorkerAdapter<ConnectorState> =
+          event.payload.event_context.mode === SyncMode.LOADING
+            ? new LoadingAdapter<ConnectorState>({
+                event,
+                adapterState,
+                options,
+              })
+            : new ExtractionAdapter<ConnectorState>({
+                event,
+                adapterState,
+                options,
+              });
 
         parentPort?.on(WorkerEvent.WorkerMessage, (message) => {
           if (message.subject !== WorkerMessageSubject.WorkerMessageExit) {

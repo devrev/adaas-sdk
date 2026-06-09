@@ -2,13 +2,24 @@ import { Worker } from 'worker_threads';
 
 import type { LogLevel } from '../logger/logger.interfaces';
 import { BaseState } from '../state/state';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
+import { LoadingAdapter } from '../multithreading/adapters/loading-adapter';
 
 import { AirSyncEvent, EventType, ExtractorEventType } from './extraction';
 
 import { LoaderEventType } from './loading';
 
 import { InitialDomainMapping } from './common';
+
+/**
+ * WorkerAdapter is the adapter passed to a worker's task/onTimeout callbacks.
+ * It is the extraction adapter for extraction workers and the loading adapter
+ * for loading workers; the SDK constructs the concrete type based on the sync
+ * mode of the event.
+ */
+export type WorkerAdapter<ConnectorState> =
+  | ExtractionAdapter<ConnectorState>
+  | LoadingAdapter<ConnectorState>;
 
 /**
  * WorkerAdapterInterface is an interface for WorkerAdapter class.
