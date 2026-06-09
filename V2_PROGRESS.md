@@ -48,9 +48,15 @@ commits. Mechanical/structural transforms first (Phase 1), polish + surface-defi
     (`process-task.ts`, `spawn.ts`, `worker-adapter.ts`, `control-protocol.ts`) imports it, so it
     can only be removed alongside the old enum members it translates (C3). Deleting it here would
     break the build.
-- **C2 — Airdrop→AirSync identifier rename.** SDK identifiers/types/classes/comments only.
-  NOT API route strings (rule 3). e.g. `AirdropEvent`→`AirSyncEvent`, `AirdropMessage`→`AirSyncMessage`
-  (verify exact target names against `origin/v2`). Provide back-compat type aliases ONLY if origin/v2 did.
+- **C2 — Airdrop→AirSync identifier rename.** DECIDED with Rado:
+  - HARD rename, NO back-compat alias: `AirdropEvent`→`AirSyncEvent`, `AirdropMessage`→`AirSyncMessage`.
+    (origin/v2 did NOT do this rename — oracle unreliable here; do it properly.)
+  - Update stale branding in comments/prose: bare "Airdrop" + "ADaaS" → "AirSync".
+  - MUST NOT touch: `/internal/airdrop.*` API routes; the `AIRDROP_*` mapping enum members AND their
+    `'airdrop_*'` string values (mappers.interface.ts); the `external_system_type: 'ADaaS'` string LITERAL
+    (platform contract — keep quotes-protected).
+  - PRODUCTION scope only: exclude `**/*.test.ts` AND `src/tests/**` (test scaffolding renamed later in C10).
+  - Connectors all import AirdropEvent → breaking; captured for migrate-v2 skill.
 - **C3 — Remove old event-type compatibility layer** (NOT a rename — main carries old+new side by side; drop old).
   - Delete deprecated enum members, leaving only the new ones (tables below). Files: `src/types/extraction.ts`,
     `src/types/loading.ts`.
@@ -181,7 +187,7 @@ Symbols imported from `@devrev/ts-adaas` by the 3 inspectable connectors:
 |--------|-------|-------|
 | C0 package rename     | ☑ done | 8ddeb87. @devrev/ts-adaas→@devrev/airsync-sdk, v2.0.0-beta.0. Report filename rename deferred to C8. |
 | C1 delete + tsconfig  | ☑ done | d573cb6. Deleted src/deprecated/ (6 files) + 4 index exports; added tsconfig.build.json (excludes tests), build script points to it. Reviewer-approved. event-type-translation deletion moved to C3. |
-| C2 AirSync rename     | ☐ todo | |
+| C2 AirSync rename     | ☑ done | 1fa9afc. AirdropEvent→AirSyncEvent, AirdropMessage→AirSyncMessage (hard, no alias) + prose ADaaS/Airdrop→AirSync. Protected: airdrop.* routes, AIRDROP_* enum, 'ADaaS' literal. Reviewer-approved. |
 | C3 enum cleanup       | ☐ todo | |
 | C4a state split       | ☐ todo | |
 | C4b state envelope    | ☐ todo | |
