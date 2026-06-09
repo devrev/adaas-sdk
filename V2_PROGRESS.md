@@ -40,18 +40,28 @@ commits. Mechanical/structural transforms first (Phase 1), polish + surface-defi
   Touch: `package.json` `name`; README references; api-extractor config (entry point / package name);
   rename the report file `*/ts-adaas.api.md` → `airsync-sdk.api.md` IF trivial, else defer report to Phase 2.
   Do NOT publish. Version → `2.0.0-beta.0` placeholder.
-- **C1 — Delete dead/deprecated code + add build tsconfig.**
-  - Delete `src/deprecated/**` (see list below) and its exports from `src/index.ts`.
-  - Delete `src/common/event-type-translation.ts` + `.test.ts` (the old↔new event-type shim).
-  - Delete other `@deprecated`-tagged symbols / provably-unused code (grep-justified).
+- **C1 — Delete deprecated dir + add build tsconfig.**
+  - Delete `src/deprecated/**` (see list below) and its 4 `export * from './deprecated/...'` lines from `src/index.ts`.
   - Add `tsconfig.build.json` (`include: ["src"]`, `exclude: ["**/*.test.ts","node_modules","dist"]`)
     and point `build` script at it. This is the "build stays green" enabler.
+  - NOTE: `event-type-translation.ts` deletion MOVED to C3 — it is NOT dead; production code
+    (`process-task.ts`, `spawn.ts`, `worker-adapter.ts`, `control-protocol.ts`) imports it, so it
+    can only be removed alongside the old enum members it translates (C3). Deleting it here would
+    break the build.
 - **C2 — Airdrop→AirSync identifier rename.** SDK identifiers/types/classes/comments only.
   NOT API route strings (rule 3). e.g. `AirdropEvent`→`AirSyncEvent`, `AirdropMessage`→`AirSyncMessage`
   (verify exact target names against `origin/v2`). Provide back-compat type aliases ONLY if origin/v2 did.
-- **C3 — Delete deprecated enum members** (NOT a rename — main carries old+new side by side; drop old).
-  Leave only the new members. See enum tables below. Files: `src/types/extraction.ts`,
-  `src/types/loading.ts`, plus any `case`/reference cleanups in `control-protocol.ts`, `spawn.helpers.ts`, adapters.
+- **C3 — Remove old event-type compatibility layer** (NOT a rename — main carries old+new side by side; drop old).
+  - Delete deprecated enum members, leaving only the new ones (tables below). Files: `src/types/extraction.ts`,
+    `src/types/loading.ts`.
+  - Delete `src/common/event-type-translation.ts` + `.test.ts`.
+  - Rewire its 4 production callers to use event types directly (no translation; backend now sends/accepts
+    only new types): `src/multithreading/process-task.ts` (translateIncomingEventType),
+    `src/multithreading/spawn/spawn.ts` (translateIncomingEventType),
+    `src/multithreading/worker-adapter/worker-adapter.ts` (translateOutgoingEventType),
+    `src/common/control-protocol.ts` (translateOutgoingEventType).
+  - Plus any `case`/reference cleanups in `spawn.helpers.ts`, adapters.
+  - Exported translation fns are NOT in index.ts (internal) — safe to delete.
 - **C4a — State split (structural only).** Introduce `BaseState` + `ExtractionState` + `LoadingState`.
   KEEP the flat `AdapterState<ConnectorState> = ConnectorState & SdkState` shape (behavior identical).
   Author fresh; origin/v2 `src/state/base-state.ts` etc. are structural reference only.
@@ -170,7 +180,7 @@ Symbols imported from `@devrev/ts-adaas` by the 3 inspectable connectors:
 | Commit | State | Notes |
 |--------|-------|-------|
 | C0 package rename     | ☑ done | 8ddeb87. @devrev/ts-adaas→@devrev/airsync-sdk, v2.0.0-beta.0. Report filename rename deferred to C8. |
-| C1 delete + tsconfig  | ☐ todo | |
+| C1 delete + tsconfig  | ☑ done | d573cb6. Deleted src/deprecated/ (6 files) + 4 index exports; added tsconfig.build.json (excludes tests), build script points to it. Reviewer-approved. event-type-translation deletion moved to C3. |
 | C2 AirSync rename     | ☐ todo | |
 | C3 enum cleanup       | ☐ todo | |
 | C4a state split       | ☐ todo | |
