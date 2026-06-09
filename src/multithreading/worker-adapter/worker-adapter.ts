@@ -24,7 +24,7 @@ import {
   NormalizedAttachment,
   RepoInterface,
 } from '../../repo/repo.interfaces';
-import { State } from '../../state/state';
+import { BaseState } from '../../state/state';
 import { AdapterState } from '../../state/state.interfaces';
 import {
   AirSyncEvent,
@@ -93,7 +93,7 @@ export class WorkerAdapter<ConnectorState> {
   isTimeout: boolean;
   hasWorkerEmitted: boolean;
 
-  private adapterState: State<ConnectorState>;
+  private adapterState: BaseState<ConnectorState>;
   private _artifacts: Artifact[];
   private repos: Repo[] = [];
   private currentEventDataLength: number = 0;

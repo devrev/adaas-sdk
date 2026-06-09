@@ -1,7 +1,7 @@
 import { Worker } from 'worker_threads';
 
 import type { LogLevel } from '../logger/logger.interfaces';
-import { State } from '../state/state';
+import { BaseState } from '../state/state';
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 
 import { AirSyncEvent, EventType, ExtractorEventType } from './extraction';
@@ -20,7 +20,7 @@ import { InitialDomainMapping } from './common';
  */
 export interface WorkerAdapterInterface<ConnectorState> {
   event: AirSyncEvent;
-  adapterState: State<ConnectorState>;
+  adapterState: BaseState<ConnectorState>;
   options?: WorkerAdapterOptions;
 }
 
