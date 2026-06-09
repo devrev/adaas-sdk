@@ -107,8 +107,42 @@ commits. Mechanical/structural transforms first (Phase 1), polish + surface-defi
   - time-value-resolver.ts: signature unchanged.
   BREAKING: connectors reading SDK fields via adapter.state break; on-disk state auto-migrates v1→v2 on read.
 - **C5 — Adapter split (structural only).** `BaseAdapter` + `ExtractionAdapter` + `LoadingAdapter`.
-  KEEP existing `emit`-based contract working (behavior identical). Author fresh intermediate form
-  (this exact form exists in NO branch — v2-old-backup (oracle tag)'s split already assumes emit-from-return).
+  KEEP existing `emit(eventType, data)` contract (behavior identical).
+  CORRECTION: the oracle's adapter split IS C5-compatible — its `emit()` still has the
+  `emit(eventType, data)` signature (emit-from-return is genuinely deferred to C6 in the oracle too).
+  So follow the oracle's adapter design closely (it's a faithful reference), re-authored cleanly.
+  DESIGN (decided after reading current worker-adapter + oracle adapters):
+  - `adapters/base-adapter.ts`: `abstract class BaseAdapter<ConnectorState>` holds event/options/isTimeout/
+    hasWorkerEmitted, `protected adapterState: BaseState<ConnectorState>`, `protected uploader`,
+    `state` get/set, `sdkState` get, `extractionScope` get, `postState()`, and the TEMPLATE-METHOD `emit()`
+    skeleton (hasWorkerEmitted guard → beforeEmit hook → state save (non-stateless) → emit() w/ buildEmitPayload
+    → afterEmit hook → WorkerMessageEmitted). Three abstract hooks: `beforeEmit(type)`, `buildEmitPayload(type)`,
+    `afterEmit(type)`.
+  - `adapters/extraction-adapter.ts`: `ExtractionAdapter extends BaseAdapter`. Owns _artifacts, repos,
+    currentEventDataLength, mappers? NO (mappers is loader). Owns: shouldExtract, initializeRepos, getRepo,
+    artifacts get/set, uploadAllRepos, processAttachment, destroyHttpStream, streamAttachments.
+    beforeEmit = ESU-repo-upload (the TODO block) + uploadAllRepos + the AttachmentExtractionDone boundary
+    update (lastSuccessfulSyncStarted/workers* on sdkState). buildEmitPayload = { artifacts }. afterEmit =
+    clear artifacts. ctor seeds mappers? no. (mappers stays loader-only per oracle.)
+  - `adapters/loading-adapter.ts`: `LoadingAdapter extends BaseAdapter`. Owns loaderReports, _processedFiles,
+    _mappers, reports/processedFiles/mappers getters, loadItemTypes, getLoaderBatches, loadAttachments,
+    loadItem, loadAttachment. beforeEmit = noop. buildEmitPayload = { reports, processed_files }. afterEmit = noop.
+  - NOTE the current emit() computes isExtraction/isLoader to decide payload extras; the template split makes
+    that implicit (each subclass's buildEmitPayload returns its own extras). Behavior-equivalent.
+  - `worker-adapter.ts`: REPLACE with a thin re-export module OR keep file but it just re-exports. The
+    `WorkerAdapter` public type becomes a UNION alias in types/workers.ts (see below). `createWorkerAdapter`
+    factory: keep but split or drop (process-task builds directly). Check consumers.
+  - `types/workers.ts`: `export type WorkerAdapter<S> = ExtractionAdapter<S> | LoadingAdapter<S>`.
+    WorkerAdapterInterface stays (adapterState: BaseState).
+  - `process-task.ts`: dispatch by `event_context.mode === SyncMode.LOADING` → new LoadingAdapter, else
+    new ExtractionAdapter; pass concrete adapter to task/onTimeout. (process-task SPLIT into two entry points
+    is C6, NOT here — keep single processTask dispatching.)
+  - `attachments-streaming-pool.ts` + `.interfaces.ts`: retype `adapter: WorkerAdapter` → `ExtractionAdapter`
+    (pool is extraction-only; uses sdkState.toDevRev, processAttachment, isTimeout, emit).
+  - `types/extraction.ts`: imports WorkerAdapter for processor fn types — keep importing the union alias.
+  - DECIDED: union alias is throwaway, removed in C6 when processTask splits into typed entry points.
+  - Helpers `worker-adapter.helpers.ts` (getFilesToLoad, addReportToLoaderReport): move to loading-adapter's
+    dir or keep; used only by loading now. Keep path stable to minimize churn (import from new loading-adapter).
 - **C6 — Emit-from-return contract.** `task`/`onTimeout` return a `TaskResult`
   (`{ status: 'success'|'progress'|'delay'|'error', ... }`); the SDK maps status→phase event and emits
   exactly once; `emit` removed from public surface. `processTask` → `processExtractionTask` +
@@ -223,7 +257,7 @@ Symbols imported from `@devrev/ts-adaas` by the 3 inspectable connectors:
 | C3 enum cleanup       | ☑ done | cc05f41. Deleted deprecated enum members (EventType, ExtractorEventType, LoaderEventType) + event-type-translation.ts/.test; rewired 4 callers (process-task, spawn, control-protocol, worker-adapter) + spawn.helpers cases. Behavior-equivalent. Reviewer-approved. |
 | C4a state split       | ☑ done | b63f3ab. BaseState + ExtractionState + LoadingState, flat shape preserved; state.ts is dispatcher by mode. Reviewer-confirmed behavior-equivalent (loading only loses inert logs). |
 | C4b state envelope    | ☑ done | 30ba1b3. { connectorState, sdkState } envelope + v1->v2 migration shim (normalizeFetchedState). adapter.state→connector-only, new adapter.sdkState; ~28 SDK-field access sites moved. SdkState kept combined (narrowing deferred to C5). Reviewer-approved (migration cases verified). |
-| C5 adapter split      | ☐ todo | NOTE for C5: narrow SdkState into Base/Extraction/Loading variants here (oracle state.interfaces shows the split). |
+| C5 adapter split      | ☑ done | a7a877f. BaseAdapter (template emit + hooks) + ExtractionAdapter + LoadingAdapter; WorkerAdapter→union alias; processTask dispatches by mode (still single entry). worker-adapter.ts deleted; helpers→loading-adapter.helpers. Reviewer-approved (emit equivalence verified). SdkState kept combined (narrowing dropped from scope). |
 | C6 emit-from-return   | ☐ todo | |
 | C7 JSDoc              | ☐ todo | Phase 2 |
 | C8 api report         | ☐ todo | Phase 2 |
