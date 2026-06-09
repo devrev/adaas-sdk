@@ -23,11 +23,10 @@ import {
   ExternalSystemAttachmentStreamingFunction,
   ExtractorEventType,
   ProcessAttachmentReturnType,
-  StreamAttachmentsReturnType,
 } from '../../types/extraction';
 import { LoaderEventType } from '../../types/loading';
 import { BaseState } from '../../state/state';
-import { WorkerAdapterOptions } from '../../types/workers';
+import { TaskResult, WorkerAdapterOptions } from '../../types/workers';
 import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
 
 import { BaseAdapter } from './base-adapter';
@@ -192,50 +191,6 @@ export class ExtractionAdapter<
     this.artifacts = [];
   }
 
-  /**
-   * Emits an extraction event. For ExternalSyncUnitExtractionDone, inline
-   * external sync units are uploaded via a Repo first (then stripped from the
-   * payload to avoid SQS size limits); `beforeEmit` uploads that repo with the
-   * rest before the event is sent.
-   * TODO: Remove the external sync unit handling in v2.0.0
-   *
-   * @param newEventType - The event type to be emitted
-   * @param data - The data to be sent with the event
-   */
-  override async emit(
-    newEventType: ExtractorEventType | LoaderEventType,
-    data?: EventData
-  ): Promise<void> {
-    if (
-      newEventType === ExtractorEventType.ExternalSyncUnitExtractionDone &&
-      data?.external_sync_units &&
-      data.external_sync_units.length > 0
-    ) {
-      console.log(
-        `Uploading ${data.external_sync_units.length} external sync units via repo before emitting event.`
-      );
-
-      this.initializeRepos([
-        {
-          itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
-          overridenOptions: {
-            batchSize: 25000,
-            skipConfirmation: true,
-          },
-        },
-      ]);
-
-      await this.getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)?.push(
-        data.external_sync_units
-      );
-
-      // Remove inline external_sync_units from data to avoid SQS size issues
-      delete data.external_sync_units;
-    }
-
-    return super.emit(newEventType, data);
-  }
-
   async uploadAllRepos(): Promise<void> {
     for (const repo of this.repos) {
       const error = await repo.upload();
@@ -397,7 +352,7 @@ export class ExtractionAdapter<
       NewBatch
     >;
     batchSize?: number;
-  }): Promise<StreamAttachmentsReturnType> {
+  }): Promise<TaskResult> {
     return runWithSdkLogContext(async () => {
       if (batchSize <= 0) {
         console.warn(
@@ -425,7 +380,7 @@ export class ExtractionAdapter<
       // If there are no attachments metadata artifact IDs in state, finish here
       if (!attachmentsMetadata?.artifactIds?.length) {
         console.log(`No attachments metadata artifact IDs found in state.`);
-        return;
+        return { status: 'success' };
       } else {
         console.log(
           `Found ${attachmentsMetadata.artifactIds.length} attachments metadata artifact IDs in state.`
@@ -450,7 +405,7 @@ export class ExtractionAdapter<
           console.error(
             `Failed to get attachments for artifact ID: ${attachmentsMetadataArtifactId}.`
           );
-          return { error };
+          return { status: 'error', error };
         }
 
         if (!attachments || attachments.length === 0) {
@@ -505,18 +460,20 @@ export class ExtractionAdapter<
           response = await attachmentsPool.streamAll();
         }
 
-        if (response?.delay || response?.error) {
-          return response;
+        if (response?.error) {
+          return { status: 'error', error: response.error };
         }
 
-        // On timeout, emit progress and exit to allow continuation.
+        if (response?.delay) {
+          return { status: 'delay', delaySeconds: response.delay };
+        }
+
+        // On timeout, return progress to allow continuation in a fresh invocation.
         if (this.isTimeout) {
           console.log(
-            `Timeout detected after processing attachments for artifact ID: ${attachmentsMetadataArtifactId}. Emitting progress to allow continuation.`
+            `Timeout detected after processing attachments for artifact ID: ${attachmentsMetadataArtifactId}. Returning progress to allow continuation.`
           );
-          await this.emit(ExtractorEventType.AttachmentExtractionProgress);
-          process.exit(0);
-          return;
+          return { status: 'progress' };
         }
 
         console.log(
@@ -529,7 +486,7 @@ export class ExtractionAdapter<
         }
       }
 
-      return;
+      return { status: 'success' };
     });
   }
 }

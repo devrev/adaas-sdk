@@ -25,10 +25,9 @@ import {
   LoaderEventType,
   LoaderReport,
   LoadItemResponse,
-  LoadItemTypesResponse,
   StatsFileObject,
 } from '../../types/loading';
-import { WorkerAdapterOptions } from '../../types/workers';
+import { TaskResult, WorkerAdapterOptions } from '../../types/workers';
 
 import { BaseAdapter } from './base-adapter';
 import {
@@ -99,7 +98,7 @@ export class LoadingAdapter<
 
   async loadItemTypes({
     itemTypesToLoad,
-  }: ItemTypesToLoadParams): Promise<LoadItemTypesResponse> {
+  }: ItemTypesToLoadParams): Promise<TaskResult> {
     return runWithSdkLogContext(async () => {
       if (this.event.payload.event_type === EventType.StartLoadingData) {
         const itemTypes = itemTypesToLoad.map(
@@ -108,10 +107,7 @@ export class LoadingAdapter<
 
         if (!itemTypes.length) {
           console.warn('No item types to load, returning.');
-          return {
-            reports: this.reports,
-            processed_files: this.processedFiles,
-          };
+          return { status: 'success' };
         }
 
         const filesToLoad = await this.getLoaderBatches({
@@ -127,10 +123,7 @@ export class LoadingAdapter<
         !this.sdkState.fromDevRev.filesToLoad.length
       ) {
         console.warn('No files to load, returning.');
-        return {
-          reports: this.reports,
-          processed_files: this.processedFiles,
-        };
+        return { status: 'success' };
       }
 
       console.log(
@@ -139,8 +132,7 @@ export class LoadingAdapter<
       );
 
       try {
-        outerloop: for (const fileToLoad of this.sdkState.fromDevRev
-          .filesToLoad) {
+        for (const fileToLoad of this.sdkState.fromDevRev.filesToLoad) {
           const itemTypeToLoad = itemTypesToLoad.find(
             (itemTypeToLoad: ItemTypeToLoad) =>
               itemTypeToLoad.itemType === fileToLoad.itemType
@@ -151,13 +143,12 @@ export class LoadingAdapter<
               `Item type to load not found for item type: ${fileToLoad.itemType}.`
             );
 
-            await this.emit(LoaderEventType.DataLoadingError, {
+            return {
+              status: 'error',
               error: {
                 message: `Item type to load not found for item type: ${fileToLoad.itemType}.`,
               },
-            });
-
-            break;
+            };
           }
 
           if (!fileToLoad.completed) {
@@ -171,12 +162,12 @@ export class LoadingAdapter<
               console.error(
                 `Transformer file not found for artifact ID: ${fileToLoad.id}.`
               );
-              await this.emit(LoaderEventType.DataLoadingError, {
+              return {
+                status: 'error',
                 error: {
                   message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
                 },
-              });
-              break outerloop;
+              };
             }
 
             const transformerFile = response as ExternalSystemItem[];
@@ -184,10 +175,9 @@ export class LoadingAdapter<
             for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
               if (this.isTimeout) {
                 console.log(
-                  'Timeout detected during data loading. Emitting progress to allow continuation.'
+                  'Timeout detected during data loading. Returning progress to allow continuation.'
                 );
-                await this.emit(LoaderEventType.DataLoadingProgress);
-                process.exit(0);
+                return { status: 'progress' };
               }
 
               const { report, rateLimit } = await this.loadItem({
@@ -196,13 +186,7 @@ export class LoadingAdapter<
               });
 
               if (rateLimit?.delay) {
-                await this.emit(LoaderEventType.DataLoadingDelayed, {
-                  delay: rateLimit.delay,
-                  reports: this.reports,
-                  processed_files: this.processedFiles,
-                });
-
-                break outerloop;
+                return { status: 'delay', delaySeconds: rateLimit.delay };
               }
 
               if (report) {
@@ -220,18 +204,15 @@ export class LoadingAdapter<
         }
       } catch (error) {
         console.error('Error during data loading.', serializeError(error));
-        await this.emit(LoaderEventType.DataLoadingError, {
+        return {
+          status: 'error',
           error: {
             message: `Error during data loading. ${serializeError(error)}`,
           },
-        });
-        process.exit(1);
+        };
       }
 
-      return {
-        reports: this.reports,
-        processed_files: this.processedFiles,
-      };
+      return { status: 'success' };
     });
   }
 
@@ -271,7 +252,7 @@ export class LoadingAdapter<
     create,
   }: {
     create: ExternalSystemLoadingFunction<ExternalSystemAttachment>;
-  }): Promise<LoadItemTypesResponse> {
+  }): Promise<TaskResult> {
     return runWithSdkLogContext(async () => {
       if (this.event.payload.event_type === EventType.StartLoadingAttachments) {
         this.sdkState.fromDevRev = {
@@ -286,16 +267,13 @@ export class LoadingAdapter<
         this.sdkState.fromDevRev?.filesToLoad.length === 0
       ) {
         console.log('No files to load, returning.');
-        return {
-          reports: this.reports,
-          processed_files: this.processedFiles,
-        };
+        return { status: 'success' };
       }
 
       const filesToLoad = this.sdkState.fromDevRev?.filesToLoad;
 
       try {
-        outerloop: for (const fileToLoad of filesToLoad) {
+        for (const fileToLoad of filesToLoad) {
           if (!fileToLoad.completed) {
             const { response, error: transformerFileError } =
               await this.uploader.getJsonObjectByArtifactId({
@@ -309,21 +287,20 @@ export class LoadingAdapter<
               console.error(
                 `Transformer file not found for artifact ID: ${fileToLoad.id}.`
               );
-              await this.emit(LoaderEventType.AttachmentLoadingError, {
+              return {
+                status: 'error',
                 error: {
                   message: `Transformer file not found for artifact ID: ${fileToLoad.id}.`,
                 },
-              });
-              break outerloop;
+              };
             }
 
             for (let i = fileToLoad.lineToProcess; i < fileToLoad.count; i++) {
               if (this.isTimeout) {
                 console.log(
-                  'Timeout detected during attachment loading. Emitting progress to allow continuation.'
+                  'Timeout detected during attachment loading. Returning progress to allow continuation.'
                 );
-                await this.emit(LoaderEventType.AttachmentLoadingProgress);
-                process.exit(0);
+                return { status: 'progress' };
               }
 
               const { report, rateLimit } = await this.loadAttachment({
@@ -332,13 +309,7 @@ export class LoadingAdapter<
               });
 
               if (rateLimit?.delay) {
-                await this.emit(LoaderEventType.AttachmentLoadingDelayed, {
-                  delay: rateLimit.delay,
-                  reports: this.reports,
-                  processed_files: this.processedFiles,
-                });
-
-                break outerloop;
+                return { status: 'delay', delaySeconds: rateLimit.delay };
               }
 
               if (report) {
@@ -359,20 +330,17 @@ export class LoadingAdapter<
           'Error during attachment loading.',
           serializeError(error)
         );
-        await this.emit(LoaderEventType.AttachmentLoadingError, {
+        return {
+          status: 'error',
           error: {
             message: `Error during attachment loading. ${serializeError(
               error
             )}`,
           },
-        });
-        process.exit(1);
+        };
       }
 
-      return {
-        reports: this.reports,
-        processed_files: this.processedFiles,
-      };
+      return { status: 'success' };
     });
   }
 

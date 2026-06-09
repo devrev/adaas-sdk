@@ -2,24 +2,12 @@ import { Worker } from 'worker_threads';
 
 import type { LogLevel } from '../logger/logger.interfaces';
 import { BaseState } from '../state/state';
-import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
-import { LoadingAdapter } from '../multithreading/adapters/loading-adapter';
 
 import { AirSyncEvent, EventType, ExtractorEventType } from './extraction';
 
 import { LoaderEventType } from './loading';
 
-import { InitialDomainMapping } from './common';
-
-/**
- * WorkerAdapter is the adapter passed to a worker's task/onTimeout callbacks.
- * It is the extraction adapter for extraction workers and the loading adapter
- * for loading workers; the SDK constructs the concrete type based on the sync
- * mode of the event.
- */
-export type WorkerAdapter<ConnectorState> =
-  | ExtractionAdapter<ConnectorState>
-  | LoadingAdapter<ConnectorState>;
+import { ErrorRecord, InitialDomainMapping } from './common';
 
 /**
  * WorkerAdapterInterface is an interface for WorkerAdapter class.
@@ -99,25 +87,66 @@ export interface SpawnFactoryInterface<ConnectorState> {
 }
 
 /**
- * TaskAdapterInterface is an interface for TaskAdapter class.
- * @interface TaskAdapterInterface
- * @constructor
- * @param {WorkerAdapter} adapter - The adapter object
+ * TaskResult is the value a worker's `task` (and optional `onTimeout`) callback
+ * returns to tell the SDK how the current phase ended. The SDK — not the
+ * connector — maps this status to the phase-appropriate platform event and
+ * emits it exactly once. Connectors never call `emit` directly.
+ *
+ * One lambda invocation = one worker process = exactly one emitted event =
+ * terminal. Any continuation (CONTINUE_*, next phase, retry after delay)
+ * happens in a fresh invocation driven by the platform.
+ *
+ * The discriminant is a bare string literal, so connectors write e.g.
+ * `return { status: 'delay', delaySeconds: 60 }` with no import.
+ *
+ * Status -> emitted event, per phase:
+ *
+ * | status     | resumable phases | non-resumable (ESU / metadata) |
+ * |------------|------------------|--------------------------------|
+ * | 'success'  | *_DONE           | *_DONE                         |
+ * | 'progress' | *_PROGRESS       | *_ERROR (illegal; descriptive) |
+ * | 'delay'    | *_DELAYED        | *_ERROR (illegal; descriptive) |
+ * | 'error'    | *_ERROR          | *_ERROR                        |
+ *
+ * Resumable phases: data/attachment extraction, data/attachment loading.
+ * Non-resumable phases: external sync units, metadata.
  */
-export interface TaskAdapterInterface<ConnectorState> {
-  adapter: WorkerAdapter<ConnectorState>;
+export type TaskResult =
+  | { status: 'success' }
+  | { status: 'progress' }
+  | { status: 'delay'; delaySeconds: number }
+  | { status: 'error'; error: ErrorRecord };
+
+/**
+ * Discriminant string of a {@link TaskResult}.
+ */
+export type TaskStatus = TaskResult['status'];
+
+/**
+ * TaskAdapterInterface is the parameter shape passed to a worker's task and
+ * onTimeout callbacks.
+ * @param adapter - The mode-specific adapter for the worker.
+ */
+export interface TaskAdapterInterface<Adapter> {
+  adapter: Adapter;
 }
 
 /**
- * ProcessTaskInterface is an interface for ProcessTask class.
- * @interface ProcessTaskInterface
- * @constructor
- * @param {function} task - The task to be executed, returns exit code
- * @param {function} onTimeout - The task to be executed on timeout, returns exit code
+ * ProcessTaskInterface is the parameter shape for the process-task entry points.
+ *
+ * Both callbacks return a {@link TaskResult}; the SDK — not the connector —
+ * maps that status to the phase-appropriate platform event and emits it exactly
+ * once. Connectors never call `emit` directly.
+ *
+ * `onTimeout` is optional: if omitted, the SDK emits a phase-appropriate default
+ * on timeout (progress for resumable phases, error for ESU/metadata).
+ *
+ * @param task - Runs the phase; returns how it ended.
+ * @param onTimeout - Runs only on timeout; returns how to hand off.
  */
-export interface ProcessTaskInterface<ConnectorState> {
-  task: (params: TaskAdapterInterface<ConnectorState>) => Promise<void>;
-  onTimeout: (params: TaskAdapterInterface<ConnectorState>) => Promise<void>;
+export interface ProcessTaskInterface<Adapter> {
+  task: (params: TaskAdapterInterface<Adapter>) => Promise<TaskResult>;
+  onTimeout?: (params: TaskAdapterInterface<Adapter>) => Promise<TaskResult>;
 }
 
 /**

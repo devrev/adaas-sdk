@@ -14,11 +14,13 @@ import {
 } from '../../types/extraction';
 import { LoaderEventType } from '../../types/loading';
 import {
+  TaskResult,
   WorkerAdapterOptions,
   WorkerMessageEmitted,
   WorkerMessageSubject,
 } from '../../types/workers';
 import { Uploader } from '../../uploader/uploader';
+import { getEventTypeForResult } from '../spawn/spawn.helpers';
 
 /**
  * BaseAdapter holds the state and behavior shared by both sync modes and owns
@@ -108,12 +110,43 @@ export abstract class BaseAdapter<ConnectorState> {
   ): void;
 
   /**
+   * Maps a {@link TaskResult} returned by a worker's task/onTimeout callback to
+   * the phase-appropriate platform event and emits it exactly once.
+   *
+   * This is the SDK-internal bridge between the return-based connector contract
+   * and the control protocol; it is invoked by the worker driver, not by
+   * connectors. Connectors signal outcomes by returning a `TaskResult`, never by
+   * calling `emit` directly.
+   *
+   * @param result - The status the worker reported for the current phase.
+   */
+  async emitFromResult(result: TaskResult): Promise<void> {
+    const { eventType, illegal } = getEventTypeForResult(
+      this.event.payload.event_type,
+      result.status
+    );
+
+    const data: EventData = {};
+    if (result.status === 'delay') {
+      data.delay = result.delaySeconds;
+    } else if (result.status === 'error') {
+      data.error = result.error;
+    } else if (illegal) {
+      data.error = {
+        message: `Worker returned status '${result.status}' for a non-resumable phase (${this.event.payload.event_type}), which is not allowed. Emitting an error event instead.`,
+      };
+    }
+
+    await this.emit(eventType, data);
+  }
+
+  /**
    *  Emits an event to the platform.
    *
    * @param newEventType - The event type to be emitted
    * @param data - The data to be sent with the event
    */
-  async emit(
+  protected async emit(
     newEventType: ExtractorEventType | LoaderEventType,
     data?: EventData
   ): Promise<void> {

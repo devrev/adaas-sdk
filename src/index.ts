@@ -9,7 +9,10 @@ export type {
   RetryConfig,
   RouteConfig,
 } from './mock-server/mock-server.interfaces';
-export { processTask } from './multithreading/process-task';
+export {
+  processExtractionTask,
+  processLoadingTask,
+} from './multithreading/process-task';
 export { spawn } from './multithreading/spawn/spawn';
 export { BaseAdapter } from './multithreading/adapters/base-adapter';
 export { ExtractionAdapter } from './multithreading/adapters/extraction-adapter';
