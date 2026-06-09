@@ -8,7 +8,7 @@ import {
   LoaderEvent,
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
-import { LIBRARY_VERSION } from './constants';
+import { LIBRARY_VERSION } from '../common/constants';
 
 export interface EmitInterface {
   event: AirSyncEvent;

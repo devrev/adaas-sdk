@@ -1,7 +1,7 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import { emit } from '../../common/control-protocol';
+import { emit } from '../emit';
 import { getMemoryUsage } from '../../common/helpers';
 import { Logger, serializeError } from '../../logger/logger';
 import { AirSyncEvent, EventType } from '../../types/extraction';
