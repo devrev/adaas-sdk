@@ -454,8 +454,16 @@ describe(Repo.name, () => {
 
     it('should track modified_date independently from created_date', async () => {
       await repo.upload([
-        itemWithDates('1', '2020-01-01T00:00:00.000Z', '2023-01-01T00:00:00.000Z'),
-        itemWithDates('2', '2024-01-01T00:00:00.000Z', '2021-06-01T00:00:00.000Z'),
+        itemWithDates(
+          '1',
+          '2020-01-01T00:00:00.000Z',
+          '2023-01-01T00:00:00.000Z'
+        ),
+        itemWithDates(
+          '2',
+          '2024-01-01T00:00:00.000Z',
+          '2021-06-01T00:00:00.000Z'
+        ),
       ]);
 
       expect(repo.dateRanges.creationDate.oldest).toBe(

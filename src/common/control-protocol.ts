@@ -6,29 +6,17 @@ import {
   ExtractorEvent,
   ExtractorEventType,
   LoaderEvent,
+  WorkerMetadata,
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
 import { LIBRARY_VERSION } from './constants';
 import { translateOutgoingEventType } from './event-type-translation';
 
-export interface DateRange {
-  oldest?: string;
-  newest?: string;
-}
-
-export interface ProgressData {
-  item_type?: string;
-  creationDate?: DateRange;
-  modifiedDate?: DateRange;
-}
-
 export interface EmitInterface {
   event: AirdropEvent;
   eventType: ExtractorEventType | LoaderEventType;
   data?: EventData;
-  worker_metadata?: {
-    progress_data: ProgressData;
-  };
+  worker_metadata?: WorkerMetadata;
 }
 
 export const emit = async ({
@@ -49,6 +37,8 @@ export const emit = async ({
     },
     worker_metadata: {
       ...worker_metadata,
+      newest_state_date: event.payload.event_context.extract_to,
+      oldest_state_date: event.payload.event_context.extract_from,
       adaas_library_version: LIBRARY_VERSION,
     },
   };

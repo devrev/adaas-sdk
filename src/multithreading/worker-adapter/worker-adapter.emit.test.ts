@@ -319,7 +319,7 @@ describe(`${WorkerAdapter.name}.emit`, () => {
   });
 });
 
-describe(`${WorkerAdapter.name}.emit — progress_data`, () => {
+describe(`${WorkerAdapter.name}.emit — worker_metadata`, () => {
   let adapter: WorkerAdapter<TestState>;
 
   beforeEach(() => {
@@ -352,20 +352,22 @@ describe(`${WorkerAdapter.name}.emit — progress_data`, () => {
     adapterInstance['lastExtractedItemType'] = lastExtractedItemType;
   }
 
-  it('should emit flat progress_data for the latest extracted item type only', async () => {
+  it('should emit flat worker_metadata for the latest extracted item type only', async () => {
     setupRepos(adapter, 'tasks');
 
     await adapter.emit(ExtractorEventType.DataExtractionProgress);
 
     const { emit: mockEmit } = require('../../common/control-protocol');
-    expect(mockEmit.mock.calls[0][0].worker_metadata.progress_data).toEqual({
+    expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({
       item_type: 'tasks',
-      creationDate: { oldest: iso(300), newest: iso(400) },
-      modifiedDate: { oldest: iso(350), newest: iso(450) },
+      oldest_created_date: iso(300),
+      newest_created_date: iso(400),
+      oldest_modified_date: iso(350),
+      newest_modified_date: iso(450),
     });
   });
 
-  it('should omit unset RFC3339 bounds from progress_data', async () => {
+  it('should omit unset RFC3339 bounds from worker_metadata', async () => {
     adapter['repos'] = [
       {
         itemType: 'tasks',
@@ -380,40 +382,34 @@ describe(`${WorkerAdapter.name}.emit — progress_data`, () => {
     await adapter.emit(ExtractorEventType.DataExtractionProgress);
 
     const { emit: mockEmit } = require('../../common/control-protocol');
-    expect(mockEmit.mock.calls[0][0].worker_metadata.progress_data).toEqual({
+    expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({
       item_type: 'tasks',
     });
   });
 
-  it('should send empty progress_data when no item type has been extracted', async () => {
+  it('should send empty worker_metadata when no item type has been extracted', async () => {
     await adapter.emit(ExtractorEventType.DataExtractionProgress);
 
     const { emit: mockEmit } = require('../../common/control-protocol');
-    expect(mockEmit.mock.calls[0][0].worker_metadata.progress_data).toEqual(
-      {}
-    );
+    expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({});
   });
 
-  it('should send empty progress_data for loader events', async () => {
+  it('should send empty worker_metadata for loader events', async () => {
     setupRepos(adapter, 'tasks');
 
     await adapter.emit(LoaderEventType.DataLoadingProgress);
 
     const { emit: mockEmit } = require('../../common/control-protocol');
-    expect(mockEmit.mock.calls[0][0].worker_metadata.progress_data).toEqual(
-      {}
-    );
+    expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({});
   });
 
-  it('should send empty progress_data for non-progress extraction events', async () => {
+  it('should send empty worker_metadata for non-progress extraction events', async () => {
     setupRepos(adapter, 'tasks');
 
     await adapter.emit(ExtractorEventType.DataExtractionError);
 
     const { emit: mockEmit } = require('../../common/control-protocol');
-    expect(mockEmit.mock.calls[0][0].worker_metadata.progress_data).toEqual(
-      {}
-    );
+    expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({});
   });
 });
 

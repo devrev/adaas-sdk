@@ -7,7 +7,7 @@ import {
   SSOR_ATTACHMENT,
   STATELESS_EVENT_TYPES,
 } from '../../common/constants';
-import { emit, ProgressData } from '../../common/control-protocol';
+import { emit } from '../../common/control-protocol';
 import {
   addReportToLoaderReport,
   getFilesToLoad,
@@ -67,23 +67,6 @@ function toRfc3339Timestamp(ms: number): string | undefined {
   }
 
   return new Date(ms).toISOString();
-}
-
-function toRfc3339DateRange(range: {
-  oldest: number;
-  newest: number;
-}): ProgressData['creationDate'] {
-  const oldest = toRfc3339Timestamp(range.oldest);
-  const newest = toRfc3339Timestamp(range.newest);
-
-  if (!oldest && !newest) {
-    return undefined;
-  }
-
-  return {
-    ...(oldest ? { oldest } : {}),
-    ...(newest ? { newest } : {}),
-  };
 }
 
 export function createWorkerAdapter<ConnectorState>({
@@ -394,7 +377,19 @@ export class WorkerAdapter<ConnectorState> {
           newEventType as LoaderEventType
         );
 
-        const progress_data: ProgressData = {};
+        const progress_data: {
+          // Last extracted item type statistics
+          item_type?: string;
+          oldest_created_date?: string;
+          newest_created_date?: string;
+          oldest_modified_date?: string;
+          newest_modified_date?: string;
+
+          // Calculated time ranges in absolute times
+          oldest_state_date?: string;
+          newest_state_date?: string;
+        } = {};
+
         if (
           isExtractionEvent &&
           (newEventType == ExtractorEventType.DataExtractionDone ||
@@ -407,20 +402,18 @@ export class WorkerAdapter<ConnectorState> {
             : undefined;
           if (repo) {
             progress_data.item_type = repo.itemType;
-            progress_data.creationDate = toRfc3339DateRange(
-              repo.dateRanges.creationDate
+            progress_data.newest_created_date = toRfc3339Timestamp(
+              repo.dateRanges.creationDate.newest
             );
-            progress_data.modifiedDate = toRfc3339DateRange(
-              repo.dateRanges.modifiedDate
+            progress_data.oldest_created_date = toRfc3339Timestamp(
+              repo.dateRanges.creationDate.oldest
             );
-
-            if (!progress_data.creationDate) {
-              delete progress_data.creationDate;
-            }
-
-            if (!progress_data.modifiedDate) {
-              delete progress_data.modifiedDate;
-            }
+            progress_data.newest_modified_date = toRfc3339Timestamp(
+              repo.dateRanges.modifiedDate.newest
+            );
+            progress_data.oldest_modified_date = toRfc3339Timestamp(
+              repo.dateRanges.modifiedDate.oldest
+            );
           }
         }
 
@@ -434,7 +427,7 @@ export class WorkerAdapter<ConnectorState> {
               ? { reports: this.reports, processed_files: this.processedFiles }
               : {}),
           },
-          worker_metadata: { progress_data },
+          worker_metadata: { ...progress_data },
         });
 
         const message: WorkerMessageEmitted = {

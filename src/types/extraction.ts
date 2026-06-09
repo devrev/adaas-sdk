@@ -3,8 +3,6 @@ import { InputData } from '@devrev/typescript-sdk/dist/snap-ins';
 import { Artifact } from '../uploader/uploader.interfaces';
 
 import { ErrorRecord } from './common';
-import type { ProgressData } from '../common/control-protocol';
-
 import { AxiosResponse } from 'axios';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
@@ -420,8 +418,18 @@ export interface EventData {
  * WorkerMetadata is an interface that defines the structure of the worker metadata that is sent from the external extractor to ADaaS.
  */
 export interface WorkerMetadata {
-  adaas_library_version: string;
-  progress_data?: ProgressData;
+  adaas_library_version?: string;
+
+  // Last extracted item type statistics
+  item_type?: string;
+  oldest_created_date?: string;
+  newest_created_date?: string;
+  oldest_modified_date?: string;
+  newest_modified_date?: string;
+
+  // Calculated time ranges in absolute times
+  oldest_state_date?: string;
+  newest_state_date?: string;
 }
 
 /**
