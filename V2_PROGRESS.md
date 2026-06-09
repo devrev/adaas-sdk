@@ -90,7 +90,22 @@ commits. Mechanical/structural transforms first (Phase 1), polish + surface-defi
   - Consumers: `types/workers.ts` + `worker-adapter.ts` change `State` type ref → `BaseState`.
 - **C4b — State envelope + migration.** Change on-disk shape to `{ connectorState, sdkState }`.
   Add migration shim: read legacy flat v1 blob → split SDK-owned keys into `sdkState` → persist envelope.
-  (v2-old-backup (oracle tag) `base-state.ts` has the reference impl incl. `V1_SDK_STATE_KEYS`.)
+  (oracle `base-state.ts` has the reference impl incl. `V1_SDK_STATE_KEYS`.)
+  DESIGN DECISION: keep a SINGLE combined `SdkState` for C4b (do NOT narrow into Base/Extraction/Loading
+  SdkState — oracle narrows but that's coupled to the adapter split; defer to C5). `BaseState<ConnectorState>`
+  keeps ONE type param; gains `_connectorState` + `_sdkState: SdkState`. Keep deprecated lastSyncStarted/
+  lastSuccessfulSyncStarted in SdkState (still live: stamped in extraction-state, promoted in worker-adapter,
+  read by time-value-resolver). Blast radius (SDK-field access moves off `.state` → `.sdkState`):
+  - state.interfaces.ts: add AdapterStateEnvelope + V1_SDK_STATE_KEYS; keep SdkState/initials/AdapterState.
+  - base-state.ts: `_connectorState`+`_sdkState`; `state` getter→connector, add `sdkState` getter;
+    init/postState use envelope; private normalizeFetchedState() (v2 as-is; v1 flat split by V1_SDK_STATE_KEYS;
+    malformed→throw). installIDM uses this.sdkState.snapInVersionId.
+  - extraction-state.ts: resolveExtractionWindow this.state.X→this.sdkState.X; pass this.sdkState to resolver.
+  - worker-adapter.ts: get state()→ConnectorState (KEY public breaking change); add get sdkState(); internal
+    this.state.<sdkField>→this.sdkState; this.adapterState.state.fromDevRev→this.adapterState.sdkState.fromDevRev.
+  - attachments-streaming-pool.ts: this.adapter.state.toDevRev→this.adapter.sdkState.toDevRev.
+  - time-value-resolver.ts: signature unchanged.
+  BREAKING: connectors reading SDK fields via adapter.state break; on-disk state auto-migrates v1→v2 on read.
 - **C5 — Adapter split (structural only).** `BaseAdapter` + `ExtractionAdapter` + `LoadingAdapter`.
   KEEP existing `emit`-based contract working (behavior identical). Author fresh intermediate form
   (this exact form exists in NO branch — v2-old-backup (oracle tag)'s split already assumes emit-from-return).
@@ -207,8 +222,8 @@ Symbols imported from `@devrev/ts-adaas` by the 3 inspectable connectors:
 | C2 AirSync rename     | ☑ done | 1fa9afc. AirdropEvent→AirSyncEvent, AirdropMessage→AirSyncMessage (hard, no alias) + prose ADaaS/Airdrop→AirSync. Protected: airdrop.* routes, AIRDROP_* enum, 'ADaaS' literal. Reviewer-approved. |
 | C3 enum cleanup       | ☑ done | cc05f41. Deleted deprecated enum members (EventType, ExtractorEventType, LoaderEventType) + event-type-translation.ts/.test; rewired 4 callers (process-task, spawn, control-protocol, worker-adapter) + spawn.helpers cases. Behavior-equivalent. Reviewer-approved. |
 | C4a state split       | ☑ done | b63f3ab. BaseState + ExtractionState + LoadingState, flat shape preserved; state.ts is dispatcher by mode. Reviewer-confirmed behavior-equivalent (loading only loses inert logs). |
-| C4b state envelope    | ☐ todo | |
-| C5 adapter split      | ☐ todo | |
+| C4b state envelope    | ☑ done | 30ba1b3. { connectorState, sdkState } envelope + v1->v2 migration shim (normalizeFetchedState). adapter.state→connector-only, new adapter.sdkState; ~28 SDK-field access sites moved. SdkState kept combined (narrowing deferred to C5). Reviewer-approved (migration cases verified). |
+| C5 adapter split      | ☐ todo | NOTE for C5: narrow SdkState into Base/Extraction/Loading variants here (oracle state.interfaces shows the split). |
 | C6 emit-from-return   | ☐ todo | |
 | C7 JSDoc              | ☐ todo | Phase 2 |
 | C8 api report         | ☐ todo | Phase 2 |
