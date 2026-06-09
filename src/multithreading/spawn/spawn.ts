@@ -2,7 +2,6 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { emit } from '../../common/control-protocol';
-import { translateIncomingEventType } from '../../common/event-type-translation';
 import { getMemoryUsage } from '../../common/helpers';
 import { Logger, serializeError } from '../../logger/logger';
 import { AirSyncEvent, EventType } from '../../types/extraction';
@@ -79,14 +78,6 @@ export async function spawn<ConnectorState>({
   options,
   baseWorkerPath,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
-  // Translate incoming event type for backwards compatibility. This allows the
-  // SDK to accept both old and new event type formats. Then update the event with the translated event type.
-  const originalEventType = event.payload.event_type;
-  const translatedEventType = translateIncomingEventType(
-    event.payload.event_type as string
-  );
-  event.payload.event_type = translatedEventType;
-
   // Read the command line arguments to check if the local flag is passed.
   const argv = await yargs(hideBin(process.argv)).argv;
   if (argv._.includes('local') || argv.local) {
@@ -100,11 +91,6 @@ export async function spawn<ConnectorState>({
   // eslint-disable-next-line no-global-assign
   console = new Logger({ event, options });
 
-  if (translatedEventType !== originalEventType) {
-    console.log(
-      `Event type translated from ${originalEventType} to ${translatedEventType}.`
-    );
-  }
   if (options?.isLocalDevelopment) {
     console.log('Snap-in is running in local development mode.');
   }
@@ -115,11 +101,11 @@ export async function spawn<ConnectorState>({
   } else if (
     baseWorkerPath != null &&
     options?.workerPathOverrides != null &&
-    options.workerPathOverrides[translatedEventType as EventType] != null
+    options.workerPathOverrides[event.payload.event_type as EventType] != null
   ) {
     script =
       baseWorkerPath +
-      options.workerPathOverrides[translatedEventType as EventType];
+      options.workerPathOverrides[event.payload.event_type as EventType];
   } else {
     script = getWorkerPath({
       event,

@@ -14,39 +14,15 @@ import { DonV2, LoaderReport, RateLimited } from './loading';
  * The external extractor can use these events to know what to do next in the extraction process.
  */
 export enum EventType {
-  // Extraction - Old member names with OLD values (deprecated, kept for backwards compatibility)
-  /**
-   * @deprecated Use StartExtractingExternalSyncUnits instead
-   */
-  ExtractionExternalSyncUnitsStart = 'EXTRACTION_EXTERNAL_SYNC_UNITS_START',
-  /**
-   * @deprecated Use StartExtractingMetadata instead
-   */
-  ExtractionMetadataStart = 'EXTRACTION_METADATA_START',
-  /**
-   * @deprecated Use StartExtractingData instead
-   */
-  ExtractionDataStart = 'EXTRACTION_DATA_START',
-  /**
-   * @deprecated Use ContinueExtractingData instead
-   */
-  ExtractionDataContinue = 'EXTRACTION_DATA_CONTINUE',
-  /**
-   * @deprecated Use StartDeletingExtractorState instead
-   */
-  ExtractionDataDelete = 'EXTRACTION_DATA_DELETE',
-  /**
-   * @deprecated Use StartExtractingAttachments instead
-   */
-  ExtractionAttachmentsStart = 'EXTRACTION_ATTACHMENTS_START',
-  /**
-   * @deprecated Use ContinueExtractingAttachments instead
-   */
-  ExtractionAttachmentsContinue = 'EXTRACTION_ATTACHMENTS_CONTINUE',
-  /**
-   * @deprecated Use StartDeletingExtractorAttachmentsState instead
-   */
-  ExtractionAttachmentsDelete = 'EXTRACTION_ATTACHMENTS_DELETE',
+  // Extraction
+  StartExtractingExternalSyncUnits = 'START_EXTRACTING_EXTERNAL_SYNC_UNITS',
+  StartExtractingMetadata = 'START_EXTRACTING_METADATA',
+  StartExtractingData = 'START_EXTRACTING_DATA',
+  ContinueExtractingData = 'CONTINUE_EXTRACTING_DATA',
+  StartDeletingExtractorState = 'START_DELETING_EXTRACTOR_STATE',
+  StartExtractingAttachments = 'START_EXTRACTING_ATTACHMENTS',
+  ContinueExtractingAttachments = 'CONTINUE_EXTRACTING_ATTACHMENTS',
+  StartDeletingExtractorAttachmentsState = 'START_DELETING_EXTRACTOR_ATTACHMENTS_STATE',
 
   // Loading
   StartLoadingData = 'START_LOADING_DATA',
@@ -58,16 +34,6 @@ export enum EventType {
 
   // Unknown
   UnknownEventType = 'UNKNOWN_EVENT_TYPE',
-
-  // Extraction - New member names with NEW values (preferred)
-  StartExtractingExternalSyncUnits = 'START_EXTRACTING_EXTERNAL_SYNC_UNITS',
-  StartExtractingMetadata = 'START_EXTRACTING_METADATA',
-  StartExtractingData = 'START_EXTRACTING_DATA',
-  ContinueExtractingData = 'CONTINUE_EXTRACTING_DATA',
-  StartDeletingExtractorState = 'START_DELETING_EXTRACTOR_STATE',
-  StartExtractingAttachments = 'START_EXTRACTING_ATTACHMENTS',
-  ContinueExtractingAttachments = 'CONTINUE_EXTRACTING_ATTACHMENTS',
-  StartDeletingExtractorAttachmentsState = 'START_DELETING_EXTRACTOR_ATTACHMENTS_STATE',
 }
 
 /**
@@ -75,76 +41,7 @@ export enum EventType {
  * The external extractor can use these events to inform AirSync about the progress of the extraction process.
  */
 export enum ExtractorEventType {
-  // Extraction - Old member names with OLD values (deprecated, kept for backwards compatibility)
-  /**
-   * @deprecated Use ExternalSyncUnitExtractionDone instead
-   */
-  ExtractionExternalSyncUnitsDone = 'EXTRACTION_EXTERNAL_SYNC_UNITS_DONE',
-  /**
-   * @deprecated Use ExternalSyncUnitExtractionError instead
-   */
-  ExtractionExternalSyncUnitsError = 'EXTRACTION_EXTERNAL_SYNC_UNITS_ERROR',
-  /**
-   * @deprecated Use MetadataExtractionDone instead
-   */
-  ExtractionMetadataDone = 'EXTRACTION_METADATA_DONE',
-  /**
-   * @deprecated Use MetadataExtractionError instead
-   */
-  ExtractionMetadataError = 'EXTRACTION_METADATA_ERROR',
-  /**
-   * @deprecated Use DataExtractionProgress instead
-   */
-  ExtractionDataProgress = 'EXTRACTION_DATA_PROGRESS',
-  /**
-   * @deprecated Use DataExtractionDelayed instead
-   */
-  ExtractionDataDelay = 'EXTRACTION_DATA_DELAY',
-  /**
-   * @deprecated Use DataExtractionDone instead
-   */
-  ExtractionDataDone = 'EXTRACTION_DATA_DONE',
-  /**
-   * @deprecated Use DataExtractionError instead
-   */
-  ExtractionDataError = 'EXTRACTION_DATA_ERROR',
-  /**
-   * @deprecated Use ExtractorStateDeletionDone instead
-   */
-  ExtractionDataDeleteDone = 'EXTRACTION_DATA_DELETE_DONE',
-  /**
-   * @deprecated Use ExtractorStateDeletionError instead
-   */
-  ExtractionDataDeleteError = 'EXTRACTION_DATA_DELETE_ERROR',
-  /**
-   * @deprecated Use AttachmentExtractionProgress instead
-   */
-  ExtractionAttachmentsProgress = 'EXTRACTION_ATTACHMENTS_PROGRESS',
-  /**
-   * @deprecated Use AttachmentExtractionDelayed instead
-   */
-  ExtractionAttachmentsDelay = 'EXTRACTION_ATTACHMENTS_DELAY',
-  /**
-   * @deprecated Use AttachmentExtractionDone instead
-   */
-  ExtractionAttachmentsDone = 'EXTRACTION_ATTACHMENTS_DONE',
-  /**
-   * @deprecated Use AttachmentExtractionError instead
-   */
-  ExtractionAttachmentsError = 'EXTRACTION_ATTACHMENTS_ERROR',
-  /**
-   * @deprecated Use ExtractorAttachmentsStateDeletionDone instead
-   */
-  ExtractionAttachmentsDeleteDone = 'EXTRACTION_ATTACHMENTS_DELETE_DONE',
-  /**
-   * @deprecated Use ExtractorAttachmentsStateDeletionError instead
-   */
-  ExtractionAttachmentsDeleteError = 'EXTRACTION_ATTACHMENTS_DELETE_ERROR',
-
-  // Unknown
-  UnknownEventType = 'UNKNOWN_EVENT_TYPE',
-
-  // Extraction - New member names with NEW values (preferred)
+  // Extraction
   ExternalSyncUnitExtractionDone = 'EXTERNAL_SYNC_UNIT_EXTRACTION_DONE',
   ExternalSyncUnitExtractionError = 'EXTERNAL_SYNC_UNIT_EXTRACTION_ERROR',
   MetadataExtractionDone = 'METADATA_EXTRACTION_DONE',
@@ -161,6 +58,9 @@ export enum ExtractorEventType {
   AttachmentExtractionError = 'ATTACHMENT_EXTRACTION_ERROR',
   ExtractorAttachmentsStateDeletionDone = 'EXTRACTOR_ATTACHMENTS_STATE_DELETION_DONE',
   ExtractorAttachmentsStateDeletionError = 'EXTRACTOR_ATTACHMENTS_STATE_DELETION_ERROR',
+
+  // Unknown
+  UnknownEventType = 'UNKNOWN_EVENT_TYPE',
 }
 
 /**
