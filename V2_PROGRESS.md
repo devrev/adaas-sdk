@@ -188,7 +188,7 @@ Symbols imported from `@devrev/ts-adaas` by the 3 inspectable connectors:
 | C0 package rename     | ☑ done | 8ddeb87. @devrev/ts-adaas→@devrev/airsync-sdk, v2.0.0-beta.0. Report filename rename deferred to C8. |
 | C1 delete + tsconfig  | ☑ done | d573cb6. Deleted src/deprecated/ (6 files) + 4 index exports; added tsconfig.build.json (excludes tests), build script points to it. Reviewer-approved. event-type-translation deletion moved to C3. |
 | C2 AirSync rename     | ☑ done | 1fa9afc. AirdropEvent→AirSyncEvent, AirdropMessage→AirSyncMessage (hard, no alias) + prose ADaaS/Airdrop→AirSync. Protected: airdrop.* routes, AIRDROP_* enum, 'ADaaS' literal. Reviewer-approved. |
-| C3 enum cleanup       | ☐ todo | |
+| C3 enum cleanup       | ☑ done | cc05f41. Deleted deprecated enum members (EventType, ExtractorEventType, LoaderEventType) + event-type-translation.ts/.test; rewired 4 callers (process-task, spawn, control-protocol, worker-adapter) + spawn.helpers cases. Behavior-equivalent. Reviewer-approved. |
 | C4a state split       | ☐ todo | |
 | C4b state envelope    | ☐ todo | |
 | C5 adapter split      | ☐ todo | |
