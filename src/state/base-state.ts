@@ -9,12 +9,17 @@ import { AirSyncEvent } from '../types/extraction';
 import { WorkerMessageSubject } from '../types/workers';
 import { ExtractionScope } from '../types/workers';
 
-import { AdapterState, SdkState, StateInterface } from './state.interfaces';
+import {
+  AdapterStateEnvelope,
+  SdkState,
+  StateInterface,
+  V1_SDK_STATE_KEYS,
+} from './state.interfaces';
 
 /**
- * BaseState owns the state lifecycle shared by every sync mode: holding the
- * adapter state, fetching/initializing/posting it against the platform, and the
- * snap-in-version-gated initial domain mapping install.
+ * BaseState owns the state lifecycle shared by every sync mode: connector vs.
+ * SDK state separation, fetch/init/post against the platform, the v1->v2
+ * migration shim, and the snap-in-version-gated initial domain mapping install.
  *
  * Mode-specific subclasses (`ExtractionState`, `LoadingState`) seed the
  * SDK-owned portion of the state and add mode-specific setup in their factories.
@@ -22,7 +27,8 @@ import { AdapterState, SdkState, StateInterface } from './state.interfaces';
  * @typeParam ConnectorState - the connector-owned state shape
  */
 export abstract class BaseState<ConnectorState> {
-  protected _state: AdapterState<ConnectorState>;
+  protected _connectorState: ConnectorState;
+  protected _sdkState: SdkState;
   protected _extractionScope: ExtractionScope = {};
   protected readonly initialSdkState: SdkState;
   protected readonly event: AirSyncEvent;
@@ -37,22 +43,30 @@ export abstract class BaseState<ConnectorState> {
   ) {
     this.event = event;
     this.initialSdkState = initialSdkState;
-    this._state = {
-      ...initialState,
-      ...initialSdkState,
-    } as AdapterState<ConnectorState>;
+    this._connectorState = initialState;
+    this._sdkState = { ...initialSdkState };
     this.workerUrl = event.payload.event_context.worker_data_url;
     this.devrevToken = event.context.secrets.service_account_token;
     this.syncUnitId = event.payload.event_context.sync_unit_id;
     this.requestId = event.payload.event_context.request_id_adaas;
   }
 
-  get state(): AdapterState<ConnectorState> {
-    return this._state;
+  /** Connector-owned state. This is what `adapter.state` exposes to snap-in code. */
+  get state(): ConnectorState {
+    return this._connectorState;
   }
 
-  set state(value: AdapterState<ConnectorState>) {
-    this._state = value;
+  set state(value: ConnectorState) {
+    this._connectorState = value;
+  }
+
+  /** SDK-internal bookkeeping state. Never exposed to connector code. */
+  get sdkState(): SdkState {
+    return this._sdkState;
+  }
+
+  set sdkState(value: SdkState) {
+    this._sdkState = value;
   }
 
   get extractionScope(): ExtractionScope {
@@ -69,10 +83,10 @@ export abstract class BaseState<ConnectorState> {
     initialDomainMapping?: InitialDomainMapping
   ): Promise<void> {
     const snapInVersionId = this.event.context.snap_in_version_id;
-    const hasSnapInVersionInState = 'snapInVersionId' in this.state;
+    const hasSnapInVersionInState = 'snapInVersionId' in this.sdkState;
     const shouldUpdateIDM =
       !hasSnapInVersionInState ||
-      this.state.snapInVersionId !== snapInVersionId;
+      this.sdkState.snapInVersionId !== snapInVersionId;
 
     if (!shouldUpdateIDM) {
       console.log(
@@ -83,12 +97,12 @@ export abstract class BaseState<ConnectorState> {
 
     try {
       console.log(
-        `Snap-in version in state "${this.state.snapInVersionId}" does not match the version in event context "${snapInVersionId}". Installing initial domain mapping.`
+        `Snap-in version in state "${this.sdkState.snapInVersionId}" does not match the version in event context "${snapInVersionId}". Installing initial domain mapping.`
       );
 
       if (initialDomainMapping) {
         await installInitialDomainMapping(this.event, initialDomainMapping);
-        this.state.snapInVersionId = snapInVersionId;
+        this.sdkState.snapInVersionId = snapInVersionId;
       } else {
         throw new Error(
           'No initial domain mapping was passed to spawn function. Skipping initial domain mapping installation.'
@@ -110,6 +124,10 @@ export abstract class BaseState<ConnectorState> {
   /**
    * Initializes the state for this adapter instance by fetching from API
    * or creating an initial state if none exists (404).
+   *
+   * Reads both the v2 `{ connectorState, sdkState }` envelope and a legacy flat
+   * v1 blob (connector keys merged with SDK keys), migrating the latter on read.
+   * Always persists the v2 envelope going forward.
    * @param initialState The initial connector state provided by the spawn function
    */
   async init(initialState: ConnectorState): Promise<void> {
@@ -119,18 +137,23 @@ export abstract class BaseState<ConnectorState> {
         throw new Error('No state found in response.');
       }
 
-      let parsedState: AdapterState<ConnectorState>;
+      let parsed: unknown;
       try {
-        parsedState = JSON.parse(stringifiedState);
+        parsed = JSON.parse(stringifiedState);
       } catch (error) {
         throw new Error(`Failed to parse state. ${error}`);
       }
 
-      this.state = parsedState;
-      console.log(
-        'State fetched successfully. Current state',
-        getPrintableState(this.state)
-      );
+      const { connectorState, sdkState } = this.normalizeFetchedState(parsed);
+      this.state = connectorState;
+      this.sdkState = sdkState;
+
+      console.log('State fetched successfully. Current state', {
+        connectorState: getPrintableState(
+          this.state as Record<string, unknown>
+        ),
+        sdkState: getPrintableState(this.sdkState),
+      });
 
       if (objects) {
         try {
@@ -142,13 +165,9 @@ export abstract class BaseState<ConnectorState> {
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         console.log('State not found. Initializing state with initial state.');
-        const initialAdapterState: AdapterState<ConnectorState> = {
-          ...initialState,
-          ...this.initialSdkState,
-        };
-
-        this.state = initialAdapterState;
-        await this.postState(initialAdapterState);
+        this.state = initialState;
+        this.sdkState = { ...this.initialSdkState };
+        await this.postState();
       } else {
         const errorMessage = `Failed to init state. ${serializeError(error)}`;
         console.error(errorMessage);
@@ -162,16 +181,72 @@ export abstract class BaseState<ConnectorState> {
   }
 
   /**
-   *  Updates the state of the adapter by posting to API.
-   * @param {object} state - The state to be updated
+   * Normalizes a parsed on-disk state into the `{ connectorState, sdkState }`
+   * envelope, migrating a legacy flat v1 blob if needed.
+   *
+   * - v2 envelope (`{ connectorState, sdkState }`): used as-is.
+   * - v1 flat blob: SDK-owned keys (`V1_SDK_STATE_KEYS`) split into `sdkState`,
+   *   everything else becomes connector state.
+   * - Malformed envelope (one side present, the other missing) fails loud.
    */
-  async postState(state?: AdapterState<ConnectorState>) {
+  private normalizeFetchedState(parsed: unknown): {
+    connectorState: ConnectorState;
+    sdkState: SdkState;
+  } {
+    if (parsed === null || typeof parsed !== 'object') {
+      throw new Error('Fetched state is not a JSON object.');
+    }
+
+    const record = parsed as Record<string, unknown>;
+    const hasConnector = 'connectorState' in record;
+    const hasSdk = 'sdkState' in record;
+
+    if (hasConnector || hasSdk) {
+      if (!hasConnector || !hasSdk) {
+        throw new Error(
+          'Malformed state envelope: expected both "connectorState" and "sdkState".'
+        );
+      }
+      return {
+        connectorState: record.connectorState as ConnectorState,
+        sdkState: { ...this.initialSdkState, ...(record.sdkState as SdkState) },
+      };
+    }
+
+    // Legacy flat v1 blob: split known SDK keys out of the connector state.
+    const connectorState: Record<string, unknown> = {};
+    const sdkState: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(record)) {
+      if (V1_SDK_STATE_KEYS.has(key)) {
+        sdkState[key] = value;
+      } else {
+        connectorState[key] = value;
+      }
+    }
+
+    return {
+      connectorState: connectorState as ConnectorState,
+      sdkState: { ...this.initialSdkState, ...(sdkState as SdkState) },
+    };
+  }
+
+  /**
+   *  Updates the state of the adapter by posting to API.
+   *  Persists the v2 `{ connectorState, sdkState }` envelope.
+   * @param {object} state - The connector state to be updated
+   */
+  async postState(state?: ConnectorState) {
     const url = this.workerUrl + '.update';
     this.state = state || this.state;
 
+    const envelope: AdapterStateEnvelope<ConnectorState> = {
+      connectorState: this.state,
+      sdkState: this.sdkState,
+    };
+
     let stringifiedState: string;
     try {
-      stringifiedState = JSON.stringify(this.state);
+      stringifiedState = JSON.stringify(envelope);
     } catch (error) {
       const errorMessage = `Failed to stringify state. ${serializeError(
         error
@@ -201,10 +276,12 @@ export abstract class BaseState<ConnectorState> {
         }
       );
 
-      console.log(
-        'State updated successfully to',
-        getPrintableState(this.state)
-      );
+      console.log('State updated successfully to', {
+        connectorState: getPrintableState(
+          this.state as Record<string, unknown>
+        ),
+        sdkState: getPrintableState(this.sdkState),
+      });
     } catch (error) {
       const errorMessage = `Failed to update the state. ${serializeError(
         error

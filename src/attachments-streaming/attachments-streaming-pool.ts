@@ -74,7 +74,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
       `Starting download of ${this.attachments.length} attachments, streaming ${this.batchSize} at once.`
     );
 
-    if (!this.adapter.state.toDevRev) {
+    if (!this.adapter.sdkState.toDevRev) {
       const error = new Error('toDevRev state is not initialized');
       console.error(error);
       return { error };
@@ -83,17 +83,17 @@ export class AttachmentsStreamingPool<ConnectorState> {
     // Get the list of successfully processed attachments in previous (possibly incomplete) batch extraction.
     // If no such list exists, create an empty one.
     if (
-      !this.adapter.state.toDevRev.attachmentsMetadata
+      !this.adapter.sdkState.toDevRev.attachmentsMetadata
         .lastProcessedAttachmentsIdsList
     ) {
-      this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList =
+      this.adapter.sdkState.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList =
         [];
     }
 
     // Migrate old processed attachments to the new format.
-    this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList =
+    this.adapter.sdkState.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList =
       this.migrateProcessedAttachments(
-        this.adapter.state.toDevRev.attachmentsMetadata
+        this.adapter.sdkState.toDevRev.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       );
 
@@ -139,8 +139,8 @@ export class AttachmentsStreamingPool<ConnectorState> {
       }
 
       if (
-        this.adapter.state.toDevRev &&
-        this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList?.some(
+        this.adapter.sdkState.toDevRev &&
+        this.adapter.sdkState.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList?.some(
           (it) => it.id == attachment.id && it.parent_id == attachment.parent_id
         )
       ) {
@@ -180,10 +180,10 @@ export class AttachmentsStreamingPool<ConnectorState> {
 
         // No rate limiting, process normally
         if (
-          this.adapter.state.toDevRev?.attachmentsMetadata
+          this.adapter.sdkState.toDevRev?.attachmentsMetadata
             ?.lastProcessedAttachmentsIdsList
         ) {
-          this.adapter.state.toDevRev?.attachmentsMetadata.lastProcessedAttachmentsIdsList.push(
+          this.adapter.sdkState.toDevRev?.attachmentsMetadata.lastProcessedAttachmentsIdsList.push(
             { id: attachment.id, parent_id: attachment.parent_id }
           );
         }

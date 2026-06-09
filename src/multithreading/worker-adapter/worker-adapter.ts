@@ -25,7 +25,7 @@ import {
   RepoInterface,
 } from '../../repo/repo.interfaces';
 import { BaseState } from '../../state/state';
-import { AdapterState } from '../../state/state.interfaces';
+import { SdkState } from '../../state/state.interfaces';
 import {
   AirSyncEvent,
   EventData,
@@ -129,12 +129,18 @@ export class WorkerAdapter<ConnectorState> {
     });
   }
 
-  get state(): AdapterState<ConnectorState> {
+  /** Connector-owned state exposed to snap-in code. */
+  get state(): ConnectorState {
     return this.adapterState.state;
   }
 
-  set state(value: AdapterState<ConnectorState>) {
+  set state(value: ConnectorState) {
     this.adapterState.state = value;
+  }
+
+  /** SDK-internal bookkeeping state. Used by SDK internals; not for connector use. */
+  get sdkState(): SdkState {
+    return this.adapterState.sdkState;
   }
 
   get reports(): LoaderReport[] {
@@ -177,7 +183,7 @@ export class WorkerAdapter<ConnectorState> {
         onUpload: (artifact: Artifact) => {
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AirSyncDefaultItemTypes.ATTACHMENTS) {
-            this.state.toDevRev?.attachmentsMetadata.artifactIds.push(
+            this.sdkState.toDevRev?.attachmentsMetadata.artifactIds.push(
               artifact.id
             );
           }
@@ -296,15 +302,15 @@ export class WorkerAdapter<ConnectorState> {
       // If the extraction is done, we want to save the timestamp of the last successful sync
       if (newEventType === ExtractorEventType.AttachmentExtractionDone) {
         console.log(
-          `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${this.state.lastSyncStarted}).`
+          `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${this.sdkState.lastSyncStarted}).`
         );
 
-        this.state.lastSuccessfulSyncStarted = this.state.lastSyncStarted;
-        this.state.lastSyncStarted = '';
+        this.sdkState.lastSuccessfulSyncStarted = this.sdkState.lastSyncStarted;
+        this.sdkState.lastSyncStarted = '';
 
         // Clear pending extraction boundaries now that the cycle is complete
-        this.state.pendingWorkersOldest = '';
-        this.state.pendingWorkersNewest = '';
+        this.sdkState.pendingWorkersOldest = '';
+        this.sdkState.pendingWorkersNewest = '';
 
         // Update workersOldest and workersNewest boundaries from resolved extraction timestamps.
         // Expand boundaries: workersOldest gets the earliest timestamp, workersNewest gets the latest.
@@ -313,24 +319,24 @@ export class WorkerAdapter<ConnectorState> {
 
         if (
           extractionStart &&
-          (!this.state.workersOldest ||
-            extractionStart < this.state.workersOldest)
+          (!this.sdkState.workersOldest ||
+            extractionStart < this.sdkState.workersOldest)
         ) {
           console.log(
-            `Updating workersOldest from '${this.state.workersOldest}' to '${extractionStart}'.`
+            `Updating workersOldest from '${this.sdkState.workersOldest}' to '${extractionStart}'.`
           );
-          this.state.workersOldest = extractionStart;
+          this.sdkState.workersOldest = extractionStart;
         }
 
         if (
           extractionEnd &&
-          (!this.state.workersNewest ||
-            extractionEnd > this.state.workersNewest)
+          (!this.sdkState.workersNewest ||
+            extractionEnd > this.sdkState.workersNewest)
         ) {
           console.log(
-            `Updating workersNewest from '${this.state.workersNewest}' to '${extractionEnd}'.`
+            `Updating workersNewest from '${this.sdkState.workersNewest}' to '${extractionEnd}'.`
           );
-          this.state.workersNewest = extractionEnd;
+          this.sdkState.workersNewest = extractionEnd;
         }
       }
 
@@ -423,14 +429,14 @@ export class WorkerAdapter<ConnectorState> {
         const filesToLoad = await this.getLoaderBatches({
           supportedItemTypes: itemTypes,
         });
-        this.adapterState.state.fromDevRev = {
+        this.adapterState.sdkState.fromDevRev = {
           filesToLoad,
         };
       }
 
       if (
-        !this.adapterState.state.fromDevRev ||
-        !this.adapterState.state.fromDevRev.filesToLoad.length
+        !this.adapterState.sdkState.fromDevRev ||
+        !this.adapterState.sdkState.fromDevRev.filesToLoad.length
       ) {
         console.warn('No files to load, returning.');
         return {
@@ -441,12 +447,12 @@ export class WorkerAdapter<ConnectorState> {
 
       console.log(
         'Files to load in state',
-        this.adapterState.state.fromDevRev?.filesToLoad
+        this.adapterState.sdkState.fromDevRev?.filesToLoad
       );
 
       try {
-        outerloop: for (const fileToLoad of this.adapterState.state.fromDevRev
-          .filesToLoad) {
+        outerloop: for (const fileToLoad of this.adapterState.sdkState
+          .fromDevRev.filesToLoad) {
           const itemTypeToLoad = itemTypesToLoad.find(
             (itemTypeToLoad: ItemTypeToLoad) =>
               itemTypeToLoad.itemType === fileToLoad.itemType
@@ -580,7 +586,7 @@ export class WorkerAdapter<ConnectorState> {
   }): Promise<LoadItemTypesResponse> {
     return runWithSdkLogContext(async () => {
       if (this.event.payload.event_type === EventType.StartLoadingAttachments) {
-        this.adapterState.state.fromDevRev = {
+        this.adapterState.sdkState.fromDevRev = {
           filesToLoad: await this.getLoaderBatches({
             supportedItemTypes: ['attachment'],
           }),
@@ -588,8 +594,8 @@ export class WorkerAdapter<ConnectorState> {
       }
 
       if (
-        !this.adapterState.state.fromDevRev ||
-        this.adapterState.state.fromDevRev?.filesToLoad.length === 0
+        !this.adapterState.sdkState.fromDevRev ||
+        this.adapterState.sdkState.fromDevRev?.filesToLoad.length === 0
       ) {
         console.log('No files to load, returning.');
         return {
@@ -598,7 +604,7 @@ export class WorkerAdapter<ConnectorState> {
         };
       }
 
-      const filesToLoad = this.adapterState.state.fromDevRev?.filesToLoad;
+      const filesToLoad = this.adapterState.sdkState.fromDevRev?.filesToLoad;
 
       try {
         outerloop: for (const fileToLoad of filesToLoad) {
@@ -1123,7 +1129,7 @@ export class WorkerAdapter<ConnectorState> {
       ];
       this.initializeRepos(repos);
 
-      const attachmentsMetadata = this.state.toDevRev?.attachmentsMetadata;
+      const attachmentsMetadata = this.sdkState.toDevRev?.attachmentsMetadata;
 
       // If there are no attachments metadata artifact IDs in state, finish here
       if (!attachmentsMetadata?.artifactIds?.length) {

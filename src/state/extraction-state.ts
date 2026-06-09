@@ -30,13 +30,15 @@ export class ExtractionState<ConnectorState> extends BaseState<ConnectorState> {
    * StartExtractingMetadata. Finally, validate that extract_from < extract_to.
    */
   resolveExtractionWindow(): void {
+    const sdkState = this.sdkState;
+
     // Set lastSyncStarted if the event type is StartExtractingData
     if (
       this.event.payload.event_type === EventType.StartExtractingData &&
-      !this.state.lastSyncStarted
+      !sdkState.lastSyncStarted
     ) {
-      this.state.lastSyncStarted = new Date().toISOString();
-      console.log(`Setting lastSyncStarted to ${this.state.lastSyncStarted}.`);
+      sdkState.lastSyncStarted = new Date().toISOString();
+      console.log(`Setting lastSyncStarted to ${sdkState.lastSyncStarted}.`);
     }
 
     const eventContext = this.event.payload.event_context;
@@ -59,9 +61,9 @@ export class ExtractionState<ConnectorState> extends BaseState<ConnectorState> {
         const timeValue = eventContext[source];
         if (timeValue && timeValue.type) {
           try {
-            const resolved = resolveTimeValue(timeValue, this.state);
+            const resolved = resolveTimeValue(timeValue, sdkState);
             eventContext[target] = resolved;
-            this.state[pending] = resolved;
+            sdkState[pending] = resolved;
             console.log(
               `Resolved ${target} to ${resolved}. Stored in ${pending}.`
             );
@@ -80,20 +82,20 @@ export class ExtractionState<ConnectorState> extends BaseState<ConnectorState> {
       }
     } else {
       // Non-StartExtractingMetadata events: reuse pending values from state
-      if (this.state.pendingWorkersOldest) {
-        eventContext.extract_from = this.state.pendingWorkersOldest;
+      if (sdkState.pendingWorkersOldest) {
+        eventContext.extract_from = sdkState.pendingWorkersOldest;
         console.log(
-          `Reusing pendingWorkersOldest as extract_from: ${this.state.pendingWorkersOldest}.`
+          `Reusing pendingWorkersOldest as extract_from: ${sdkState.pendingWorkersOldest}.`
         );
       } else {
         console.log(
           'pendingWorkersOldest is not set in state. extract_from will not be populated for this invocation.'
         );
       }
-      if (this.state.pendingWorkersNewest) {
-        eventContext.extract_to = this.state.pendingWorkersNewest;
+      if (sdkState.pendingWorkersNewest) {
+        eventContext.extract_to = sdkState.pendingWorkersNewest;
         console.log(
-          `Reusing pendingWorkersNewest as extract_to: ${this.state.pendingWorkersNewest}.`
+          `Reusing pendingWorkersNewest as extract_to: ${sdkState.pendingWorkersNewest}.`
         );
       } else {
         console.log(
