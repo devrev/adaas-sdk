@@ -169,7 +169,7 @@ Symbols imported from `@devrev/ts-adaas` by the 3 inspectable connectors:
 ## Status
 | Commit | State | Notes |
 |--------|-------|-------|
-| C0 package rename     | ☐ todo | |
+| C0 package rename     | ☑ done | 8ddeb87. @devrev/ts-adaas→@devrev/airsync-sdk, v2.0.0-beta.0. Report filename rename deferred to C8. |
 | C1 delete + tsconfig  | ☐ todo | |
 | C2 AirSync rename     | ☐ todo | |
 | C3 enum cleanup       | ☐ todo | |
