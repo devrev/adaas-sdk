@@ -1,6 +1,6 @@
 import { Mappers } from '../mappers/mappers';
 import { ErrorRecord } from './common';
-import { AirdropEvent } from './extraction';
+import { AirSyncEvent } from './extraction';
 
 export interface StatsFileObject {
   id: string;
@@ -60,7 +60,7 @@ export interface ExternalSystemItem {
 export interface ExternalSystemItemLoadingParams<Type> {
   item: Type;
   mappers: Mappers;
-  event: AirdropEvent;
+  event: AirSyncEvent;
 }
 
 export interface ExternalSystemItemLoadingResponse {

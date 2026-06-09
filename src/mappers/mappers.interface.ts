@@ -1,4 +1,4 @@
-import { AirdropEvent } from '../types';
+import { AirSyncEvent } from '../types';
 import { DonV2 } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
@@ -6,7 +6,7 @@ import { WorkerAdapterOptions } from '../types/workers';
  * Configuration interface for creating a Mappers instance.
  */
 export interface MappersFactoryInterface {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   options?: WorkerAdapterOptions;
 }
 

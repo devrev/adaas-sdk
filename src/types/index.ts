@@ -10,8 +10,8 @@ export {
 
 // Extraction
 export {
-  AirdropEvent,
-  AirdropMessage,
+  AirSyncEvent,
+  AirSyncMessage,
   ConnectionData,
   DomainObjectState,
   EventContextIn,

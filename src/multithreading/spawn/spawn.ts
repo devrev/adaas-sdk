@@ -5,7 +5,7 @@ import { emit } from '../../common/control-protocol';
 import { translateIncomingEventType } from '../../common/event-type-translation';
 import { getMemoryUsage } from '../../common/helpers';
 import { Logger, serializeError } from '../../logger/logger';
-import { AirdropEvent, EventType } from '../../types/extraction';
+import { AirSyncEvent, EventType } from '../../types/extraction';
 import {
   GetWorkerPathInterface,
   SpawnFactoryInterface,
@@ -65,7 +65,7 @@ function getWorkerPath({
  * The class provides utilities to emit control events to the platform and exit the worker gracefully.
  * In case of lambda timeout, the class emits a lambda timeout event to the platform.
  * @param {SpawnFactoryInterface} options - The options to create a new instance of Spawn class
- * @param {AirdropEvent} options.event - The event object received from the platform
+ * @param {AirSyncEvent} options.event - The event object received from the platform
  * @param {object} options.initialState - The initial state of the adapter
  * @param {string} [options.workerPath] Remove getWorkerPath function and use baseWorkerPath: __dirname instead of workerPath
  * @param {string} [options.baseWorkerPath] - The base path for the worker files, usually `__dirname`
@@ -169,7 +169,7 @@ export async function spawn<ConnectorState>({
 }
 
 export class Spawn {
-  private event: AirdropEvent;
+  private event: AirSyncEvent;
   private alreadyEmitted: boolean;
   private softTimeoutSent: boolean;
   private defaultLambdaTimeout: number = DEFAULT_LAMBDA_TIMEOUT;
@@ -269,7 +269,7 @@ export class Spawn {
 
       // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.
       if (message?.subject === WorkerMessageSubject.WorkerMessageEmitted) {
-        console.info('Worker has emitted message to ADaaS.');
+        console.info('Worker has emitted message to AirSync.');
         this.alreadyEmitted = true;
       }
 
