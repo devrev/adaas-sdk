@@ -2,16 +2,6 @@ import { isMainThread, Worker } from 'node:worker_threads';
 
 import { WorkerData, WorkerEvent } from '../types/workers';
 
-/**
- * Creates a Node worker thread that runs the snap-in's task worker script.
- *
- * Used by `spawn` to launch the off-main-thread worker that processes an
- * extraction/loading event; the promise settles once the worker comes online
- * so the caller can wire up timeouts and lifecycle handling.
- *
- * @param workerData - The data of type WorkerData passed to the worker thread (event, initial state, options, etc.).
- * @returns A Promise that resolves with the online Worker instance, or rejects with the Error if the worker fails to start or is itself a worker thread.
- */
 async function createWorker<ConnectorState>(
   workerData: WorkerData<ConnectorState>
 ): Promise<Worker> {

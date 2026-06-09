@@ -30,12 +30,6 @@ import { LoadingAdapter } from './adapters/loading-adapter';
  * If `onTimeout` is omitted, the SDK emits a phase-appropriate default on
  * timeout: `progress` (resumable phases) or `error` (non-resumable phases) is
  * handled by the status->event mapping when we emit a `progress` result.
- *
- * @param buildAdapter - Factory that constructs the typed adapter for this worker.
- * @param params - The task hooks of type ProcessTaskInterface.
- * @param params.task - The worker's main task; receives the adapter and resolves to a TaskResult.
- * @param params.onTimeout - Optional callback run on soft timeout when nothing has emitted yet; resolves to a TaskResult.
- * @returns A Promise that resolves once the result has been emitted and the worker process exits.
  */
 async function runWorkerTask<Adapter extends BaseAdapter<unknown>>(
   buildAdapter: () => Promise<Adapter>,
@@ -89,15 +83,6 @@ async function runWorkerTask<Adapter extends BaseAdapter<unknown>>(
  * Entry point for an extraction worker. Builds an {@link ExtractionAdapter} and
  * runs the provided task against it.
  *
- * Used as the worker-script entry the snap-in calls inside an extraction worker
- * thread; returns immediately on the main thread so the same module can be
- * imported there safely.
- *
- * @param params - The task hooks of type ProcessTaskInterface for an ExtractionAdapter.
- * @param params.task - The extraction task; receives the adapter and resolves to a TaskResult.
- * @param params.onTimeout - Optional callback run on soft timeout; resolves to a TaskResult.
- * @returns Nothing; emission and process exit are handled by the shared driver.
- *
  * @public
  */
 export function processExtractionTask<ConnectorState>({
@@ -137,15 +122,6 @@ export function processExtractionTask<ConnectorState>({
 /**
  * Entry point for a loading worker. Builds a {@link LoadingAdapter} and runs the
  * provided task against it.
- *
- * Used as the worker-script entry the snap-in calls inside a loading worker
- * thread; returns immediately on the main thread so the same module can be
- * imported there safely.
- *
- * @param params - The task hooks of type ProcessTaskInterface for a LoadingAdapter.
- * @param params.task - The loading task; receives the adapter and resolves to a TaskResult.
- * @param params.onTimeout - Optional callback run on soft timeout; resolves to a TaskResult.
- * @returns Nothing; emission and process exit are handled by the shared driver.
  *
  * @public
  */

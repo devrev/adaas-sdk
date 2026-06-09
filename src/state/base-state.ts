@@ -17,11 +17,10 @@ import {
 } from './state.interfaces';
 
 /**
- * Abstract base owning the adapter state lifecycle shared by every sync mode.
+ * BaseState owns the state lifecycle shared by every sync mode: connector vs.
+ * SDK state separation, fetch/init/post against the platform, the v1->v2
+ * migration shim, and the snap-in-version-gated initial domain mapping install.
  *
- * Used to keep connector-owned state separate from SDK bookkeeping, fetch/init/
- * post the persisted state against the platform, run the v1->v2 migration shim,
- * and install the initial domain mapping gated on the snap-in version.
  * Mode-specific subclasses (`ExtractionState`, `LoadingState`) seed the
  * SDK-owned portion of the state and add mode-specific setup in their factories.
  *
@@ -70,21 +69,15 @@ export abstract class BaseState<ConnectorState> {
     this._sdkState = value;
   }
 
-  /** The per-sync-unit extraction scope (object types to extract), loaded alongside state. */
   get extractionScope(): ExtractionScope {
     return this._extractionScope;
   }
 
   /**
-   * Installs the initial domain mapping when the version in state is stale.
-   *
-   * Used by all modes (so a loading run still installs the mapping if extraction
-   * has not) to (re)install whenever `sdkState.snapInVersionId` is absent or
-   * differs from the event context's snap-in version; on success the new version
-   * is recorded in state. A missing mapping or install error fails the worker.
-   *
-   * @param initialDomainMapping - The initial domain mapping of type InitialDomainMapping passed to the spawn function; required when an install is needed
-   * @returns Promise that resolves once the mapping is installed or the install is skipped
+   * Installs the initial domain mapping when the snap-in version in state does
+   * not match the version in the event context. Shared by all modes so that a
+   * loading run still installs the mapping if extraction has not done so.
+   * @param initialDomainMapping The initial domain mapping passed to spawn
    */
   async installInitialDomainMappingIfNeeded(
     initialDomainMapping?: InitialDomainMapping
@@ -129,17 +122,13 @@ export abstract class BaseState<ConnectorState> {
   }
 
   /**
-   * Initializes this adapter's state from persisted state, or seeds it on first run.
+   * Initializes the state for this adapter instance by fetching from API
+   * or creating an initial state if none exists (404).
    *
-   * Used at worker start to load and normalize state: it fetches the persisted
-   * blob, parses it, and runs `normalizeFetchedState` so both the v2
-   * `{ connectorState, sdkState }` envelope and a legacy flat v1 blob are
-   * accepted (the latter migrated on read). It also restores the extraction
-   * scope. On a 404 it seeds the initial state and persists the v2 envelope;
-   * any other failure fails the worker.
-   *
-   * @param initialState - The initial connector state of type ConnectorState provided by the spawn function, used when no state exists yet
-   * @returns Promise that resolves once state has been loaded or seeded
+   * Reads both the v2 `{ connectorState, sdkState }` envelope and a legacy flat
+   * v1 blob (connector keys merged with SDK keys), migrating the latter on read.
+   * Always persists the v2 envelope going forward.
+   * @param initialState The initial connector state provided by the spawn function
    */
   async init(initialState: ConnectorState): Promise<void> {
     try {
@@ -192,20 +181,13 @@ export abstract class BaseState<ConnectorState> {
   }
 
   /**
-   * Normalizes parsed on-disk state into the `{ connectorState, sdkState }` envelope, migrating legacy v1 state.
+   * Normalizes a parsed on-disk state into the `{ connectorState, sdkState }`
+   * envelope, migrating a legacy flat v1 blob if needed.
    *
-   * Used as the v1->v2 migration shim so older snap-ins keep working after the
-   * state split. Behavior by shape of the parsed input:
-   * - v2 envelope (`{ connectorState, sdkState }`): used as-is, with `sdkState`
-   *   merged over the mode's initial SDK state to backfill newly added fields.
-   * - Legacy v1 flat blob: top-level keys present in `V1_SDK_STATE_KEYS` are
-   *   split into `sdkState`, everything else becomes connector state.
-   * - Malformed envelope (one of `connectorState`/`sdkState` present, the other
-   *   missing) or non-object input: throws.
-   *
-   * @param parsed - The JSON-parsed persisted state of unknown shape (v2 envelope or legacy v1 flat blob)
-   * @returns The split state as `{ connectorState, sdkState }`, with `sdkState` merged over the initial SDK state
-   * @throws Error when the input is not an object or is a malformed envelope
+   * - v2 envelope (`{ connectorState, sdkState }`): used as-is.
+   * - v1 flat blob: SDK-owned keys (`V1_SDK_STATE_KEYS`) split into `sdkState`,
+   *   everything else becomes connector state.
+   * - Malformed envelope (one side present, the other missing) fails loud.
    */
   private normalizeFetchedState(parsed: unknown): {
     connectorState: ConnectorState;
@@ -249,14 +231,9 @@ export abstract class BaseState<ConnectorState> {
   }
 
   /**
-   * Persists the adapter state to the platform.
-   *
-   * Used to checkpoint progress: wraps the current connector and SDK state into
-   * the v2 `{ connectorState, sdkState }` envelope, serializes it, and posts it.
-   * A serialization or request failure fails the worker.
-   *
-   * @param state - Optional connector state of type ConnectorState to set and persist; when omitted the current `this.state` is used
-   * @returns Promise that resolves once the state has been persisted
+   *  Updates the state of the adapter by posting to API.
+   *  Persists the v2 `{ connectorState, sdkState }` envelope.
+   * @param {object} state - The connector state to be updated
    */
   async postState(state?: ConnectorState) {
     const url = this.workerUrl + '.update';
@@ -319,12 +296,8 @@ export abstract class BaseState<ConnectorState> {
   }
 
   /**
-   * Fetches the raw persisted adapter state from the platform.
-   *
-   * Used by `init` to read the stored state before normalization; returns the
-   * raw, still-stringified payload without parsing or migrating it.
-   *
-   * @returns Promise resolving to `{ state, objects }`, where `state` is the stringified state blob and `objects` is the optional stringified extraction scope
+   *  Fetches the state of the adapter from API.
+   * @return  The raw state data from API
    */
   async fetchState(): Promise<{ state: string; objects?: string }> {
     console.log(

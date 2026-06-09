@@ -9,12 +9,9 @@ import {
 import { UploaderResult } from './uploader.interfaces';
 
 /**
- * Compresses a JSONL string using gzip.
- *
- * Used to shrink a serialized JSONL batch before uploading it as an artifact.
- *
- * @param jsonlObject - The JSONL string to compress.
- * @returns An UploaderResult wrapping the gzipped Buffer, or an error on failure.
+ * Compresses a JSONL string using gzip compression.
+ * @param {string} jsonlObject - The JSONL string to compress
+ * @returns {Buffer | void} The compressed buffer or undefined on error
  */
 export function compressGzip(jsonlObject: string): UploaderResult<Buffer> {
   try {
@@ -25,12 +22,9 @@ export function compressGzip(jsonlObject: string): UploaderResult<Buffer> {
 }
 
 /**
- * Decompresses a gzipped buffer back into a JSONL string.
- *
- * Used to restore a downloaded gzipped artifact before parsing it.
- *
- * @param gzippedJsonlObject - The gzipped Buffer to decompress.
- * @returns An UploaderResult wrapping the decompressed JSONL string, or an error on failure.
+ * Decompresses a gzipped buffer to a JSONL string.
+ * @param {Buffer} gzippedJsonlObject - The gzipped buffer to decompress
+ * @returns {string | void} The decompressed JSONL string or undefined on error
  */
 export function decompressGzip(
   gzippedJsonlObject: Buffer
@@ -45,11 +39,8 @@ export function decompressGzip(
 
 /**
  * Parses a JSONL string into an array of objects.
- *
- * Used to turn a decompressed artifact into usable records.
- *
- * @param jsonlObject - The JSONL string to parse.
- * @returns An UploaderResult wrapping the parsed object array, or an error on failure.
+ * @param {string} jsonlObject - The JSONL string to parse
+ * @returns {object[] | null} The parsed array of objects or null on error
  */
 export function parseJsonl(jsonlObject: string): UploaderResult<object[]> {
   try {
@@ -60,14 +51,10 @@ export function parseJsonl(jsonlObject: string): UploaderResult<object[]> {
 }
 
 /**
- * Writes fetched objects to the local file system for local development.
- *
- * Used to inspect extracted data on disk instead of uploading it when running locally; writes a
- * timestamped JSON/JSONL file under the `extracted_files` directory.
- *
- * @param itemType - The string item type, used to name the output file and pick its extension.
- * @param fetchedObjects - The object or array of objects to write, one JSON record per line.
- * @returns Promise that resolves once the file is written, or rejects on a write error.
+ * Downloads fetched objects to the local file system (for local development).
+ * @param {string} itemType - The type of items being downloaded
+ * @param {object | object[]} fetchedObjects - The objects to write to file
+ * @returns {Promise<void>} Resolves when the file is written or rejects on error
  */
 export async function downloadToLocal(
   itemType: string,
@@ -103,13 +90,9 @@ export async function downloadToLocal(
 }
 
 /**
- * Truncates a filename that exceeds the platform's maximum length.
- *
- * Used before requesting an upload URL so the registered file name stays within DevRev limits,
- * preserving the extension and inserting an ellipsis in the middle.
- *
- * @param filename - The string filename to truncate.
- * @returns The original filename if within the limit, otherwise a truncated `name...ext` string.
+ * Truncates a filename if it exceeds the maximum allowed length.
+ * @param {string} filename - The filename to truncate
+ * @returns {string} The truncated filename
  */
 export function truncateFilename(filename: string): string {
   // If the filename is already within the limit, return it as is.

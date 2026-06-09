@@ -25,17 +25,6 @@ import {
   getNoScriptEventType,
 } from './spawn.helpers';
 
-/**
- * Resolves the default worker script path for an incoming event type.
- *
- * Used by `spawn` to pick which built-in worker (external sync units, metadata,
- * data/attachment extraction, data/attachment loading) to run when the caller
- * has not supplied an explicit `workerPath` or override.
- *
- * @param event - The AirSync event whose `payload.event_type` selects the worker.
- * @param workerBasePath - The base directory string the resolved relative worker path is appended to.
- * @returns The full worker script path string, or null if the event type has no matching built-in worker.
- */
 function getWorkerPath({
   event,
   workerBasePath,
@@ -74,14 +63,12 @@ function getWorkerPath({
  * Spawn class is responsible for spawning a new worker thread and managing the lifecycle of the worker.
  * The class provides utilities to emit control events to the platform and exit the worker gracefully.
  * In case of lambda timeout, the class emits a lambda timeout event to the platform.
- * @param options - The options of type SpawnFactoryInterface used to launch the worker.
- * @param options.event - The AirSync event object received from the platform.
- * @param options.initialState - The initial connector state handed to the worker.
- * @param options.initialDomainMapping - The initial domain mapping handed to the worker.
- * @param options.options - Optional SDK behavior overrides (timeout, local development, worker path overrides, etc.).
- * @param options.workerPath - Optional explicit path to the worker script; takes precedence over overrides and the default resolver.
- * @param options.baseWorkerPath - The base path for the worker files, usually `__dirname`.
- * @returns A Promise that resolves once the worker finishes (or a no-script default event is emitted), or rejects if the worker fails to start.
+ * @param {SpawnFactoryInterface} options - The options to create a new instance of Spawn class
+ * @param {AirSyncEvent} options.event - The event object received from the platform
+ * @param {object} options.initialState - The initial state of the adapter
+ * @param {string} [options.workerPath] Remove getWorkerPath function and use baseWorkerPath: __dirname instead of workerPath
+ * @param {string} [options.baseWorkerPath] - The base path for the worker files, usually `__dirname`
+ * @returns {Promise<Spawn>} - A new instance of Spawn class
  */
 export async function spawn<ConnectorState>({
   event,
@@ -167,16 +154,6 @@ export async function spawn<ConnectorState>({
   }
 }
 
-/**
- * Manages the lifecycle of a spawned worker thread for a single event.
- *
- * Used by `spawn` to supervise the worker: it arms a soft timeout (asks the
- * worker to exit gracefully) and a hard timeout (terminates a stuck worker),
- * relays the worker's log messages to the main thread, tracks whether the
- * worker has already emitted an event, periodically logs memory usage, and on
- * worker exit clears the timers and resolves the spawn promise -- emitting a
- * timeout error event if the worker exited without emitting one itself.
- */
 export class Spawn {
   private event: AirSyncEvent;
   private alreadyEmitted: boolean;

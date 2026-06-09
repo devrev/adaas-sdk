@@ -23,13 +23,10 @@ import { Uploader } from '../../uploader/uploader';
 import { getEventTypeForResult } from '../spawn/spawn.helpers';
 
 /**
- * Abstract base for the worker adapters, holding state and behavior shared by
- * both sync modes and owning the `emit` control-protocol flow as a template method.
- *
- * Used as the type passed to worker tasks; mode-specific adapters
- * (`ExtractionAdapter`, `LoadingAdapter`) extend it and implement the abstract
- * hooks (`beforeEmit`, `buildEmitPayload`, `afterEmit`) to inject their own
- * pre-emit work and event payload shaping.
+ * BaseAdapter holds the state and behavior shared by both sync modes and owns
+ * the `emit` control-protocol flow as a template method. Mode-specific adapters
+ * (`ExtractionAdapter`, `LoadingAdapter`) implement the abstract hooks to inject
+ * their own pre-emit work and event payload shaping.
  *
  * @typeParam ConnectorState - the connector-owned state shape
  */
@@ -76,18 +73,10 @@ export abstract class BaseAdapter<ConnectorState> {
     return this.adapterState.sdkState;
   }
 
-  /** Per-item-type extraction scope (which item types to extract). */
   get extractionScope() {
     return this.adapterState.extractionScope;
   }
 
-  /**
-   * Persists the current adapter state to the platform.
-   *
-   * Used to checkpoint connector and SDK state outside of an emit.
-   *
-   * @returns Promise that resolves once the state has been posted.
-   */
   async postState() {
     return runWithSdkLogContext(async () => {
       await this.adapterState.postState();
@@ -124,15 +113,12 @@ export abstract class BaseAdapter<ConnectorState> {
    * Maps a {@link TaskResult} returned by a worker's task/onTimeout callback to
    * the phase-appropriate platform event and emits it exactly once.
    *
-   * Used as the SDK-internal bridge between the return-based connector contract
+   * This is the SDK-internal bridge between the return-based connector contract
    * and the control protocol; it is invoked by the worker driver, not by
    * connectors. Connectors signal outcomes by returning a `TaskResult`, never by
-   * calling `emit` directly. A `delay`/`error` status carries its delay seconds
-   * or error into the event data; a status that is illegal for a non-resumable
-   * phase is downgraded to an error event.
+   * calling `emit` directly.
    *
-   * @param result - The TaskResult status the worker reported for the current phase.
-   * @returns Promise that resolves once the mapped event has been emitted.
+   * @param result - The status the worker reported for the current phase.
    */
   async emitFromResult(result: TaskResult): Promise<void> {
     const { eventType, illegal } = getEventTypeForResult(
@@ -155,17 +141,10 @@ export abstract class BaseAdapter<ConnectorState> {
   }
 
   /**
-   * Emits a single event to the platform via the template-method flow.
+   *  Emits an event to the platform.
    *
-   * Used as the one place that sends a control-protocol event: it runs the
-   * `beforeEmit` hook, persists state (except for stateless start/delete events),
-   * merges in the mode-specific `buildEmitPayload`, sends the event, then runs
-   * `afterEmit`. Guarded by `hasWorkerEmitted` so it emits at most once; any
-   * failure in preparation, state posting, or sending signals the worker to exit.
-   *
-   * @param newEventType - The ExtractorEventType or LoaderEventType to emit.
-   * @param data - Optional EventData (e.g. delay or error) merged into the payload.
-   * @returns Promise that resolves once the emit attempt has completed.
+   * @param newEventType - The event type to be emitted
+   * @param data - The data to be sent with the event
    */
   protected async emit(
     newEventType: ExtractorEventType | LoaderEventType,

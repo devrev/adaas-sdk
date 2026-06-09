@@ -1,15 +1,6 @@
-/** Prefix used to namespace common error codes emitted by extractors. */
 const ERROR_PREFIX = 'ERROR_CODE';
-/** Delimiter joining the error prefix and the specific error name in the encoded code. */
 const ERROR_DELIMITER = '=';
 
-/**
- * Well-known error codes an extractor can report to signal common, externally-caused failure conditions.
- *
- * Used to communicate persistent source-system states (deletion, deactivation, missing access/permission)
- * or sync-completion signals back to AirSync in a recognized, machine-readable form. Each member's value
- * is the encoded string `ERROR_CODE=<NAME>`.
- */
 export const enum ExtractionCommonError {
   // Indicates that the external system is permanently inactive or inaccessible.
   // This is used for persistent conditions (system deleted, deactivated, access permanently revoked)

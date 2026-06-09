@@ -10,13 +10,10 @@ import { BaseState } from './base-state';
 import { extractionSdkState, StateInterface } from './state.interfaces';
 
 /**
- * Per-mode adapter state for extraction workers.
- *
- * Used to seed the extraction SDK state (extraction-window boundaries +
- * attachments bookkeeping) on top of the shared lifecycle provided by
- * `BaseState`, and to resolve the incremental extraction window for each event.
- *
- * @typeParam ConnectorState - the connector-owned state shape
+ * ExtractionState is the per-mode state for extraction workers. It seeds the
+ * extraction SDK state (extraction boundaries + attachments bookkeeping) on top
+ * of the shared lifecycle provided by `BaseState` and adds extraction-window
+ * resolution.
  */
 export class ExtractionState<ConnectorState> extends BaseState<ConnectorState> {
   constructor(params: StateInterface<ConnectorState>) {
@@ -24,19 +21,13 @@ export class ExtractionState<ConnectorState> extends BaseState<ConnectorState> {
   }
 
   /**
-   * Computes the incremental extraction window and writes `extract_from`/`extract_to` onto the event context.
+   * Resolves the extraction window onto the event context.
    *
-   * Used so every extraction phase shares one consistent time window, read from
-   * the SDK-owned boundary fields in `this.sdkState`. Behavior by event type:
-   * - StartExtractingData: stamp `lastSyncStarted` if not already set.
-   * - StartExtractingMetadata: resolve fresh from the TimeValue objects in the
-   *   event context and cache them as pending boundaries (always overwrite).
-   * - All other events: reuse the pending boundaries cached during
-   *   StartExtractingMetadata.
-   * Finally validates that `extract_from` is older than `extract_to`, failing
-   * the worker if the platform supplied an inverted window.
-   *
-   * @returns void; mutates the event context and `this.sdkState` in place
+   * On StartExtractingData: stamp `lastSyncStarted` if not already set.
+   * On StartExtractingMetadata: resolve fresh from the TimeValue objects in the
+   * event context and cache them as pending boundaries (always overwrite).
+   * On all other events: reuse the pending boundaries cached during
+   * StartExtractingMetadata. Finally, validate that extract_from < extract_to.
    */
   resolveExtractionWindow(): void {
     const sdkState = this.sdkState;
@@ -131,14 +122,9 @@ export class ExtractionState<ConnectorState> extends BaseState<ConnectorState> {
 /**
  * Creates and initializes an `ExtractionState` for an extraction worker.
  *
- * Used by the state dispatcher to build extraction-mode state. The initial state
- * is deep-cloned to avoid mutating the caller's object; for non-stateless events
- * this fetches persisted state, installs the initial domain mapping if the
- * snap-in version changed, then resolves the extraction window (time-value
- * resolution + pending boundary reuse) and validates it.
- *
- * @param params - The state factory parameters of type StateInterface (event, initial connector state, optional domain mapping and worker options)
- * @returns Promise resolving to the initialized ExtractionState
+ * For non-stateless events this fetches persisted state, installs the initial
+ * domain mapping if the snap-in version changed, then resolves the extraction
+ * window (time-value resolution + pending boundary reuse) and validates it.
  */
 export async function createExtractionState<ConnectorState>({
   event,

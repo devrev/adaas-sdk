@@ -8,12 +8,6 @@ import {
 } from '../types';
 import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 
-/**
- * Concurrency-bounded pool that streams a batch of attachments from the external system to DevRev.
- *
- * Used during attachment extraction to download up to batchSize attachments in parallel while honoring
- * timeouts, rate-limit delays, and per-attachment errors, and to track processed attachments for resumption.
- */
 export class AttachmentsStreamingPool<ConnectorState> {
   private adapter: ExtractionAdapter<ConnectorState>;
   private attachments: NormalizedAttachment[];
@@ -37,14 +31,6 @@ export class AttachmentsStreamingPool<ConnectorState> {
     this.stream = stream;
   }
 
-  /**
-   * Increments the processed counter and periodically logs progress.
-   *
-   * Used after each attachment to report progress every PROGRESS_REPORT_INTERVAL items and briefly
-   * yield the event loop.
-   *
-   * @returns Promise that resolves once progress has been recorded (and any brief sleep elapsed).
-   */
   private async updateProgress() {
     this.totalProcessedCount++;
     if (this.totalProcessedCount % this.PROGRESS_REPORT_INTERVAL === 0) {
@@ -55,13 +41,10 @@ export class AttachmentsStreamingPool<ConnectorState> {
   }
 
   /**
-   * Migrates processed-attachment state from the legacy string[] format to ProcessedAttachment[].
+   * Migrates processed attachments from the legacy string[] format to the new ProcessedAttachment[] format.
    *
-   * Used when resuming streaming so older saved state (a list of ids) is upgraded to the structured
-   * { id, parent_id } form before it is consulted for de-duplication.
-   *
-   * @param attachments - The persisted list to migrate, either a string[] of ids or a ProcessedAttachment[].
-   * @returns Migrated array of ProcessedAttachment objects, or an empty array if the input is invalid.
+   * @param attachments - The attachments list to migrate (either string[] or ProcessedAttachment[])
+   * @returns Migrated array of ProcessedAttachment objects, or empty array if input is invalid
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private migrateProcessedAttachments(attachments: any): ProcessedAttachment[] {
@@ -86,15 +69,6 @@ export class AttachmentsStreamingPool<ConnectorState> {
     return [];
   }
 
-  /**
-   * Streams every attachment in the pool, running up to batchSize streams concurrently.
-   *
-   * Used as the pool's entry point: it initializes/migrates the processed-attachments state, starts the
-   * initial set of worker loops, and waits for them to drain the queue or stop early on a delay.
-   *
-   * @returns Promise resolving to a ProcessAttachmentReturnType: a delay if rate-limited, an error if
-   * state is uninitialized, or an empty object once all attachments are processed.
-   */
   async streamAll(): Promise<ProcessAttachmentReturnType> {
     console.log(
       `Starting download of ${this.attachments.length} attachments, streaming ${this.batchSize} at once.`
@@ -141,15 +115,6 @@ export class AttachmentsStreamingPool<ConnectorState> {
     return {};
   }
 
-  /**
-   * Runs a single worker loop that pulls and streams attachments until the queue is drained.
-   *
-   * Used as one of the concurrent workers started by streamAll: it skips already-processed attachments,
-   * stops on timeout or a rate-limit delay, records successes, and logs/skips per-attachment errors.
-   *
-   * @returns Promise that resolves when this worker stops, either because the queue is empty or a
-   * timeout/delay was detected.
-   */
   async startPoolStreaming() {
     // Process attachments until the attachments array is empty
     while (this.attachments.length > 0) {

@@ -1,11 +1,3 @@
-/**
- * Public types barrel for the SDK.
- *
- * Aggregates and re-exports the commonly used types across the SDK domains — common, extraction,
- * loading, repo, state, uploader, mappers, and external domain metadata — so consumers can import
- * them from a single entry point.
- */
-
 // Common
 export {
   AdapterUpdateParams,
