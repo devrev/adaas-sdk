@@ -13,10 +13,13 @@ commits. Mechanical/structural transforms first (Phase 1), polish + surface-defi
 ## Git facts
 - **Working branch:** `v2` (already hard-reset to `origin/main`).
 - **Base commit:** `origin/main` = `5b81ef2` (feat: Add new common error enums #204).
-- **Oracle (target shape):** `origin/v2` / tag `v2-old-backup` = `9202e47`. This is the PREVIOUS
+- **Oracle (target shape):** tag `v2-old-backup` = `9202e47`. This is the PREVIOUS
   v2 attempt — it already implemented the rename, deletions, adapter split, state split+envelope,
   and emit-from-return, but bundled into huge unreviewable commits built on a stale base. **Use it
   as a structural reference / oracle only. Never copy wholesale. Re-author cleanly.**
+  Read oracle files with `git show v2-old-backup:src/...`.
+- **IMPORTANT:** `origin/v2` is NOW our working branch (post-reset), NOT the oracle. The oracle is the
+  TAG `v2-old-backup`. Don't confuse them.
 - **Safety:** old work preserved at tag `v2-old-backup`. Force-push of `v2` is approved by Rado.
 
 ## Hard rules (apply to EVERY Phase-1 commit)
@@ -50,7 +53,7 @@ commits. Mechanical/structural transforms first (Phase 1), polish + surface-defi
     break the build.
 - **C2 — Airdrop→AirSync identifier rename.** DECIDED with Rado:
   - HARD rename, NO back-compat alias: `AirdropEvent`→`AirSyncEvent`, `AirdropMessage`→`AirSyncMessage`.
-    (origin/v2 did NOT do this rename — oracle unreliable here; do it properly.)
+    (v2-old-backup (oracle tag) did NOT do this rename — oracle unreliable here; do it properly.)
   - Update stale branding in comments/prose: bare "Airdrop" + "ADaaS" → "AirSync".
   - MUST NOT touch: `/internal/airdrop.*` API routes; the `AIRDROP_*` mapping enum members AND their
     `'airdrop_*'` string values (mappers.interface.ts); the `external_system_type: 'ADaaS'` string LITERAL
@@ -70,17 +73,31 @@ commits. Mechanical/structural transforms first (Phase 1), polish + surface-defi
   - Exported translation fns are NOT in index.ts (internal) — safe to delete.
 - **C4a — State split (structural only).** Introduce `BaseState` + `ExtractionState` + `LoadingState`.
   KEEP the flat `AdapterState<ConnectorState> = ConnectorState & SdkState` shape (behavior identical).
-  Author fresh; origin/v2 `src/state/base-state.ts` etc. are structural reference only.
+  Author fresh; oracle `src/state/base-state.ts` etc. guide STRUCTURE only (the oracle is already
+  envelope-based = C4b; do NOT copy its envelope split here).
+  DESIGN (decided after reading current state.ts + oracle):
+  - `base-state.ts`: `abstract class BaseState<ConnectorState>` holds flat `_state: AdapterState`,
+    `_extractionScope`, shared fields, `state` get/set, `extractionScope` get, `init()`, `fetchState()`,
+    `postState()`, and `installInitialDomainMappingIfNeeded()` (extracted from current factory). Ctor takes
+    `initialSdkState`.
+  - `extraction-state.ts`: `ExtractionState extends BaseState` (ctor passes `extractionSdkState`) +
+    `resolveExtractionWindow()` + lastSyncStarted logic; factory `createExtractionState()`.
+  - `loading-state.ts`: `LoadingState extends BaseState` (ctor passes `loadingSdkState`); factory
+    `createLoadingState()`.
+  - `state.ts`: keep a thin `createAdapterState()` DISPATCHER picking Extraction/Loading by
+    `event_context.mode === SyncMode.LOADING` (process-task stays unchanged until C6). Re-export classes.
+  - `state.interfaces.ts`: UNCHANGED (flat shape kept; type reshaping is C4b).
+  - Consumers: `types/workers.ts` + `worker-adapter.ts` change `State` type ref → `BaseState`.
 - **C4b — State envelope + migration.** Change on-disk shape to `{ connectorState, sdkState }`.
   Add migration shim: read legacy flat v1 blob → split SDK-owned keys into `sdkState` → persist envelope.
-  (origin/v2 `base-state.ts` has the reference impl incl. `V1_SDK_STATE_KEYS`.)
+  (v2-old-backup (oracle tag) `base-state.ts` has the reference impl incl. `V1_SDK_STATE_KEYS`.)
 - **C5 — Adapter split (structural only).** `BaseAdapter` + `ExtractionAdapter` + `LoadingAdapter`.
   KEEP existing `emit`-based contract working (behavior identical). Author fresh intermediate form
-  (this exact form exists in NO branch — origin/v2's split already assumes emit-from-return).
+  (this exact form exists in NO branch — v2-old-backup (oracle tag)'s split already assumes emit-from-return).
 - **C6 — Emit-from-return contract.** `task`/`onTimeout` return a `TaskResult`
   (`{ status: 'success'|'progress'|'delay'|'error', ... }`); the SDK maps status→phase event and emits
   exactly once; `emit` removed from public surface. `processTask` → `processExtractionTask` +
-  `processLoadingTask`. Reference: origin/v2 `process-task.ts`, `base-adapter.ts` (mapping keys off
+  `processLoadingTask`. Reference: v2-old-backup (oracle tag) `process-task.ts`, `base-adapter.ts` (mapping keys off
   event_type/phase, NOT off state shape — so C4b and C6 are independent).
 
 ### Phase 2 — closing / interactive (batched, done at the end)
@@ -124,7 +141,7 @@ src/deprecated/uploader/index.ts
 Also delete `src/common/event-type-translation.ts` (+ `.test.ts`).
 `src/index.ts` on main exports these deprecated barrels — remove those export lines:
 `./deprecated/adapter`, `./deprecated/demo-extractor`, `./deprecated/http/client`, `./deprecated/uploader`,
-and the `formatAxiosError` export (origin/v2 dropped it — confirm against connector usage; azure-boards imports it, so this is a migration note).
+and the `formatAxiosError` export (v2-old-backup (oracle tag) dropped it — confirm against connector usage; azure-boards imports it, so this is a migration note).
 
 ### C3 — EventType (incoming): DELETE these deprecated members, keep the new ones
 | DELETE (old member = old VALUE)                              | KEEP (new member = new VALUE)                                            |
@@ -158,7 +175,7 @@ Loading members (StartLoadingData…StartDeletingLoaderAttachmentState) + Unknow
 | ExtractionAttachmentsError            | AttachmentExtractionError               |
 | ExtractionAttachmentsDeleteDone       | ExtractorAttachmentsStateDeletionDone   |
 | ExtractionAttachmentsDeleteError      | ExtractorAttachmentsStateDeletionError  |
-(values for new members are the *_EXTRACTION_* / *_DELETION_* strings — see origin/v2 extraction.ts.)
+(values for new members are the *_EXTRACTION_* / *_DELETION_* strings — see v2-old-backup (oracle tag) extraction.ts.)
 
 ### C3 — LoaderEventType: DELETE deprecated typo/plural members
 DELETE: `DataLoadingDelay` (typo), `AttachmentsLoadingProgress/Delayed/Done/Error` (the plural-typo dupes).
@@ -189,7 +206,7 @@ Symbols imported from `@devrev/ts-adaas` by the 3 inspectable connectors:
 | C1 delete + tsconfig  | ☑ done | d573cb6. Deleted src/deprecated/ (6 files) + 4 index exports; added tsconfig.build.json (excludes tests), build script points to it. Reviewer-approved. event-type-translation deletion moved to C3. |
 | C2 AirSync rename     | ☑ done | 1fa9afc. AirdropEvent→AirSyncEvent, AirdropMessage→AirSyncMessage (hard, no alias) + prose ADaaS/Airdrop→AirSync. Protected: airdrop.* routes, AIRDROP_* enum, 'ADaaS' literal. Reviewer-approved. |
 | C3 enum cleanup       | ☑ done | cc05f41. Deleted deprecated enum members (EventType, ExtractorEventType, LoaderEventType) + event-type-translation.ts/.test; rewired 4 callers (process-task, spawn, control-protocol, worker-adapter) + spawn.helpers cases. Behavior-equivalent. Reviewer-approved. |
-| C4a state split       | ☐ todo | |
+| C4a state split       | ☑ done | b63f3ab. BaseState + ExtractionState + LoadingState, flat shape preserved; state.ts is dispatcher by mode. Reviewer-confirmed behavior-equivalent (loading only loses inert logs). |
 | C4b state envelope    | ☐ todo | |
 | C5 adapter split      | ☐ todo | |
 | C6 emit-from-return   | ☐ todo | |
