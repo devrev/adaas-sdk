@@ -1,81 +1,160 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
-import { translateIncomingEventType } from '../common/event-type-translation';
+
 import { Logger, serializeError } from '../logger/logger';
 import {
   runWithSdkLogContext,
   runWithUserLogContext,
 } from '../logger/logger.context';
-import { createAdapterState } from '../state/state';
+import { createExtractionState } from '../state/extraction-state';
+import { createLoadingState } from '../state/loading-state';
 import {
   ProcessTaskInterface,
+  TaskResult,
   WorkerEvent,
   WorkerMessageSubject,
 } from '../types/workers';
-import { WorkerAdapter } from './worker-adapter/worker-adapter';
 
-export function processTask<ConnectorState>({
+import { BaseAdapter } from './adapters/base-adapter';
+import { ExtractionAdapter } from './adapters/extraction-adapter';
+import { LoadingAdapter } from './adapters/loading-adapter';
+
+/**
+ * Shared worker-thread driver. Builds the logger context, runs the task and
+ * (on timeout) the onTimeout callback against the provided adapter, maps the
+ * returned {@link TaskResult} to a platform event and emits it exactly once,
+ * and wires the error/exit plumbing.
+ *
+ * The adapter is constructed by the caller so each entry point can build its
+ * own typed adapter.
+ *
+ * If `onTimeout` is omitted, the SDK emits a phase-appropriate default on
+ * timeout: `progress` (resumable phases) or `error` (non-resumable phases) is
+ * handled by the status->event mapping when we emit a `progress` result.
+ */
+async function runWorkerTask<Adapter extends BaseAdapter<unknown>>(
+  buildAdapter: () => Promise<Adapter>,
+  { task, onTimeout }: ProcessTaskInterface<Adapter>
+): Promise<void> {
+  await runWithSdkLogContext(async () => {
+    try {
+      const adapter = await buildAdapter();
+
+      parentPort?.on(WorkerEvent.WorkerMessage, (message) => {
+        if (message.subject !== WorkerMessageSubject.WorkerMessageExit) {
+          return;
+        }
+        console.log('Timeout received. Waiting for the task to finish.');
+        adapter.isTimeout = true;
+      });
+
+      let result: TaskResult = await runWithUserLogContext(async () =>
+        task({ adapter })
+      );
+
+      // On timeout, hand off to onTimeout (or default to a progress result).
+      if (adapter.isTimeout && !adapter.hasWorkerEmitted) {
+        result = onTimeout
+          ? await runWithUserLogContext(async () => onTimeout({ adapter }))
+          : { status: 'progress' };
+      }
+
+      if (!adapter.hasWorkerEmitted) {
+        await adapter.emitFromResult(result);
+      }
+
+      process.exit(0);
+    } catch (error) {
+      runWithUserLogContext(() => {
+        const errorMessage = `Error while processing task. ${serializeError(
+          error
+        )}`;
+        console.error(errorMessage);
+        parentPort?.postMessage({
+          subject: WorkerMessageSubject.WorkerMessageFailed,
+          payload: { message: errorMessage },
+        });
+        process.exit(1);
+      });
+    }
+  });
+}
+
+/**
+ * Entry point for an extraction worker. Builds an {@link ExtractionAdapter} and
+ * runs the provided task against it.
+ *
+ * @public
+ */
+export function processExtractionTask<ConnectorState>({
   task,
   onTimeout,
-}: ProcessTaskInterface<ConnectorState>) {
+}: ProcessTaskInterface<ExtractionAdapter<ConnectorState>>) {
   if (isMainThread) {
     return;
   }
 
-  void (async () => {
-    await runWithSdkLogContext(async () => {
-      try {
-        const event = workerData.event;
+  void runWorkerTask<ExtractionAdapter<ConnectorState>>(
+    async () => {
+      const event = workerData.event;
+      const initialState = workerData.initialState as ConnectorState;
+      const initialDomainMapping = workerData.initialDomainMapping;
+      const options = workerData.options;
+      // eslint-disable-next-line no-global-assign
+      console = new Logger({ event, options });
 
-        // TODO: Remove when the old types are completely phased out
-        event.payload.event_type = translateIncomingEventType(
-          event.payload.event_type
-        );
+      const adapterState = await createExtractionState<ConnectorState>({
+        event,
+        initialState,
+        initialDomainMapping,
+        options,
+      });
 
-        const initialState = workerData.initialState as ConnectorState;
-        const initialDomainMapping = workerData.initialDomainMapping;
-        const options = workerData.options;
-        // eslint-disable-next-line no-global-assign
-        console = new Logger({ event, options });
+      return new ExtractionAdapter<ConnectorState>({
+        event,
+        adapterState,
+        options,
+      });
+    },
+    { task, onTimeout }
+  );
+}
 
-        const adapterState = await createAdapterState<ConnectorState>({
-          event,
-          initialState,
-          initialDomainMapping,
-          options,
-        });
+/**
+ * Entry point for a loading worker. Builds a {@link LoadingAdapter} and runs the
+ * provided task against it.
+ *
+ * @public
+ */
+export function processLoadingTask<ConnectorState>({
+  task,
+  onTimeout,
+}: ProcessTaskInterface<LoadingAdapter<ConnectorState>>) {
+  if (isMainThread) {
+    return;
+  }
 
-        const adapter = new WorkerAdapter<ConnectorState>({
-          event,
-          adapterState,
-          options,
-        });
+  void runWorkerTask<LoadingAdapter<ConnectorState>>(
+    async () => {
+      const event = workerData.event;
+      const initialState = workerData.initialState as ConnectorState;
+      const initialDomainMapping = workerData.initialDomainMapping;
+      const options = workerData.options;
+      // eslint-disable-next-line no-global-assign
+      console = new Logger({ event, options });
 
-        parentPort?.on(WorkerEvent.WorkerMessage, (message) => {
-          if (message.subject !== WorkerMessageSubject.WorkerMessageExit) {
-            return;
-          }
-          console.log('Timeout received. Waiting for the task to finish.');
-          adapter.isTimeout = true;
-        });
+      const adapterState = await createLoadingState<ConnectorState>({
+        event,
+        initialState,
+        initialDomainMapping,
+        options,
+      });
 
-        await runWithUserLogContext(async () => task({ adapter }));
-        if (adapter.isTimeout && !adapter.hasWorkerEmitted) {
-          await runWithUserLogContext(async () => onTimeout({ adapter }));
-        }
-        process.exit(0);
-      } catch (error) {
-        runWithUserLogContext(() => {
-          const errorMessage = `Error while processing task. ${serializeError(
-            error
-          )}`;
-          console.error(errorMessage);
-          parentPort?.postMessage({
-            subject: WorkerMessageSubject.WorkerMessageFailed,
-            payload: { message: errorMessage },
-          });
-          process.exit(1);
-        });
-      }
-    });
-  })();
+      return new LoadingAdapter<ConnectorState>({
+        event,
+        adapterState,
+        options,
+      });
+    },
+    { task, onTimeout }
+  );
 }

@@ -1,6 +1,5 @@
 import { sleep } from '../common/helpers';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
-import { ProcessedAttachment } from '../state/state.interfaces';
+import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
@@ -9,7 +8,7 @@ import {
 import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 
 export class AttachmentsStreamingPool<ConnectorState> {
-  private adapter: WorkerAdapter<ConnectorState>;
+  private adapter: ExtractionAdapter<ConnectorState>;
   private attachments: NormalizedAttachment[];
   private batchSize: number;
   private delay: number | undefined;
@@ -40,41 +39,12 @@ export class AttachmentsStreamingPool<ConnectorState> {
     }
   }
 
-  /**
-   * Migrates processed attachments from the legacy string[] format to the new ProcessedAttachment[] format.
-   *
-   * @param attachments - The attachments list to migrate (either string[] or ProcessedAttachment[])
-   * @returns Migrated array of ProcessedAttachment objects, or empty array if input is invalid
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private migrateProcessedAttachments(attachments: any): ProcessedAttachment[] {
-    // Handle null/undefined
-    if (!attachments || !Array.isArray(attachments)) {
-      return [];
-    }
-
-    // If already migrated (first element is an object), return as-is
-    if (attachments.length > 0 && typeof attachments[0] === 'object') {
-      return attachments as ProcessedAttachment[];
-    }
-
-    // Migrate old string[] format
-    if (attachments.length > 0 && typeof attachments[0] === 'string') {
-      return attachments.map((it) => ({
-        id: it as string,
-        parent_id: '',
-      }));
-    }
-
-    return [];
-  }
-
   async streamAll(): Promise<ProcessAttachmentReturnType> {
     console.log(
       `Starting download of ${this.attachments.length} attachments, streaming ${this.batchSize} at once.`
     );
 
-    if (!this.adapter.state.toDevRev) {
+    if (!this.adapter.sdkState.toDevRev) {
       const error = new Error('toDevRev state is not initialized');
       console.error(error);
       return { error };
@@ -83,19 +53,12 @@ export class AttachmentsStreamingPool<ConnectorState> {
     // Get the list of successfully processed attachments in previous (possibly incomplete) batch extraction.
     // If no such list exists, create an empty one.
     if (
-      !this.adapter.state.toDevRev.attachmentsMetadata
+      !this.adapter.sdkState.toDevRev.attachmentsMetadata
         .lastProcessedAttachmentsIdsList
     ) {
-      this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList =
+      this.adapter.sdkState.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList =
         [];
     }
-
-    // Migrate old processed attachments to the new format.
-    this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList =
-      this.migrateProcessedAttachments(
-        this.adapter.state.toDevRev.attachmentsMetadata
-          .lastProcessedAttachmentsIdsList
-      );
 
     // Start initial batch of promises up to batchSize limit
     const initialBatchSize = Math.min(this.batchSize, this.attachments.length);
@@ -139,8 +102,8 @@ export class AttachmentsStreamingPool<ConnectorState> {
       }
 
       if (
-        this.adapter.state.toDevRev &&
-        this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList?.some(
+        this.adapter.sdkState.toDevRev &&
+        this.adapter.sdkState.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList?.some(
           (it) => it.id == attachment.id && it.parent_id == attachment.parent_id
         )
       ) {
@@ -180,10 +143,10 @@ export class AttachmentsStreamingPool<ConnectorState> {
 
         // No rate limiting, process normally
         if (
-          this.adapter.state.toDevRev?.attachmentsMetadata
+          this.adapter.sdkState.toDevRev?.attachmentsMetadata
             ?.lastProcessedAttachmentsIdsList
         ) {
-          this.adapter.state.toDevRev?.attachmentsMetadata.lastProcessedAttachmentsIdsList.push(
+          this.adapter.sdkState.toDevRev?.attachmentsMetadata.lastProcessedAttachmentsIdsList.push(
             { id: attachment.id, parent_id: attachment.parent_id }
           );
         }

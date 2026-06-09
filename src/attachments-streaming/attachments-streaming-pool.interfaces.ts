@@ -2,10 +2,10 @@ import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
 } from '../types';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
 
 export interface AttachmentsStreamingPoolParams<ConnectorState> {
-  adapter: WorkerAdapter<ConnectorState>;
+  adapter: ExtractionAdapter<ConnectorState>;
   attachments: NormalizedAttachment[];
   batchSize?: number;
   stream: ExternalSystemAttachmentStreamingFunction;

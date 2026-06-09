@@ -1,10 +1,6 @@
 export { AirSyncDefaultItemTypes } from './common/constants';
 export { ExtractionCommonError } from './common/errors';
 export * from './common/install-initial-domain-mapping';
-export * from './deprecated/adapter';
-export * from './deprecated/demo-extractor';
-export * from './deprecated/http/client';
-export * from './deprecated/uploader';
 export * from './http';
 export { formatAxiosError, serializeAxiosError } from './logger/logger';
 export { MockServer } from './mock-server/mock-server';
@@ -13,9 +9,14 @@ export type {
   RetryConfig,
   RouteConfig,
 } from './mock-server/mock-server.interfaces';
-export { processTask } from './multithreading/process-task';
+export {
+  processExtractionTask,
+  processLoadingTask,
+} from './multithreading/process-task';
 export { spawn } from './multithreading/spawn/spawn';
-export { WorkerAdapter } from './multithreading/worker-adapter/worker-adapter';
+export { BaseAdapter } from './multithreading/adapters/base-adapter';
+export { ExtractionAdapter } from './multithreading/adapters/extraction-adapter';
+export { LoadingAdapter } from './multithreading/adapters/loading-adapter';
 export { createMockEvent, MOCK_SERVER_DEFAULT_URL } from './common/test-utils';
 export type { DeepPartial } from './common/test-utils';
 export * from './types';
