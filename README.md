@@ -17,7 +17,7 @@ It provides features such as:
 ## Installation
 
 ```bash
-npm install @devrev/ts-adaas
+npm install @devrev/airsync-sdk
 ```
 
 ## Reference
