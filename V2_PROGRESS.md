@@ -143,11 +143,42 @@ commits. Mechanical/structural transforms first (Phase 1), polish + surface-defi
   - DECIDED: union alias is throwaway, removed in C6 when processTask splits into typed entry points.
   - Helpers `worker-adapter.helpers.ts` (getFilesToLoad, addReportToLoaderReport): move to loading-adapter's
     dir or keep; used only by loading now. Keep path stable to minimize churn (import from new loading-adapter).
-- **C6 — Emit-from-return contract.** `task`/`onTimeout` return a `TaskResult`
-  (`{ status: 'success'|'progress'|'delay'|'error', ... }`); the SDK maps status→phase event and emits
-  exactly once; `emit` removed from public surface. `processTask` → `processExtractionTask` +
-  `processLoadingTask`. Reference: v2-old-backup (oracle tag) `process-task.ts`, `base-adapter.ts` (mapping keys off
-  event_type/phase, NOT off state shape — so C4b and C6 are independent).
+- **C6 — Emit-from-return contract.** NET-NEW DESIGN: emit-from-return was NEVER implemented in any
+  branch (oracle process-task.ts is still emit-based). Only spec is the TaskResult surface recovered from
+  `src/tests/backwards-compatibility/temp/airsync-sdk.api.md` (untracked leftover). DESIGN:
+  - types: add to types/workers.ts:
+    `export type TaskResult = {status:'success'} | {status:'progress'} | {status:'delay';delaySeconds:number}
+     | {status:'error';error:ErrorRecord};` and `export type TaskStatus = TaskResult['status'];`
+    Change ProcessTaskInterface: `task: (p)=>Promise<TaskResult>`, `onTimeout?: (p)=>Promise<TaskResult>` (optional).
+  - Status→event mapping (SDK-owned, per phase). Resumable phases (data/attachment extraction, data/attachment
+    loading): success→*_DONE, progress→*_PROGRESS, delay→*_DELAYED, error→*_ERROR. Non-resumable (ESU, metadata):
+    success→*_DONE, error→*_ERROR, progress/delay→*_ERROR (illegal, descriptive msg). Map keyed off
+    event.payload.event_type (which incoming EventType → which Extractor/Loader event per status).
+  - base-adapter: emit() becomes SDK-INTERNAL (drop from public surface / index). Add a driver-facing method
+    e.g. `async emitFromResult(result: TaskResult)` that computes the event type from event_type+status via the
+    mapping and calls the internal emit with the right payload (delaySeconds for delay, error for error).
+  - LOADER/STREAMING methods RETURN TaskResult (Rado decided): loadItemTypes, loadAttachments, streamAttachments
+    stop calling emit mid-flight; instead they RETURN a TaskResult (success/progress/delay/error). The reports/
+    processed_files still flow via buildEmitPayload from adapter state (already wired in C5), so the methods just
+    return status. Their old in-method emit() calls (rate-limit→delay, timeout→progress, error→error) become
+    `return {status:...}`. They no longer call process.exit; the driver handles emit+exit.
+  - process-task.ts: split into `processExtractionTask` + `processLoadingTask` (drop single processTask + the
+    WorkerAdapter union alias). Shared `runWorkerTask(buildAdapter, {task,onTimeout})` driver (oracle has the
+    skeleton): run task→get TaskResult; if isTimeout && !hasWorkerEmitted run onTimeout (or SDK default if
+    onTimeout omitted: progress for resumable, error for ESU/metadata)→get TaskResult; then
+    adapter.emitFromResult(result); exit. Build the typed adapter via createExtractionState/createLoadingState.
+  - index.ts: export TaskResult, TaskStatus, processExtractionTask, processLoadingTask. REMOVE processTask.
+  - DECIDED (Rado): emit is SDK-INTERNAL — NOT on the public ExtractionAdapter/LoadingAdapter surface.
+    The spec confirms this (its adapter surfaces show no emit()). Implementation: the template-method skeleton
+    + beforeEmit/buildEmitPayload/afterEmit hooks become `protected` (already are for hooks); the actual emit
+    entry the DRIVER calls is `emitFromResult(result: TaskResult)` — make it a method the driver can call but
+    not documented as connector surface. Connectors calling adapter.emit() get a compile error (good).
+    Keep the old `emit(eventType,data)` as a protected/internal helper that emitFromResult delegates to (the
+    loader/streaming methods no longer call it — they return TaskResult).
+  - test connectors (src/tests/**): these CALL adapter.emit today → they'd break. They are test files (deferred
+    to C10), and build excludes them, so C6 build stays green. Migration of test workers to return-style = C10.
+  - Reference: oracle process-task.ts (the runWorkerTask skeleton + typed entry points) — but oracle is still
+    emit-based, so the TaskResult return + emitFromResult mapping is authored fresh per the spec above.
 
 ### Phase 2 — closing / interactive (batched, done at the end)
 - **C7 — JSDoc pass.** Bar = `src/mappers/mappers.ts` style (class block: what+when; method block:
@@ -258,7 +289,7 @@ Symbols imported from `@devrev/ts-adaas` by the 3 inspectable connectors:
 | C4a state split       | ☑ done | b63f3ab. BaseState + ExtractionState + LoadingState, flat shape preserved; state.ts is dispatcher by mode. Reviewer-confirmed behavior-equivalent (loading only loses inert logs). |
 | C4b state envelope    | ☑ done | 30ba1b3. { connectorState, sdkState } envelope + v1->v2 migration shim (normalizeFetchedState). adapter.state→connector-only, new adapter.sdkState; ~28 SDK-field access sites moved. SdkState kept combined (narrowing deferred to C5). Reviewer-approved (migration cases verified). |
 | C5 adapter split      | ☑ done | a7a877f. BaseAdapter (template emit + hooks) + ExtractionAdapter + LoadingAdapter; WorkerAdapter→union alias; processTask dispatches by mode (still single entry). worker-adapter.ts deleted; helpers→loading-adapter.helpers. Reviewer-approved (emit equivalence verified). SdkState kept combined (narrowing dropped from scope). |
-| C6 emit-from-return   | ☐ todo | |
+| C6 emit-from-return   | ☑ done | 0fb6116. task/onTimeout return TaskResult; SDK maps status→event via getEventTypeForResult and emits once (emitFromResult); emit now protected/internal; processTask→processExtractionTask+processLoadingTask; loader/stream methods return TaskResult. Reviewer-approved (mapping+state-save+no-double-emit verified). NET-NEW design (no oracle). |
 | C7 JSDoc              | ☐ todo | Phase 2 |
 | C8 api report         | ☐ todo | Phase 2 |
 | C9 exposure audit     | ☐ todo | Phase 2, interactive |
