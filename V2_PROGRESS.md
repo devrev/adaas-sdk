@@ -181,10 +181,15 @@ commits. Mechanical/structural transforms first (Phase 1), polish + surface-defi
     emit-based, so the TaskResult return + emitFromResult mapping is authored fresh per the spec above.
 
 ### Phase 2 — closing / interactive (batched, done at the end)
-- **C7 — JSDoc pass.** Bar = `src/mappers/mappers.ts` style (class block: what+when; method block:
-  one-line what, "Used to/for…" usage, `@param` w/ type, `@returns`). Public surface + non-obvious
-  internals (state migration, emit-from-return mapping, attachment streaming pool). Fan out per module,
-  squash to one `docs:` commit.
+- **C7 — JSDoc pass (DEFERRED to the very end).** Bar = `src/mappers/mappers.ts` style (class block:
+  what+when; method block: one-line what, "Used to/for…" usage, `@param` w/ type, `@returns`). Public
+  surface + non-obvious internals (state migration, emit-from-return mapping, attachment streaming pool).
+  FIRST attempt (d05434b, fanned-out subagents) was REVERTED (4fea755): too heavy (902 insertions), some
+  blocks just restated the obvious, made structural review harder. REDO as the LAST step of the whole
+  refactor — done once, by hand, against settled code, with an explicit **"skip-the-obvious" rule**:
+  NO docs on trivial getters/setters, NO restating the method name; document only class-level "what+when",
+  non-obvious params, and genuinely tricky internals. The high-value blocks (normalizeFetchedState
+  migration shim, getEventTypeForResult/EVENT_PHASE_MAP, zero-doc types/loading.ts) still get covered.
 - **C8 — Regenerate api report** (`airsync-sdk.api.md`).
 - **C9 — Exposure audit (INTERACTIVE with Rado).** Read the regenerated report; decide per-symbol what
   to keep public vs hide. Empirical floor = anything imported by the 3 connectors (table below).
@@ -279,6 +284,12 @@ Symbols imported from `@devrev/ts-adaas` by the 3 inspectable connectors:
 + return-based contract), `processTask` (split), `formatAxiosError` (dropped from index), `AirdropEvent`/`AirdropMessage`
 (renamed AirSync*), all old `EXTRACTION_*` enum members (deleted).
 
+**v2 on-disk-state baseline assumption (for C11 migrate-v2 note):** v2 assumes persisted state was written by
+SDK **>= v1.15.2**. The pre-1.15.2 `string[]` form of `lastProcessedAttachmentsIdsList` is NO LONGER migrated
+(shim removed in CLEANUP/9b2b975). The v1→v2 *envelope* migration (`normalizeFetchedState`, C4b) is KEPT — that's
+the real v1-vs-v2 boundary (every v1 version, incl. 1.19, writes flat state). Only the ancient intra-v1 string[]
+processed-attachments format was dropped.
+
 ## Status
 | Commit | State | Notes |
 |--------|-------|-------|
@@ -290,7 +301,8 @@ Symbols imported from `@devrev/ts-adaas` by the 3 inspectable connectors:
 | C4b state envelope    | ☑ done | 30ba1b3. { connectorState, sdkState } envelope + v1->v2 migration shim (normalizeFetchedState). adapter.state→connector-only, new adapter.sdkState; ~28 SDK-field access sites moved. SdkState kept combined (narrowing deferred to C5). Reviewer-approved (migration cases verified). |
 | C5 adapter split      | ☑ done | a7a877f. BaseAdapter (template emit + hooks) + ExtractionAdapter + LoadingAdapter; WorkerAdapter→union alias; processTask dispatches by mode (still single entry). worker-adapter.ts deleted; helpers→loading-adapter.helpers. Reviewer-approved (emit equivalence verified). SdkState kept combined (narrowing dropped from scope). |
 | C6 emit-from-return   | ☑ done | 0fb6116. task/onTimeout return TaskResult; SDK maps status→event via getEventTypeForResult and emits once (emitFromResult); emit now protected/internal; processTask→processExtractionTask+processLoadingTask; loader/stream methods return TaskResult. Reviewer-approved (mapping+state-save+no-double-emit verified). NET-NEW design (no oracle). |
-| C7 JSDoc              | ☑ done | d05434b. Comments-only pass over 25 files to the mappers.ts bar: v2-new code (adapters, state incl. migration shim, process-task/spawn/getEventTypeForResult mapping) + under-documented older modules (repo, uploader, attachments pool, control-protocol, install-IDM, errors, types/loading barrel). Verified every changed line is a comment; build green, lint clean. Fanned out 5 implementer subagents over disjoint file groups. |
+| CLEANUP (post-review) | ☑ done | 9b2b975. (1) Removed dead pre-1.15.2 `migrateProcessedAttachments` shim (v2 assumes on-disk state >= v1.15.2); (2) moved emit primitive `common/control-protocol.ts`→`multithreading/emit.ts` (co-located w/ its only consumers base-adapter+spawn); (3) deleted dead `createAdapterState` dispatcher (zero callers post-C6), `state.ts` now a thin barrel. Build green, lint clean. Preceded by 4fea755 (revert of C7). |
+| C7 JSDoc              | ☐ todo | DEFERRED to very end. First attempt d05434b REVERTED (4fea755) — too heavy/redundant, hurt review. Redo by hand, once, against settled code, with "skip-the-obvious" rule (see C7 plan above). |
 | C8 api report         | ☐ todo | Phase 2 |
 | C9 exposure audit     | ☐ todo | Phase 2, interactive |
 | C10 tests + baseline  | ☐ todo | Phase 2 |
