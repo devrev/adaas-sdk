@@ -28,6 +28,10 @@ describe(AttachmentsStreamingPool.name, () => {
           },
         },
       },
+      isTimeout: false,
+      // Never resolves: streamAll's race is decided by the workers completing,
+      // unless a test overrides this / flips isTimeout.
+      timeoutSignal: new Promise<void>(() => {}),
       processAttachment: jest
         .fn()
         .mockResolvedValue({} as ProcessAttachmentReturnType),
@@ -682,6 +686,87 @@ describe(AttachmentsStreamingPool.name, () => {
       // Verify the user callback was executed
       expect(userCallbackExecuted).toBe(true);
       expect(mockStreamFn).toHaveBeenCalled();
+    });
+  });
+
+  describe('soft timeout handling', () => {
+    it('should resolve streamAll when the timeout signal fires even if a worker is stuck in flight', async () => {
+      // A worker stuck in a never-resolving request: only the timeout race can
+      // unblock streamAll.
+      mockAdapter.processAttachment.mockImplementation(
+        async () => new Promise<ProcessAttachmentReturnType>(() => {})
+      );
+
+      let fireTimeout!: () => void;
+      (mockAdapter as any).timeoutSignal = new Promise<void>((resolve) => {
+        fireTimeout = resolve;
+      });
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: mockAttachments,
+        batchSize: 10,
+        stream: mockStream,
+      });
+
+      const streamAllPromise = pool.streamAll();
+
+      (mockAdapter as any).isTimeout = true;
+      fireTimeout();
+
+      const result = await streamAllPromise;
+      expect(result).toEqual({});
+    });
+
+    it('should not record an attachment as processed when a timeout fires while it is in flight', async () => {
+      mockAdapter.processAttachment.mockImplementation(async () => {
+        await Promise.resolve();
+        (mockAdapter as any).isTimeout = true;
+        return {};
+      });
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: mockAttachments,
+        batchSize: 1,
+        stream: mockStream,
+      });
+
+      await pool.streamAll();
+
+      expect(
+        mockAdapter.state.toDevRev!.attachmentsMetadata
+          .lastProcessedAttachmentsIdsList
+      ).toEqual([]);
+      expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(1);
+    });
+
+    it('should record attachments completed before the timeout and stop after', async () => {
+      let calls = 0;
+      mockAdapter.processAttachment.mockImplementation(async () => {
+        await Promise.resolve();
+        calls++;
+        if (calls === 2) {
+          (mockAdapter as any).isTimeout = true;
+        }
+        return {};
+      });
+
+      const pool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: mockAttachments,
+        batchSize: 1,
+        stream: mockStream,
+      });
+
+      await pool.streamAll();
+
+      expect(
+        mockAdapter.state.toDevRev!.attachmentsMetadata
+          .lastProcessedAttachmentsIdsList
+      ).toEqual([{ id: 'attachment-1', parent_id: 'parent-1' }]);
+      // 2nd was started then abandoned; 3rd never started.
+      expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(2);
     });
   });
 });
