@@ -16,6 +16,8 @@ export interface MockResponse extends ServerResponse {
   status(code: number): MockResponse;
   /** Send a JSON response */
   json(data: unknown): void;
+  /** Send a raw binary (Buffer) response */
+  buffer(data: Buffer): void;
   /** Send an empty response */
   send(): void;
 }
@@ -48,6 +50,8 @@ export interface RouteConfig {
   status: number;
   /** Optional response body to send as JSON */
   body?: unknown;
+  /** Optional raw binary response body, e.g. gzipped JSONL (takes precedence over `body`) */
+  bodyBuffer?: Buffer;
   /** Optional headers to send with the response */
   headers?: Record<string, string>;
   /** Optional retry configuration for simulating failures before success */
