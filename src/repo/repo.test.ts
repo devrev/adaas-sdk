@@ -4,7 +4,6 @@ import { mockServer } from '../tests/jest.setup';
 import { createMockEvent } from '../common/test-utils';
 import { EventType } from '../types';
 import { NormalizedAttachment, NormalizedItem } from './repo.interfaces';
-import { Uploader } from '../uploader/uploader';
 import { Repo } from './repo';
 
 jest.mock('../tests/test-helpers', () => ({
@@ -414,7 +413,9 @@ describe(Repo.name, () => {
         artifact: null,
       });
 
-      await repo.upload([itemWithDate('1', '2022-01-01T00:00:00.000Z')]);
+      await expect(
+        repo.upload([itemWithDate('1', '2022-01-01T00:00:00.000Z')])
+      ).rejects.toThrow('fail');
 
       expect(repo.dateRanges.creationDate.oldest).toBe(
         ts('2022-01-01T00:00:00.000Z')
@@ -483,7 +484,7 @@ describe(Repo.name, () => {
   });
 
   it('should throw when upload fails', async () => {
-    jest.spyOn(Uploader.prototype, 'upload').mockResolvedValue({
+    mockUploadFn.mockResolvedValueOnce({
       error: { message: 'upload failed' },
     });
 
@@ -502,8 +503,7 @@ describe(Repo.name, () => {
     });
 
     const items = createItems(20);
-    jest
-      .spyOn(Uploader.prototype, 'upload')
+    mockUploadFn
       .mockResolvedValueOnce({
         artifact: {
           id: 'artifact-1',
