@@ -3,7 +3,9 @@ import FormData from 'form-data';
 import { jsonl } from 'js-jsonl';
 import zlib from 'zlib';
 
+import { createMockEvent } from '../common/test-utils';
 import { axiosClient } from '../http/axios-client-internal';
+import { mockServer } from '../tests/jest.setup';
 import {
   callPrivateMethod,
   createArtifact,
@@ -13,12 +15,10 @@ import {
   createFileStream,
   spyOnPrivateMethod,
 } from '../tests/test-helpers';
-import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
 
+import { Uploader } from './uploader';
 import { compressGzip, downloadToLocal } from './uploader.helpers';
 import { ArtifactToUpload, UploaderResult } from './uploader.interfaces';
-import { Uploader } from './uploader';
 
 jest.mock('../http/axios-client-internal');
 jest.mock('./uploader.helpers', () => ({
@@ -84,6 +84,75 @@ describe(Uploader.name, () => {
         },
       });
       expect(result.error).toBeUndefined();
+    });
+
+    it('should compute oldest/newest created and modified dates from normalized items', async () => {
+      // Arrange
+      const itemType = 'tasks';
+      const fetchedObjects = [
+        {
+          id: '1',
+          created_date: '2020-06-15T10:00:00.000Z',
+          modified_date: '2021-01-20T10:00:00.000Z',
+          data: { name: 'Task 1' },
+        },
+        {
+          id: '2',
+          created_date: '2019-03-01T08:00:00.000Z',
+          modified_date: '2022-11-30T18:00:00.000Z',
+          data: { name: 'Task 2' },
+        },
+      ];
+
+      mockedAxiosClient.get.mockResolvedValueOnce(
+        mockArtifactUploadUrlResponse
+      );
+      mockedAxiosClient.post.mockResolvedValue(createAxiosResponse());
+
+      // Act
+      const result = await uploader.upload(itemType, fetchedObjects);
+
+      // Assert
+      expect(result.artifact?.oldest_created_date).toBe(
+        '2019-03-01T08:00:00.000Z'
+      );
+      expect(result.artifact?.newest_created_date).toBe(
+        '2020-06-15T10:00:00.000Z'
+      );
+      expect(result.artifact?.oldest_modified_date).toBe(
+        '2021-01-20T10:00:00.000Z'
+      );
+      expect(result.artifact?.newest_modified_date).toBe(
+        '2022-11-30T18:00:00.000Z'
+      );
+      expect(result.error).toBeUndefined();
+    });
+
+    it('should compute date ranges for single object upload', async () => {
+      // Arrange
+      const itemType = 'metadata';
+      const fetchedObject = {
+        id: '1',
+        created_date: '2018-12-25T00:00:00.000Z',
+        modified_date: '2018-12-26T00:00:00.000Z',
+        data: { key: 'value' },
+      };
+
+      mockedAxiosClient.get.mockResolvedValueOnce(
+        mockArtifactUploadUrlResponse
+      );
+      mockedAxiosClient.post.mockResolvedValue(createAxiosResponse());
+
+      // Act
+      const result = await uploader.upload(itemType, fetchedObject);
+
+      // Assert
+      const createdTs = '2018-12-25T00:00:00.000Z';
+      const modifiedTs = '2018-12-26T00:00:00.000Z';
+      expect(result.artifact?.oldest_created_date).toBe(createdTs);
+      expect(result.artifact?.newest_created_date).toBe(createdTs);
+      expect(result.artifact?.oldest_modified_date).toBe(modifiedTs);
+      expect(result.artifact?.newest_modified_date).toBe(modifiedTs);
     });
 
     it('should report item_count as 1 when uploading single object', async () => {

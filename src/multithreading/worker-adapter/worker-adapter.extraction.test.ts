@@ -1,7 +1,7 @@
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
+import { createMockEvent } from '../../common/test-utils';
 import { State } from '../../state/state';
 import { mockServer } from '../../tests/jest.setup';
-import { createMockEvent } from '../../common/test-utils';
 import {
   AdapterState,
   AirdropEvent,
