@@ -5,7 +5,6 @@ import { emit } from '../../common/control-protocol';
 import { translateIncomingEventType } from '../../common/event-type-translation';
 import { getMemoryUsage } from '../../common/helpers';
 import { Logger, serializeError } from '../../logger/logger';
-import type { Logger as LoggerType } from '../../logger/logger';
 import { AirdropEvent, EventType } from '../../types/extraction';
 import {
   GetWorkerPathInterface,
@@ -98,9 +97,8 @@ export async function spawn<ConnectorState>({
   }
 
   const originalConsole = console;
-  const logger = new Logger({ event, options });
   // eslint-disable-next-line no-global-assign
-  console = logger;
+  console = new Logger({ event, options });
 
   if (translatedEventType !== originalEventType) {
     console.log(
@@ -147,7 +145,6 @@ export async function spawn<ConnectorState>({
           options,
           resolve,
           originalConsole,
-          logger,
         });
       });
     } catch (error) {
@@ -182,7 +179,7 @@ export class Spawn {
   private memoryMonitoringInterval: ReturnType<typeof setInterval> | undefined;
   private resolve: (value: void | PromiseLike<void>) => void;
   private originalConsole: Console;
-  private logger: LoggerType;
+  private logger: Logger;
   private workerFailedMessage: string | undefined;
   constructor({
     event,
@@ -190,11 +187,9 @@ export class Spawn {
     options,
     resolve,
     originalConsole,
-    logger,
   }: SpawnInterface) {
     this.originalConsole = originalConsole || console;
-    this.logger =
-      logger ?? (console as LoggerType);
+    this.logger = console as Logger;
     this.alreadyEmitted = false;
     this.softTimeoutSent = false;
     this.event = event;

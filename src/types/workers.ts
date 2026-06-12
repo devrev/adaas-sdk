@@ -1,6 +1,5 @@
 import { Worker } from 'worker_threads';
 
-import type { Logger } from '../logger/logger';
 import type { LogLevel } from '../logger/logger.interfaces';
 import { State } from '../state/state';
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
@@ -46,8 +45,6 @@ export interface WorkerAdapterOptions {
   batchSize?: number;
   workerPathOverrides?: WorkerPathOverrides;
   skipConfirmation?: boolean;
-  /** Test-only: limits axios-retry attempts inside worker threads (see axios-client-internal). */
-  httpRetries?: number;
 }
 
 /**
@@ -63,7 +60,6 @@ export interface SpawnInterface {
   options?: WorkerAdapterOptions;
   resolve: (value: void | PromiseLike<void>) => void;
   originalConsole?: Console;
-  logger?: Logger;
 }
 
 /**

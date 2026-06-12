@@ -30,9 +30,6 @@ module.exports = {
     {
       displayName: 'slow',
       preset: 'ts-jest',
-      setupFiles: [
-        '<rootDir>/src/tests/upload-failure/slow-env.setup.ts',
-      ],
       testMatch: [
         '<rootDir>/src/tests/dummy-connector/metadata-extraction.test.ts',
         '<rootDir>/src/http/axios-client-internal.test.ts',

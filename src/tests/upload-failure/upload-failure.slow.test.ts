@@ -2,8 +2,8 @@
  * Upload-failure retry tests (spawn integration).
  *
  * Uses a dedicated mock server (./mock-server.setup) for isolation when the slow
- * project runs test files in parallel. Retry count is reduced via slow-env.setup.ts
- * (ADAAS_TEST_HTTP_RETRIES) so tests finish quickly while still exhausting retries.
+ * project runs test files in parallel. These tests use the production retry
+ * count and are intentionally slower than the fast upload-failure suite.
  */
 import { EventType, ExtractorEventType } from '../../types/extraction';
 import { createMockEvent } from '../../common/test-utils';
@@ -16,10 +16,10 @@ import { mockServer } from './mock-server.setup';
 
 import run from './extraction';
 
-jest.setTimeout(30000);
+jest.setTimeout(180000);
 
 const UPLOAD_URL_PATH = '/internal/airdrop.artifacts.upload-url';
-const TEST_HTTP_RETRIES = 2;
+const TEST_HTTP_RETRIES = 5;
 
 function failUploadUrlPermanently(): void {
   mockServer.setRoute({

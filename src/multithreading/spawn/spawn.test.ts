@@ -90,7 +90,6 @@ function buildSpawn(overrides: {
     options: overrides.options as never,
     resolve: overrides.resolve ?? jest.fn(),
     originalConsole: originalConsole as Console,
-    logger: mockLogger as never,
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global as any).console = originalConsole;

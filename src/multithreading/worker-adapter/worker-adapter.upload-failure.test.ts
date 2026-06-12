@@ -103,7 +103,7 @@ describe(`${WorkerAdapter.name} upload failure (near-integration)`, () => {
     expect(adapter.getRepo('tasks')?.getItems().length).toBe(20);
   });
 
-  it('should emit DataExtractionError via emitToPlatform when uploadAllRepos fails', async () => {
+  it('should emit DataExtractionError when uploadAllRepos fails', async () => {
     const { emit: mockEmit } = require('../../common/control-protocol');
 
     mockServer.setRoute({

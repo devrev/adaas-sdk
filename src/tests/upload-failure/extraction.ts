@@ -16,7 +16,6 @@ const run = async (events: AirdropEvent[], workerPath: string) => {
       initialDomainMapping,
       options: {
         isLocalDevelopment: true,
-        httpRetries: 2,
       },
     });
   }
