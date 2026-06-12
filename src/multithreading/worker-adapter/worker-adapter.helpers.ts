@@ -90,3 +90,12 @@ export function addReportToLoaderReport({
 
   return loaderReports;
 }
+
+export function toRfc3339Timestamp(ms: number): string | undefined {
+  if (!Number.isFinite(ms) || ms === 0) {
+    return undefined;
+  }
+
+  return new Date(ms).toISOString();
+}
+
