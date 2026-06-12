@@ -133,6 +133,7 @@ dist
 .idea
 .claude
 .cursor
+.husky/_/
 
 
 src/tests/backwards-compatibility/temp/
