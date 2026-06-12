@@ -428,6 +428,7 @@ export interface WorkerMetadata {
   newest_modified_date?: string;
 
   // Calculated time ranges in absolute times
+  // Times present in `extract_from` and `extract_to` given to the connector.
   oldest_state_date?: string;
   newest_state_date?: string;
 }
