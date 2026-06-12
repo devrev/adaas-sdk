@@ -92,8 +92,13 @@ export function createWorkerAdapter<ConnectorState>({
 export class WorkerAdapter<ConnectorState> {
   readonly event: AirdropEvent;
   readonly options?: WorkerAdapterOptions;
-  isTimeout: boolean;
   hasWorkerEmitted: boolean;
+
+  private _isTimeout: boolean = false;
+  private resolveTimeoutSignal!: () => void;
+  readonly timeoutSignal: Promise<void> = new Promise<void>((resolve) => {
+    this.resolveTimeoutSignal = resolve;
+  });
 
   private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];
@@ -117,7 +122,6 @@ export class WorkerAdapter<ConnectorState> {
     this.adapterState = adapterState;
     this._artifacts = [];
     this.hasWorkerEmitted = false;
-    this.isTimeout = false;
 
     // Loader
     this.loaderReports = [];
@@ -130,6 +134,17 @@ export class WorkerAdapter<ConnectorState> {
       event,
       options,
     });
+  }
+
+  get isTimeout(): boolean {
+    return this._isTimeout;
+  }
+
+  set isTimeout(value: boolean) {
+    this._isTimeout = value;
+    if (value) {
+      this.resolveTimeoutSignal();
+    }
   }
 
   get state(): AdapterState<ConnectorState> {
@@ -1037,6 +1052,11 @@ export class WorkerAdapter<ConnectorState> {
           ssorAttachment.inline = true;
         } else if (attachment.inline === false) {
           ssorAttachment.inline = false;
+        }
+
+        if (this.isTimeout) {
+          this.destroyHttpStream(httpStream);
+          return;
         }
 
         await this.getRepo('ssor_attachment')?.push([ssorAttachment]);

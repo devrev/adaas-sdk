@@ -105,8 +105,10 @@ export class AttachmentsStreamingPool<ConnectorState> {
       initialPromises.push(this.startPoolStreaming());
     }
 
-    // Wait for all promises to complete
-    await Promise.all(initialPromises);
+    await Promise.race([
+      Promise.all(initialPromises),
+      this.adapter.timeoutSignal,
+    ]);
 
     if (this.delay) {
       return { delay: this.delay };
@@ -178,8 +180,8 @@ export class AttachmentsStreamingPool<ConnectorState> {
           continue;
         }
 
-        // No rate limiting, process normally
         if (
+          !this.adapter.isTimeout &&
           this.adapter.state.toDevRev?.attachmentsMetadata
             ?.lastProcessedAttachmentsIdsList
         ) {
