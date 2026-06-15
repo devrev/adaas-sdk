@@ -37,7 +37,6 @@ export function getLibraryVersion() {
  * @returns {Promise<void>} A promise that resolves after the given number of milliseconds
  */
 export async function sleep(ms: number) {
-  console.log(`Sleeping for ${ms}ms.`);
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 

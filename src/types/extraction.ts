@@ -349,6 +349,14 @@ export interface AirSyncEvent {
     };
     snap_in_version_id: string;
     snap_in_id: string;
+    /** DevRev identity of the user who triggered the sync. */
+    user_id: string;
+    /** DevRev org id (don:identity:.../devo/...). */
+    dev_oid: string;
+    /** External source identity, when the platform provides one. */
+    source_id: string;
+    /** DevRev service-account identity used for the sync. */
+    service_account_id: string;
   };
   payload: AirSyncMessage;
   execution_metadata: {

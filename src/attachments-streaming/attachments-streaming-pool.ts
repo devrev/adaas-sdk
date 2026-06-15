@@ -1,10 +1,9 @@
-import { sleep } from '../common/helpers';
 import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
+import { NormalizedAttachment } from '../repo/repo.interfaces';
 import {
   ExternalSystemAttachmentStreamingFunction,
-  NormalizedAttachment,
   ProcessAttachmentReturnType,
-} from '../types';
+} from '../types/extraction';
 import { AttachmentsStreamingPoolParams } from './attachments-streaming-pool.interfaces';
 
 export class AttachmentsStreamingPool<ConnectorState> {
@@ -34,8 +33,10 @@ export class AttachmentsStreamingPool<ConnectorState> {
     this.totalProcessedCount++;
     if (this.totalProcessedCount % this.PROGRESS_REPORT_INTERVAL === 0) {
       console.info(`Processed ${this.totalProcessedCount} attachments so far.`);
-      // Sleep for 100ms to avoid blocking the event loop
-      await sleep(100);
+      // Yield once to the event loop so a pending soft-timeout message
+      // (WorkerMessageExit) can be delivered and adapter.isTimeout can flip
+      // before the next batch of attachments is processed.
+      await new Promise((resolve) => setImmediate(resolve));
     }
   }
 

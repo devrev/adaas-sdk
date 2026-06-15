@@ -30,6 +30,11 @@ import { LoadingAdapter } from './adapters/loading-adapter';
  * If `onTimeout` is omitted, the SDK emits a phase-appropriate default on
  * timeout: `progress` (resumable phases) or `error` (non-resumable phases) is
  * handled by the status->event mapping when we emit a `progress` result.
+ *
+ * On timeout the timeout outcome always wins: once the soft timeout has fired,
+ * the SDK emits the `onTimeout` result (or the default `progress`) and ignores
+ * whatever the task returned, because a phase that ran out of time must hand off
+ * for continuation rather than report itself complete.
  */
 async function runWorkerTask<Adapter extends BaseAdapter<unknown>>(
   buildAdapter: () => Promise<Adapter>,
@@ -51,16 +56,16 @@ async function runWorkerTask<Adapter extends BaseAdapter<unknown>>(
         task({ adapter })
       );
 
-      // On timeout, hand off to onTimeout (or default to a progress result).
-      if (adapter.isTimeout && !adapter.hasWorkerEmitted) {
+      // If the soft timeout fired, the timeout outcome wins regardless of what
+      // the task returned: hand off via onTimeout (or the default progress
+      // result) so the phase continues in a fresh invocation.
+      if (adapter.isTimeout) {
         result = onTimeout
           ? await runWithUserLogContext(async () => onTimeout({ adapter }))
           : { status: 'progress' };
       }
 
-      if (!adapter.hasWorkerEmitted) {
-        await adapter.emitFromResult(result);
-      }
+      await adapter.emitFromResult(result);
 
       process.exit(0);
     } catch (error) {

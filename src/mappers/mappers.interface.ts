@@ -1,4 +1,4 @@
-import { AirSyncEvent } from '../types';
+import { AirSyncEvent } from '../types/extraction';
 import { DonV2 } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 

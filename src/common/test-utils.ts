@@ -63,6 +63,10 @@ export function createMockEvent(
       },
       snap_in_version_id: 'test_snap_in_version_id',
       snap_in_id: 'test_snap_in_id',
+      user_id: 'test_user_id',
+      dev_oid: 'test_dev_oid',
+      source_id: 'test_source_id',
+      service_account_id: 'test_service_account_id',
     },
     payload: {
       connection_data: {
