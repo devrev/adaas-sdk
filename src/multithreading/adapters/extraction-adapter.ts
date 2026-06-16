@@ -8,7 +8,7 @@ import { serializeError } from '../../logger/logger';
 import {
   runWithSdkLogContext,
   runWithUserLogContext,
-} from '../../logger/logger.context';
+} from '../../logger/logger-context';
 import { Repo } from '../../repo/repo';
 import {
   NormalizedAttachment,

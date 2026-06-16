@@ -49,7 +49,7 @@ jest.mock('../logger/logger', () => ({
   serializeError: jest.fn((e: unknown) => String(e)),
 }));
 
-jest.mock('../logger/logger.context', () => ({
+jest.mock('../logger/logger-context', () => ({
   runWithSdkLogContext: jest.fn((fn: () => unknown) => fn()),
   runWithUserLogContext: jest.fn((fn: () => unknown) => fn()),
 }));
@@ -69,7 +69,7 @@ import { processTask } from './process-task';
 import { translateIncomingEventType } from '../common/event-type-translation';
 import { createAdapterState } from '../state/state';
 import { WorkerAdapter } from './worker-adapter/worker-adapter';
-import { createMockEvent } from '../common/test-utils';
+import { createMockEvent } from '../testing/mock-event';
 
 function setWorkerData(data: Record<string, unknown>) {
   (global as Record<string, unknown>).__workerData__ = data;

@@ -10,6 +10,12 @@ import {
   RouteHandlers,
 } from './mock-server.interfaces';
 
+/**
+ * Default base URL for the mock server. The port `0` lets the OS assign a free
+ * port at listen time; tests read the resolved URL from `mockServer.baseUrl`.
+ */
+export const MOCK_SERVER_DEFAULT_URL = 'http://localhost:0';
+
 const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10mb
 
 /**

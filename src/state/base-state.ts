@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { parentPort } from 'node:worker_threads';
 
-import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
-import { axiosClient } from '../http/axios-client-internal';
+import { installInitialDomainMapping } from './install-initial-domain-mapping';
+import { axiosClient } from '../http/client';
 import { getPrintableState, serializeError } from '../logger/logger';
 import { InitialDomainMapping } from '../types/common';
 import { AirSyncEvent } from '../types/extraction';

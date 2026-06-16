@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { DEFAULT_LAMBDA_TIMEOUT } from '../../common/constants';
 import { EventType, ExtractorEventType } from '../../types/extraction';
 import { WorkerEvent, WorkerMessageSubject } from '../../types/workers';
-import { createMockEvent } from '../../common/test-utils';
+import { createMockEvent } from '../../testing/mock-event';
 
 // ---------------------------------------------------------------------------
 // Mocks

@@ -4,7 +4,7 @@ import { Logger, serializeError } from '../logger/logger';
 import {
   runWithSdkLogContext,
   runWithUserLogContext,
-} from '../logger/logger.context';
+} from '../logger/logger-context';
 import { createExtractionState } from '../state/extraction-state';
 import { createLoadingState } from '../state/loading-state';
 import {

@@ -7,8 +7,8 @@ import { isMainThread, parentPort } from 'node:worker_threads';
 import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 
-import { INSPECT_OPTIONS } from './logger.constants';
-import { getSdkLogContextValue } from './logger.context';
+import { INSPECT_OPTIONS } from './logger-constants';
+import { getSdkLogContextValue } from './logger-context';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,

@@ -1,6 +1,6 @@
 import { EventType, ExtractorEventType } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
-import { createMockEvent } from '../../common/test-utils';
+import { createMockEvent } from '../../testing/mock-event';
 
 import run from './extraction';
 

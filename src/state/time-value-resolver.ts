@@ -1,6 +1,6 @@
 import { TimeUnit, TimeValue, TimeValueType } from '../types/extraction';
 import { SdkState } from '../state/state.interfaces';
-import { UNBOUNDED_DATE_TIME_VALUE } from './constants';
+import { UNBOUNDED_DATE_TIME_VALUE } from '../common/constants';
 
 /**
  * Parses a shorthand duration string into its numeric value and unit.

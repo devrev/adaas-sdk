@@ -1,5 +1,5 @@
 import { AxiosResponse } from 'axios';
-import { axiosClient } from '../http/axios-client-internal';
+import { axiosClient } from '../http/client';
 import {
   AirSyncEvent,
   EventData,

@@ -1,6 +1,6 @@
 import { AirSyncEvent, EventType } from '../types/extraction';
 
-export const MOCK_SERVER_DEFAULT_URL = 'http://localhost:0';
+import { MOCK_SERVER_DEFAULT_URL } from './mock-server';
 
 /**
  * Recursively makes all properties of T optional.

@@ -11,7 +11,7 @@ module.exports = {
         'src/tests/timeout-handling/.*.ts',
         // These tests are slow (10-15s per)
         'src/tests/dummy-connector/metadata-extraction.test.ts',
-        'src/http/axios-client-internal.test.ts',
+        'src/http/client.test.ts',
         'src/tests/event-data-size-limit/.*.test.ts',
       ],
     },
@@ -31,7 +31,7 @@ module.exports = {
       preset: 'ts-jest',
       testMatch: [
         '<rootDir>/src/tests/dummy-connector/metadata-extraction.test.ts',
-        '<rootDir>/src/http/axios-client-internal.test.ts',
+        '<rootDir>/src/http/client.test.ts',
         '<rootDir>/src/tests/event-data-size-limit/size-limit-1.test.ts',
       ],
     },

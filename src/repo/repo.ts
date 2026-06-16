@@ -9,7 +9,7 @@ import { Uploader } from '../uploader/uploader';
 import { Artifact } from '../uploader/uploader.interfaces';
 
 import { WorkerAdapterOptions } from '../types/workers';
-import { runWithUserLogContext } from '../logger/logger.context';
+import { runWithUserLogContext } from '../logger/logger-context';
 import {
   NormalizedAttachment,
   NormalizedItem,

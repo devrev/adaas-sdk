@@ -1,7 +1,7 @@
 import { parentPort } from 'node:worker_threads';
 
 import { STATELESS_EVENT_TYPES } from '../common/constants';
-import { resolveTimeValue } from '../common/time-value-resolver';
+import { resolveTimeValue } from './time-value-resolver';
 import { serializeError } from '../logger/logger';
 import { EventType } from '../types/extraction';
 import { WorkerMessageSubject } from '../types/workers';

@@ -1,5 +1,5 @@
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
+import { createMockEvent } from '../testing/mock-event';
 import { EventType, TimeValue, TimeValueType } from '../types/extraction';
 import { State, createAdapterState } from './state';
 

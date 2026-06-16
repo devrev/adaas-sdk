@@ -1,7 +1,7 @@
 import { AxiosResponse } from 'axios';
 import FormData from 'form-data';
 import { jsonl } from 'js-jsonl';
-import { axiosClient } from '../http/axios-client-internal';
+import { axiosClient } from '../http/client';
 
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
 import { NormalizedAttachment } from '../repo/repo.interfaces';

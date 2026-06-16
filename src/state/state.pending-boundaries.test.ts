@@ -1,5 +1,5 @@
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
+import { createMockEvent } from '../testing/mock-event';
 import { EventType, TimeValueType } from '../types/extraction';
 import { State, createAdapterState } from './state';
 
@@ -19,7 +19,7 @@ describe('State — pending extraction boundaries', () => {
     postStateSpy = jest.spyOn(State.prototype, 'postState');
     fetchStateSpy = jest.spyOn(State.prototype, 'fetchState');
     installInitialDomainMappingSpy = jest.spyOn(
-      require('../common/install-initial-domain-mapping'),
+      require('./install-initial-domain-mapping'),
       'installInitialDomainMapping'
     );
     jest.spyOn(process, 'exit').mockImplementation(() => {

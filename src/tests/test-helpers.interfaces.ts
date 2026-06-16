@@ -1,4 +1,4 @@
-import { DeepPartial } from '../common/test-utils';
+import { DeepPartial } from '../testing/mock-event';
 import { AirdropEvent } from '../types/extraction';
 
 /**

@@ -1,5 +1,5 @@
 import { mockServer } from '../tests/jest.setup';
-import { axiosClient } from './axios-client-internal';
+import { axiosClient } from './client';
 
 jest.setTimeout(60000);
 

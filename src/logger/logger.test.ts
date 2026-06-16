@@ -2,7 +2,7 @@ import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
 import { LIBRARY_VERSION } from '../common/constants';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
+import { createMockEvent } from '../testing/mock-event';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import {
@@ -14,7 +14,7 @@ import {
 import {
   INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
   MAX_LOG_STRING_LENGTH,
-} from './logger.constants';
+} from './logger-constants';
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();

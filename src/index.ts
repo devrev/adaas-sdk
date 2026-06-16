@@ -33,10 +33,10 @@ export type {
 // ── Constants & enums ──
 export { AirSyncDefaultItemTypes } from './common/constants';
 export { UNBOUNDED_DATE_TIME_VALUE } from './common/constants';
-export { ExtractionCommonError } from './common/errors';
+export { ExtractionCommonError } from './types/errors';
 
 // ── Domain mapping install ──
-export { installInitialDomainMapping } from './common/install-initial-domain-mapping';
+export { installInitialDomainMapping } from './state/install-initial-domain-mapping';
 
 // ── Error formatting ──
 export { serializeError } from './logger/logger';
@@ -104,13 +104,13 @@ export { Mappers } from './mappers/mappers';
 export {
   SyncMapperRecordStatus,
   SyncMapperRecordTargetType,
-} from './mappers/mappers.interface';
+} from './mappers/mappers.interfaces';
 export type {
   MappersCreateParams,
   MappersGetByExternalIdParams,
   MappersGetByTargetIdParams,
   MappersUpdateParams,
-} from './mappers/mappers.interface';
+} from './mappers/mappers.interfaces';
 
 // ── State types ──
 export type { AdapterState } from './state/state.interfaces';
@@ -171,11 +171,11 @@ export type {
 } from './types/external-domain-metadata';
 
 // ── Testing utilities (public test-support surface) ──
-export { MockServer } from './mock-server/mock-server';
+export { MockServer, MOCK_SERVER_DEFAULT_URL } from './testing/mock-server';
 export type {
   RequestInfo,
   RetryConfig,
   RouteConfig,
-} from './mock-server/mock-server.interfaces';
-export { createMockEvent, MOCK_SERVER_DEFAULT_URL } from './common/test-utils';
-export type { DeepPartial } from './common/test-utils';
+} from './testing/mock-server.interfaces';
+export { createMockEvent } from './testing/mock-event';
+export type { DeepPartial } from './testing/mock-event';

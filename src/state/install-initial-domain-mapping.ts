@@ -1,4 +1,4 @@
-import { axiosClient } from '../http/axios-client-internal';
+import { axiosClient } from '../http/client';
 import { AirSyncEvent } from '../types/extraction';
 
 import { serializeError } from '../logger/logger';
