@@ -38,11 +38,8 @@ export { ExtractionCommonError } from './common/errors';
 // ── Domain mapping install ──
 export { installInitialDomainMapping } from './common/install-initial-domain-mapping';
 
-// ── HTTP client ──
-export { axios, axiosClient } from './http/axios-client';
-
 // ── Error formatting ──
-export { formatAxiosError, serializeAxiosError } from './logger/logger';
+export { serializeError } from './logger/logger';
 
 // ── Common types ──
 export { ErrorLevel, SyncMode } from './types/common';
@@ -79,6 +76,7 @@ export type {
   ExternalSystemAttachmentStreamingParams,
   ExternalSystemAttachmentStreamingResponse,
   ExtractorEvent,
+  HttpStreamResponse,
   ProcessAttachmentReturnType,
   TimeValue,
 } from './types/extraction';

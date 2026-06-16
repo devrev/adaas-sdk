@@ -4,7 +4,6 @@ import { Artifact } from '../uploader/uploader.interfaces';
 
 import { ErrorRecord } from './common';
 
-import { AxiosResponse } from 'axios';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
 import { DonV2, LoaderReport, RateLimited } from './loading';
@@ -406,8 +405,15 @@ export interface ExternalSystemAttachmentStreamingParams {
   event: AirSyncEvent;
 }
 
+export interface HttpStreamResponse {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  headers: Record<string, any>;
+}
+
 export interface ExternalSystemAttachmentStreamingResponse {
-  httpStream?: AxiosResponse;
+  httpStream?: HttpStreamResponse;
   error?: ErrorRecord;
   delay?: number;
 }

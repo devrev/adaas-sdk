@@ -1,5 +1,3 @@
-import { AxiosResponse } from 'axios';
-
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
 import {
   AirSyncDefaultItemTypes,
@@ -22,6 +20,7 @@ import {
   ExternalSystemAttachmentProcessors,
   ExternalSystemAttachmentStreamingFunction,
   ExtractorEventType,
+  HttpStreamResponse,
   ProcessAttachmentReturnType,
 } from '../../types/extraction';
 import { LoaderEventType } from '../../types/loading';
@@ -319,7 +318,7 @@ export class ExtractionAdapter<
    * Destroys a stream to prevent memory leaks.
    * @param httpStream - The axios response stream to destroy
    */
-  private destroyHttpStream(httpStream: AxiosResponse): void {
+  private destroyHttpStream(httpStream: HttpStreamResponse): void {
     try {
       if (httpStream && httpStream.data) {
         if (typeof httpStream.data.destroy === 'function') {

@@ -5,6 +5,7 @@ import { axiosClient } from '../http/axios-client-internal';
 
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
+import { HttpStreamResponse } from '../types/extraction';
 import { serializeError } from '../logger/logger';
 
 import {
@@ -193,14 +194,14 @@ export class Uploader {
   }
 
   /**
-   * Streams an artifact file from an axios response to the upload URL.
+   * Streams an artifact file from an HTTP streaming response to the upload URL.
    * @param {ArtifactToUpload} artifact - The artifact upload information containing upload URL and form data
-   * @param {AxiosResponse} fileStream - The axios response stream containing the file data
+   * @param {HttpStreamResponse} fileStream - The HTTP streaming response containing the file data
    * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
    */
   async streamArtifact(
     artifact: ArtifactToUpload,
-    fileStream: AxiosResponse
+    fileStream: HttpStreamResponse
   ): Promise<UploaderResult<AxiosResponse>> {
     const formData = new FormData();
     for (const field in artifact.form_data) {
@@ -274,9 +275,9 @@ export class Uploader {
 
   /**
    * Destroys a stream to prevent resource leaks.
-   * @param {any} fileStream - The axios response stream to destroy
+   * @param {HttpStreamResponse} fileStream - The HTTP streaming response to destroy
    */
-  private destroyStream(fileStream: AxiosResponse): void {
+  private destroyStream(fileStream: HttpStreamResponse): void {
     try {
       if (fileStream && fileStream.data) {
         // For axios response streams, the data property contains the actual stream

@@ -1,5 +1,3 @@
-import { AxiosResponse } from 'axios';
-
 import { axiosClient } from '../http/axios-client-internal';
 
 import {
@@ -34,13 +32,13 @@ export class Mappers {
    * Used to find the mapping when you know the DevRev ID and want to find the external system ID.
    *
    * @param params - Query parameters of type MappersGetByTargetIdParams
-   * @returns Promise with response data containing the sync mapper record
+   * @returns Promise resolving to the sync mapper record
    */
   async getByTargetId(
     params: MappersGetByTargetIdParams
-  ): Promise<AxiosResponse<MappersGetByTargetIdResponse>> {
+  ): Promise<MappersGetByTargetIdResponse> {
     const { sync_unit, target } = params;
-    return axiosClient.get<MappersGetByTargetIdResponse>(
+    const response = await axiosClient.get<MappersGetByTargetIdResponse>(
       `${this.devrevApiEndpoint}/internal/airdrop.sync-mapper-record.get-by-target`,
       {
         headers: {
@@ -49,6 +47,7 @@ export class Mappers {
         params: { sync_unit, target },
       }
     );
+    return response.data;
   }
 
   /**
@@ -57,13 +56,13 @@ export class Mappers {
    * Used to find the mapping when you know the external system ID and want to find the DevRev ID.
    *
    * @param params - Query parameters of type MappersGetByExternalIdParams
-   * @returns Promise with response data containing the sync mapper record
+   * @returns Promise resolving to the sync mapper record
    */
   async getByExternalId(
     params: MappersGetByExternalIdParams
-  ): Promise<AxiosResponse<MappersGetByExternalIdResponse>> {
+  ): Promise<MappersGetByExternalIdResponse> {
     const { sync_unit, external_id, target_type } = params;
-    return axiosClient.get<MappersGetByExternalIdResponse>(
+    const response = await axiosClient.get<MappersGetByExternalIdResponse>(
       `${this.devrevApiEndpoint}/internal/airdrop.sync-mapper-record.get-by-external-id`,
       {
         headers: {
@@ -72,6 +71,7 @@ export class Mappers {
         params: { sync_unit, external_id, target_type },
       }
     );
+    return response.data;
   }
 
   /**
@@ -82,12 +82,10 @@ export class Mappers {
    * the mapping for future synchronization operations.
    *
    * @param params - Creation parameters of type MappersCreateParams
-   * @returns Promise with response data containing the created sync mapper record
+   * @returns Promise resolving to the created sync mapper record
    */
-  async create(
-    params: MappersCreateParams
-  ): Promise<AxiosResponse<MappersCreateResponse>> {
-    return axiosClient.post<MappersCreateResponse>(
+  async create(params: MappersCreateParams): Promise<MappersCreateResponse> {
+    const response = await axiosClient.post<MappersCreateResponse>(
       `${this.devrevApiEndpoint}/internal/airdrop.sync-mapper-record.create`,
       params,
       {
@@ -96,6 +94,7 @@ export class Mappers {
         },
       }
     );
+    return response.data;
   }
 
   /**
@@ -105,12 +104,10 @@ export class Mappers {
    * additional DevRev entities need to be associated.
    *
    * @param params - Update parameters of type MappersUpdateParams
-   * @returns Promise with response data containing the updated sync mapper record
+   * @returns Promise resolving to the updated sync mapper record
    */
-  async update(
-    params: MappersUpdateParams
-  ): Promise<AxiosResponse<MappersUpdateResponse>> {
-    return axiosClient.post<MappersUpdateResponse>(
+  async update(params: MappersUpdateParams): Promise<MappersUpdateResponse> {
+    const response = await axiosClient.post<MappersUpdateResponse>(
       `${this.devrevApiEndpoint}/internal/airdrop.sync-mapper-record.update`,
       params,
       {
@@ -119,5 +116,6 @@ export class Mappers {
         },
       }
     );
+    return response.data;
   }
 }

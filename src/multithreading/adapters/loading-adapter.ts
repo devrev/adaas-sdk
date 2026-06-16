@@ -355,12 +355,11 @@ export class LoadingAdapter<
       const devrevId = item.id.devrev;
 
       try {
-        const syncMapperRecordResponse = await this._mappers.getByTargetId({
+        const syncMapperRecord = await this._mappers.getByTargetId({
           sync_unit: this.event.payload.event_context.sync_unit,
           target: devrevId,
         });
 
-        const syncMapperRecord = syncMapperRecordResponse.data;
         if (!syncMapperRecord) {
           console.warn('Failed to get sync mapper record from response.');
           return {
@@ -383,7 +382,7 @@ export class LoadingAdapter<
 
         if (id) {
           try {
-            const syncMapperRecordUpdateResponse = await this._mappers.update({
+            const syncMapperRecordUpdate = await this._mappers.update({
               id: syncMapperRecord.sync_mapper_record.id,
               sync_unit: this.event.payload.event_context.sync_unit,
               status: SyncMapperRecordStatus.OPERATIONAL,
@@ -407,7 +406,7 @@ export class LoadingAdapter<
 
             console.log(
               'Successfully updated sync mapper record.',
-              syncMapperRecordUpdateResponse.data
+              syncMapperRecordUpdate
             );
           } catch (error) {
             console.warn(
@@ -465,25 +464,24 @@ export class LoadingAdapter<
             if (id) {
               // Create mapper
               try {
-                const syncMapperRecordCreateResponse =
-                  await this._mappers.create({
-                    sync_unit: this.event.payload.event_context.sync_unit,
-                    status: SyncMapperRecordStatus.OPERATIONAL,
-                    external_ids: [id],
-                    targets: [devrevId],
-                    ...(modifiedDate && {
-                      external_versions: [
-                        {
-                          modified_date: modifiedDate,
-                          recipe_version: 0,
-                        },
-                      ],
-                    }),
-                  });
+                const syncMapperRecordCreate = await this._mappers.create({
+                  sync_unit: this.event.payload.event_context.sync_unit,
+                  status: SyncMapperRecordStatus.OPERATIONAL,
+                  external_ids: [id],
+                  targets: [devrevId],
+                  ...(modifiedDate && {
+                    external_versions: [
+                      {
+                        modified_date: modifiedDate,
+                        recipe_version: 0,
+                      },
+                    ],
+                  }),
+                });
 
                 console.log(
                   'Successfully created sync mapper record.',
-                  syncMapperRecordCreateResponse.data
+                  syncMapperRecordCreate
                 );
 
                 return {
@@ -575,7 +573,7 @@ export class LoadingAdapter<
         };
       } else if (id) {
         try {
-          const syncMapperRecordCreateResponse = await this._mappers.create({
+          const syncMapperRecordCreate = await this._mappers.create({
             sync_unit: this.event.payload.event_context.sync_unit,
             external_ids: [id],
             targets: [item.reference_id],
@@ -584,7 +582,7 @@ export class LoadingAdapter<
 
           console.log(
             'Successfully created sync mapper record.',
-            syncMapperRecordCreateResponse.data
+            syncMapperRecordCreate
           );
         } catch (error) {
           console.warn(
