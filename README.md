@@ -19,7 +19,3 @@ It provides features such as:
 ```bash
 npm install @devrev/airsync-sdk
 ```
-
-## Reference
-
-Please refer to the [REFERENCE.md](./REFERENCE.md) file for more information on the types, interfaces and functions used in the library.
