@@ -7,14 +7,12 @@ import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import {
   getPrintableState,
+  INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
   Logger,
+  MAX_LOG_STRING_LENGTH,
   serializeAxiosError,
   serializeError,
 } from './logger';
-import {
-  INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
-  MAX_LOG_STRING_LENGTH,
-} from './logger-constants';
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();

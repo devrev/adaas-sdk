@@ -38,8 +38,6 @@ jest.mock('../../common/helpers', () => ({
     arrayBuffersMB: '5.00',
   }),
   sleep: jest.fn(),
-  truncateFilename: jest.fn((f: string) => f),
-  truncateMessage: jest.fn((m: string) => m),
 }));
 
 // ---------------------------------------------------------------------------

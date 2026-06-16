@@ -47,9 +47,6 @@ jest.mock('../logger/logger', () => ({
     logFn: jest.fn(),
   })),
   serializeError: jest.fn((e: unknown) => String(e)),
-}));
-
-jest.mock('../logger/logger-context', () => ({
   runWithSdkLogContext: jest.fn((fn: () => unknown) => fn()),
   runWithUserLogContext: jest.fn((fn: () => unknown) => fn()),
 }));

@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-import { serializeError } from '../../logger/logger';
 import {
   runWithSdkLogContext,
   runWithUserLogContext,
-} from '../../logger/logger-context';
+  serializeError,
+} from '../../logger/logger';
 import { Mappers } from '../../mappers/mappers';
 import { SyncMapperRecordStatus } from '../../mappers/mappers.interfaces';
 import { BaseState } from '../../state/state';

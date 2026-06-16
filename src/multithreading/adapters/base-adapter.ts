@@ -2,9 +2,11 @@ import { parentPort } from 'node:worker_threads';
 
 import { STATELESS_EVENT_TYPES } from '../../common/constants';
 import { emit } from '../emit';
-import { truncateMessage } from '../../common/helpers';
-import { serializeError } from '../../logger/logger';
-import { runWithSdkLogContext } from '../../logger/logger-context';
+import {
+  runWithSdkLogContext,
+  serializeError,
+  truncateMessage,
+} from '../../logger/logger';
 import { BaseState } from '../../state/state';
 import { SdkState } from '../../state/state.interfaces';
 import {

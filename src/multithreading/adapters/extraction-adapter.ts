@@ -4,11 +4,11 @@ import {
   EVENT_SIZE_THRESHOLD_BYTES,
   SSOR_ATTACHMENT,
 } from '../../common/constants';
-import { serializeError } from '../../logger/logger';
 import {
   runWithSdkLogContext,
   runWithUserLogContext,
-} from '../../logger/logger-context';
+  serializeError,
+} from '../../logger/logger';
 import { Repo } from '../../repo/repo';
 import {
   NormalizedAttachment,

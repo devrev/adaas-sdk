@@ -1,10 +1,11 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
 
-import { Logger, serializeError } from '../logger/logger';
 import {
+  Logger,
   runWithSdkLogContext,
   runWithUserLogContext,
-} from '../logger/logger-context';
+  serializeError,
+} from '../logger/logger';
 import { createExtractionState } from '../state/extraction-state';
 import { createLoadingState } from '../state/loading-state';
 import {
