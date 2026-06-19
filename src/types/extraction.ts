@@ -30,9 +30,6 @@ export enum EventType {
   ContinueLoadingAttachments = 'CONTINUE_LOADING_ATTACHMENTS',
   StartDeletingLoaderState = 'START_DELETING_LOADER_STATE',
   StartDeletingLoaderAttachmentState = 'START_DELETING_LOADER_ATTACHMENT_STATE',
-
-  // Unknown
-  UnknownEventType = 'UNKNOWN_EVENT_TYPE',
 }
 
 /**
@@ -57,19 +54,6 @@ export enum ExtractorEventType {
   AttachmentExtractionError = 'ATTACHMENT_EXTRACTION_ERROR',
   ExtractorAttachmentsStateDeletionDone = 'EXTRACTOR_ATTACHMENTS_STATE_DELETION_DONE',
   ExtractorAttachmentsStateDeletionError = 'EXTRACTOR_ATTACHMENTS_STATE_DELETION_ERROR',
-
-  // Unknown
-  UnknownEventType = 'UNKNOWN_EVENT_TYPE',
-}
-
-/**
- * @deprecated
- * ExtractionMode is an enum that defines the different modes of extraction that can be used by the external extractor.
- * It can be either INITIAL or INCREMENTAL. INITIAL mode is used for the first/initial import, while INCREMENTAL mode is used for doing syncs.
- */
-export enum ExtractionMode {
-  INITIAL = 'INITIAL',
-  INCREMENTAL = 'INCREMENTAL',
 }
 
 /**
@@ -144,44 +128,6 @@ export enum TimeValueType {
 export interface TimeValue {
   type: TimeValueType;
   value?: string;
-}
-
-/**
- * EventContextIn is an interface that defines the structure of the input event context that is sent to the external extractor from AirSync.
- * @deprecated
- */
-export interface EventContextIn {
-  callback_url: string;
-  dev_org: string;
-  dev_org_id: string;
-  dev_user: string;
-  dev_user_id: string;
-  external_sync_unit: string;
-  external_sync_unit_id: string;
-  external_sync_unit_name: string;
-  external_system: string;
-  external_system_type: string;
-  import_slug: string;
-  mode: string;
-  request_id: string;
-  snap_in_slug: string;
-  sync_run: string;
-  sync_run_id: string;
-  sync_tier: string;
-  sync_unit: DonV2;
-  sync_unit_id: string;
-  uuid: string;
-  worker_data_url: string;
-}
-
-/**
- * EventContextOut is an interface that defines the structure of the output event context that is sent from the external extractor to AirSync.
- * @deprecated
- */
-export interface EventContextOut {
-  uuid: string;
-  sync_run: string;
-  sync_unit?: string;
 }
 
 /**
@@ -291,20 +237,12 @@ export interface ConnectionData {
  * EventData is an interface that defines the structure of the event data that is sent from the external extractor to AirSync.
  */
 export interface EventData {
-  /**
-   * @deprecated This field is deprecated and should not be used. External sync units should be pushed to the AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS repo.
-   *
-   */
-  external_sync_units?: ExternalSyncUnit[];
-  /**
-   * @deprecated This field is deprecated and should not be used. Progress is
-   * now calculated on the backend.
-   */
-  progress?: number;
   error?: ErrorRecord;
   delay?: number;
   /**
-   * @deprecated This field is deprecated and should not be used.
+   * Artifacts produced by the worker's repos, attached to the emitted event by
+   * the SDK. This includes external sync units, which are pushed to the
+   * AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS repo and uploaded as artifacts.
    */
   artifacts?: Artifact[];
 
@@ -319,22 +257,6 @@ export interface EventData {
  */
 export interface WorkerMetadata {
   adaas_library_version: string;
-}
-
-/**
- * DomainObject is an interface that defines the structure of a domain object that can be extracted.
- * It must contain a name, a next chunk ID, the pages, the last modified date, whether it is done, and the count.
- * @deprecated
- */
-export interface DomainObjectState {
-  name: string;
-  nextChunkId: number;
-  pages?: {
-    pages: number[];
-  };
-  lastModified: string;
-  isDone: boolean;
-  count: number;
 }
 
 /**

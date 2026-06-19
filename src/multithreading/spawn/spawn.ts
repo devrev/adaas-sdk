@@ -66,14 +66,12 @@ function getWorkerPath({
  * @param {SpawnFactoryInterface} options - The options to create a new instance of Spawn class
  * @param {AirSyncEvent} options.event - The event object received from the platform
  * @param {object} options.initialState - The initial state of the adapter
- * @param {string} [options.workerPath] Remove getWorkerPath function and use baseWorkerPath: __dirname instead of workerPath
  * @param {string} [options.baseWorkerPath] - The base path for the worker files, usually `__dirname`
  * @returns {Promise<Spawn>} - A new instance of Spawn class
  */
 export async function spawn<ConnectorState>({
   event,
   initialState,
-  workerPath,
   initialDomainMapping,
   options,
   baseWorkerPath,
@@ -96,9 +94,7 @@ export async function spawn<ConnectorState>({
   }
 
   let script = null;
-  if (workerPath != null) {
-    script = workerPath;
-  } else if (
+  if (
     baseWorkerPath != null &&
     options?.workerPathOverrides != null &&
     options.workerPathOverrides[event.payload.event_type as EventType] != null

@@ -70,7 +70,6 @@ export interface SpawnInterface {
  * @constructor
  * @param {AirSyncEvent} event - The event object received from the platform
  * @param {object=} initialState - The initial state of the adapter
- * @param {string} workerPath - The path to the worker file
  * @param {string} initialDomainMapping - The initial domain mapping
  * @param {WorkerAdapterOptions} options - The options to create a new instance of Spawn class
  * @param {string=} baseWorkerPath - The base path for the worker files, usually `__dirname`
@@ -78,9 +77,6 @@ export interface SpawnInterface {
 export interface SpawnFactoryInterface<ConnectorState> {
   event: AirSyncEvent;
   initialState: ConnectorState;
-
-  /** @deprecated Remove getWorkerPath function and use baseWorkerPath: __dirname instead of workerPath */
-  workerPath?: string;
   options?: WorkerAdapterOptions;
   initialDomainMapping?: InitialDomainMapping;
   baseWorkerPath?: string;

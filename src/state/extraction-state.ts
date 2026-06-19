@@ -23,7 +23,6 @@ export class ExtractionState<ConnectorState> extends BaseState<ConnectorState> {
   /**
    * Resolves the extraction window onto the event context.
    *
-   * On StartExtractingData: stamp `lastSyncStarted` if not already set.
    * On StartExtractingMetadata: resolve fresh from the TimeValue objects in the
    * event context and cache them as pending boundaries (always overwrite).
    * On all other events: reuse the pending boundaries cached during
@@ -31,15 +30,6 @@ export class ExtractionState<ConnectorState> extends BaseState<ConnectorState> {
    */
   resolveExtractionWindow(): void {
     const sdkState = this.sdkState;
-
-    // Set lastSyncStarted if the event type is StartExtractingData
-    if (
-      this.event.payload.event_type === EventType.StartExtractingData &&
-      !sdkState.lastSyncStarted
-    ) {
-      sdkState.lastSyncStarted = new Date().toISOString();
-      console.log(`Setting lastSyncStarted to ${sdkState.lastSyncStarted}.`);
-    }
 
     const eventContext = this.event.payload.event_context;
 

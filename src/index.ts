@@ -42,18 +42,12 @@ export { installInitialDomainMapping } from './state/install-initial-domain-mapp
 export { serializeError } from './logger/logger';
 
 // ── Common types ──
-export { ErrorLevel, SyncMode } from './types/common';
-export type {
-  AdapterUpdateParams,
-  ErrorRecord,
-  InitialDomainMapping,
-  LogRecord,
-} from './types/common';
+export { SyncMode } from './types/common';
+export type { ErrorRecord, InitialDomainMapping } from './types/common';
 
 // ── Extraction types ──
 export {
   EventType,
-  ExtractionMode,
   ExtractorEventType,
   InitialSyncScope,
   TimeUnit,
@@ -63,10 +57,7 @@ export type {
   AirSyncEvent,
   AirSyncMessage,
   ConnectionData,
-  DomainObjectState,
   EventContext,
-  EventContextIn,
-  EventContextOut,
   EventData,
   ExternalProcessAttachmentFunction,
   ExternalSyncUnit,
@@ -111,9 +102,6 @@ export type {
   MappersGetByTargetIdParams,
   MappersUpdateParams,
 } from './mappers/mappers.interfaces';
-
-// ── State types ──
-export type { AdapterState } from './state/state.interfaces';
 
 // ── Uploader types ──
 export type {

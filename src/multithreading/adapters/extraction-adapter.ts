@@ -135,16 +135,10 @@ export class ExtractionAdapter<
     );
     await this.uploadAllRepos();
 
-    // If the extraction is done, we want to save the timestamp of the last successful sync
+    // When the full extraction cycle completes, commit the extraction window
+    // boundaries so subsequent incremental syncs can resume from them.
     if (newEventType === ExtractorEventType.AttachmentExtractionDone) {
       const sdkState = this.sdkState;
-
-      console.log(
-        `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${sdkState.lastSyncStarted}).`
-      );
-
-      sdkState.lastSuccessfulSyncStarted = sdkState.lastSyncStarted;
-      sdkState.lastSyncStarted = '';
 
       // Clear pending extraction boundaries now that the cycle is complete
       sdkState.pendingWorkersOldest = '';

@@ -4,16 +4,6 @@ import { FileToLoad } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
 export interface SdkState {
-  /**
-   * @deprecated Use extract_from and extract_to from the event context instead,
-   * which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
-   */
-  lastSyncStarted?: string;
-  /**
-   * @deprecated Use extract_from and extract_to from the event context instead,
-   * which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
-   */
-  lastSuccessfulSyncStarted?: string;
   /** The pending (not yet committed) oldest extraction boundary (ISO 8601 timestamp).
    *  Set on StartExtractingMetadata, reused across subsequent phases, cleared on AttachmentExtractionDone. */
   pendingWorkersOldest?: string;
@@ -28,16 +18,6 @@ export interface SdkState {
   fromDevRev?: FromDevRev;
   snapInVersionId?: string;
 }
-
-/**
- * AdapterState is the legacy (v1) flat adapter state: connector state merged
- * with SDK bookkeeping in a single object.
- *
- * @deprecated v2 persists the `{ connectorState, sdkState }` envelope
- * (see {@link AdapterStateEnvelope}). Connector state is now exposed via
- * `adapter.state` and SDK state is kept internal.
- */
-export type AdapterState<ConnectorState> = ConnectorState & SdkState;
 
 /**
  * AdapterStateEnvelope is the v2 on-disk state shape: connector state and SDK
@@ -77,8 +57,6 @@ export interface StateInterface<ConnectorState> {
 }
 
 export const extractionSdkState = {
-  lastSyncStarted: '',
-  lastSuccessfulSyncStarted: '',
   pendingWorkersOldest: '',
   pendingWorkersNewest: '',
   workersOldest: '',
@@ -106,8 +84,15 @@ export const loadingSdkState = {
  * Used by the migration shim to split a flat v1 state blob into the
  * `{ connectorState, sdkState }` envelope: keys in this set go to `sdkState`,
  * everything else is connector state.
+ *
+ * `lastSyncStarted` / `lastSuccessfulSyncStarted` are retained here even though
+ * they are no longer fields on `SdkState`: a flat v1 blob may still carry them,
+ * and they must be recognized as SDK-owned so they are stripped out rather than
+ * leaking into connector state during migration.
  */
 export const V1_SDK_STATE_KEYS: ReadonlySet<string> = new Set<string>([
   ...Object.keys(extractionSdkState),
   ...Object.keys(loadingSdkState),
+  'lastSyncStarted',
+  'lastSuccessfulSyncStarted',
 ]);
