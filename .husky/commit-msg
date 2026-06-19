@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+
+FIRST_LINE=$(head -n1 "$1")
+
+case "$FIRST_LINE" in
+  beta/*|release/*|patch/*)
+    bash .github/scripts/validate-release-command.sh "$FIRST_LINE" || exit 1
+    exit 0
+    ;;
+esac
+
+npx --no -- commitlint --edit "$1"
