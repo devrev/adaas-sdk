@@ -67,6 +67,7 @@ export const EVENT_SIZE_THRESHOLD_BYTES = Math.floor(
 );
 
 export const SSOR_ATTACHMENT: string = 'ssor_attachment';
+export const UNKNOWN_EVENT_TYPE = 'UNKNOWN_EVENT_TYPE';
 
 export enum AirSyncDefaultItemTypes {
   EXTERNAL_DOMAIN_METADATA = 'external_domain_metadata',

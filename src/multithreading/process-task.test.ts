@@ -3,9 +3,6 @@ import { WorkerEvent, WorkerMessageSubject } from '../types/workers';
 
 // These tests cover logic that is NOT exercised by the end-to-end integration
 // tests under src/tests/timeout-handling/:
-//   - translation of legacy wire event types into the new enum (mutates event in place)
-//   - the hasWorkerEmitted guard that prevents onTimeout from firing after a
-//     successful emit (integration tests only exercise the positive case)
 //   - the error branch that posts WorkerMessageFailed and exits(1)
 //   - the WorkerMessage handler's guard that only flips isTimeout on
 //     WorkerMessageExit (integration tests can't cleanly target non-Exit messages)
@@ -34,10 +31,6 @@ jest.mock('node:worker_threads', () => ({
   },
 }));
 
-jest.mock('../common/event-type-translation', () => ({
-  translateIncomingEventType: jest.fn((t: string) => t),
-}));
-
 jest.mock('../logger/logger', () => ({
   Logger: jest.fn().mockImplementation(() => ({
     log: jest.fn(),
@@ -51,21 +44,20 @@ jest.mock('../logger/logger', () => ({
   runWithUserLogContext: jest.fn((fn: () => unknown) => fn()),
 }));
 
-jest.mock('../state/state', () => ({
-  createAdapterState: jest.fn(),
+jest.mock('../state/extraction-state', () => ({
+  createExtractionState: jest.fn(),
 }));
 
-jest.mock('./worker-adapter/worker-adapter', () => ({
-  WorkerAdapter: jest.fn().mockImplementation(() => ({
+jest.mock('./adapters/extraction-adapter', () => ({
+  ExtractionAdapter: jest.fn().mockImplementation(() => ({
     isTimeout: false,
-    hasWorkerEmitted: false,
+    emitFromResult: jest.fn().mockResolvedValue(undefined),
   })),
 }));
 
-import { processTask } from './process-task';
-import { translateIncomingEventType } from '../common/event-type-translation';
-import { createAdapterState } from '../state/state';
-import { WorkerAdapter } from './worker-adapter/worker-adapter';
+import { processExtractionTask } from './process-task';
+import { createExtractionState } from '../state/extraction-state';
+import { ExtractionAdapter } from './adapters/extraction-adapter';
 import { createMockEvent } from '../testing/mock-event';
 
 function setWorkerData(data: Record<string, unknown>) {
@@ -81,7 +73,7 @@ function makeEvent(eventType = EventType.StartExtractingData) {
 // Flush the microtask queue enough to let the async IIFE inside processTask run.
 const flush = async () => new Promise((r) => setTimeout(r, 0));
 
-describe(processTask.name, () => {
+describe(processExtractionTask.name, () => {
   let processExitSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -92,68 +84,27 @@ describe(processTask.name, () => {
       .spyOn(process, 'exit')
       .mockImplementation((() => {}) as () => never);
 
-    (createAdapterState as jest.Mock).mockResolvedValue({});
+    (createExtractionState as jest.Mock).mockResolvedValue({});
   });
 
   afterEach(() => {
     processExitSpy.mockRestore();
   });
 
-  it('should translate incoming event type before passing to task', async () => {
-    // Arrange
-    const event = makeEvent(EventType.StartExtractingData);
-    setWorkerData({ event, initialState: {}, options: {} });
-    (translateIncomingEventType as jest.Mock).mockReturnValue(
-      EventType.StartExtractingMetadata
-    );
-    const task = jest.fn().mockResolvedValue(undefined);
-    const onTimeout = jest.fn().mockResolvedValue(undefined);
-
-    // Act
-    processTask({ task, onTimeout });
-    await flush();
-
-    // Assert
-    expect(translateIncomingEventType).toHaveBeenCalledWith(
-      EventType.StartExtractingData
-    );
-    // The event is mutated in place — downstream code (including task) sees the
-    // translated type, not the original wire type.
-    expect(event.payload.event_type).toBe(EventType.StartExtractingMetadata);
-  });
-
-  it('should NOT call onTimeout when the worker already emitted before timeout check', async () => {
-    // Arrange
-    const event = makeEvent();
-    setWorkerData({ event, initialState: {}, options: {} });
-    // Both flags true: a timeout arrived but the worker had already emitted —
-    // onTimeout must be skipped. This is the guard the integration suite cannot
-    // target cleanly because it requires a precise race between emit and timeout.
-    const mockAdapter = { isTimeout: true, hasWorkerEmitted: true };
-    (WorkerAdapter as jest.Mock).mockImplementation(() => mockAdapter);
-    const task = jest.fn().mockResolvedValue(undefined);
-    const onTimeout = jest.fn().mockResolvedValue(undefined);
-
-    // Act
-    processTask({ task, onTimeout });
-    await flush();
-
-    // Assert
-    expect(onTimeout).not.toHaveBeenCalled();
-    expect(processExitSpy).toHaveBeenCalledWith(0);
-  });
-
   it('should NOT flip adapter.isTimeout when a non-Exit WorkerMessage arrives', async () => {
     // Arrange
     const event = makeEvent();
     setWorkerData({ event, initialState: {}, options: {} });
-    const mockAdapter = { isTimeout: false, hasWorkerEmitted: false };
-    (WorkerAdapter as jest.Mock).mockImplementation(() => mockAdapter);
-    const task = jest.fn().mockResolvedValue(undefined);
-    const onTimeout = jest.fn().mockResolvedValue(undefined);
+    const mockAdapter = {
+      isTimeout: false,
+      emitFromResult: jest.fn().mockResolvedValue(undefined),
+    };
+    (ExtractionAdapter as jest.Mock).mockImplementation(() => mockAdapter);
+    const task = jest.fn().mockResolvedValue({ status: 'success' });
+    const onTimeout = jest.fn().mockResolvedValue({ status: 'progress' });
 
     // Act
-    processTask({ task, onTimeout });
+    processExtractionTask({ task, onTimeout });
     await flush();
 
     // Grab the handler registered for WorkerMessage events and invoke it with
@@ -175,14 +126,17 @@ describe(processTask.name, () => {
     // Arrange
     const event = makeEvent();
     setWorkerData({ event, initialState: {}, options: {} });
-    const mockAdapter = { isTimeout: false, hasWorkerEmitted: false };
-    (WorkerAdapter as jest.Mock).mockImplementation(() => mockAdapter);
+    const mockAdapter = {
+      isTimeout: false,
+      emitFromResult: jest.fn().mockResolvedValue(undefined),
+    };
+    (ExtractionAdapter as jest.Mock).mockImplementation(() => mockAdapter);
     const taskError = new Error('task boom');
     const task = jest.fn().mockRejectedValue(taskError);
-    const onTimeout = jest.fn().mockResolvedValue(undefined);
+    const onTimeout = jest.fn().mockResolvedValue({ status: 'progress' });
 
     // Act
-    processTask({ task, onTimeout });
+    processExtractionTask({ task, onTimeout });
     await flush();
 
     // Assert

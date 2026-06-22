@@ -3,7 +3,7 @@ import { inspect } from 'node:util';
 import { LIBRARY_VERSION } from '../common/constants';
 import { mockServer } from '../tests/jest.setup';
 import { createMockEvent } from '../testing/mock-event';
-import { AirdropEvent, EventType } from '../types/extraction';
+import { AirSyncEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import {
   getPrintableState,
@@ -30,7 +30,7 @@ jest.mock('node:worker_threads', () => {
 });
 
 describe(Logger.name, () => {
-  let mockEvent: AirdropEvent;
+  let mockEvent: AirSyncEvent;
   let mockOptions: WorkerAdapterOptions;
 
   beforeEach(() => {

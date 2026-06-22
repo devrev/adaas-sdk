@@ -1,7 +1,8 @@
 import { mockServer } from '../tests/jest.setup';
 import { createMockEvent } from '../testing/mock-event';
 import { EventType, TimeValue, TimeValueType } from '../types/extraction';
-import { State, createAdapterState } from './state';
+import { BaseState } from './base-state';
+import { createExtractionState } from './extraction-state';
 
 describe('State — TimeValue resolution', () => {
   let fetchStateSpy: jest.SpyInstance;
@@ -11,7 +12,7 @@ describe('State — TimeValue resolution', () => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
 
-    fetchStateSpy = jest.spyOn(State.prototype, 'fetchState');
+    fetchStateSpy = jest.spyOn(BaseState.prototype, 'fetchState');
     processExitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {
       throw new Error('process.exit called');
     });
@@ -19,13 +20,14 @@ describe('State — TimeValue resolution', () => {
 
   describe('Enhanced Control Protocol - TimeValue resolution failures', () => {
     it('should exit the process if extraction_start_time resolution fails', async () => {
-      // Arrange: WORKERS_NEWEST type but state has no workersNewest
+      // Arrange: ABSOLUTE_TIME with an invalid ISO timestamp (still rejected in v2)
       const event = createMockEvent(mockServer.baseUrl, {
         payload: {
           event_type: EventType.StartExtractingMetadata,
           event_context: {
             extraction_start_time: {
-              type: TimeValueType.WORKERS_NEWEST,
+              type: TimeValueType.ABSOLUTE_TIME,
+              value: 'not-a-date',
             },
           },
         },
@@ -40,7 +42,7 @@ describe('State — TimeValue resolution', () => {
 
       // Act & Assert
       await expect(
-        createAdapterState({
+        createExtractionState({
           event,
           initialState: {},
           initialDomainMapping: {},
@@ -50,7 +52,7 @@ describe('State — TimeValue resolution', () => {
     });
 
     it('should exit the process if extraction_end_time resolution fails', async () => {
-      // Arrange: WORKERS_NEWEST type but state has no workersNewest
+      // Arrange: ABSOLUTE_TIME end_time with an invalid ISO timestamp (still rejected in v2)
       const event = createMockEvent(mockServer.baseUrl, {
         payload: {
           event_type: EventType.StartExtractingMetadata,
@@ -59,7 +61,8 @@ describe('State — TimeValue resolution', () => {
               type: TimeValueType.UNBOUNDED,
             },
             extraction_end_time: {
-              type: TimeValueType.WORKERS_NEWEST,
+              type: TimeValueType.ABSOLUTE_TIME,
+              value: 'not-a-date',
             },
           },
         },
@@ -74,7 +77,7 @@ describe('State — TimeValue resolution', () => {
 
       // Act & Assert
       await expect(
-        createAdapterState({
+        createExtractionState({
           event,
           initialState: {},
           initialDomainMapping: {},
@@ -109,7 +112,7 @@ describe('State — TimeValue resolution', () => {
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
       // Act
-      const state = await createAdapterState({
+      const state = await createExtractionState({
         event,
         initialState: {},
         initialDomainMapping: {},
@@ -121,7 +124,9 @@ describe('State — TimeValue resolution', () => {
       expect(event.payload.event_context.extract_to).toBe(
         '2025-06-01T00:00:00.000Z'
       );
-      expect(state.state.pendingWorkersNewest).toBe('2025-06-01T00:00:00.000Z');
+      expect(state.sdkState.pendingWorkersNewest).toBe(
+        '2025-06-01T00:00:00.000Z'
+      );
     });
 
     it('should skip resolution when extraction_end_time has no type', async () => {
@@ -148,7 +153,7 @@ describe('State — TimeValue resolution', () => {
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
       // Act
-      await createAdapterState({
+      await createExtractionState({
         event,
         initialState: {},
         initialDomainMapping: {},
@@ -187,7 +192,7 @@ describe('State — TimeValue resolution', () => {
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
       // Act
-      await createAdapterState({
+      await createExtractionState({
         event,
         initialState: {},
         initialDomainMapping: {},

@@ -1,5 +1,5 @@
 import {
-  AirdropEvent,
+  AirSyncEvent,
   EventType,
   ExtractorEventType,
 } from '../../types/extraction';
@@ -11,7 +11,7 @@ import run from './extraction';
 jest.setTimeout(10000); // 10 seconds
 
 describe('Timeout unblocked', () => {
-  let event: AirdropEvent;
+  let event: AirSyncEvent;
   beforeEach(() => {
     event = createMockEvent(mockServer.baseUrl, {
       payload: { event_type: EventType.StartExtractingData },

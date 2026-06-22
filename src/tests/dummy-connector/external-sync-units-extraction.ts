@@ -1,6 +1,10 @@
-import { ExternalSyncUnit, ExtractorEventType, processTask } from '../../index';
+import {
+  AirSyncDefaultItemTypes,
+  ExternalSyncUnit,
+  processExtractionTask,
+} from '../../index';
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     const dummyExternalSyncUnits: ExternalSyncUnit[] = [
       {
@@ -12,15 +16,26 @@ processTask({
       },
     ];
 
-    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionDone, {
-      external_sync_units: dummyExternalSyncUnits,
-    });
+    adapter.initializeRepos([
+      {
+        itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
+        overridenOptions: { batchSize: 25000, skipConfirmation: true },
+      },
+    ]);
+
+    await adapter
+      .getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)
+      ?.push(dummyExternalSyncUnits);
+
+    return { status: 'success' };
   },
-  onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionError, {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  onTimeout: async () => {
+    return {
+      status: 'error',
       error: {
         message: 'Failed to extract external sync units. Lambda timeout.',
       },
-    });
+    };
   },
 });

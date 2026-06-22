@@ -1,4 +1,4 @@
-import { ExtractorEventType, processTask } from '../../index';
+import { processExtractionTask } from '../../index';
 
 /**
  * Test worker that generates items to trigger the SQS size limit.
@@ -8,7 +8,7 @@ import { ExtractorEventType, processTask } from '../../index';
  * Each artifact metadata is ~55 bytes (id, item_type, item_count).
  * We need ~2857 artifacts to reach 160KB, so generating 3000 items.
  */
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     // Using external_domain_metadata itemType which doesn't require normalize
     adapter.initializeRepos([
@@ -20,10 +20,10 @@ processTask({
     const repo = adapter.getRepo('external_domain_metadata');
     if (!repo) {
       console.error('Repo not found after init');
-      await adapter.emit(ExtractorEventType.DataExtractionError, {
+      return {
+        status: 'error',
         error: { message: 'Repo not found after init!' },
-      });
-      return;
+      };
     }
 
     // Generate 3000 items with batch size 1 = 3000 artifacts
@@ -41,15 +41,16 @@ processTask({
       ]);
 
       if (adapter.isTimeout) {
-        return;
+        return { status: 'progress' };
       }
     }
 
     console.log('Size limit was NOT triggered, emitting done');
-    await adapter.emit(ExtractorEventType.DataExtractionDone);
+    return { status: 'success' };
   },
-  onTimeout: async ({ adapter }) => {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  onTimeout: async () => {
     console.log('onTimeout called - emitting progress');
-    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+    return { status: 'progress' };
   },
 });

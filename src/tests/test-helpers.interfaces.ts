@@ -1,11 +1,11 @@
 import { DeepPartial } from '../testing/mock-event';
-import { AirdropEvent } from '../types/extraction';
+import { AirSyncEvent } from '../types/extraction';
 
 /**
  * Internal variant of the createMockEvent overrides — a deep partial of
- * {@link AirdropEvent}. The shared test wrapper injects defaults automatically.
+ * {@link AirSyncEvent}. The shared test wrapper injects defaults automatically.
  */
-export type CreateMockEventOverrides = DeepPartial<AirdropEvent>;
+export type CreateMockEventOverrides = DeepPartial<AirSyncEvent>;
 
 /**
  * Options for creating a file stream response.

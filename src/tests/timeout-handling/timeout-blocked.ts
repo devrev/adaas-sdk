@@ -1,7 +1,8 @@
-import { ExtractorEventType, processTask } from '../../index';
+import { processExtractionTask } from '../../index';
 
-processTask({
-  task: async ({ adapter }) => {
+processExtractionTask({
+  // eslint-disable-next-line @typescript-eslint/require-await
+  task: async () => {
     // Simple CPU-intensive nested loops that block the event loop
     let result = 0;
     for (let i = 0; i < 100000; i++) {
@@ -16,9 +17,10 @@ processTask({
       }
     }
 
-    await adapter.emit(ExtractorEventType.DataExtractionDone);
+    return { status: 'success' };
   },
-  onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+  // eslint-disable-next-line @typescript-eslint/require-await
+  onTimeout: async () => {
+    return { status: 'progress' };
   },
 });

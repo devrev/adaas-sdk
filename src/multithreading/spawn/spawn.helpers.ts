@@ -1,3 +1,4 @@
+import { UNKNOWN_EVENT_TYPE } from '../../common/constants';
 import { EventType, ExtractorEventType } from '../../types/extraction';
 import { LoaderEventType } from '../../types/loading';
 import { TaskStatus } from '../../types/workers';
@@ -33,7 +34,10 @@ export function getEventTypeForResult(
       'Event type not recognized in getEventTypeForResult function: ' +
         eventType
     );
-    return { eventType: LoaderEventType.UnknownEventType, illegal: true };
+    return {
+      eventType: UNKNOWN_EVENT_TYPE as ExtractorEventType | LoaderEventType,
+      illegal: true,
+    };
   }
 
   // Non-resumable phases only define done/error events.
@@ -250,7 +254,7 @@ export function getTimeoutErrorEventType(eventType: EventType): {
           eventType
       );
       return {
-        eventType: LoaderEventType.UnknownEventType,
+        eventType: UNKNOWN_EVENT_TYPE as ExtractorEventType | LoaderEventType,
       };
   }
 }
@@ -284,7 +288,7 @@ export function getNoScriptEventType(eventType: EventType) {
           eventType
       );
       return {
-        eventType: LoaderEventType.UnknownEventType,
+        eventType: UNKNOWN_EVENT_TYPE as ExtractorEventType | LoaderEventType,
       };
   }
 }

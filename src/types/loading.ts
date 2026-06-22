@@ -151,6 +151,4 @@ export enum LoaderEventType {
 
   LoaderAttachmentStateDeletionDone = 'LOADER_ATTACHMENT_STATE_DELETION_DONE',
   LoaderAttachmentStateDeletionError = 'LOADER_ATTACHMENT_STATE_DELETION_ERROR',
-
-  UnknownEventType = 'UNKNOWN_EVENT_TYPE',
 }
