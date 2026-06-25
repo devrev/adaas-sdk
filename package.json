@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@devrev/typescript-sdk": "^1.1.75",
-    "axios": "^1.15.2",
+    "axios": "^1.17.0",
     "axios-retry": "^4.5.0",
     "form-data": "^4.0.4",
     "js-jsonl": "^1.1.1",
