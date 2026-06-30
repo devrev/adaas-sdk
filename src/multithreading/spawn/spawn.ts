@@ -264,7 +264,9 @@ export class Spawn {
         const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
         const isSdkLog = message.payload?.isSdkLog ?? true;
-        this.logger.logFn(stringifiedArgs, level, isSdkLog);
+        if (typeof this.logger?.logFn === 'function') {
+          this.logger.logFn(stringifiedArgs, level, isSdkLog);
+        }
       }
 
       // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.

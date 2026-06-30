@@ -216,18 +216,32 @@ export class MockServer {
    * Configures a route to return a specific status code and optional response body.
    */
   public setRoute(config: RouteConfig): void {
-    const { path, method, status, body, bodyBuffer, retry, headers, delay } =
+    const { path, method, status, body, bodyBuffer, retry, succeedThenFail, headers, delay } =
       config;
     const key = this.getRouteKey(method, path);
 
-    if (retry) {
+    if (retry || succeedThenFail) {
       this.requestCounts.set(key, 0);
     }
 
     this.routeHandlers.set(key, (req: ParsedRequest, res: MockResponse) => {
       const sendResponse = (responseDelay?: number) => {
         const send = () => {
-          if (retry) {
+          if (succeedThenFail) {
+            const currentCount = this.requestCounts.get(key) || 0;
+            this.requestCounts.set(key, currentCount + 1);
+
+            if (currentCount < succeedThenFail.successCount) {
+              this.defaultRouteHandler(req, res);
+            } else {
+              const errorStatus = succeedThenFail.errorStatus ?? 400;
+              if (succeedThenFail.errorBody !== undefined) {
+                res.status(errorStatus).json(succeedThenFail.errorBody);
+              } else {
+                res.status(errorStatus).send();
+              }
+            }
+          } else if (retry) {
             const currentCount = this.requestCounts.get(key) || 0;
             const failureCount = retry.failureCount ?? 4;
             const errorStatus = retry.errorStatus ?? 500;
@@ -301,6 +315,16 @@ export class MockServer {
     this.routeHandlers.clear();
     this.requestCounts.clear();
     this.requests = [];
+  }
+
+  /**
+   * Returns all POST requests to the platform callback URL.
+   */
+  public getCallbackRequests(): RequestInfo[] {
+    return this.requests.filter(
+      (req) =>
+        req.method.toUpperCase() === 'POST' && req.url.includes('callback_url')
+    );
   }
 
   /**

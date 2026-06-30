@@ -3,6 +3,7 @@ import { createItems, normalizeItem } from '../tests/test-helpers';
 import { mockServer } from '../tests/jest.setup';
 import { createMockEvent } from '../common/test-utils';
 import { EventType } from '../types';
+import { Uploader } from '../uploader/uploader';
 import { Repo } from './repo';
 
 jest.mock('../tests/test-helpers', () => ({
@@ -227,5 +228,42 @@ describe(Repo.name, () => {
       // Assert
       expect(repo.getItems().length).toBe(5);
     });
+  });
+
+  it('should throw when upload fails', async () => {
+    jest.spyOn(Uploader.prototype, 'upload').mockResolvedValue({
+      error: { message: 'upload failed' },
+    });
+
+    await expect(repo.upload(createItems(1))).rejects.toThrow('upload failed');
+  });
+
+  it('should retain items in repo when batch upload fails during push', async () => {
+    repo = new Repo({
+      event: createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: EventType.ExtractionDataStart },
+      }),
+      itemType: 'test_item_type',
+      normalize,
+      onUpload: jest.fn(),
+      options: { batchSize: 10 },
+    });
+
+    const items = createItems(20);
+    jest
+      .spyOn(Uploader.prototype, 'upload')
+      .mockResolvedValueOnce({
+        artifact: {
+          id: 'artifact-1',
+          item_type: 'test_item_type',
+          item_count: 10,
+        },
+      })
+      .mockResolvedValueOnce({
+        error: { message: 'second batch failed' },
+      });
+
+    await expect(repo.push(items)).rejects.toThrow('second batch failed');
+    expect(repo.getItems().length).toBe(10);
   });
 });
