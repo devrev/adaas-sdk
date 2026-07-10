@@ -216,8 +216,17 @@ export class MockServer {
    * Configures a route to return a specific status code and optional response body.
    */
   public setRoute(config: RouteConfig): void {
-    const { path, method, status, body, bodyBuffer, retry, succeedThenFail, headers, delay } =
-      config;
+    const {
+      path,
+      method,
+      status,
+      body,
+      bodyBuffer,
+      retry,
+      succeedThenFail,
+      headers,
+      delay,
+    } = config;
     const key = this.getRouteKey(method, path);
 
     if (retry || succeedThenFail) {

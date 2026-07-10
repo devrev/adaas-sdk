@@ -298,18 +298,13 @@ export class WorkerAdapter<ConnectorState> {
         delete data.external_sync_units;
       }
 
-      const canEmit = await this.beforeEmit(newEventType);
-      if (!canEmit) {
+      const prepared = await this.beforeEmit(newEventType);
+      if (!prepared) {
         return;
       }
 
       const payload = this.buildEmitPayload(newEventType, data);
-      const sent = await this.sendToPlatform(newEventType, payload);
-      if (!sent) {
-        return;
-      }
-
-      await this.afterEmit(newEventType);
+      await this.emitToPlatform(newEventType, payload);
     });
   }
 
@@ -320,6 +315,14 @@ export class WorkerAdapter<ConnectorState> {
     }
   }
 
+  /**
+   * Pre-emit hook: uploads all repos and updates extraction boundaries/state.
+   * Returns false when it has already resolved the emit itself — either by
+   * emitting an error event after a repo-upload failure, or by signalling the
+   * worker to exit after a state-persistence failure. In both cases the
+   * caller must return immediately without emitting the originally
+   * requested event.
+   */
   private async beforeEmit(
     eventType: ExtractorEventType | LoaderEventType
   ): Promise<boolean> {
@@ -338,7 +341,10 @@ export class WorkerAdapter<ConnectorState> {
       const { eventType: errorEventType } = getTimeoutErrorEventType(
         this.event.payload.event_type
       );
-      await this.emitUploadFailure(errorEventType, error);
+      const payload = this.buildEmitPayload(errorEventType, {
+        error: { message: serializeError(error) },
+      });
+      await this.emitToPlatform(errorEventType, payload);
       return false;
     }
 
@@ -361,7 +367,8 @@ export class WorkerAdapter<ConnectorState> {
 
       if (
         extractionStart &&
-        (!this.state.workersOldest || extractionStart < this.state.workersOldest)
+        (!this.state.workersOldest ||
+          extractionStart < this.state.workersOldest)
       ) {
         console.log(
           `Updating workersOldest from '${this.state.workersOldest}' to '${extractionStart}'.`
@@ -386,13 +393,16 @@ export class WorkerAdapter<ConnectorState> {
 
     let stateSizeKb = 0;
     try {
-      stateSizeKb = Buffer.byteLength(JSON.stringify(this.state), 'utf8') / 1024;
+      stateSizeKb =
+        Buffer.byteLength(JSON.stringify(this.state), 'utf8') / 1024;
     } catch {
       stateSizeKb = 0;
     }
 
     console.log(
-      `Saving ${stateSizeKb.toFixed(2)} KB state before emitting event with event type: ${eventType}. Current state`,
+      `Saving ${stateSizeKb.toFixed(
+        2
+      )} KB state before emitting event with event type: ${eventType}. Current state`,
       getPrintableState(this.state)
     );
 
@@ -431,17 +441,29 @@ export class WorkerAdapter<ConnectorState> {
     };
   }
 
-  private async sendToPlatform(
+  /**
+   * Sends the event to the platform and reports the outcome to the main
+   * thread: WorkerMessageEmitted on success (also clears accumulated
+   * artifacts), or WorkerMessageExit on failure.
+   */
+  private async emitToPlatform(
     eventType: ExtractorEventType | LoaderEventType,
     data?: EventData
-  ): Promise<boolean> {
+  ): Promise<void> {
     try {
       await emit({
         eventType,
         event: this.event,
         data,
       });
-      return true;
+
+      const message: WorkerMessageEmitted = {
+        subject: WorkerMessageSubject.WorkerMessageEmitted,
+        payload: { eventType },
+      };
+      this.artifacts = [];
+      parentPort?.postMessage(message);
+      this.hasWorkerEmitted = true;
     } catch (error) {
       console.error(
         `Error while emitting event with event type: ${eventType}.`,
@@ -449,32 +471,6 @@ export class WorkerAdapter<ConnectorState> {
       );
       parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
       this.hasWorkerEmitted = true;
-      return false;
-    }
-  }
-
-  private async afterEmit(
-    eventType: ExtractorEventType | LoaderEventType
-  ): Promise<void> {
-    const message: WorkerMessageEmitted = {
-      subject: WorkerMessageSubject.WorkerMessageEmitted,
-      payload: { eventType },
-    };
-    this.artifacts = [];
-    parentPort?.postMessage(message);
-    this.hasWorkerEmitted = true;
-  }
-
-  private async emitUploadFailure(
-    eventType: ExtractorEventType | LoaderEventType,
-    error: unknown
-  ): Promise<void> {
-    const payload = this.buildEmitPayload(eventType, {
-      error: { message: serializeError(error) },
-    });
-    const sent = await this.sendToPlatform(eventType, payload);
-    if (sent) {
-      await this.afterEmit(eventType);
     }
   }
 

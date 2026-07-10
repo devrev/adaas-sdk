@@ -1,7 +1,4 @@
-import {
-  EventType,
-  ExtractorEventType,
-} from '../../types/extraction';
+import { EventType, ExtractorEventType } from '../../types/extraction';
 import { mockServer } from './mock-server.setup';
 import { createMockEvent } from '../../common/test-utils';
 import {
@@ -38,7 +35,9 @@ describe('Upload failure integration (fast)', () => {
 
       await run([event], __dirname + '/push-batch-failure');
 
-      const callbacks = getCallbackEventBodies(mockServer.getCallbackRequests());
+      const callbacks = getCallbackEventBodies(
+        mockServer.getCallbackRequests()
+      );
       expectNoCallbackWithEventType(
         callbacks,
         ExtractorEventType.DataExtractionDone
@@ -69,7 +68,9 @@ describe('Upload failure integration (fast)', () => {
 
       await run([event], __dirname + '/push-batch-failure');
 
-      const callbacks = getCallbackEventBodies(mockServer.getCallbackRequests());
+      const callbacks = getCallbackEventBodies(
+        mockServer.getCallbackRequests()
+      );
       expectNoCallbackWithEventType(
         callbacks,
         ExtractorEventType.DataExtractionDone
@@ -99,7 +100,9 @@ describe('Upload failure integration (fast)', () => {
 
       await run([event], __dirname + '/emit-remainder-failure');
 
-      const callbacks = getCallbackEventBodies(mockServer.getCallbackRequests());
+      const callbacks = getCallbackEventBodies(
+        mockServer.getCallbackRequests()
+      );
       expectNoCallbackWithEventType(
         callbacks,
         ExtractorEventType.DataExtractionDone
@@ -127,7 +130,9 @@ describe('Upload failure integration (fast)', () => {
 
       await run([event], __dirname + '/emit-remainder-failure');
 
-      const callbacks = getCallbackEventBodies(mockServer.getCallbackRequests());
+      const callbacks = getCallbackEventBodies(
+        mockServer.getCallbackRequests()
+      );
       expectNoCallbackWithEventType(
         callbacks,
         ExtractorEventType.DataExtractionDone
@@ -152,7 +157,9 @@ describe('Upload failure integration (fast)', () => {
 
       await run([event], __dirname + '/emit-remainder-failure');
 
-      const callbacks = getCallbackEventBodies(mockServer.getCallbackRequests());
+      const callbacks = getCallbackEventBodies(
+        mockServer.getCallbackRequests()
+      );
       expectNoCallbackWithEventType(
         callbacks,
         ExtractorEventType.DataExtractionDone
@@ -183,7 +190,9 @@ describe('Upload failure integration (fast)', () => {
 
       await run([event], __dirname + '/emit-partial-failure');
 
-      const callbacks = getCallbackEventBodies(mockServer.getCallbackRequests());
+      const callbacks = getCallbackEventBodies(
+        mockServer.getCallbackRequests()
+      );
       expectNoCallbackWithEventType(
         callbacks,
         ExtractorEventType.DataExtractionDone
@@ -193,9 +202,9 @@ describe('Upload failure integration (fast)', () => {
         ExtractorEventType.DataExtractionError,
         UPLOAD_URL_ERROR_SNIPPET
       );
-      expect(callbacks[callbacks.length - 1].event_data?.artifacts).toHaveLength(
-        1
-      );
+      expect(
+        callbacks[callbacks.length - 1].event_data?.artifacts
+      ).toHaveLength(1);
       expect(
         callbacks[callbacks.length - 1].event_data?.artifacts?.[0].item_count
       ).toBe(10);
@@ -212,7 +221,9 @@ describe('Upload failure integration (fast)', () => {
 
       await run([event], __dirname + '/metadata-upload-failure');
 
-      const callbacks = getCallbackEventBodies(mockServer.getCallbackRequests());
+      const callbacks = getCallbackEventBodies(
+        mockServer.getCallbackRequests()
+      );
       expectNoCallbackWithEventType(
         callbacks,
         ExtractorEventType.MetadataExtractionDone

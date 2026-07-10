@@ -1,4 +1,9 @@
-import { ExtractorEventType, NormalizedItem, processTask, RepoInterface } from '../../index';
+import {
+  ExtractorEventType,
+  NormalizedItem,
+  processTask,
+  RepoInterface,
+} from '../../index';
 import { Item } from '../../repo/repo.interfaces';
 
 const repos: RepoInterface[] = [

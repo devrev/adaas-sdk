@@ -2,11 +2,7 @@ import { State } from '../../state/state';
 import { mockServer } from '../../tests/jest.setup';
 import { createItems } from '../../tests/test-helpers';
 import { createMockEvent } from '../../common/test-utils';
-import {
-  AdapterState,
-  EventType,
-  ExtractorEventType,
-} from '../../types';
+import { AdapterState, EventType, ExtractorEventType } from '../../types';
 import { WorkerAdapter } from './worker-adapter';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
