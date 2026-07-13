@@ -15,10 +15,7 @@ import {
   NormalizedItem,
   RepoFactoryInterface,
 } from './repo.interfaces';
-import {
-  updateRange,
-  toValidTimestamp
-} from './repo.helpers';
+import { updateRange, toValidTimestamp } from './repo.helpers';
 
 export class Repo {
   readonly itemType: string;
@@ -28,9 +25,12 @@ export class Repo {
   private onUpload: (artifact: Artifact) => void;
   private options?: WorkerAdapterOptions;
   public uploadedArtifacts: Artifact[];
-  public dateRanges = {
-    creationDate: { oldest: 0, newest: 0 },
-    modifiedDate: { oldest: 0, newest: 0 },
+  public dateRanges: {
+    creationDate: { oldest?: number; newest?: number };
+    modifiedDate: { oldest?: number; newest?: number };
+  } = {
+    creationDate: {},
+    modifiedDate: {},
   };
 
   constructor({

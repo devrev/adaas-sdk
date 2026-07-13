@@ -372,8 +372,8 @@ describe(`${WorkerAdapter.name}.emit — worker_metadata`, () => {
       {
         itemType: 'tasks',
         dateRanges: {
-          creationDate: { oldest: 0, newest: 0 },
-          modifiedDate: { oldest: 0, newest: 0 },
+          creationDate: {},
+          modifiedDate: {},
         },
       },
     ] as never;
@@ -384,6 +384,28 @@ describe(`${WorkerAdapter.name}.emit — worker_metadata`, () => {
     const { emit: mockEmit } = require('../../common/control-protocol');
     expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({
       item_type: 'tasks',
+    });
+  });
+
+  it('should include Unix-epoch bounds rather than treating them as unset', async () => {
+    adapter['repos'] = [
+      {
+        itemType: 'tasks',
+        dateRanges: {
+          creationDate: { oldest: 0, newest: 0 },
+          modifiedDate: {},
+        },
+      },
+    ] as never;
+    adapter['lastExtractedItemType'] = 'tasks';
+
+    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({
+      item_type: 'tasks',
+      oldest_created_date: iso(0),
+      newest_created_date: iso(0),
     });
   });
 

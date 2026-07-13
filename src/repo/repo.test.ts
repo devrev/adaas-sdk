@@ -307,7 +307,7 @@ describe(Repo.name, () => {
       );
     });
 
-    it('should leave timestamps at zero when no items have created_date', async () => {
+    it('should leave date ranges unset when no items have created_date', async () => {
       await repo.upload([
         { id: '1', modified_date: '', data: {} },
         {
@@ -319,8 +319,8 @@ describe(Repo.name, () => {
       ]);
 
       expect(repo.dateRanges).toEqual({
-        creationDate: { oldest: 0, newest: 0 },
-        modifiedDate: { oldest: 0, newest: 0 },
+        creationDate: {},
+        modifiedDate: {},
       });
     });
 
@@ -328,10 +328,23 @@ describe(Repo.name, () => {
       await repo.upload([]);
 
       expect(repo.dateRanges).toEqual({
-        creationDate: { oldest: 0, newest: 0 },
-        modifiedDate: { oldest: 0, newest: 0 },
+        creationDate: {},
+        modifiedDate: {},
       });
       expect(mockUploadFn).not.toHaveBeenCalled();
+    });
+
+    it('should track an item dated exactly at the Unix epoch instead of treating it as unset', async () => {
+      await repo.upload([itemWithDate('1', '1970-01-01T00:00:00.000Z')]);
+
+      expect(repo.dateRanges.creationDate).toEqual({ oldest: 0, newest: 0 });
+
+      await repo.upload([itemWithDate('2', '2020-01-01T00:00:00.000Z')]);
+
+      expect(repo.dateRanges.creationDate).toEqual({
+        oldest: 0,
+        newest: ts('2020-01-01T00:00:00.000Z'),
+      });
     });
 
     it('should accumulate min and max across multiple upload batches via push', async () => {
