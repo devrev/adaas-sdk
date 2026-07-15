@@ -2,14 +2,14 @@ import zlib from 'zlib';
 import { jsonl } from 'js-jsonl';
 
 import {
-  AirdropEvent,
+  AirSyncEvent,
   EventType,
   ExtractorEvent,
   ExtractorEventType,
 } from '../../types/extraction';
 import { NormalizedAttachment } from '../../repo/repo.interfaces';
 import { mockServer } from '../jest.setup';
-import { createMockEvent } from '../../common/test-utils';
+import { createMockEvent } from '../../testing/mock-event';
 
 import run from './attachments-extraction';
 
@@ -50,18 +50,19 @@ function seedAttachmentsState(
   attachments: NormalizedAttachment[]
 ): void {
   const state = {
-    lastSyncStarted: '',
-    lastSuccessfulSyncStarted: '',
-    pendingWorkersOldest: '',
-    pendingWorkersNewest: '',
-    workersOldest: '',
-    workersNewest: '',
-    snapInVersionId: 'test_snap_in_version_id',
-    toDevRev: {
-      attachmentsMetadata: {
-        artifactIds: [METADATA_ARTIFACT_ID],
-        lastProcessed: 0,
-        lastProcessedAttachmentsIdsList: [],
+    connectorState: {},
+    sdkState: {
+      pendingWorkersOldest: '',
+      pendingWorkersNewest: '',
+      workersOldest: '',
+      workersNewest: '',
+      snapInVersionId: 'test_snap_in_version_id',
+      toDevRev: {
+        attachmentsMetadata: {
+          artifactIds: [METADATA_ARTIFACT_ID],
+          lastProcessed: 0,
+          lastProcessedAttachmentsIdsList: [],
+        },
       },
     },
   };
@@ -91,7 +92,7 @@ function seedAttachmentsState(
 }
 
 describe('Attachments streaming soft timeout', () => {
-  let event: AirdropEvent;
+  let event: AirSyncEvent;
 
   beforeEach(() => {
     event = createMockEvent(mockServer.baseUrl, {

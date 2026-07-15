@@ -1,19 +1,9 @@
 import { InitialDomainMapping } from '../types/common';
-import { AirdropEvent } from '../types/extraction';
+import { AirSyncEvent } from '../types/extraction';
 import { FileToLoad } from '../types/loading';
 import { WorkerAdapterOptions } from '../types/workers';
 
 export interface SdkState {
-  /**
-   * @deprecated Use extract_from and extract_to from the event context instead,
-   * which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
-   */
-  lastSyncStarted?: string;
-  /**
-   * @deprecated Use extract_from and extract_to from the event context instead,
-   * which are automatically resolved by the SDK from extraction_start_time and extraction_end_time.
-   */
-  lastSuccessfulSyncStarted?: string;
   /** The pending (not yet committed) oldest extraction boundary (ISO 8601 timestamp).
    *  Set on StartExtractingMetadata, reused across subsequent phases, cleared on AttachmentExtractionDone. */
   pendingWorkersOldest?: string;
@@ -30,10 +20,14 @@ export interface SdkState {
 }
 
 /**
- * AdapterState is an interface that defines the structure of the adapter state that is used by the external extractor.
- * It extends the connector state with additional fields: lastSyncStarted, lastSuccessfulSyncStarted, snapInVersionId and attachmentsMetadata.
+ * AdapterStateEnvelope is the v2 on-disk state shape: connector state and SDK
+ * bookkeeping are stored as disjoint sub-objects so SDK internals stay
+ * encapsulated and never collide with connector keys.
  */
-export type AdapterState<ConnectorState> = ConnectorState & SdkState;
+export interface AdapterStateEnvelope<ConnectorState> {
+  connectorState: ConnectorState;
+  sdkState: SdkState;
+}
 
 export interface ToDevRev {
   attachmentsMetadata: {
@@ -56,15 +50,13 @@ export interface FromDevRev {
 }
 
 export interface StateInterface<ConnectorState> {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   initialState: ConnectorState;
   initialDomainMapping?: InitialDomainMapping;
   options?: WorkerAdapterOptions;
 }
 
 export const extractionSdkState = {
-  lastSyncStarted: '',
-  lastSuccessfulSyncStarted: '',
   pendingWorkersOldest: '',
   pendingWorkersNewest: '',
   workersOldest: '',
@@ -85,3 +77,22 @@ export const loadingSdkState = {
     filesToLoad: [],
   },
 };
+
+/**
+ * The set of top-level state keys owned by the SDK. Derived from the initial
+ * SDK state constants so it auto-updates whenever a new SDK field is added.
+ * Used by the migration shim to split a flat v1 state blob into the
+ * `{ connectorState, sdkState }` envelope: keys in this set go to `sdkState`,
+ * everything else is connector state.
+ *
+ * `lastSyncStarted` / `lastSuccessfulSyncStarted` are retained here even though
+ * they are no longer fields on `SdkState`: a flat v1 blob may still carry them,
+ * and they must be recognized as SDK-owned so they are stripped out rather than
+ * leaking into connector state during migration.
+ */
+export const V1_SDK_STATE_KEYS: ReadonlySet<string> = new Set<string>([
+  ...Object.keys(extractionSdkState),
+  ...Object.keys(loadingSdkState),
+  'lastSyncStarted',
+  'lastSuccessfulSyncStarted',
+]);

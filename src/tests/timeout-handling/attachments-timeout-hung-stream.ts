@@ -1,7 +1,7 @@
 import { AxiosResponse } from 'axios';
 import { Readable } from 'stream';
 
-import { ExtractorEventType, processTask } from '../../index';
+import { processExtractionTask } from '../../index';
 import {
   ExternalSystemAttachmentStreamingResponse,
   ExternalSystemAttachmentStreamingParams,
@@ -9,9 +9,9 @@ import {
 
 // Repro for logs2.csv: one attachment's stream() hangs forever, keeping a pool
 // worker (and streamAll) pending past the soft timeout.
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
-    await adapter.streamAttachments({
+    return adapter.streamAttachments({
       stream: async ({
         item,
       }: ExternalSystemAttachmentStreamingParams): Promise<ExternalSystemAttachmentStreamingResponse> => {
@@ -29,10 +29,9 @@ processTask({
       },
       batchSize: 10,
     });
-
-    await adapter.emit(ExtractorEventType.AttachmentExtractionDone);
   },
-  onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.AttachmentExtractionProgress);
+  // eslint-disable-next-line @typescript-eslint/require-await
+  onTimeout: async () => {
+    return { status: 'progress' };
   },
 });

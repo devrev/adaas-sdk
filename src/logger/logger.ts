@@ -1,14 +1,13 @@
 import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { Console } from 'node:console';
-import { inspect } from 'node:util';
+import { inspect, InspectOptions } from 'node:util';
 import { isMainThread, parentPort } from 'node:worker_threads';
 
 import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 
-import { INSPECT_OPTIONS } from './logger.constants';
-import { getSdkLogContextValue } from './logger.context';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
@@ -17,7 +16,62 @@ import {
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
-import { truncateMessage } from '../common/helpers';
+
+// ── Log formatting ──
+
+export const MAX_LOG_STRING_LENGTH = 10000;
+const MAX_LOG_DEPTH = 10;
+const MAX_LOG_ARRAY_LENGTH = 100;
+
+export const INSPECT_OPTIONS: InspectOptions = {
+  compact: false,
+  breakLength: Infinity,
+  depth: MAX_LOG_DEPTH,
+  maxArrayLength: MAX_LOG_ARRAY_LENGTH,
+  maxStringLength: MAX_LOG_STRING_LENGTH,
+};
+
+/**
+ * Truncates a message that exceeds the maximum length, appending a suffix
+ * noting how many characters were omitted.
+ */
+export function truncateMessage(message: string): string {
+  if (message.length > MAX_LOG_STRING_LENGTH) {
+    return `${message.substring(0, MAX_LOG_STRING_LENGTH)}... ${
+      message.length - MAX_LOG_STRING_LENGTH
+    } more characters`;
+  }
+  return message;
+}
+
+// ── SDK log context ──
+
+/**
+ * Async-aware flag tracking whether code is running in SDK internals (`true`)
+ * or user-provided handlers (`false`). AsyncLocalStorage propagates the value
+ * across await/Promise/timer boundaries, so logs stay correctly attributed
+ * without threading the flag through call signatures.
+ */
+const sdkLogContext = new AsyncLocalStorage<boolean>();
+
+/** Runs `fn` with logs marked as user-originated (`is_sdk_log: false`). */
+export function runWithUserLogContext<T>(fn: () => T): T {
+  return sdkLogContext.run(false, fn);
+}
+
+/** Runs `fn` with logs marked as SDK-originated (`is_sdk_log: true`). */
+export function runWithSdkLogContext<T>(fn: () => T): T {
+  return sdkLogContext.run(true, fn);
+}
+
+/** Returns the current context flag, or `defaultValue` if none is set. */
+export function getSdkLogContextValue(defaultValue: boolean): boolean {
+  const storeValue = sdkLogContext.getStore();
+  if (typeof storeValue === 'boolean') {
+    return storeValue;
+  }
+  return defaultValue;
+}
 
 /**
  * Custom logger that extends Node.js Console with context-aware logging.
@@ -231,15 +285,4 @@ export function serializeAxiosError(error: AxiosError): AxiosErrorResponse {
   }
 
   return serializedAxiosError;
-}
-
-/**
- * Formats an Axios error to a printable format.
- *
- * @param error - Axios error to format
- * @returns Formatted error object
- * @deprecated Use {@link serializeAxiosError} instead
- */
-export function formatAxiosError(error: AxiosError): object {
-  return serializeAxiosError(error);
 }

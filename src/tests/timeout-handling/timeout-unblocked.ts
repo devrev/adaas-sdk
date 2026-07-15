@@ -1,7 +1,7 @@
 import { sleep } from '../../common/helpers';
-import { ExtractorEventType, processTask } from '../../index';
+import { processExtractionTask } from '../../index';
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     // CPU-intensive nested loops that yield control after logging
     // This allows the event loop to process timeout messages
@@ -9,7 +9,7 @@ processTask({
     for (let i = 0; i < 100000; i++) {
       for (let j = 0; j < 10000; j++) {
         if (adapter.isTimeout) {
-          return;
+          return { status: 'progress' };
         }
 
         result += Math.sqrt(i * j) * Math.sin(i + j);
@@ -23,9 +23,10 @@ processTask({
       }
     }
 
-    await adapter.emit(ExtractorEventType.DataExtractionDone);
+    return { status: 'success' };
   },
-  onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+  // eslint-disable-next-line @typescript-eslint/require-await
+  onTimeout: async () => {
+    return { status: 'progress' };
   },
 });

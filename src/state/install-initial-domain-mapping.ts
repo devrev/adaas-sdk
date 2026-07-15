@@ -1,11 +1,11 @@
-import { axiosClient } from '../http/axios-client-internal';
-import { AirdropEvent } from '../types/extraction';
+import { axiosClient } from '../http/client';
+import { AirSyncEvent } from '../types/extraction';
 
 import { serializeError } from '../logger/logger';
 import { InitialDomainMapping } from '../types/common';
 
 export async function installInitialDomainMapping(
-  event: AirdropEvent,
+  event: AirSyncEvent,
   initialDomainMappingJson: InitialDomainMapping
 ): Promise<void> {
   const devrevEndpoint = event.execution_metadata.devrev_endpoint;

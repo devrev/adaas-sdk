@@ -1,15 +1,18 @@
-import { ExtractorEventType, processTask } from '../../index';
+import { processExtractionTask } from '../../index';
 
-processTask({
-  task: async ({ adapter }) => {
+processExtractionTask({
+  // eslint-disable-next-line @typescript-eslint/require-await
+  task: async () => {
     console.log('Some cleanup logic executed.');
-    await adapter.emit(ExtractorEventType.ExtractorStateDeletionDone);
+    return { status: 'success' };
   },
-  onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.ExtractorStateDeletionError, {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  onTimeout: async () => {
+    return {
+      status: 'error',
       error: {
         message: 'Failed to execute cleanup logic. Lambda timeout.',
       },
-    });
+    };
   },
 });

@@ -2,19 +2,17 @@ import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
 import { LIBRARY_VERSION } from '../common/constants';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
-import { AirdropEvent, EventType } from '../types/extraction';
+import { createMockEvent } from '../testing/mock-event';
+import { AirSyncEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import {
   getPrintableState,
+  INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
   Logger,
+  MAX_LOG_STRING_LENGTH,
   serializeAxiosError,
   serializeError,
 } from './logger';
-import {
-  INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
-  MAX_LOG_STRING_LENGTH,
-} from './logger.constants';
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
@@ -32,7 +30,7 @@ jest.mock('node:worker_threads', () => {
 });
 
 describe(Logger.name, () => {
-  let mockEvent: AirdropEvent;
+  let mockEvent: AirSyncEvent;
   let mockOptions: WorkerAdapterOptions;
 
   beforeEach(() => {

@@ -3,7 +3,7 @@ import FormData from 'form-data';
 import { jsonl } from 'js-jsonl';
 import zlib from 'zlib';
 
-import { axiosClient } from '../http/axios-client-internal';
+import { axiosClient } from '../http/client';
 import {
   callPrivateMethod,
   createArtifact,
@@ -14,13 +14,13 @@ import {
   spyOnPrivateMethod,
 } from '../tests/test-helpers';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
+import { createMockEvent } from '../testing/mock-event';
 
 import { compressGzip, downloadToLocal } from './uploader.helpers';
 import { ArtifactToUpload, UploaderResult } from './uploader.interfaces';
 import { Uploader } from './uploader';
 
-jest.mock('../http/axios-client-internal');
+jest.mock('../http/client');
 jest.mock('./uploader.helpers', () => ({
   ...jest.requireActual('./uploader.helpers'),
   downloadToLocal: jest.fn(),

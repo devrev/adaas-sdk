@@ -4,62 +4,16 @@ import { Artifact } from '../uploader/uploader.interfaces';
 
 import { ErrorRecord } from './common';
 
-import { AxiosResponse } from 'axios';
 import { NormalizedAttachment } from '../repo/repo.interfaces';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
 import { DonV2, LoaderReport, RateLimited } from './loading';
 
 /**
- * EventType is an enum that defines the different types of events that can be sent to the external extractor from ADaaS.
+ * EventType is an enum that defines the different types of events that can be sent to the external extractor from AirSync.
  * The external extractor can use these events to know what to do next in the extraction process.
  */
 export enum EventType {
-  // Extraction - Old member names with OLD values (deprecated, kept for backwards compatibility)
-  /**
-   * @deprecated Use StartExtractingExternalSyncUnits instead
-   */
-  ExtractionExternalSyncUnitsStart = 'EXTRACTION_EXTERNAL_SYNC_UNITS_START',
-  /**
-   * @deprecated Use StartExtractingMetadata instead
-   */
-  ExtractionMetadataStart = 'EXTRACTION_METADATA_START',
-  /**
-   * @deprecated Use StartExtractingData instead
-   */
-  ExtractionDataStart = 'EXTRACTION_DATA_START',
-  /**
-   * @deprecated Use ContinueExtractingData instead
-   */
-  ExtractionDataContinue = 'EXTRACTION_DATA_CONTINUE',
-  /**
-   * @deprecated Use StartDeletingExtractorState instead
-   */
-  ExtractionDataDelete = 'EXTRACTION_DATA_DELETE',
-  /**
-   * @deprecated Use StartExtractingAttachments instead
-   */
-  ExtractionAttachmentsStart = 'EXTRACTION_ATTACHMENTS_START',
-  /**
-   * @deprecated Use ContinueExtractingAttachments instead
-   */
-  ExtractionAttachmentsContinue = 'EXTRACTION_ATTACHMENTS_CONTINUE',
-  /**
-   * @deprecated Use StartDeletingExtractorAttachmentsState instead
-   */
-  ExtractionAttachmentsDelete = 'EXTRACTION_ATTACHMENTS_DELETE',
-
-  // Loading
-  StartLoadingData = 'START_LOADING_DATA',
-  ContinueLoadingData = 'CONTINUE_LOADING_DATA',
-  StartLoadingAttachments = 'START_LOADING_ATTACHMENTS',
-  ContinueLoadingAttachments = 'CONTINUE_LOADING_ATTACHMENTS',
-  StartDeletingLoaderState = 'START_DELETING_LOADER_STATE',
-  StartDeletingLoaderAttachmentState = 'START_DELETING_LOADER_ATTACHMENT_STATE',
-
-  // Unknown
-  UnknownEventType = 'UNKNOWN_EVENT_TYPE',
-
-  // Extraction - New member names with NEW values (preferred)
+  // Extraction
   StartExtractingExternalSyncUnits = 'START_EXTRACTING_EXTERNAL_SYNC_UNITS',
   StartExtractingMetadata = 'START_EXTRACTING_METADATA',
   StartExtractingData = 'START_EXTRACTING_DATA',
@@ -68,83 +22,22 @@ export enum EventType {
   StartExtractingAttachments = 'START_EXTRACTING_ATTACHMENTS',
   ContinueExtractingAttachments = 'CONTINUE_EXTRACTING_ATTACHMENTS',
   StartDeletingExtractorAttachmentsState = 'START_DELETING_EXTRACTOR_ATTACHMENTS_STATE',
+
+  // Loading
+  StartLoadingData = 'START_LOADING_DATA',
+  ContinueLoadingData = 'CONTINUE_LOADING_DATA',
+  StartLoadingAttachments = 'START_LOADING_ATTACHMENTS',
+  ContinueLoadingAttachments = 'CONTINUE_LOADING_ATTACHMENTS',
+  StartDeletingLoaderState = 'START_DELETING_LOADER_STATE',
+  StartDeletingLoaderAttachmentState = 'START_DELETING_LOADER_ATTACHMENT_STATE',
 }
 
 /**
- * ExtractorEventType is an enum that defines the different types of events that can be sent from the external extractor to ADaaS.
- * The external extractor can use these events to inform ADaaS about the progress of the extraction process.
+ * ExtractorEventType is an enum that defines the different types of events that can be sent from the external extractor to AirSync.
+ * The external extractor can use these events to inform AirSync about the progress of the extraction process.
  */
 export enum ExtractorEventType {
-  // Extraction - Old member names with OLD values (deprecated, kept for backwards compatibility)
-  /**
-   * @deprecated Use ExternalSyncUnitExtractionDone instead
-   */
-  ExtractionExternalSyncUnitsDone = 'EXTRACTION_EXTERNAL_SYNC_UNITS_DONE',
-  /**
-   * @deprecated Use ExternalSyncUnitExtractionError instead
-   */
-  ExtractionExternalSyncUnitsError = 'EXTRACTION_EXTERNAL_SYNC_UNITS_ERROR',
-  /**
-   * @deprecated Use MetadataExtractionDone instead
-   */
-  ExtractionMetadataDone = 'EXTRACTION_METADATA_DONE',
-  /**
-   * @deprecated Use MetadataExtractionError instead
-   */
-  ExtractionMetadataError = 'EXTRACTION_METADATA_ERROR',
-  /**
-   * @deprecated Use DataExtractionProgress instead
-   */
-  ExtractionDataProgress = 'EXTRACTION_DATA_PROGRESS',
-  /**
-   * @deprecated Use DataExtractionDelayed instead
-   */
-  ExtractionDataDelay = 'EXTRACTION_DATA_DELAY',
-  /**
-   * @deprecated Use DataExtractionDone instead
-   */
-  ExtractionDataDone = 'EXTRACTION_DATA_DONE',
-  /**
-   * @deprecated Use DataExtractionError instead
-   */
-  ExtractionDataError = 'EXTRACTION_DATA_ERROR',
-  /**
-   * @deprecated Use ExtractorStateDeletionDone instead
-   */
-  ExtractionDataDeleteDone = 'EXTRACTION_DATA_DELETE_DONE',
-  /**
-   * @deprecated Use ExtractorStateDeletionError instead
-   */
-  ExtractionDataDeleteError = 'EXTRACTION_DATA_DELETE_ERROR',
-  /**
-   * @deprecated Use AttachmentExtractionProgress instead
-   */
-  ExtractionAttachmentsProgress = 'EXTRACTION_ATTACHMENTS_PROGRESS',
-  /**
-   * @deprecated Use AttachmentExtractionDelayed instead
-   */
-  ExtractionAttachmentsDelay = 'EXTRACTION_ATTACHMENTS_DELAY',
-  /**
-   * @deprecated Use AttachmentExtractionDone instead
-   */
-  ExtractionAttachmentsDone = 'EXTRACTION_ATTACHMENTS_DONE',
-  /**
-   * @deprecated Use AttachmentExtractionError instead
-   */
-  ExtractionAttachmentsError = 'EXTRACTION_ATTACHMENTS_ERROR',
-  /**
-   * @deprecated Use ExtractorAttachmentsStateDeletionDone instead
-   */
-  ExtractionAttachmentsDeleteDone = 'EXTRACTION_ATTACHMENTS_DELETE_DONE',
-  /**
-   * @deprecated Use ExtractorAttachmentsStateDeletionError instead
-   */
-  ExtractionAttachmentsDeleteError = 'EXTRACTION_ATTACHMENTS_DELETE_ERROR',
-
-  // Unknown
-  UnknownEventType = 'UNKNOWN_EVENT_TYPE',
-
-  // Extraction - New member names with NEW values (preferred)
+  // Extraction
   ExternalSyncUnitExtractionDone = 'EXTERNAL_SYNC_UNIT_EXTRACTION_DONE',
   ExternalSyncUnitExtractionError = 'EXTERNAL_SYNC_UNIT_EXTRACTION_ERROR',
   MetadataExtractionDone = 'METADATA_EXTRACTION_DONE',
@@ -161,16 +54,6 @@ export enum ExtractorEventType {
   AttachmentExtractionError = 'ATTACHMENT_EXTRACTION_ERROR',
   ExtractorAttachmentsStateDeletionDone = 'EXTRACTOR_ATTACHMENTS_STATE_DELETION_DONE',
   ExtractorAttachmentsStateDeletionError = 'EXTRACTOR_ATTACHMENTS_STATE_DELETION_ERROR',
-}
-
-/**
- * @deprecated
- * ExtractionMode is an enum that defines the different modes of extraction that can be used by the external extractor.
- * It can be either INITIAL or INCREMENTAL. INITIAL mode is used for the first/initial import, while INCREMENTAL mode is used for doing syncs.
- */
-export enum ExtractionMode {
-  INITIAL = 'INITIAL',
-  INCREMENTAL = 'INCREMENTAL',
 }
 
 /**
@@ -248,45 +131,7 @@ export interface TimeValue {
 }
 
 /**
- * EventContextIn is an interface that defines the structure of the input event context that is sent to the external extractor from ADaaS.
- * @deprecated
- */
-export interface EventContextIn {
-  callback_url: string;
-  dev_org: string;
-  dev_org_id: string;
-  dev_user: string;
-  dev_user_id: string;
-  external_sync_unit: string;
-  external_sync_unit_id: string;
-  external_sync_unit_name: string;
-  external_system: string;
-  external_system_type: string;
-  import_slug: string;
-  mode: string;
-  request_id: string;
-  snap_in_slug: string;
-  sync_run: string;
-  sync_run_id: string;
-  sync_tier: string;
-  sync_unit: DonV2;
-  sync_unit_id: string;
-  uuid: string;
-  worker_data_url: string;
-}
-
-/**
- * EventContextOut is an interface that defines the structure of the output event context that is sent from the external extractor to ADaaS.
- * @deprecated
- */
-export interface EventContextOut {
-  uuid: string;
-  sync_run: string;
-  sync_unit?: string;
-}
-
-/**
- * EventContext is an interface that defines the structure of the event context that is sent to the external connector from Airdrop.
+ * EventContext is an interface that defines the structure of the event context that is sent to the external connector from AirSync.
  */
 export interface EventContext {
   callback_url: string;
@@ -378,7 +223,7 @@ export interface EventContext {
 }
 
 /**
- * ConnectionData is an interface that defines the structure of the connection data that is sent to the external extractor from ADaaS.
+ * ConnectionData is an interface that defines the structure of the connection data that is sent to the external extractor from AirSync.
  * It contains the organization ID, organization name, key, and key type.
  */
 export interface ConnectionData {
@@ -389,23 +234,15 @@ export interface ConnectionData {
 }
 
 /**
- * EventData is an interface that defines the structure of the event data that is sent from the external extractor to ADaaS.
+ * EventData is an interface that defines the structure of the event data that is sent from the external extractor to AirSync.
  */
 export interface EventData {
-  /**
-   * @deprecated This field is deprecated and should not be used. External sync units should be pushed to the AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS repo.
-   *
-   */
-  external_sync_units?: ExternalSyncUnit[];
-  /**
-   * @deprecated This field is deprecated and should not be used. Progress is
-   * now calculated on the backend.
-   */
-  progress?: number;
   error?: ErrorRecord;
   delay?: number;
   /**
-   * @deprecated This field is deprecated and should not be used.
+   * Artifacts produced by the worker's repos, attached to the emitted event by
+   * the SDK. This includes external sync units, which are pushed to the
+   * AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS repo and uploaded as artifacts.
    */
   artifacts?: Artifact[];
 
@@ -416,41 +253,33 @@ export interface EventData {
 }
 
 /**
- * WorkerMetadata is an interface that defines the structure of the worker metadata that is sent from the external extractor to ADaaS.
+ * WorkerMetadata is an interface that defines the structure of the worker metadata that is sent from the external extractor to AirSync.
  */
 export interface WorkerMetadata {
   adaas_library_version: string;
 }
 
 /**
- * DomainObject is an interface that defines the structure of a domain object that can be extracted.
- * It must contain a name, a next chunk ID, the pages, the last modified date, whether it is done, and the count.
- * @deprecated
- */
-export interface DomainObjectState {
-  name: string;
-  nextChunkId: number;
-  pages?: {
-    pages: number[];
-  };
-  lastModified: string;
-  isDone: boolean;
-  count: number;
-}
-
-/**
- * AirdropEvent is an interface that defines the structure of the event that is sent to the external extractor from ADaaS.
+ * AirSyncEvent is an interface that defines the structure of the event that is sent to the external extractor from AirSync.
  * It contains the context, payload, execution metadata, and input data as common snap-ins.
  */
-export interface AirdropEvent {
+export interface AirSyncEvent {
   context: {
     secrets: {
       service_account_token: string;
     };
     snap_in_version_id: string;
     snap_in_id: string;
+    /** DevRev identity of the user who triggered the sync. */
+    user_id: string;
+    /** DevRev org id (don:identity:.../devo/...). */
+    dev_oid: string;
+    /** External source identity, when the platform provides one. */
+    source_id: string;
+    /** DevRev service-account identity used for the sync. */
+    service_account_id: string;
   };
-  payload: AirdropMessage;
+  payload: AirSyncMessage;
   execution_metadata: {
     devrev_endpoint: string;
   };
@@ -458,9 +287,9 @@ export interface AirdropEvent {
 }
 
 /**
- * AirdropMessage is an interface that defines the structure of the payload/message that is sent to the external extractor from ADaaS.
+ * AirSyncMessage is an interface that defines the structure of the payload/message that is sent to the external extractor from AirSync.
  */
-export interface AirdropMessage {
+export interface AirSyncMessage {
   connection_data: ConnectionData;
   event_context: EventContext;
   event_type: EventType;
@@ -468,7 +297,7 @@ export interface AirdropMessage {
 }
 
 /**
- * ExtractorEvent is an interface that defines the structure of the event that is sent from the external extractor to ADaaS.
+ * ExtractorEvent is an interface that defines the structure of the event that is sent from the external extractor to AirSync.
  * It contains the event type, event context, extractor state, and event data.
  */
 export interface ExtractorEvent {
@@ -495,11 +324,18 @@ export type ExternalSystemAttachmentStreamingFunction = ({
 
 export interface ExternalSystemAttachmentStreamingParams {
   item: NormalizedAttachment;
-  event: AirdropEvent;
+  event: AirSyncEvent;
+}
+
+export interface HttpStreamResponse {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  headers: Record<string, any>;
 }
 
 export interface ExternalSystemAttachmentStreamingResponse {
-  httpStream?: AxiosResponse;
+  httpStream?: HttpStreamResponse;
   error?: ErrorRecord;
   delay?: number;
 }
@@ -534,7 +370,7 @@ export type ExternalSystemAttachmentReducerFunction<
   batchSize,
 }: {
   attachments: Batch;
-  adapter: WorkerAdapter<ConnectorState>;
+  adapter: ExtractionAdapter<ConnectorState>;
   batchSize?: number;
 }) => NewBatch;
 
@@ -553,7 +389,7 @@ export type ExternalSystemAttachmentIteratorFunction<NewBatch, ConnectorState> =
     stream,
   }: {
     reducedAttachments: NewBatch;
-    adapter: WorkerAdapter<ConnectorState>;
+    adapter: ExtractionAdapter<ConnectorState>;
     stream: ExternalSystemAttachmentStreamingFunction;
   }) => Promise<ProcessAttachmentReturnType>;
 

@@ -1,4 +1,4 @@
-import { createMockEvent } from '../common/test-utils';
+import { createMockEvent } from '../testing/mock-event';
 import { mockServer } from '../tests/jest.setup';
 import { EventType, InitialSyncScope, TimeValueType } from './extraction';
 

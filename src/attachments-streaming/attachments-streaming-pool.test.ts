@@ -1,9 +1,9 @@
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { ExtractionAdapter } from '../multithreading/adapters/extraction-adapter';
+import { NormalizedAttachment } from '../repo/repo.interfaces';
 import {
   ExternalSystemAttachmentStreamingFunction,
-  NormalizedAttachment,
   ProcessAttachmentReturnType,
-} from '../types';
+} from '../types/extraction';
 import { AttachmentsStreamingPool } from './attachments-streaming-pool';
 
 interface TestState {
@@ -13,7 +13,7 @@ interface TestState {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 describe(AttachmentsStreamingPool.name, () => {
-  let mockAdapter: jest.Mocked<WorkerAdapter<TestState>>;
+  let mockAdapter: jest.Mocked<ExtractionAdapter<TestState>>;
   let mockStream: jest.MockedFunction<ExternalSystemAttachmentStreamingFunction>;
   let mockAttachments: NormalizedAttachment[];
 
@@ -22,6 +22,8 @@ describe(AttachmentsStreamingPool.name, () => {
     mockAdapter = {
       state: {
         attachments: { completed: false },
+      },
+      sdkState: {
         toDevRev: {
           attachmentsMetadata: {
             lastProcessedAttachmentsIdsList: [],
@@ -107,7 +109,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
   describe(AttachmentsStreamingPool.prototype.streamAll.name, () => {
     it('should initialize lastProcessedAttachmentsIdsList if it does not exist', async () => {
-      mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
+      mockAdapter.sdkState.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
         undefined as any;
       mockAdapter.processAttachment.mockResolvedValue({});
 
@@ -125,7 +127,7 @@ describe(AttachmentsStreamingPool.name, () => {
       await pool.streamAll();
 
       expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata
+        mockAdapter.sdkState.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([]);
     });
@@ -173,11 +175,15 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(result).toEqual({ delay: 5000 });
     });
 
-    it('should resume attachment extraction if it encounters old ids', async () => {
-      // Test migration from old string[] format to new ProcessedAttachment[] format
-      // Using 'as any' because we're intentionally testing legacy data format
-      mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
-        ['attachment-1', 'attachment-2'] as any;
+    it('should resume attachment extraction, skipping already-processed ids', async () => {
+      // Resume case: the state already records attachment-1 and attachment-2 as
+      // processed (in the v2 ProcessedAttachment {id, parent_id} format), so a
+      // re-run must skip them and only process the remaining attachment-3.
+      mockAdapter.sdkState.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
+        [
+          { id: 'attachment-1', parent_id: 'parent-1' },
+          { id: 'attachment-2', parent_id: 'parent-2' },
+        ];
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
@@ -187,12 +193,11 @@ describe(AttachmentsStreamingPool.name, () => {
 
       const result = await pool.streamAll();
 
+      // attachment-1/2 are skipped (already processed); attachment-3 is appended.
       expect(
-        mockAdapter.state.toDevRev?.attachmentsMetadata
+        mockAdapter.sdkState.toDevRev?.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([
-        { id: 'attachment-1', parent_id: '' },
-        { id: 'attachment-2', parent_id: '' },
         { id: 'attachment-1', parent_id: 'parent-1' },
         { id: 'attachment-2', parent_id: 'parent-2' },
         { id: 'attachment-3', parent_id: 'parent-3' },
@@ -247,7 +252,7 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(warnSpy).toHaveBeenCalledTimes(3);
 
       expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata
+        mockAdapter.sdkState.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([]);
     });
@@ -255,7 +260,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
   describe(AttachmentsStreamingPool.prototype.startPoolStreaming.name, () => {
     it('should skip already processed attachments', async () => {
-      mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
+      mockAdapter.sdkState.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
         [{ id: 'attachment-1', parent_id: 'parent-1' }];
       mockAdapter.processAttachment.mockResolvedValue({});
 
@@ -282,7 +287,7 @@ describe(AttachmentsStreamingPool.name, () => {
       await pool.streamAll();
 
       expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata
+        mockAdapter.sdkState.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([
         { id: 'attachment-1', parent_id: 'parent-1' },
@@ -312,7 +317,7 @@ describe(AttachmentsStreamingPool.name, () => {
         error
       );
       expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata
+        mockAdapter.sdkState.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([
         {
@@ -342,7 +347,7 @@ describe(AttachmentsStreamingPool.name, () => {
 
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
       expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata
+        mockAdapter.sdkState.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([
         { id: 'attachment-1', parent_id: 'parent-1' },
@@ -665,7 +670,10 @@ describe(AttachmentsStreamingPool.name, () => {
         });
 
       mockAdapter.processAttachment.mockImplementation(
-        async (attachment, stream) => {
+        async (
+          attachment: NormalizedAttachment,
+          stream: ExternalSystemAttachmentStreamingFunction
+        ) => {
           // processAttachment should be called with the user's stream function
           const result = await stream({
             item: attachment,
@@ -735,7 +743,7 @@ describe(AttachmentsStreamingPool.name, () => {
       await pool.streamAll();
 
       expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata
+        mockAdapter.sdkState.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([]);
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(1);
@@ -762,7 +770,7 @@ describe(AttachmentsStreamingPool.name, () => {
       await pool.streamAll();
 
       expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata
+        mockAdapter.sdkState.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([{ id: 'attachment-1', parent_id: 'parent-1' }]);
       // 2nd was started then abandoned; 3rd never started.

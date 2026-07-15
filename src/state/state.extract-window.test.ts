@@ -1,7 +1,7 @@
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
+import { createMockEvent } from '../testing/mock-event';
 import { EventType, TimeValueType } from '../types/extraction';
-import { State, createAdapterState } from './state';
+import { ExtractionState, createExtractionState } from './extraction-state';
 
 describe('State — extraction window validation', () => {
   let fetchStateSpy: jest.SpyInstance;
@@ -11,7 +11,7 @@ describe('State — extraction window validation', () => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
 
-    fetchStateSpy = jest.spyOn(State.prototype, 'fetchState');
+    fetchStateSpy = jest.spyOn(ExtractionState.prototype, 'fetchState');
     processExitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {
       throw new Error('process.exit called');
     });
@@ -43,7 +43,7 @@ describe('State — extraction window validation', () => {
 
       // Act & Assert
       await expect(
-        createAdapterState({
+        createExtractionState({
           event,
           initialState: {},
           initialDomainMapping: {},
@@ -77,7 +77,7 @@ describe('State — extraction window validation', () => {
 
       // Act & Assert
       await expect(
-        createAdapterState({
+        createExtractionState({
           event,
           initialState: {},
           initialDomainMapping: {},
@@ -110,7 +110,7 @@ describe('State — extraction window validation', () => {
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
       // Act
-      await createAdapterState({
+      await createExtractionState({
         event,
         initialState: {},
         initialDomainMapping: {},
@@ -140,7 +140,7 @@ describe('State — extraction window validation', () => {
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
       // Act
-      await createAdapterState({
+      await createExtractionState({
         event,
         initialState: {},
         initialDomainMapping: {},
@@ -173,7 +173,7 @@ describe('State — extraction window validation', () => {
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
       // Act
-      await createAdapterState({
+      await createExtractionState({
         event,
         initialState: {},
         initialDomainMapping: {},

@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { DEFAULT_LAMBDA_TIMEOUT } from '../../common/constants';
 import { EventType, ExtractorEventType } from '../../types/extraction';
 import { WorkerEvent, WorkerMessageSubject } from '../../types/workers';
-import { createMockEvent } from '../../common/test-utils';
+import { createMockEvent } from '../../testing/mock-event';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -12,7 +12,7 @@ jest.mock('../create-worker', () => ({
   createWorker: jest.fn(),
 }));
 
-jest.mock('../../common/control-protocol', () => ({
+jest.mock('../emit', () => ({
   emit: jest.fn().mockResolvedValue({}),
 }));
 
@@ -38,8 +38,6 @@ jest.mock('../../common/helpers', () => ({
     arrayBuffersMB: '5.00',
   }),
   sleep: jest.fn(),
-  truncateFilename: jest.fn((f: string) => f),
-  truncateMessage: jest.fn((m: string) => m),
 }));
 
 // ---------------------------------------------------------------------------
@@ -47,7 +45,7 @@ jest.mock('../../common/helpers', () => ({
 // ---------------------------------------------------------------------------
 import { spawn, Spawn } from './spawn';
 import { createWorker } from '../create-worker';
-import { emit } from '../../common/control-protocol';
+import { emit } from '../emit';
 import { getMemoryUsage } from '../../common/helpers';
 
 // ---------------------------------------------------------------------------
@@ -113,7 +111,7 @@ describe('spawn() factory', () => {
   it('should emit a no-script event and NOT spawn a worker for an unknown event type', async () => {
     // Arrange
     const event = createMockEvent('http://localhost:0', {
-      payload: { event_type: EventType.UnknownEventType },
+      payload: { event_type: 'TOTALLY_UNKNOWN' as EventType },
     });
 
     // Act
@@ -137,7 +135,16 @@ describe('spawn() factory', () => {
 
     // Act & Assert
     await expect(
-      spawn({ event, initialState: {}, workerPath: '/fake/path.js' })
+      spawn({
+        event,
+        initialState: {},
+        baseWorkerPath: '',
+        options: {
+          workerPathOverrides: {
+            [event.payload.event_type]: '/fake/path.js',
+          },
+        },
+      })
     ).rejects.toThrow('worker boom');
   });
 });

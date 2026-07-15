@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { axiosClient } from '../http/axios-client-internal';
+import { axiosClient } from '../http/client';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from './test-utils';
-import { InitialDomainMapping } from '../types';
+import { createMockEvent } from '../testing/mock-event';
+import { InitialDomainMapping } from '../types/common';
 import { EventType } from '../types/extraction';
 import { installInitialDomainMapping } from './install-initial-domain-mapping';
 
@@ -11,8 +11,8 @@ jest.mock('axios', () => ({
   ...jest.requireActual('axios'),
   isAxiosError: jest.fn(),
 }));
-jest.mock('../http/axios-client-internal', () => {
-  const originalModule = jest.requireActual('../http/axios-client-internal');
+jest.mock('../http/client', () => {
+  const originalModule = jest.requireActual('../http/client');
   return {
     ...originalModule,
     axiosClient: {
@@ -29,7 +29,7 @@ const mockIsAxiosError = axios.isAxiosError as unknown as jest.Mock;
 describe(installInitialDomainMapping.name, () => {
   // Create mock objects
   const mockEvent = createMockEvent(mockServer.baseUrl, {
-    payload: { event_type: EventType.ExtractionDataStart },
+    payload: { event_type: EventType.StartExtractingData },
   });
 
   const mockInitialDomainMapping: InitialDomainMapping = {
