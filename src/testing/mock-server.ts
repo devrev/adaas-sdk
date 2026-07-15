@@ -77,6 +77,11 @@ function wrapResponse(res: ServerResponse): MockResponse {
     res.end(JSON.stringify(data));
   };
 
+  mock.buffer = (data: Buffer) => {
+    res.writeHead(statusCode, { 'Content-Type': 'application/octet-stream' });
+    res.end(data);
+  };
+
   mock.send = () => {
     res.writeHead(statusCode);
     res.end();
@@ -217,7 +222,8 @@ export class MockServer {
    * Configures a route to return a specific status code and optional response body.
    */
   public setRoute(config: RouteConfig): void {
-    const { path, method, status, body, retry, headers, delay } = config;
+    const { path, method, status, body, bodyBuffer, retry, headers, delay } =
+      config;
     const key = this.getRouteKey(method, path);
 
     if (retry) {
@@ -259,7 +265,9 @@ export class MockServer {
                 res.set(headers);
               }
 
-              if (body !== undefined) {
+              if (bodyBuffer !== undefined) {
+                res.status(status).buffer(bodyBuffer);
+              } else if (body !== undefined) {
                 res.status(status).json(body);
               } else {
                 this.defaultRouteHandler(req, res);
@@ -270,7 +278,9 @@ export class MockServer {
               res.set(headers);
             }
 
-            if (body !== undefined) {
+            if (bodyBuffer !== undefined) {
+              res.status(status).buffer(bodyBuffer);
+            } else if (body !== undefined) {
               res.status(status).json(body);
             } else {
               res.status(status).send();

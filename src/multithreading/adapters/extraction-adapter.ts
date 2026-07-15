@@ -297,6 +297,11 @@ export class ExtractionAdapter<
           ssorAttachment.inline = false;
         }
 
+        if (this.isTimeout) {
+          this.destroyHttpStream(httpStream);
+          return;
+        }
+
         await this.getRepo('ssor_attachment')?.push([ssorAttachment]);
         return;
       }

@@ -35,8 +35,13 @@ import { getEventTypeForResult } from '../spawn/spawn.helpers';
 export abstract class BaseAdapter<ConnectorState> {
   readonly event: AirSyncEvent;
   readonly options?: WorkerAdapterOptions;
-  isTimeout: boolean;
   hasWorkerEmitted: boolean;
+
+  private _isTimeout: boolean = false;
+  private resolveTimeoutSignal!: () => void;
+  readonly timeoutSignal: Promise<void> = new Promise<void>((resolve) => {
+    this.resolveTimeoutSignal = resolve;
+  });
 
   protected adapterState: BaseState<ConnectorState>;
   protected uploader: Uploader;
@@ -54,11 +59,21 @@ export abstract class BaseAdapter<ConnectorState> {
     this.options = options;
     this.adapterState = adapterState;
     this.hasWorkerEmitted = false;
-    this.isTimeout = false;
     this.uploader = new Uploader({
       event,
       options,
     });
+  }
+
+  get isTimeout(): boolean {
+    return this._isTimeout;
+  }
+
+  set isTimeout(value: boolean) {
+    this._isTimeout = value;
+    if (value) {
+      this.resolveTimeoutSignal();
+    }
   }
 
   /** Connector-owned state exposed to snap-in code. */
