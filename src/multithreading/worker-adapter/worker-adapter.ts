@@ -13,6 +13,7 @@ import {
   getFilesToLoad,
   toRfc3339Timestamp,
 } from './worker-adapter.helpers';
+import { ProgressData } from './worker-adapter.interfaces';
 import { serializeError } from '../../logger/logger';
 import {
   runWithSdkLogContext,
@@ -385,18 +386,7 @@ export class WorkerAdapter<ConnectorState> {
           newEventType as LoaderEventType
         );
 
-        const progressData: {
-          // Last extracted item type statistics
-          item_type?: string;
-          oldest_created_date?: string;
-          newest_created_date?: string;
-          oldest_modified_date?: string;
-          newest_modified_date?: string;
-
-          // Calculated time ranges in absolute times
-          oldest_state_date?: string;
-          newest_state_date?: string;
-        } = {};
+        const progressData: ProgressData = {};
 
         if (
           isExtractionEvent &&
