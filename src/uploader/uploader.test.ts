@@ -476,6 +476,42 @@ describe(Uploader.name, () => {
       );
     });
 
+    it('should disable axios-retry when falling back to a guessed Content-Length', async () => {
+      // Arrange
+      const artifact = createArtifact();
+      const fileStream = createFileStream({ includeContentLength: false });
+
+      mockedAxiosClient.post.mockResolvedValueOnce(createAxiosResponse());
+
+      // Act
+      await uploader.streamArtifact(artifact, fileStream);
+
+      // Assert
+      expect(mockedAxiosClient.post).toHaveBeenCalledWith(
+        artifact.upload_url,
+        expect.any(FormData),
+        expect.objectContaining({
+          'axios-retry': { retries: 0 },
+        })
+      );
+    });
+
+    it('should not override axios-retry when the real Content-Length is known', async () => {
+      // Arrange
+      const artifact = createArtifact();
+      const fileStream = createFileStream({ contentLength: 1024 });
+
+      mockedAxiosClient.post.mockResolvedValueOnce(createAxiosResponse());
+
+      // Act
+      await uploader.streamArtifact(artifact, fileStream);
+
+      // Assert
+      const callArgs = mockedAxiosClient.post.mock.calls[0];
+      const config = callArgs[2];
+      expect(config).not.toHaveProperty('axios-retry');
+    });
+
     it('should destroy stream and return undefined when streaming fails', async () => {
       // Arrange
       const artifact = createArtifact();
