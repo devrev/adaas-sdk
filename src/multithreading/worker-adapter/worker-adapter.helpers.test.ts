@@ -8,6 +8,7 @@ import {
 import {
   addReportToLoaderReport,
   getFilesToLoad,
+  toRfc3339Timestamp,
 } from './worker-adapter.helpers';
 
 describe(getFilesToLoad.name, () => {
@@ -588,5 +589,47 @@ describe(addReportToLoaderReport.name, () => {
     expect(result).toHaveLength(1);
     expect(result[0][ActionType.FAILED]).toBe(7);
     expect(result[0][ActionType.CREATED]).toBe(2);
+  });
+});
+
+describe(toRfc3339Timestamp.name, () => {
+  it('should convert milliseconds to an RFC3339 string', () => {
+    const ms = new Date('2024-06-01T00:00:00.000Z').getTime();
+
+    const result = toRfc3339Timestamp(ms);
+
+    expect(result).toBe('2024-06-01T00:00:00.000Z');
+  });
+
+  it('[edge] should convert the Unix epoch (0) instead of treating it as unset', () => {
+    const result = toRfc3339Timestamp(0);
+
+    expect(result).toBe('1970-01-01T00:00:00.000Z');
+  });
+
+  it('[edge] should return undefined when ms is undefined', () => {
+    const result = toRfc3339Timestamp(undefined);
+
+    expect(result).toBeUndefined();
+  });
+
+  it('[edge] should return undefined for NaN', () => {
+    const result = toRfc3339Timestamp(NaN);
+
+    expect(result).toBeUndefined();
+  });
+
+  it('[edge] should return undefined for Infinity', () => {
+    const result = toRfc3339Timestamp(Infinity);
+
+    expect(result).toBeUndefined();
+  });
+
+  it('[edge] should convert negative milliseconds (pre-1970 dates)', () => {
+    const ms = new Date('1969-12-31T00:00:00.000Z').getTime();
+
+    const result = toRfc3339Timestamp(ms);
+
+    expect(result).toBe('1969-12-31T00:00:00.000Z');
   });
 });

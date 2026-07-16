@@ -61,6 +61,8 @@ function makeAdapter(eventType: EventType = EventType.StartExtractingData): {
   return { adapter, event, adapterState };
 }
 
+const iso = (ms: number) => new Date(ms).toISOString();
+
 describe(`${WorkerAdapter.name}.emit`, () => {
   let adapter: WorkerAdapter<TestState>;
   let mockPostMessage: jest.Mock;
@@ -314,6 +316,122 @@ describe(`${WorkerAdapter.name}.emit`, () => {
       ?.message as string;
     expect(emittedMessage.length).toBeLessThan(longMessage.length);
     expect(emittedMessage.startsWith('E'.repeat(100))).toBe(true);
+  });
+});
+
+describe(`${WorkerAdapter.name}.emit — worker_metadata`, () => {
+  let adapter: WorkerAdapter<TestState>;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    ({ adapter } = makeAdapter());
+    adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
+    adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+  });
+
+  function setupRepos(
+    adapterInstance: WorkerAdapter<TestState>,
+    lastExtractedItemType: string
+  ) {
+    adapterInstance['repos'] = [
+      {
+        itemType: 'issues',
+        dateRanges: {
+          creationDate: { oldest: 100, newest: 200 },
+          modifiedDate: { oldest: 150, newest: 250 },
+        },
+      },
+      {
+        itemType: 'tasks',
+        dateRanges: {
+          creationDate: { oldest: 300, newest: 400 },
+          modifiedDate: { oldest: 350, newest: 450 },
+        },
+      },
+    ] as never;
+    adapterInstance['lastExtractedItemType'] = lastExtractedItemType;
+  }
+
+  it('should emit flat worker_metadata for the latest extracted item type only', async () => {
+    setupRepos(adapter, 'tasks');
+
+    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({
+      item_type: 'tasks',
+      oldest_created_date: iso(300),
+      newest_created_date: iso(400),
+      oldest_modified_date: iso(350),
+      newest_modified_date: iso(450),
+    });
+  });
+
+  it('should omit unset RFC3339 bounds from worker_metadata', async () => {
+    adapter['repos'] = [
+      {
+        itemType: 'tasks',
+        dateRanges: {
+          creationDate: {},
+          modifiedDate: {},
+        },
+      },
+    ] as never;
+    adapter['lastExtractedItemType'] = 'tasks';
+
+    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({
+      item_type: 'tasks',
+    });
+  });
+
+  it('should include Unix-epoch bounds rather than treating them as unset', async () => {
+    adapter['repos'] = [
+      {
+        itemType: 'tasks',
+        dateRanges: {
+          creationDate: { oldest: 0, newest: 0 },
+          modifiedDate: {},
+        },
+      },
+    ] as never;
+    adapter['lastExtractedItemType'] = 'tasks';
+
+    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({
+      item_type: 'tasks',
+      oldest_created_date: iso(0),
+      newest_created_date: iso(0),
+    });
+  });
+
+  it('should send empty worker_metadata when no item type has been extracted', async () => {
+    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({});
+  });
+
+  it('should send empty worker_metadata for loader events', async () => {
+    setupRepos(adapter, 'tasks');
+
+    await adapter.emit(LoaderEventType.DataLoadingProgress);
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({});
+  });
+
+  it('should send empty worker_metadata for non-progress extraction events', async () => {
+    setupRepos(adapter, 'tasks');
+
+    await adapter.emit(ExtractorEventType.DataExtractionError);
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit.mock.calls[0][0].worker_metadata).toEqual({});
   });
 });
 

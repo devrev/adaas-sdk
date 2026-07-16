@@ -11,7 +11,9 @@ import { emit } from '../../common/control-protocol';
 import {
   addReportToLoaderReport,
   getFilesToLoad,
+  toRfc3339Timestamp,
 } from './worker-adapter.helpers';
+import { ProgressData } from './worker-adapter.interfaces';
 import { serializeError } from '../../logger/logger';
 import {
   runWithSdkLogContext,
@@ -102,6 +104,7 @@ export class WorkerAdapter<ConnectorState> {
   private adapterState: State<ConnectorState>;
   private _artifacts: Artifact[];
   private repos: Repo[] = [];
+  private lastExtractedItemType?: string;
   private currentEventDataLength: number = 0;
 
   // Loader
@@ -191,6 +194,8 @@ export class WorkerAdapter<ConnectorState> {
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
+          this.lastExtractedItemType = repo.itemType;
+
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AirSyncDefaultItemTypes.ATTACHMENTS) {
             this.state.toDevRev?.attachmentsMetadata.artifactIds.push(
@@ -381,6 +386,35 @@ export class WorkerAdapter<ConnectorState> {
           newEventType as LoaderEventType
         );
 
+        const progressData: ProgressData = {};
+
+        if (
+          isExtractionEvent &&
+          (newEventType == ExtractorEventType.DataExtractionDone ||
+            newEventType == ExtractorEventType.DataExtractionProgress ||
+            newEventType == ExtractorEventType.AttachmentExtractionDone ||
+            newEventType == ExtractorEventType.AttachmentExtractionProgress)
+        ) {
+          const repo = this.lastExtractedItemType
+            ? this.repos.find((r) => r.itemType === this.lastExtractedItemType)
+            : undefined;
+          if (repo) {
+            progressData.item_type = repo.itemType;
+            progressData.newest_created_date = toRfc3339Timestamp(
+              repo.dateRanges.creationDate.newest
+            );
+            progressData.oldest_created_date = toRfc3339Timestamp(
+              repo.dateRanges.creationDate.oldest
+            );
+            progressData.newest_modified_date = toRfc3339Timestamp(
+              repo.dateRanges.modifiedDate.newest
+            );
+            progressData.oldest_modified_date = toRfc3339Timestamp(
+              repo.dateRanges.modifiedDate.oldest
+            );
+          }
+        }
+
         await emit({
           eventType: newEventType,
           event: this.event,
@@ -391,6 +425,7 @@ export class WorkerAdapter<ConnectorState> {
               ? { reports: this.reports, processed_files: this.processedFiles }
               : {}),
           },
+          worker_metadata: { ...progressData },
         });
 
         const message: WorkerMessageEmitted = {

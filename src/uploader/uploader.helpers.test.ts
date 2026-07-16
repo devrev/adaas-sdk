@@ -1,5 +1,4 @@
-import fs from 'fs';
-import { promises as fsPromises } from 'fs';
+import fs, { promises as fsPromises } from 'fs';
 import type { FileHandle } from 'fs/promises';
 import { jsonl } from 'js-jsonl';
 import zlib from 'zlib';
@@ -10,6 +9,7 @@ import {
 } from '../common/constants';
 import {
   compressGzip,
+  computeArtifactDateRanges,
   decompressGzip,
   downloadToLocal,
   parseJsonl,
@@ -226,6 +226,153 @@ describe('uploader.helpers', () => {
       );
 
       fsPromisesOpenSpy.mockRestore();
+    });
+  });
+
+  describe(computeArtifactDateRanges.name, () => {
+    it('should compute min and max across multiple items', () => {
+      // Arrange
+      const items = [
+        {
+          id: '1',
+          created_date: '2020-01-01T00:00:00.000Z',
+          modified_date: '2021-06-01T00:00:00.000Z',
+          data: {},
+        },
+        {
+          id: '2',
+          created_date: '2022-03-15T12:00:00.000Z',
+          modified_date: '2020-12-31T23:59:59.000Z',
+          data: {},
+        },
+      ];
+
+      // Act
+      const result = computeArtifactDateRanges(items);
+
+      // Assert
+      expect(result.oldest_created_date).toBe(
+        '2020-01-01T00:00:00.000Z'
+      );
+      expect(result.newest_created_date).toBe(
+        '2022-03-15T12:00:00.000Z'
+      );
+      expect(result.oldest_modified_date).toBe(
+        '2020-12-31T23:59:59.000Z'
+      );
+      expect(result.newest_modified_date).toBe(
+        '2021-06-01T00:00:00.000Z'
+      );
+    });
+
+    it('should return zeros when no items have date fields', () => {
+      // Arrange
+      const items = [
+        { id: 1, name: 'a' },
+        { id: 2, name: 'b' },
+      ];
+
+      // Act
+      const result = computeArtifactDateRanges(items);
+
+      // Assert
+      expect(result).toEqual({});
+    });
+
+    it('should aggregate only fields that are present on items', () => {
+      // Arrange
+      const items = [
+        {
+          id: '1',
+          created_date: '2021-01-01T00:00:00.000Z',
+          data: {},
+        },
+        {
+          id: '2',
+          modified_date: '2023-01-01T00:00:00.000Z',
+          data: {},
+        },
+      ];
+
+      // Act
+      const result = computeArtifactDateRanges(items);
+
+      // Assert
+      expect(result.oldest_created_date).toBe(
+        '2021-01-01T00:00:00.000Z'
+      );
+      expect(result.newest_created_date).toBe(
+        '2021-01-01T00:00:00.000Z'
+      );
+      expect(result.oldest_modified_date).toBe(
+        '2023-01-01T00:00:00.000Z'
+      );
+      expect(result.newest_modified_date).toBe(
+        '2023-01-01T00:00:00.000Z'
+      );
+    });
+
+    it('should handle single object input', () => {
+      // Arrange
+      const item = {
+        id: '1',
+        created_date: '2019-05-10T08:30:00.000Z',
+        modified_date: '2019-05-10T08:30:00.000Z',
+        data: {},
+      };
+
+      // Act
+      const result = computeArtifactDateRanges(item);
+
+      // Assert
+      const ts = '2019-05-10T08:30:00.000Z';
+      expect(result.oldest_created_date).toBe(ts);
+      expect(result.newest_created_date).toBe(ts);
+      expect(result.oldest_modified_date).toBe(ts);
+      expect(result.newest_modified_date).toBe(ts);
+    });
+
+    it('should skip invalid date values', () => {
+      const items = [
+        {
+          id: '1',
+          created_date: 'not-a-date',
+          modified_date: '2024-01-01T00:00:00.000Z',
+          data: {},
+        },
+      ];
+
+      const result = computeArtifactDateRanges(items);
+
+      expect(result).toEqual({
+        oldest_modified_date: '2024-01-01T00:00:00.000Z',
+        newest_modified_date: '2024-01-01T00:00:00.000Z',
+      });
+    });
+
+    it('[edge] should skip non-object entries in an array', () => {
+      // Arrange
+      const items = [
+        null,
+        {
+          id: '1',
+          created_date: '2024-01-01T00:00:00.000Z',
+          modified_date: '2024-06-01T00:00:00.000Z',
+          data: {},
+        },
+        'not-an-object',
+      ] as unknown as object[];
+
+      // Act
+      const result = computeArtifactDateRanges(items);
+
+      // Assert
+      expect(result.oldest_created_date).toBe(
+        '2024-01-01T00:00:00.000Z'
+      );
+      expect(result.newest_created_date).toBe(
+        '2024-01-01T00:00:00.000Z'
+      );
     });
   });
 
