@@ -91,6 +91,19 @@ export type {
   RecordManagerExternalSystemSpecifier,
 } from '../record-manager/record-manager.interfaces';
 
+// Unresolved References
+export type {
+  ObjectWithUnresolvedReferences,
+  ResolvedReference,
+  UnresolvedReference,
+  UnresolvedReferencesListParams,
+  UnresolvedReferencesListResponse,
+  UnresolvedReferencesResolveParams,
+  UnresolvedReferencesSetParams,
+} from '../record-manager/unresolved-references.interfaces';
+
+export { UnresolvedReferenceDevRevType } from '../record-manager/unresolved-references.interfaces';
+
 // External Domain Metadata
 export type {
   CollectionData,

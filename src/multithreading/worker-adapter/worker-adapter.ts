@@ -26,6 +26,7 @@ import {
 import { Mappers } from '../../mappers/mappers';
 import { RecordManager } from '../../record-manager/record-manager';
 import { buildExternalSystemSpecifierFromEvent } from '../../record-manager/record-manager.helpers';
+import { UnresolvedReferences } from '../../record-manager/unresolved-references';
 import { SyncMapperRecordStatus } from '../../mappers/mappers.interface';
 import { Repo } from '../../repo/repo';
 import {
@@ -118,6 +119,7 @@ export class WorkerAdapter<ConnectorState> {
   private _processedFiles: string[];
   private _mappers: Mappers;
   private _recordManager: RecordManager;
+  private _unresolvedReferences: UnresolvedReferences;
   private uploader: Uploader;
 
   constructor({
@@ -139,6 +141,10 @@ export class WorkerAdapter<ConnectorState> {
       options,
     });
     this._recordManager = new RecordManager({
+      event,
+      options,
+    });
+    this._unresolvedReferences = new UnresolvedReferences({
       event,
       options,
     });
@@ -181,6 +187,10 @@ export class WorkerAdapter<ConnectorState> {
 
   get recordManager(): RecordManager {
     return this._recordManager;
+  }
+
+  get unresolvedReferences(): UnresolvedReferences {
+    return this._unresolvedReferences;
   }
 
   get extractionScope() {
