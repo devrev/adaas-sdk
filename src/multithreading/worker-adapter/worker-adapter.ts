@@ -9,6 +9,10 @@ import {
 } from '../../common/constants';
 import { emit } from '../../common/control-protocol';
 import {
+  isDevRevPrimaryForFieldMerge,
+  isFieldLevelMergeEnabled,
+} from '../../common/feature-flags';
+import {
   addReportToLoaderReport,
   getFilesToLoad,
   toRfc3339Timestamp,
@@ -21,6 +25,7 @@ import {
 } from '../../logger/logger.context';
 import { Mappers } from '../../mappers/mappers';
 import { RecordManager } from '../../record-manager/record-manager';
+import { buildExternalSystemSpecifierFromEvent } from '../../record-manager/record-manager.helpers';
 import { SyncMapperRecordStatus } from '../../mappers/mappers.interface';
 import { Repo } from '../../repo/repo';
 import {
@@ -746,6 +751,101 @@ export class WorkerAdapter<ConnectorState> {
     });
   }
 
+  /**
+   * ENH-7536 (External-Loader / DR2E field-level merge, proposal §5.2):
+   * before applying DevRev-originated changes to the external system, reads
+   * the item's current external state via the connector-supplied
+   * `itemTypeToLoad.read`, diffs it against the last-seen snapshot, and
+   * returns an item whose `data` is narrowed to the resolved changes.
+   * Returns `item` unchanged when the flag is off, DevRev is primary (no
+   * diff needed - proposal §5.2 step 2), or the connector didn't supply
+   * `read` (additive/optional per ItemTypeToLoad.read).
+   *
+   * PLATFORM CHECK REQUIRED before this is relied on in production:
+   * 1. `RecordExternalLoaderSeenGet`/`Set` on devrev/airdrop-record-manager
+   *    main are stubs today - Get always returns an empty response (no
+   *    diff, no fallback to ExternalExtractorSeen) and Set persists
+   *    nothing (see internal/service/record_external_loader_get.go and
+   *    record_external_loader_set.go). Enabling this flag will not yet
+   *    produce a real diff or persist ExternalLoaderSeen/Attempted.
+   * 2. Endpoint REST paths are placeholders - RPCs are RPC_TYPE_INTERNAL and
+   *    not yet bound into the gateway (see RECORD_MANAGER_ENDPOINTS in
+   *    record-manager.ts).
+   * 3. Conflict resolution between DevRev-originated changes and the
+   *    external diff is entirely unimplemented here - primary-system
+   *    granularity (global/per-object/per-field/per-recipe) is owned by the
+   *    platform and unresolved (ISS-297298, proposal §6/§7). This method
+   *    only handles the "DevRev primary" branch (apply as-is); the
+   *    "external primary" merge branch needs that answer before it can be
+   *    written.
+   * 4. `external_identifier.external_record_type` / `devrev_object_type` are
+   *    not resolvable anywhere in the SDK today (no connector-facing
+   *    mapping from itemType strings to the platform's numeric
+   *    devrev_object_type enum exists) - omitted below pending platform
+   *    guidance on how connectors should supply them.
+   */
+  private async applyFieldLevelMergeToLoadItem({
+    item,
+    itemTypeToLoad,
+  }: {
+    item: ExternalSystemItem;
+    itemTypeToLoad: ItemTypeToLoad;
+  }): Promise<ExternalSystemItem> {
+    if (
+      !isFieldLevelMergeEnabled(this.event) ||
+      isDevRevPrimaryForFieldMerge(this.event) ||
+      !itemTypeToLoad.read
+    ) {
+      return item;
+    }
+
+    try {
+      const { data: currExtObjData, error } = await runWithUserLogContext(
+        async () => {
+          return await itemTypeToLoad.read!({
+            item,
+            mappers: this._mappers,
+            event: this.event,
+          });
+        }
+      );
+
+      if (error || currExtObjData === undefined) {
+        console.warn(
+          'Failed to read current external object for field-level merge, falling back to whole object.',
+          error
+        );
+        return item;
+      }
+
+      const externalSystemSpecifier = buildExternalSystemSpecifierFromEvent(
+        this.event
+      );
+
+      const { data } = await this._recordManager.getExternalLoaderSeen({
+        devrev_id: item.id.devrev,
+        external_system_specifier: externalSystemSpecifier,
+        external_object: currExtObjData,
+      });
+
+      // Merge dr_field_changes (item.data) with ext_field_changes (the
+      // diff): external values win on a field-by-field conflict, since
+      // we're in the "external primary" branch here. This is a stubbed
+      // identity resolution, not the real platform conflict-resolution
+      // strategy - see PLATFORM CHECK #3 above.
+      return {
+        ...item,
+        data: { ...item.data, ...data.external_object_diff },
+      };
+    } catch (error) {
+      console.warn(
+        'Failed to apply field-level merge to load item, falling back to whole object.',
+        serializeError(error)
+      );
+      return item;
+    }
+  }
+
   async loadItem({
     item,
     itemTypeToLoad,
@@ -772,11 +872,18 @@ export class WorkerAdapter<ConnectorState> {
           };
         }
 
+        // ENH-7536 (External-Loader / DR2E field-level merge, proposal §5.2).
+        // See applyFieldLevelMergeToLoadItem for platform caveats.
+        const itemToLoad = await this.applyFieldLevelMergeToLoadItem({
+          item,
+          itemTypeToLoad,
+        });
+
         // Update item in external system
         const { id, modifiedDate, delay, error } = await runWithUserLogContext(
           async () => {
             return await itemTypeToLoad.update({
-              item,
+              item: itemToLoad,
               mappers: this._mappers,
               event: this.event,
             });

@@ -82,10 +82,43 @@ export type ExternalSystemLoadingFunction<Item> = ({
   event,
 }: ExternalSystemItemLoadingParams<Item>) => Promise<ExternalSystemItemLoadingResponse>;
 
+/**
+ * ENH-7536 (External-Loader / DR2E field-level merge, proposal §5.2):
+ * response shape for ItemTypeToLoad.read - unlike create/update, a read
+ * needs to return the current external object's data so the SDK can diff it
+ * against the last-seen snapshot.
+ */
+export interface ExternalSystemItemReadingResponse {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data?: any;
+  error?: string;
+  delay?: number;
+}
+
+export type ExternalSystemReadingFunction<Item> = ({
+  item,
+  mappers,
+  event,
+}: ExternalSystemItemLoadingParams<Item>) => Promise<ExternalSystemItemReadingResponse>;
+
 export interface ItemTypeToLoad {
   itemType: string;
   create: ExternalSystemLoadingFunction<ExternalSystemItem>;
   update: ExternalSystemLoadingFunction<ExternalSystemItem>;
+  /**
+   * ENH-7536 (External-Loader / DR2E field-level merge, proposal §5.2):
+   * optional pre-write read of the item's current state in the external
+   * system, used to diff against the last-seen snapshot before applying
+   * DevRev-originated changes. Optional and additive - item types that don't
+   * supply it are skipped by field-level merge and keep today's whole-object
+   * `update` behavior even when the feature flag is on.
+   *
+   * PLATFORM CHECK REQUIRED (ISS-297298): the diff computed via this hook is
+   * not currently used to resolve conflicts - conflict-resolution strategy
+   * and primary-system granularity are owned by the platform and unresolved
+   * as of this writing. See WorkerAdapter.loadItem.
+   */
+  read?: ExternalSystemReadingFunction<ExternalSystemItem>;
   // requiresSecondPass: boolean;
 }
 

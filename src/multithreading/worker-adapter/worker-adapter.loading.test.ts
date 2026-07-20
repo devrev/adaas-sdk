@@ -728,3 +728,147 @@ describe(`${WorkerAdapter.name}.loadAttachment`, () => {
     expect(result.report?.[ActionType.FAILED]).toBe(1);
   });
 });
+
+describe(`${WorkerAdapter.name}.loadItem — field-level merge (ENH-7536)`, () => {
+  let adapter: WorkerAdapter<TestState>;
+  let getExternalLoaderSeen: jest.Mock;
+
+  const makeItemTypeToLoad = () => ({
+    itemType: 'tasks',
+    create: jest.fn(),
+    update: jest.fn().mockResolvedValue({ id: 'ext-1' }),
+    read: jest.fn().mockResolvedValue({ data: { status: 'open' } }),
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    ({ adapter } = makeAdapter(EventType.ContinueLoadingData));
+    jest.spyOn(adapter, 'emit').mockResolvedValue();
+
+    adapter['_mappers'].getByTargetId = jest.fn().mockResolvedValue({
+      data: { sync_mapper_record: { id: 'smr-1' } },
+    });
+    adapter['_mappers'].update = jest.fn().mockResolvedValue({ data: {} });
+
+    getExternalLoaderSeen = jest.fn().mockResolvedValue({
+      data: { external_object_diff: { status: 'closed' } },
+    });
+    adapter['_recordManager'].getExternalLoaderSeen = getExternalLoaderSeen;
+  });
+
+  it('does not call read/getExternalLoaderSeen when the feature flag is off', async () => {
+    // Arrange
+    const itemTypeToLoad = makeItemTypeToLoad();
+
+    // Act
+    await adapter.loadItem({ item: makeLoaderItem(), itemTypeToLoad });
+
+    // Assert
+    expect(itemTypeToLoad.read).not.toHaveBeenCalled();
+    expect(getExternalLoaderSeen).not.toHaveBeenCalled();
+    expect(itemTypeToLoad.update).toHaveBeenCalledWith(
+      expect.objectContaining({ item: makeLoaderItem() })
+    );
+  });
+
+  it('does not call read/getExternalLoaderSeen when DevRev is primary, even with the flag on', async () => {
+    // Arrange
+    adapter['event'].payload.event_context.field_level_merge_enabled = true;
+    adapter['event'].payload.event_context.field_level_merge_primary_system =
+      'devrev';
+    const itemTypeToLoad = makeItemTypeToLoad();
+
+    // Act
+    await adapter.loadItem({ item: makeLoaderItem(), itemTypeToLoad });
+
+    // Assert
+    expect(itemTypeToLoad.read).not.toHaveBeenCalled();
+    expect(getExternalLoaderSeen).not.toHaveBeenCalled();
+  });
+
+  it('does not call getExternalLoaderSeen when the connector did not supply read', async () => {
+    // Arrange
+    adapter['event'].payload.event_context.field_level_merge_enabled = true;
+    adapter['event'].payload.event_context.field_level_merge_primary_system =
+      'external';
+    const itemTypeToLoad = makeItemTypeToLoad();
+    delete (itemTypeToLoad as { read?: unknown }).read;
+
+    // Act
+    await adapter.loadItem({ item: makeLoaderItem(), itemTypeToLoad });
+
+    // Assert
+    expect(getExternalLoaderSeen).not.toHaveBeenCalled();
+    expect(itemTypeToLoad.update).toHaveBeenCalledWith(
+      expect.objectContaining({ item: makeLoaderItem() })
+    );
+  });
+
+  it('merges the diff from getExternalLoaderSeen into the item passed to update when external is primary', async () => {
+    // Arrange
+    adapter['event'].payload.event_context.field_level_merge_enabled = true;
+    adapter['event'].payload.event_context.field_level_merge_primary_system =
+      'external';
+    const itemTypeToLoad = makeItemTypeToLoad();
+    const item = makeLoaderItem();
+    item.data = { title: 'from devrev' };
+
+    // Act
+    await adapter.loadItem({ item, itemTypeToLoad });
+
+    // Assert
+    expect(itemTypeToLoad.read).toHaveBeenCalledWith(
+      expect.objectContaining({ item })
+    );
+    expect(getExternalLoaderSeen).toHaveBeenCalledWith(
+      expect.objectContaining({
+        devrev_id: item.id.devrev,
+        external_object: { status: 'open' },
+      })
+    );
+    expect(itemTypeToLoad.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        item: expect.objectContaining({
+          data: { title: 'from devrev', status: 'closed' },
+        }),
+      })
+    );
+  });
+
+  it('falls back to the whole item when read fails', async () => {
+    // Arrange
+    adapter['event'].payload.event_context.field_level_merge_enabled = true;
+    adapter['event'].payload.event_context.field_level_merge_primary_system =
+      'external';
+    const itemTypeToLoad = makeItemTypeToLoad();
+    itemTypeToLoad.read = jest.fn().mockResolvedValue({ error: 'read failed' });
+    const item = makeLoaderItem();
+
+    // Act
+    await adapter.loadItem({ item, itemTypeToLoad });
+
+    // Assert
+    expect(getExternalLoaderSeen).not.toHaveBeenCalled();
+    expect(itemTypeToLoad.update).toHaveBeenCalledWith(
+      expect.objectContaining({ item })
+    );
+  });
+
+  it('falls back to the whole item when getExternalLoaderSeen throws', async () => {
+    // Arrange
+    adapter['event'].payload.event_context.field_level_merge_enabled = true;
+    adapter['event'].payload.event_context.field_level_merge_primary_system =
+      'external';
+    getExternalLoaderSeen.mockRejectedValueOnce(new Error('down'));
+    const itemTypeToLoad = makeItemTypeToLoad();
+    const item = makeLoaderItem();
+
+    // Act
+    await adapter.loadItem({ item, itemTypeToLoad });
+
+    // Assert
+    expect(itemTypeToLoad.update).toHaveBeenCalledWith(
+      expect.objectContaining({ item })
+    );
+  });
+});

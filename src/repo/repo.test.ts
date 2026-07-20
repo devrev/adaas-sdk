@@ -493,4 +493,129 @@ describe(Repo.name, () => {
       );
     });
   });
+
+  describe('field-level merge (ENH-7536)', () => {
+    let putExternalExtractorSeen: jest.Mock;
+    let recordManager: { putExternalExtractorSeen: jest.Mock };
+
+    // Local stand-in for `normalizeItem` (which is auto-mocked to a jest.fn()
+    // at the top of this file for the other describe blocks).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function normalize_(item: any): NormalizedItem {
+      return {
+        id: String(item.id),
+        created_date: '',
+        modified_date: '',
+        data: { name: item.name },
+      };
+    }
+
+    beforeEach(() => {
+      putExternalExtractorSeen = jest.fn().mockResolvedValue({
+        data: { external_object_diff: { name: 'diffed' } },
+      });
+      recordManager = { putExternalExtractorSeen };
+      normalize = jest.fn(normalize_);
+    });
+
+    it('does not call the record manager when the feature flag is off', async () => {
+      repo = new Repo({
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: { event_type: EventType.ExtractionDataStart },
+        }),
+        itemType: 'test_item_type',
+        normalize,
+        onUpload: jest.fn(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recordManager: recordManager as any,
+      });
+
+      await repo.push(createItems(1));
+
+      expect(putExternalExtractorSeen).not.toHaveBeenCalled();
+      expect(repo.getItems()).toEqual([normalize_(createItems(1)[0])]);
+    });
+
+    it('does not call the record manager when no recordManager is provided, even with the flag on', async () => {
+      repo = new Repo({
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: {
+            event_type: EventType.ExtractionDataStart,
+            event_context: { field_level_merge_enabled: true },
+          },
+        }),
+        itemType: 'test_item_type',
+        normalize,
+        onUpload: jest.fn(),
+      });
+
+      await repo.push(createItems(1));
+
+      expect(putExternalExtractorSeen).not.toHaveBeenCalled();
+    });
+
+    it('replaces item data with the record-manager diff when the flag is on', async () => {
+      repo = new Repo({
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: {
+            event_type: EventType.ExtractionDataStart,
+            event_context: { field_level_merge_enabled: true },
+          },
+        }),
+        itemType: 'test_item_type',
+        normalize,
+        onUpload: jest.fn(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recordManager: recordManager as any,
+      });
+
+      await repo.push(createItems(1));
+
+      expect(putExternalExtractorSeen).toHaveBeenCalledTimes(1);
+      expect(repo.getItems()).toEqual([
+        { ...normalize_(createItems(1)[0]), data: { name: 'diffed' } },
+      ]);
+    });
+
+    it('falls back to the whole object for an item when the record-manager call fails', async () => {
+      putExternalExtractorSeen.mockRejectedValueOnce(new Error('down'));
+      repo = new Repo({
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: {
+            event_type: EventType.ExtractionDataStart,
+            event_context: { field_level_merge_enabled: true },
+          },
+        }),
+        itemType: 'test_item_type',
+        normalize,
+        onUpload: jest.fn(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recordManager: recordManager as any,
+      });
+
+      await repo.push(createItems(1));
+
+      expect(repo.getItems()).toEqual([normalize_(createItems(1)[0])]);
+    });
+
+    it('does not apply field-level merge to attachments', async () => {
+      repo = new Repo({
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: {
+            event_type: EventType.ExtractionDataStart,
+            event_context: { field_level_merge_enabled: true },
+          },
+        }),
+        itemType: AirSyncDefaultItemTypes.ATTACHMENTS,
+        normalize,
+        onUpload: jest.fn(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recordManager: recordManager as any,
+      });
+
+      await repo.push(createItems(1));
+
+      expect(putExternalExtractorSeen).not.toHaveBeenCalled();
+    });
+  });
 });
