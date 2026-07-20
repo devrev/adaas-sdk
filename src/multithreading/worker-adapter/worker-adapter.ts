@@ -20,6 +20,7 @@ import {
   runWithUserLogContext,
 } from '../../logger/logger.context';
 import { Mappers } from '../../mappers/mappers';
+import { RecordManager } from '../../record-manager/record-manager';
 import { SyncMapperRecordStatus } from '../../mappers/mappers.interface';
 import { Repo } from '../../repo/repo';
 import {
@@ -111,6 +112,7 @@ export class WorkerAdapter<ConnectorState> {
   private loaderReports: LoaderReport[];
   private _processedFiles: string[];
   private _mappers: Mappers;
+  private _recordManager: RecordManager;
   private uploader: Uploader;
 
   constructor({
@@ -128,6 +130,10 @@ export class WorkerAdapter<ConnectorState> {
     this.loaderReports = [];
     this._processedFiles = [];
     this._mappers = new Mappers({
+      event,
+      options,
+    });
+    this._recordManager = new RecordManager({
       event,
       options,
     });
@@ -166,6 +172,10 @@ export class WorkerAdapter<ConnectorState> {
 
   get mappers(): Mappers {
     return this._mappers;
+  }
+
+  get recordManager(): RecordManager {
+    return this._recordManager;
   }
 
   get extractionScope() {
@@ -220,6 +230,7 @@ export class WorkerAdapter<ConnectorState> {
           ...this.options,
           ...repo.overridenOptions,
         },
+        recordManager: this._recordManager,
       });
     });
   }

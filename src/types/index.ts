@@ -80,6 +80,17 @@ export {
   SyncMapperRecordTargetType,
 } from '../mappers/mappers.interface';
 
+// Record Manager
+export type {
+  RecordManagerDevRevLoaderSeenGetParams,
+  RecordManagerDevRevLoaderSeenSetParams,
+  RecordManagerExternalExtractorSeenSetParams,
+  RecordManagerExternalLoaderSeenGetParams,
+  RecordManagerExternalLoaderSeenSetParams,
+  RecordManagerExternalRecordIdentifier,
+  RecordManagerExternalSystemSpecifier,
+} from '../record-manager/record-manager.interfaces';
+
 // External Domain Metadata
 export type {
   CollectionData,

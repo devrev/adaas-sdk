@@ -4,6 +4,7 @@ import {
   SSOR_ATTACHMENT,
 } from '../common/constants';
 import { Item } from '../repo/repo.interfaces';
+import { RecordManager } from '../record-manager/record-manager';
 import { ErrorRecord } from '../types/common';
 import { Uploader } from '../uploader/uploader';
 import { Artifact } from '../uploader/uploader.interfaces';
@@ -24,6 +25,7 @@ export class Repo {
   private uploader: Uploader;
   private onUpload: (artifact: Artifact) => void;
   private options?: WorkerAdapterOptions;
+  private recordManager?: RecordManager;
   public uploadedArtifacts: Artifact[];
   public dateRanges: {
     creationDate: { oldest?: number; newest?: number };
@@ -39,6 +41,7 @@ export class Repo {
     normalize,
     onUpload,
     options,
+    recordManager,
   }: RepoFactoryInterface) {
     this.items = [];
     this.itemType = itemType;
@@ -47,6 +50,7 @@ export class Repo {
     this.uploader = new Uploader({ event, options });
     this.options = options;
     this.uploadedArtifacts = [];
+    this.recordManager = recordManager;
   }
 
   getItems(): (NormalizedItem | NormalizedAttachment | Item)[] {

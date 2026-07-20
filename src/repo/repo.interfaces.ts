@@ -1,3 +1,4 @@
+import { RecordManager } from '../record-manager/record-manager';
 import { Artifact } from '../uploader/uploader.interfaces';
 
 import { AirdropEvent } from '../types/extraction';
@@ -21,6 +22,7 @@ export interface RepoFactoryInterface {
   normalize?: (record: object) => NormalizedItem | NormalizedAttachment;
   onUpload: (artifact: Artifact) => void;
   options?: WorkerAdapterOptions;
+  recordManager?: RecordManager;
 }
 
 /**
