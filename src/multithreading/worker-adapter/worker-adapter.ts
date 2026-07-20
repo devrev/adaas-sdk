@@ -771,6 +771,15 @@ export class WorkerAdapter<ConnectorState> {
    * diff needed - proposal §5.2 step 2), or the connector didn't supply
    * `read` (additive/optional per ItemTypeToLoad.read).
    *
+   * Conflict-resolution rule (confirmed against the "External System
+   * Timeline Design" doc, Gasper Senk, 2026-05-25): "When the fields
+   * conflict, external changes win" for the External-primary branch - i.e.
+   * external values overwrite DevRev-originated values field-by-field.
+   * Primacy itself is scoped per external_system_name, globally (per the
+   * `airdrop.field_level_merging_primary` flag's `{external_system_name:
+   * "devrev"|"external"}` map) - there is no per-object/per-field/per-recipe
+   * granularity in the design.
+   *
    * PLATFORM CHECK REQUIRED before this is relied on in production:
    * 1. `RecordExternalLoaderSeenGet`/`Set` on devrev/airdrop-record-manager
    *    main are stubs today - Get always returns an empty response (no
@@ -781,13 +790,11 @@ export class WorkerAdapter<ConnectorState> {
    * 2. Endpoint REST paths are placeholders - RPCs are RPC_TYPE_INTERNAL and
    *    not yet bound into the gateway (see RECORD_MANAGER_ENDPOINTS in
    *    record-manager.ts).
-   * 3. Conflict resolution between DevRev-originated changes and the
-   *    external diff is entirely unimplemented here - primary-system
-   *    granularity (global/per-object/per-field/per-recipe) is owned by the
-   *    platform and unresolved (ISS-297298, proposal §6/§7). This method
-   *    only handles the "DevRev primary" branch (apply as-is); the
-   *    "external primary" merge branch needs that answer before it can be
-   *    written.
+   * 3. The SDK-visible flag delivery is still undefined: no code anywhere
+   *    reads `airdrop.field_level_merging_primary` and surfaces it on the
+   *    event context (isFieldLevelMergeEnabled/isDevRevPrimaryForFieldMerge
+   *    read placeholder EventContext fields nothing populates today). See
+   *    src/common/feature-flags.ts.
    * 4. `external_identifier.external_record_type` / `devrev_object_type` are
    *    not resolvable anywhere in the SDK today (no connector-facing
    *    mapping from itemType strings to the platform's numeric
@@ -839,10 +846,9 @@ export class WorkerAdapter<ConnectorState> {
       });
 
       // Merge dr_field_changes (item.data) with ext_field_changes (the
-      // diff): external values win on a field-by-field conflict, since
-      // we're in the "external primary" branch here. This is a stubbed
-      // identity resolution, not the real platform conflict-resolution
-      // strategy - see PLATFORM CHECK #3 above.
+      // diff): external values win on a field-by-field conflict. This is
+      // the confirmed design rule for the External-primary branch ("When
+      // the fields conflict, external changes win") - not a stand-in.
       return {
         ...item,
         data: { ...item.data, ...data.external_object_diff },
