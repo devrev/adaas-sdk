@@ -319,6 +319,25 @@ export interface EventContext {
   external_system_name: string;
   external_system_type: string;
   /**
+   * PLATFORM CHECK REQUIRED (ISS-338642): placeholder for the field-level-merge
+   * feature flag. The platform does not send this field today - field-level
+   * merging is evaluated server-side in airdrop-record-manager
+   * (`airdrop.field_level_merging_primary`, per dev_org + external_system_name)
+   * and is not currently surfaced on the event context. Confirm with platform
+   * how (or whether) the SDK should learn this before relying on it; see
+   * src/common/feature-flags.ts.
+   */
+  field_level_merge_enabled?: boolean;
+  /**
+   * PLATFORM CHECK REQUIRED (ISS-297298): placeholder for which system is
+   * primary for field-level conflict resolution on this sync ("devrev" |
+   * "external"). Mirrors FieldMergingPrimarySystem in
+   * devrev/airdrop-record-manager internal/flags/flags.go, which is evaluated
+   * server-side and not currently returned to the SDK. See
+   * src/common/feature-flags.ts.
+   */
+  field_level_merge_primary_system?: 'devrev' | 'external';
+  /**
    * Resolved start timestamp of extraction (ISO 8601 format).
    * Automatically computed by the SDK from extraction_start_time and worker state.
    * This is the field developers should read to know when to start extracting from.
