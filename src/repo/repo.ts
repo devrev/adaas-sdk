@@ -15,6 +15,7 @@ import {
   NormalizedItem,
   RepoFactoryInterface,
 } from './repo.interfaces';
+import { updateRange, toValidTimestamp } from './repo.helpers';
 
 export class Repo {
   readonly itemType: string;
@@ -24,6 +25,13 @@ export class Repo {
   private onUpload: (artifact: Artifact) => void;
   private options?: WorkerAdapterOptions;
   public uploadedArtifacts: Artifact[];
+  public dateRanges: {
+    creationDate: { oldest?: number; newest?: number };
+    modifiedDate: { oldest?: number; newest?: number };
+  } = {
+    creationDate: {},
+    modifiedDate: {},
+  };
 
   constructor({
     event,
@@ -51,6 +59,23 @@ export class Repo {
     const itemsToUpload = batch || this.items;
 
     if (itemsToUpload.length > 0) {
+      for (const item of itemsToUpload) {
+        const createdDate = (item as NormalizedItem)?.created_date;
+        if (createdDate != null) {
+          const createdMs = toValidTimestamp(createdDate);
+          if (createdMs !== undefined) {
+            updateRange(this.dateRanges.creationDate, createdMs);
+          }
+        }
+        const modifiedDate = (item as NormalizedItem)?.modified_date;
+        if (modifiedDate != null && modifiedDate !== '') {
+          const modifiedMs = toValidTimestamp(modifiedDate);
+          if (modifiedMs !== undefined) {
+            updateRange(this.dateRanges.modifiedDate, modifiedMs);
+          }
+        }
+      }
+
       console.log(
         `Uploading ${itemsToUpload.length} items of type ${this.itemType}. `
       );

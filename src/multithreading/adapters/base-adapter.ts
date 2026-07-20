@@ -13,6 +13,7 @@ import {
   AirSyncEvent,
   EventData,
   ExtractorEventType,
+  WorkerMetadata,
 } from '../../types/extraction';
 import { LoaderEventType } from '../../types/loading';
 import {
@@ -119,6 +120,20 @@ export abstract class BaseAdapter<ConnectorState> {
   ): EventData;
 
   /**
+   * Builds the mode-specific worker metadata merged into the emitted event
+   * (extraction attaches last-extracted item-type + created/modified date
+   * ranges on data/attachment done/progress events; loading has none). The
+   * `adaas_library_version` and the state-date range are added centrally in
+   * `emit`, so subclasses only contribute their own statistics.
+   */
+  protected buildWorkerMetadata(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    newEventType: ExtractorEventType | LoaderEventType
+  ): WorkerMetadata | undefined {
+    return undefined;
+  }
+
+  /**
    * Post-emit hook run after the event has been sent successfully. Extraction
    * clears its accumulated artifacts here; loading has nothing to do.
    */
@@ -213,6 +228,7 @@ export abstract class BaseAdapter<ConnectorState> {
             ...data,
             ...this.buildEmitPayload(newEventType),
           },
+          worker_metadata: this.buildWorkerMetadata(newEventType),
         });
 
         const message: WorkerMessageEmitted = {

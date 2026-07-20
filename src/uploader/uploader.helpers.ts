@@ -6,7 +6,92 @@ import {
   MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
   MAX_DEVREV_FILENAME_LENGTH,
 } from '../common/constants';
-import { UploaderResult } from './uploader.interfaces';
+import { NormalizedItem } from '../repo/repo.interfaces';
+import {
+  ArtifactDateField,
+  ArtifactDateRanges,
+  UploaderResult,
+} from './uploader.interfaces';
+
+/**
+ * Computes oldest/newest created and modified timestamps (RFC3339) across uploaded items.
+ * @param fetchedObjects - Single object or array of objects (e.g. NormalizedItem[])
+ */
+export function computeArtifactDateRanges(
+  fetchedObjects: object[] | object
+): ArtifactDateRanges {
+  const items = Array.isArray(fetchedObjects)
+    ? fetchedObjects
+    : [fetchedObjects];
+
+  const created = {
+    min: Number.POSITIVE_INFINITY,
+    max: Number.NEGATIVE_INFINITY,
+  };
+  const modified = {
+    min: Number.POSITIVE_INFINITY,
+    max: Number.NEGATIVE_INFINITY,
+  };
+  let hasCreated = false;
+  let hasModified = false;
+
+  const parseTimestamp = (value: string): number | undefined => {
+    const ts = new Date(value).getTime();
+    return Number.isNaN(ts) ? undefined : ts;
+  };
+
+  for (const obj of items) {
+    if (!obj || typeof obj !== 'object') {
+      continue;
+    }
+    const item = obj as NormalizedItem;
+    if (item.created_date != undefined) {
+      const ts = parseTimestamp(item.created_date);
+      if (ts != undefined) {
+        if (ts < created.min) {
+          created.min = ts;
+        }
+        if (ts > created.max) {
+          created.max = ts;
+        }
+        hasCreated = true;
+      }
+    }
+    if (item.modified_date != undefined) {
+      const ts = parseTimestamp(item.modified_date);
+      if (ts != undefined) {
+        if (ts < modified.min) {
+          modified.min = ts;
+        }
+        if (ts > modified.max) {
+          modified.max = ts;
+        }
+        hasModified = true;
+      }
+    }
+  }
+
+  const result: ArtifactDateRanges = {};
+
+  if (hasCreated) {
+    result[ArtifactDateField.OldestCreatedDate] = new Date(
+      created.min
+    ).toISOString();
+    result[ArtifactDateField.NewestCreatedDate] = new Date(
+      created.max
+    ).toISOString();
+  }
+  if (hasModified) {
+    result[ArtifactDateField.OldestModifiedDate] = new Date(
+      modified.min
+    ).toISOString();
+    result[ArtifactDateField.NewestModifiedDate] = new Date(
+      modified.max
+    ).toISOString();
+  }
+
+  return result;
+}
 
 /**
  * Compresses a JSONL string using gzip compression.

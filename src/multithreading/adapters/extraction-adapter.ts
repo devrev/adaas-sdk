@@ -22,6 +22,7 @@ import {
   ExtractorEventType,
   HttpStreamResponse,
   ProcessAttachmentReturnType,
+  WorkerMetadata,
 } from '../../types/extraction';
 import { LoaderEventType } from '../../types/loading';
 import { BaseState } from '../../state/state';
@@ -42,6 +43,7 @@ export class ExtractionAdapter<
 > extends BaseAdapter<ConnectorState> {
   private _artifacts: Artifact[];
   private repos: Repo[] = [];
+  private lastExtractedItemType?: string;
   private currentEventDataLength: number = 0;
 
   constructor(params: {
@@ -75,6 +77,8 @@ export class ExtractionAdapter<
         itemType: repo.itemType,
         ...(shouldNormalize && { normalize: repo.normalize }),
         onUpload: (artifact: Artifact) => {
+          this.lastExtractedItemType = repo.itemType;
+
           // We need to store artifacts ids in state for later use when streaming attachments
           if (repo.itemType === AirSyncDefaultItemTypes.ATTACHMENTS) {
             this.sdkState.toDevRev?.attachmentsMetadata.artifactIds.push(
@@ -178,6 +182,56 @@ export class ExtractionAdapter<
       newEventType as ExtractorEventType
     );
     return isExtractionEvent ? { artifacts: this.artifacts } : {};
+  }
+
+  /**
+   * Attaches the last-extracted item type and its created/modified date ranges
+   * to data/attachment done/progress events, mirroring the tracking metadata
+   * v1 sent. Other event types contribute no extraction statistics.
+   */
+  protected override buildWorkerMetadata(
+    newEventType: ExtractorEventType | LoaderEventType
+  ): WorkerMetadata | undefined {
+    if (
+      newEventType !== ExtractorEventType.DataExtractionDone &&
+      newEventType !== ExtractorEventType.DataExtractionProgress &&
+      newEventType !== ExtractorEventType.AttachmentExtractionDone &&
+      newEventType !== ExtractorEventType.AttachmentExtractionProgress
+    ) {
+      return undefined;
+    }
+
+    const repo = this.lastExtractedItemType
+      ? this.repos.find((r) => r.itemType === this.lastExtractedItemType)
+      : undefined;
+
+    if (!repo) {
+      return undefined;
+    }
+
+    return {
+      item_type: repo.itemType,
+      newest_created_date: this.toRfc3339Timestamp(
+        repo.dateRanges.creationDate.newest
+      ),
+      oldest_created_date: this.toRfc3339Timestamp(
+        repo.dateRanges.creationDate.oldest
+      ),
+      newest_modified_date: this.toRfc3339Timestamp(
+        repo.dateRanges.modifiedDate.newest
+      ),
+      oldest_modified_date: this.toRfc3339Timestamp(
+        repo.dateRanges.modifiedDate.oldest
+      ),
+    };
+  }
+
+  private toRfc3339Timestamp(ms?: number): string | undefined {
+    if (ms === undefined || !Number.isFinite(ms)) {
+      return undefined;
+    }
+
+    return new Date(ms).toISOString();
   }
 
   protected afterEmit(): void {

@@ -6,6 +6,7 @@ import {
   ExtractorEvent,
   ExtractorEventType,
   LoaderEvent,
+  WorkerMetadata,
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
 import { LIBRARY_VERSION } from '../common/constants';
@@ -14,12 +15,14 @@ export interface EmitInterface {
   event: AirSyncEvent;
   eventType: ExtractorEventType | LoaderEventType;
   data?: EventData;
+  worker_metadata?: WorkerMetadata;
 }
 
 export const emit = async ({
   event,
   eventType,
   data,
+  worker_metadata,
 }: EmitInterface): Promise<AxiosResponse> => {
   const newEvent: ExtractorEvent | LoaderEvent = {
     event_type: eventType,
@@ -28,6 +31,9 @@ export const emit = async ({
       ...data,
     },
     worker_metadata: {
+      ...worker_metadata,
+      newest_state_date: event.payload.event_context.extract_to,
+      oldest_state_date: event.payload.event_context.extract_from,
       adaas_library_version: LIBRARY_VERSION,
     },
   };
