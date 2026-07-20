@@ -1117,11 +1117,89 @@ const response = await adapter.loadItemTypes({ itemTypesToLoad });
 
 - _itemTypesToLoad_
 
-  Required. An array of **ItemTypeToLoad** objects, each containing an `itemType` string, a `create` function, and an `update` function.
+  Required. An array of **ItemTypeToLoad** objects.
 
 #### Return value
 
 A **promise** resolving to a **LoadItemTypesResponse** containing `reports` and `processed_files`.
+
+### `ItemTypeToLoad` interface
+
+Defines how one item type is loaded into the external system during the loading phase. Passed as part of `itemTypesToLoad` to `WorkerAdapter.loadItemTypes`.
+
+#### Properties
+
+- _itemType_
+
+  Required. A **string** that identifies the item type being loaded (must match the `itemType` used during extraction).
+
+- _create_
+
+  Required. A function of type **ExternalSystemLoadingFunction\<ExternalSystemItem\>** that creates the item in the external system. Called when no existing sync mapper record is found for the item.
+
+- _update_
+
+  Required. A function of type **ExternalSystemLoadingFunction\<ExternalSystemItem\>** that updates the item in the external system. Called when a sync mapper record already links the item to an existing external object.
+
+- _read_
+
+  Optional. A function of type **ExternalSystemReadingFunction\<ExternalSystemItem\>** that reads the item's current state from the external system, without writing anything. Additive - most connectors don't need to supply it.
+
+  Used by field-level merge (ENH-7536): when supplied and the field-level-merge flag is on and the external system is primary for this sync, `WorkerAdapter.loadItem` calls `read` before `update` to fetch the current external object, diffs it against the last-seen snapshot via the record-manager, and passes `update` a version of the item whose `data` reflects that merge instead of the raw DevRev-originated changes. If `read` isn't supplied, the item type is skipped by field-level merge and `update` always receives the full object, regardless of the flag.
+
+#### Example
+
+```typescript
+const taskItemType: ItemTypeToLoad = {
+  itemType: 'tasks',
+  create: async ({ item }) => {
+    const created = await externalClient.createTask(item.data);
+    return { id: created.id, modifiedDate: created.updated_at };
+  },
+  update: async ({ item }) => {
+    const updated = await externalClient.updateTask(item.id.external!, item.data);
+    return { id: updated.id, modifiedDate: updated.updated_at };
+  },
+  // Optional: enables field-level merge to diff against the current external state.
+  read: async ({ item }) => {
+    const current = await externalClient.getTask(item.id.external!);
+    return { data: current };
+  },
+};
+```
+
+### `ExternalSystemItem` interface
+
+Represents a single item to be loaded into (or read from) the external system during the loading phase.
+
+#### Properties
+
+- _id_
+
+  Required. An object with a `devrev` **string** (the DevRev object's DON) and an optional `external` **string** (the corresponding ID in the external system, once known).
+
+- _created_date_
+
+  Required. A **string** representing the creation timestamp, formatted as RFC3339.
+
+- _modified_date_
+
+  Required. A **string** representing the last-modified timestamp, formatted as RFC3339.
+
+- _data_
+
+  Required. An **object** containing the item's data. Normally the whole object, but see `isDelta` below.
+
+- _isDelta_
+
+  Optional. A **boolean**. Not currently set by the SDK - reserved for field-level merge (ENH-7536). Once conflict resolution is implemented, this will be set to `true` when `data` contains only the fields that changed since the last sync rather than the full object, so `create`/`update` implementations that assume `data` is complete (e.g. computing a derived field from sibling fields) can branch instead of silently misbehaving on a partial payload.
+
+### `ExternalSystemLoadingFunction` and `ExternalSystemReadingFunction` types
+
+Function signatures used by `ItemTypeToLoad`.
+
+- **ExternalSystemLoadingFunction\<Item\>** - used for `create` and `update`. Receives `{ item, mappers, event }` and returns a promise resolving to `{ id?, error?, modifiedDate?, delay? }` (an `id` on success, `delay` to request a rate-limit pause, or `error`).
+- **ExternalSystemReadingFunction\<Item\>** - used for the optional `read`. Receives the same `{ item, mappers, event }` params but returns a promise resolving to `{ data?, error?, delay? }`, since a read needs to return the object's current state rather than an ID.
 
 ### `WorkerAdapter.loadAttachments` method
 

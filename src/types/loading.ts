@@ -44,6 +44,18 @@ export interface ExternalSystemItem {
   modified_date: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
+  /**
+   * ENH-7536 (field-level merge, proposal §5.5): set to true when `data`
+   * contains only the fields that changed since the last sync, rather than
+   * the full object. Not set anywhere yet - none of the current field-level
+   * merge hook points (Repo.push, WorkerAdapter.loadItem) populate it. Once
+   * conflict resolution (ISS-297298) is implemented and a real merged/delta
+   * payload flows through `update`/`create`, this flag will let connector
+   * authors detect a partial `data` and avoid assuming it's the whole
+   * object (e.g. skip derived-field computation that reads sibling fields
+   * not present in the delta).
+   */
+  isDelta?: boolean;
 }
 
 export interface ExternalSystemItem {
