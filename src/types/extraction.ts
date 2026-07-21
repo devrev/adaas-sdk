@@ -388,6 +388,23 @@ export interface ConnectionData {
 }
 
 /**
+ * ItemInputType is the sync-duration-estimation model input a counted record type feeds into.
+ */
+export enum ItemInputType {
+  MAIN = 'main',
+  USERS = 'users',
+}
+
+/**
+ * ItemTypeCount is a per-record-type count reported during the metadata phase, used for sync-duration estimation.
+ */
+export interface ItemTypeCount {
+  record_type: string;
+  count: number;
+  model_input_type: ItemInputType;
+}
+
+/**
  * EventData is an interface that defines the structure of the event data that is sent from the external extractor to ADaaS.
  */
 export interface EventData {
@@ -412,6 +429,8 @@ export interface EventData {
   reports?: LoaderReport[];
   processed_files?: string[];
   stats_file?: string;
+  // Optional per-record-type counts reported on the metadata-done event, used for sync-duration estimation.
+  pre_extraction_item_counts?: ItemTypeCount[];
 }
 
 /**

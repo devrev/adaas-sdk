@@ -466,6 +466,37 @@ Defines the structure of event data that is sent from the external extractor to 
 
   Optional. A **string** representing the stats file artifact ID.
 
+- _pre_extraction_item_counts_
+
+  Optional. An array of **ItemTypeCount** objects reporting per-record-type counts collected during the metadata phase. Used for sync duration estimation.
+
+### `ItemInputType` enum
+
+Defines which sync duration estimation input a counted record type feeds into.
+
+#### Values
+
+- `MAIN` = `'main'`
+- `USERS` = `'users'`
+
+### `ItemTypeCount` interface
+
+Represents a per-record-type count reported during the metadata phase, used for sync duration estimation.
+
+#### Properties
+
+- _record_type_
+
+  Required. A **string** identifying the external record type being counted.
+
+- _count_
+
+  Required. A **number** with the count of records of this type.
+
+- _model_input_type_
+
+  Required. An **ItemInputType** value indicating which estimation input this record type feeds into.
+
 ### `EventType` enum
 
 Defines the different types of events that can be sent to the external extractor from ADaaS. The external extractor uses these events to know what to do next in the extraction process.

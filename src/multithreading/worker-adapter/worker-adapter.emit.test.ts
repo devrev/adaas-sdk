@@ -8,6 +8,7 @@ import {
   Artifact,
   EventType,
   ExtractorEventType,
+  ItemInputType,
   LoaderEventType,
 } from '../../types';
 import { ActionType, LoaderReport } from '../../types/loading';
@@ -238,6 +239,36 @@ describe(`${WorkerAdapter.name}.emit`, () => {
     expect(callData).not.toHaveProperty('artifacts');
     expect(callData).not.toHaveProperty('reports');
     expect(callData).not.toHaveProperty('processed_files');
+  });
+
+  it('should include pre_extraction_item_counts passed on the metadata-done event', async () => {
+    // Arrange
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
+    adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+
+    // Act
+    await adapter.emit(ExtractorEventType.MetadataExtractionDone, {
+      pre_extraction_item_counts: [
+        {
+          record_type: 'tickets',
+          count: 0,
+          model_input_type: ItemInputType.MAIN,
+        },
+        {
+          record_type: 'customers',
+          count: 1200,
+          model_input_type: ItemInputType.USERS,
+        },
+      ],
+    });
+
+    // Assert
+    const callData = mockEmit.mock.calls[0][0].data;
+    expect(callData.pre_extraction_item_counts).toEqual([
+      { record_type: 'tickets', count: 0, model_input_type: 'main' },
+      { record_type: 'customers', count: 1200, model_input_type: 'users' },
+    ]);
   });
 
   it('should include artifacts for all ExtractorEventType values', async () => {
