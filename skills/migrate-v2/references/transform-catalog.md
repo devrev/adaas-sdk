@@ -12,7 +12,7 @@ Wire protocol is unchanged: every surviving enum STRING VALUE is byte-identical 
 
 **Detect:** `grep -rn "@devrev/ts-adaas" . --include=package.json --include='*.ts'` (run FIRST, before any other category).
 
-**Transform:** `npm uninstall @devrev/ts-adaas && npm install @devrev/airsync-sdk@2.0.0` (preserve the range operator: `^`/`~`/exact). Then global-replace the literal string `@devrev/ts-adaas` → `@devrev/airsync-sdk` in every `.ts` import, `jest.mock('...')`, `jest.requireActual('...')`, and `moduleNameMapper`. This rewrites deep-import path prefixes too (`.../ts-adaas/dist/x` → `.../airsync-sdk/dist/x`). Do NOT rename symbols yet.
+**Transform:** `npm uninstall @devrev/ts-adaas && npm install @devrev/airsync-sdk@beta` (the `beta` dist-tag resolves to the newest published 2.x — currently `2.0.0-beta.4`; there is NO plain `2.0.0` on npm yet, so `@2.0.0` would 404 and abort the migration. Switch to `@2.0.0` once GA ships). Then global-replace the literal string `@devrev/ts-adaas` → `@devrev/airsync-sdk` in every `.ts` import, `jest.mock('...')`, `jest.requireActual('...')`, and `moduleNameMapper`. This rewrites deep-import path prefixes too (`.../ts-adaas/dist/x` → `.../airsync-sdk/dist/x`). Do NOT rename symbols yet.
 
 **Pitfalls:** this step is why every later detect grep must use the NEW specifier. Regenerate the lockfile with `npm install` at the end (step 17), not here.
 
@@ -30,7 +30,8 @@ Wire protocol is unchanged: every surviving enum STRING VALUE is byte-identical 
 - `dist/logger/logger` (`serializeAxiosError`) → **CONDITIONAL** (see §14): keep it via this deep path if its result is spread/object-accessed; else swap to root `serializeError`.
 - `dist/state/state.interfaces` (`ToDevRev`) → **DROP the import entirely** (SDK-internal, no public replacement; `toDevRev` is SDK-managed under `adapter.sdkState`). Remove its usages (see §12).
 - `dist/http/axios-client` (`axiosClient`) → remove; bring your own axios (§14). File renamed to `http/client`, internal.
-- `dist/mappers/mappers.interface` (SINGULAR — `MappersGetByExternalIdResponse`, `MappersGetByTargetIdResponse`): these two `*Response` interfaces are NOT on the root barrel → repoint to the plural `@devrev/airsync-sdk/dist/mappers/mappers.interfaces`. Params interfaces + enums ARE on root → prefer root.
+- `dist/state/state` (`State` class, `createAdapterState`) → **REMOVED** (see §12). Both are gone from the module; the barrel now re-exports only `BaseState`, `ExtractionState`/`createExtractionState`, `LoadingState`/`createLoadingState`. Map by how the v1 symbol was used, NOT with a blanket swap: **synchronous** `new State({ event, initialState })` (as in a hand-built-adapter integration test) → **synchronous** `new LoadingState({ event, initialState, options? })` (loading phase) or `new ExtractionState({ … })` (extraction) — a true drop-in, both class constructors are exported from the root barrel and take the same `{ event, initialState, initialDomainMapping?, options? }` shape. v1's **async** `createAdapterState({ … })` (which fetched persisted state) → the **async** `createLoadingState(…)` / `createExtractionState(…)` factories (root barrel; `await` them and make the caller `async`). A test that also pokes `adapterState.state = { fromDevRev: … }` must move that onto the sdkState envelope (§12) — the constructor swap alone won't type-check.
+- `dist/mappers/mappers.interface` (SINGULAR): none of the four `*Response` interfaces (`MappersGetByExternalIdResponse`, `MappersGetByTargetIdResponse`, `MappersCreateResponse`, `MappersUpdateResponse`) are on the root barrel — nor are `SyncMapperRecord`, `SyncMapperRecordExternalVersion`, `UpdateSyncMapperRecordParams`, or `MappersFactoryInterface` → repoint any of these to the plural `@devrev/airsync-sdk/dist/mappers/mappers.interfaces`. Only the four `*Params` interfaces (`MappersCreateParams`, `MappersGetByExternalIdParams`, `MappersGetByTargetIdParams`, `MappersUpdateParams`) and the two enums (`SyncMapperRecordStatus`, `SyncMapperRecordTargetType`) ARE on root → prefer root for those.
 
 **Before**
 ```ts
@@ -94,15 +95,17 @@ const run = async (events: AirSyncEvent[]) => { ... };
 | `EventContextIn` / `EventContextOut` | `EventContext` |
 | `translate*EventType(...)` | delete the call; the platform sends modern strings |
 
-**Pitfalls:** **MIGRATION.md §12 is WRONG** — it claims `LoaderEventType.UnknownEventType` survives. It does NOT (replaced by an un-exported constant). Any `*.UnknownEventType` reference → the raw `'UNKNOWN_EVENT_TYPE'` string (value unchanged, so the wire is fine). In practice `ExtractorEventType`/`LoaderEventType` are rarely referenced by name after emit→return (§7) removes the emit sites. Most connectors already use the modern members (verified no-op for the enum values).
+**Pitfalls:** `LoaderEventType.UnknownEventType` does NOT survive (replaced by an un-exported constant), and neither do the `EventType`/`ExtractorEventType` copies. Any `*.UnknownEventType` reference → the raw `'UNKNOWN_EVENT_TYPE'` string (value unchanged, so the wire is fine). In practice `ExtractorEventType`/`LoaderEventType` are rarely referenced by name after emit→return (§7) removes the emit sites. Most connectors already use the modern members (verified no-op for the enum values).
 
 ---
 
 ## 5. adapter-split (semantic — log review entry)
 
-**Detect:** `grep -rnE "WorkerAdapter<" src test` (the CLASS is removed; the `<T>` annotations are the sites). Also `import { WorkerAdapter }`.
+**Detect:** `grep -rnE "WorkerAdapter" src test` — the CLASS is removed, so BOTH forms are sites: `WorkerAdapter<T>` type annotations AND value-context `new WorkerAdapter(…)` construction (common in hand-built-adapter integration tests). Match `WorkerAdapter` in ANY import line (not the literal `import { WorkerAdapter }`, which misses multi-symbol imports like `import { AirSyncDefaultItemTypes, WorkerAdapter } from …`).
 
 **Transform:** `WorkerAdapter<T>` → `ExtractionAdapter<T>` (extraction-phase file) or `LoadingAdapter<T>` (loading-phase file). Infer phase from directory (`extraction/` vs `loading/`) or body (`getRepo`/`initializeRepos`/`streamAttachments` ⇒ Extraction; `loadItemTypes`/`loadAttachments`/`mappers` ⇒ Loading). Import the chosen class from root. Leave `WorkerAdapterInterface`/`WorkerAdapterOptions` (still exported). If an EXTRACTION-phase helper touched `adapter.mappers`/`reports`/`processedFiles`, those are LoadingAdapter-only now → construct `new Mappers({ event: adapter.event })` (hoist out of per-item loops).
+
+**Value-construction recipe** (hand-built-adapter integration tests — real SDK, only network boundaries stubbed): `new WorkerAdapter({ event, adapterState })` → `new LoadingAdapter({ event, adapterState })` (loading) or `new ExtractionAdapter({ event, adapterState })` (extraction). Constructor shape is `{ event: AirSyncEvent; adapterState: BaseState<ConnectorState>; options? }`. This is COUPLED to the §2/§12 state-class change: the `adapterState` is usually built with the removed `new State({ event, initialState })` → becomes `new LoadingState(…)` / `new ExtractionState(…)`. Any `adapterState.state = { fromDevRev: … }` test hack moves onto the sdkState envelope (§12).
 
 **Before**
 ```ts
@@ -135,7 +138,7 @@ import { processExtractionTask } from '@devrev/airsync-sdk';
 processExtractionTask<ExtractorState>({ task: async ({ adapter }) => { ... } });
 ```
 
-**Pitfalls:** phase is per-file (a connector has both). `ProcessTaskInterface` type is still exported if referenced.
+**Pitfalls:** phase is per-file (a connector has both). `ProcessTaskInterface` is still exported, but its generic changed meaning: v1 `ProcessTaskInterface<ConnectorState>` (with `task: (…) => Promise<void>`) → v2 `ProcessTaskInterface<Adapter>` (with `task: (…) => Promise<TaskResult>` and `onTimeout` now optional). Any connector that referenced the type must rewrite `ProcessTaskInterface<State>` → `ProcessTaskInterface<ExtractionAdapter<State>>` (or `LoadingAdapter<State>`), not keep passing the bare State. Its sibling `TaskAdapterInterface` (the params type of `task`/`onTimeout`) underwent the IDENTICAL flip — v1 `TaskAdapterInterface<ConnectorState>` (`adapter: WorkerAdapter<ConnectorState>`) → v2 `TaskAdapterInterface<Adapter>` (`adapter: Adapter`) — so a connector annotating its worker signature as `TaskAdapterInterface<State>` must likewise rewrite it to `TaskAdapterInterface<ExtractionAdapter<State>>` / `LoadingAdapter<State>`; keeping bare `<State>` silently types `adapter` as the ConnectorState.
 
 ---
 
@@ -482,7 +485,7 @@ expect(result).toEqual({ status: 'success' });
 - ESU inline→repo rewrite (added EXTERNAL_SYNC_UNITS repo) and its hand-written test rewrite.
 - axios-removal: local `axios.create()`+`axiosRetry` built (record retry config vs SDK client's dropped behavior); `serializeAxiosError` kept-via-deep-import (object-spread) vs swapped to `serializeError` (string); `axios-retry` added; local `httpStream` type alias retyped.
 - spawn workerPath variable/dispatcher form → dead dispatcher + orphaned imports removed.
-- `*.UnknownEventType` mapped to raw `'UNKNOWN_EVENT_TYPE'` (contradicts MIGRATION.md §12).
+- `*.UnknownEventType` mapped to raw `'UNKNOWN_EVENT_TYPE'` (the enum members are removed).
 - `CustomAirdropEvent` dropped or rebased (esp. if it added fields beyond the five identity fields).
 - Any jest test file whose assertions moved from `expect(adapter.emit).toHaveBeenCalledWith(...)` to a TaskResult return assertion, or where an SDK-supplied mock (axios/Mappers) moved to a direct module mock, or a directly-invoked helper's assertions were rewritten.
 - Any rewrite applied with low confidence or an ambiguous judgment call.

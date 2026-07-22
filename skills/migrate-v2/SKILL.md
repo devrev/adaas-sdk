@@ -1,11 +1,11 @@
 ---
 name: migrate-v2
-description: Autonomously migrate a DevRev AirSync connector from SDK v1 (@devrev/ts-adaas, 1.19.x) to v2 (@devrev/airsync-sdk, 2.0.0). Applies every breaking-change transform end-to-end — package rename, deep-import repointing, AirdropEvent→AirSyncEvent, processTask split, emit()→return TaskResult, WorkerAdapter→Extraction/LoadingAdapter, ESU repo, onTimeout, mappers .data unwrap, adapter.state/sdkState split, incremental-window rewrite, axios removal, spawn workerPath, deleted enum members, and jest-mock rewrites — then runs tsc/lint/build/tests. Use whenever the user asks to "migrate to v2", "migrate to airsync-sdk", "upgrade connector to airsync sdk", "migrate ts-adaas to airsync-sdk", or do a "v1 to v2 migration".
+description: Autonomously migrate a DevRev AirSync connector from SDK v1 (@devrev/ts-adaas, 1.19.x) to v2 (@devrev/airsync-sdk, 2.x — newest published, currently 2.0.0-beta.4). Applies every breaking-change transform end-to-end — package rename, deep-import repointing, AirdropEvent→AirSyncEvent, processTask split, emit()→return TaskResult, WorkerAdapter→Extraction/LoadingAdapter, ESU repo, onTimeout, mappers .data unwrap, adapter.state/sdkState split, incremental-window rewrite, axios removal, spawn workerPath, deleted enum members, and jest-mock rewrites — then runs tsc/lint/build/tests. Use whenever the user asks to "migrate to v2", "migrate to airsync-sdk", "upgrade connector to airsync sdk", "migrate ts-adaas to airsync-sdk", or do a "v1 to v2 migration".
 ---
 
 # Migrate connector to AirSync SDK v2
 
-Goal: end the session with the connector depending on `@devrev/airsync-sdk` `2.0.0` instead of `@devrev/ts-adaas`, all v1 API usage rewritten to the v2 API, the codebase passing `tsc --noEmit` / lint / build / tests, and every semantic (non-mechanical) rewrite recorded in `MIGRATION_REVIEW.md` for the developer to eyeball.
+Goal: end the session with the connector depending on `@devrev/airsync-sdk` (the newest published 2.x, currently `2.0.0-beta.4` via the `beta` dist-tag) instead of `@devrev/ts-adaas`, all v1 API usage rewritten to the v2 API, the codebase passing `tsc --noEmit` / lint / build / tests, and every semantic (non-mechanical) rewrite recorded in `MIGRATION_REVIEW.md` for the developer to eyeball.
 
 This is a **fully-autonomous, best-effort** migration. It attempts EVERY transform — including the hard semantic ones (emit→return, incremental-window, buried emits in shared helpers and class methods). It does not defer hard cases to a human; it makes its best judgment, applies the edit, and logs a review entry. It only stops if the checks cannot be made to pass after repeated attempts.
 
@@ -16,11 +16,11 @@ The wire protocol is UNCHANGED: every surviving enum string value is byte-identi
 - `references/transform-catalog.md` — the full per-category recipe for all 16 breaking-change categories, with concrete before/after and pitfalls. **Read the category you are about to apply, every time** — the recipes encode gotchas found by validating against 5 real connectors.
 - `references/symbol-map.md` — the exact disposition of every v1 symbol (kept / renamed / removed / now-root-import) and what to do with it.
 
-The connector's `code/src` (or `src`) is the target. The SDK's own `MIGRATION.md` is background only — where it conflicts with the catalog, **trust the catalog** (it was audited against the v2 source; the guide has known doc bugs, e.g. it wrongly claims `LoaderEventType.UnknownEventType` survives).
+The connector's `code/src` (or `src`) is the target. The SDK's own `MIGRATION.md` is background only — where it conflicts with the catalog, **trust the catalog** (it was audited against the v2 source).
 
 ## Success criteria
 
-1. `package.json` no longer contains `@devrev/ts-adaas`; it contains `@devrev/airsync-sdk` at `2.0.0` (preserving the original range operator if any), and `npm install` has regenerated the lockfile.
+1. `package.json` no longer contains `@devrev/ts-adaas`; it contains `@devrev/airsync-sdk` at the newest published 2.x (currently `2.0.0-beta.4`; installed via the `beta` dist-tag), and `npm install` has regenerated the lockfile.
 2. No `@devrev/ts-adaas` string remains anywhere in source, tests, or config (imports, `jest.mock`, `jest.requireActual`, `moduleNameMapper`).
 3. `cd <code> && npx tsc --noEmit` passes with zero errors. No `adapter.emit(...)` and no removed symbol remains — a compile error is never left unaddressed.
 4. `cd <code> && npm run lint` passes. **This includes `noUnusedLocals`/`no-unused-vars`** — every import and local orphaned by a rewrite (dead dispatcher fns, unused `EventType` imports, dropped params) must be cleaned up, not just the direct edit.
@@ -38,15 +38,15 @@ Work one category at a time, in this exact order (later categories depend on ear
 
 0. **Locate the connector root.** Find the dir containing `package.json` with `@devrev/ts-adaas` — usually `code/`, sometimes repo root. Confirm the SDK version is a `1.19.x` semver (not `workspace:`/`git+`/`file:`). If it already depends on `@devrev/airsync-sdk`, report "already on v2" and stop. Record `<code>` as that dir. Also note whether lint covers `test/**` and what `npm test` runs (unit only vs unit+integration) — you will need to migrate whatever the gates check.
 
-1. **package-rename** (mechanical). Swap the dependency in `package.json` (`@devrev/ts-adaas` → `@devrev/airsync-sdk: 2.0.0`). Global-replace the specifier string `'@devrev/ts-adaas'` → `'@devrev/airsync-sdk'` in every import, every `jest.mock('...')` first arg, every `jest.requireActual('...')` arg, and any `moduleNameMapper`. This also rewrites deep-import path prefixes (handled next). Do NOT rename symbols yet.
+1. **package-rename** (mechanical). Swap the dependency in `package.json` (`@devrev/ts-adaas` → `@devrev/airsync-sdk`, installed via `npm install @devrev/airsync-sdk@beta` — the newest published 2.x, currently `2.0.0-beta.4`; plain `@2.0.0` does not exist on npm yet and would 404). Global-replace the specifier string `'@devrev/ts-adaas'` → `'@devrev/airsync-sdk'` in every import, every `jest.mock('...')` first arg, every `jest.requireActual('...')` arg, and any `moduleNameMapper`. This also rewrites deep-import path prefixes (handled next). Do NOT rename symbols yet.
 
-2. **deep-imports** (mechanical). Detect with `grep -rnE "@devrev/airsync-sdk/dist" src test`. Repoint or drop every deep import per the catalog: `Item`, `ItemTypeToLoad`, `Mappers`, `InitialSyncScope` become ROOT imports; `serializeAxiosError` — see the CONDITIONAL rule in §14 (keep-via-deep-repoint if its result is spread/property-accessed as an object; swap to root `serializeError` only if used as a string); `ToDevRev` is DROPPED entirely; `mappers.interface` (singular) → `mappers.interfaces` (plural) only for the two `*Response` types genuinely not on the root barrel.
+2. **deep-imports** (mechanical). Detect with `grep -rnE "@devrev/airsync-sdk/dist" src test`. Repoint or drop every deep import per the catalog: `Item`, `ItemTypeToLoad`, `Mappers`, `InitialSyncScope` become ROOT imports; `serializeAxiosError` — see the CONDITIONAL rule in §14 (keep-via-deep-repoint if its result is spread/property-accessed as an object; swap to root `serializeError` only if used as a string); `ToDevRev` is DROPPED entirely; `mappers.interface` (singular) → `mappers.interfaces` (plural) for any interface not on the root barrel — the four `*Response` types (`MappersGetByExternalIdResponse`, `MappersGetByTargetIdResponse`, `MappersCreateResponse`, `MappersUpdateResponse`), plus `SyncMapperRecord`, `SyncMapperRecordExternalVersion`, `UpdateSyncMapperRecordParams`, `MappersFactoryInterface` (only the four `*Params` interfaces + the two enums are on root).
 
 3. **event-type-rename** (mechanical). `AirdropEvent`→`AirSyncEvent`, `AirdropMessage`→`AirSyncMessage` in every annotation, generic, cast, `extends`. If a `CustomAirdropEvent` only added the identity fields now native on `AirSyncEvent.context` (`user_id`, `dev_oid`, `source_id`, `service_account_id`, **and `snap_in_id`** — all five), delete it and read `adapter.event.context.<field>`; if it added other fields, rebase it on `AirSyncEvent`. Do NOT mass-rename other `Airdrop*`/`Extractor*` type names.
 
-4. **deleted-enum-members** (mechanical). Map deleted `EventType`/`ExtractorEventType`/`LoaderEventType` members to their surviving modern members; map any `*.UnknownEventType` to the raw string `'UNKNOWN_EVENT_TYPE'` (the member is gone — MIGRATION.md §12 is wrong); drop `translate*EventType`; `ExtractionMode`→`SyncMode`, `EventContextIn/Out`→`EventContext`. See the catalog table.
+4. **deleted-enum-members** (mechanical). Map deleted `EventType`/`ExtractorEventType`/`LoaderEventType` members to their surviving modern members; map any `*.UnknownEventType` to the raw string `'UNKNOWN_EVENT_TYPE'` (the member is gone from all three enums); drop `translate*EventType`; `ExtractionMode`→`SyncMode`, `EventContextIn/Out`→`EventContext`. See the catalog table.
 
-5. **adapter-split** (semantic). `WorkerAdapter<T>` annotations → `ExtractionAdapter<T>` (extraction-phase) or `LoadingAdapter<T>` (loading-phase); infer phase from directory/methods. Leave `WorkerAdapterInterface`/`WorkerAdapterOptions` alone. If an extraction-phase site uses `adapter.mappers`, construct `new Mappers({ event: adapter.event })` (hoist out of loops).
+5. **adapter-split** (semantic). Detect BOTH `WorkerAdapter<T>` annotations AND value-context `new WorkerAdapter(…)` (grep `WorkerAdapter` broadly, incl. multi-symbol import lines). Annotations → `ExtractionAdapter<T>` (extraction-phase) or `LoadingAdapter<T>` (loading-phase); infer phase from directory/methods. `new WorkerAdapter({ event, adapterState })` → `new LoadingAdapter(…)`/`new ExtractionAdapter(…)` (hand-built-adapter integration tests — coupled to the removed `State` class, see §2/§12: `new State(…)` → `new LoadingState(…)`/`new ExtractionState(…)`, and any `adapterState.state = {fromDevRev}` hack moves onto the sdkState envelope). Leave `WorkerAdapterInterface`/`WorkerAdapterOptions` alone. If an extraction-phase site uses `adapter.mappers`, construct `new Mappers({ event: adapter.event })` (hoist out of loops).
 
 6. **process-task-split** (mechanical, paired with step 7). `processTask` → `processExtractionTask` (extraction workers) / `processLoadingTask` (loading workers) in import and call site; keep the `<State>` generic.
 
@@ -74,7 +74,7 @@ Work one category at a time, in this exact order (later categories depend on ear
 
 16. **jest-mocks** (semantic). Mechanical part: rename specifier + `processTask`→split + drop `WorkerAdapter:{}`/`axiosClient:{}` mock keys + `AirdropEvent`→`AirSyncEvent`. Semantic part: rewrite `expect(adapter.emit).toHaveBeenCalledWith(EventType.X)` into an assertion on the awaited RETURN of the captured task/onTimeout fn (`expect(result).toEqual({ status: ... })`) — and note tests that invoke a **helper directly** (not via the captured task closure) need the same return-vs-emit rewrite. Add `Mappers`/`axios`/`axios-retry` module mocks where source now uses them. Propagate state-field renames + `AdapterState` replacement into fixtures (see §12). Record every rewritten test file.
 
-17. **Verify.** From `<code>`: `npm install` (regenerate lockfile), then `npx tsc --noEmit`, `npm run lint`, `npm run build`, and tests if present. If a check fails, read the errors — a leftover `adapter.emit`, a dead symbol, a wrong adapter type, a missing `delaySeconds`, a destructure of `{reports}` off a loader, an orphaned dispatcher, or a test fixture on a renamed key is the usual cause. Fix and re-run. Up to 4 attempts. Never leave a compile error. If a check still fails after 4 attempts, record the exact remaining errors + touched files in `MIGRATION_REVIEW.md` under "Unresolved" and report failure — but package.json stays at 2.0.0.
+17. **Verify.** From `<code>`: `npm install` (regenerate lockfile), then `npx tsc --noEmit`, `npm run lint`, `npm run build`, and tests if present. If a check fails, read the errors — a leftover `adapter.emit`, a dead symbol, a wrong adapter type, a missing `delaySeconds`, a destructure of `{reports}` off a loader, an orphaned dispatcher, or a test fixture on a renamed key is the usual cause. Fix and re-run. Up to 4 attempts. Never leave a compile error. If a check still fails after 4 attempts, record the exact remaining errors + touched files in `MIGRATION_REVIEW.md` under "Unresolved" and report failure — but package.json stays on `@devrev/airsync-sdk`.
 
 18. **Report.** Summarize: which categories fired, which were verified no-ops, the final tsc/lint/build/test result, and the count of `MIGRATION_REVIEW.md` entries.
 
@@ -102,7 +102,7 @@ Create at the repo root. One `##` section per category that had semantic edits; 
 ```markdown
 # v2 Migration Review
 
-Migrated `@devrev/ts-adaas` 1.19.x → `@devrev/airsync-sdk` 2.0.0.
+Migrated `@devrev/ts-adaas` 1.19.x → `@devrev/airsync-sdk` 2.x (`2.0.0-beta.4`).
 Eyeball each entry below — these are semantic (behavior-affecting) rewrites, not mechanical renames.
 
 ## incremental-window

@@ -660,7 +660,7 @@ as their survivors, so removing them is a pure source-name change.
 > **No more incoming-event-type translation.** v1 shipped an
 > `event-type-translation` module that mapped legacy platform strings onto the
 > modern enum members (and translated outgoing types). v2 removed it entirely
-> and passes `event_context.event_type` through untouched. Any connector
+> and passes the incoming `payload.event_type` through untouched. Any connector
 > importing `translateIncomingEventType` / `translateOutgoingEventType` /
 > `translateExtractorEventType` / `translateLoaderEventType` from the SDK will
 > fail to compile — drop them; the platform sends modern strings.
@@ -777,9 +777,10 @@ spawn({ event, initialState, baseWorkerPath: __dirname });
 15. Replace `spawn({ workerPath })` with `spawn({ baseWorkerPath: __dirname })` (§15).
 16. Update jest mocks of the SDK module — they hardcode the v1 shape (`processTask`, `WorkerAdapter`, old enum members, `axiosClient`).
 
-## A note on `2.0.0-beta.0`
+## A note on the early betas
 
-An early beta (`2.0.0-beta.0`) still re-exported `axios` / `axiosClient`. The
-GA release removed them (§9). If you migrated a connector against the beta and
-imported either symbol from `@devrev/airsync-sdk`, it will fail to compile
-against GA — apply §9.
+The betas `2.0.0-beta.0` through `2.0.0-beta.3` still re-exported `axios` /
+`axiosClient`; they were removed in `2.0.0-beta.4` (and stay removed in GA — see
+§9). If you migrated a connector against any beta before `beta.4` and imported
+either symbol from `@devrev/airsync-sdk`, it will fail to compile once you move
+to `beta.4`/GA — apply §9.

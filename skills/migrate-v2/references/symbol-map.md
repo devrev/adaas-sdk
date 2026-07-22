@@ -1,6 +1,6 @@
 # v2 Symbol Disposition Map
 
-Exact fate of every v1 `@devrev/ts-adaas` symbol in `@devrev/airsync-sdk` 2.0.0. Dispositions: **kept-same** (leave it), **renamed** (token rename), **removed-use:X** (delete, replace with X), **now-root-import** (was a `dist/**` deep import, now on the root barrel), **drop-import** (delete entirely, no replacement).
+Exact fate of every v1 `@devrev/ts-adaas` symbol in `@devrev/airsync-sdk` 2.x (newest published, currently `2.0.0-beta.4`). Dispositions: **kept-same** (leave it), **renamed** (token rename), **removed-use:X** (delete, replace with X), **now-root-import** (was a `dist/**` deep import, now on the root barrel), **drop-import** (delete entirely, no replacement).
 
 Wire protocol is unchanged: every surviving enum STRING VALUE is byte-identical v1→v2.
 
@@ -8,7 +8,7 @@ Wire protocol is unchanged: every surviving enum STRING VALUE is byte-identical 
 
 | v1 | v2 | Action |
 |---|---|---|
-| `'@devrev/ts-adaas'` | `'@devrev/airsync-sdk'` | Global-replace the specifier string in every source+test import, `jest.mock('...')`, `jest.requireActual('...')`, `moduleNameMapper`, and the `package.json` dep (uninstall ts-adaas, install airsync-sdk 2.0.0). Rewrites deep-import prefixes too. |
+| `'@devrev/ts-adaas'` | `'@devrev/airsync-sdk'` | Global-replace the specifier string in every source+test import, `jest.mock('...')`, `jest.requireActual('...')`, `moduleNameMapper`, and the `package.json` dep (uninstall ts-adaas, `npm install @devrev/airsync-sdk@beta` — newest 2.x, currently `2.0.0-beta.4`; plain `@2.0.0` 404s). Rewrites deep-import prefixes too. |
 
 ## Entry points & adapters
 
@@ -18,7 +18,9 @@ Wire protocol is unchanged: every surviving enum STRING VALUE is byte-identical 
 | `processExtractionTask` | kept-same | v2 root export. Target of the split for extraction workers. |
 | `processLoadingTask` | kept-same | v2 root export. Target of the split for loading workers. |
 | `spawn` | kept-same | Root export. Only change: deprecated `workerPath` option removed → use `baseWorkerPath: __dirname`. Other options survive. |
-| `WorkerAdapter` (class) | removed-use:`ExtractionAdapter`\|`LoadingAdapter` | The class is gone. Replace `WorkerAdapter<T>` annotations by phase. Do NOT rename `WorkerAdapterInterface`/`WorkerAdapterOptions`. |
+| `WorkerAdapter` (class) | removed-use:`ExtractionAdapter`\|`LoadingAdapter` | The class is gone. Replace `WorkerAdapter<T>` annotations AND value-context `new WorkerAdapter({event,adapterState})` (→ `new LoadingAdapter(…)`/`new ExtractionAdapter(…)`) by phase — see §5. Do NOT rename `WorkerAdapterInterface`/`WorkerAdapterOptions`. |
+| `State` / `createAdapterState` (was `dist/state/state`) | removed-use:`LoadingState`\|`ExtractionState` (+ factories) | Class + async factory removed from `dist/state/state`; barrel re-exports only `BaseState`, `ExtractionState`/`createExtractionState`, `LoadingState`/`createLoadingState`. Sync `new State({event,initialState})` → sync `new LoadingState(…)`/`new ExtractionState(…)` (drop-in, root export). Async `createAdapterState(…)` → `await createLoadingState(…)`/`createExtractionState(…)`. `adapterState.state={fromDevRev}` hacks move onto sdkState (§12). See §2/§5. |
+| `TaskAdapterInterface` | kept-same (generic meaning changed) | Still exported, but the type param now IS the adapter, not ConnectorState. v1 `TaskAdapterInterface<ConnectorState>` (`adapter: WorkerAdapter<ConnectorState>`) → v2 `TaskAdapterInterface<Adapter>` (`adapter: Adapter`). Rewrite `TaskAdapterInterface<State>` → `TaskAdapterInterface<ExtractionAdapter<State>>` (or `LoadingAdapter<State>`); keeping bare `<State>` silently types `adapter` as ConnectorState. Same trap as `ProcessTaskInterface` (§6). |
 | `ExtractionAdapter` | kept-same | Root export. Has initializeRepos/getRepo/streamAttachments/shouldExtract/artifacts + event/state/sdkState/postState/isTimeout/extractionScope. NO mappers/reports/processedFiles. |
 | `LoadingAdapter` | kept-same | Root export. Has loadItemTypes/loadAttachments/mappers/reports/processedFiles + shared members. |
 | `WorkerAdapterInterface` | kept-same | Still exported. Leave as-is (do not confuse with removed class). |
@@ -43,7 +45,7 @@ Wire protocol is unchanged: every surviving enum STRING VALUE is byte-identical 
 |---|---|---|
 | `EventType` | kept-same (members changed) | Root export, surviving values identical. DELETED members → modern names (values DIFFER but connectors already use modern ones): ExtractionExternalSyncUnitsStart→StartExtractingExternalSyncUnits, ExtractionMetadataStart→StartExtractingMetadata, ExtractionDataStart→StartExtractingData, ExtractionDataContinue→ContinueExtractingData, ExtractionDataDelete→StartDeletingExtractorState, ExtractionAttachmentsStart→StartExtractingAttachments, ExtractionAttachmentsContinue→ContinueExtractingAttachments, ExtractionAttachmentsDelete→StartDeletingExtractorAttachmentsState. `EventType.UnknownEventType` → raw `'UNKNOWN_EVENT_TYPE'`. |
 | `ExtractorEventType` | kept-same (rarely needed) | Surviving values byte-identical. DELETED: the `Extraction*`-prefixed duplicates → the `*Extraction*` members (same value); `UnknownEventType` → raw `'UNKNOWN_EVENT_TYPE'`. With emit gone, rarely referenced in source. |
-| `LoaderEventType` | kept-same (rarely needed) | DELETED: `DataLoadingDelay`→`DataLoadingDelayed`, `AttachmentsLoading*`(plural)→`AttachmentLoading*`(singular) (same value). **DOC BUG: `LoaderEventType.UnknownEventType` is REMOVED** (MIGRATION.md §12 is wrong) → raw `'UNKNOWN_EVENT_TYPE'`. |
+| `LoaderEventType` | kept-same (rarely needed) | DELETED: `DataLoadingDelay`→`DataLoadingDelayed`, `AttachmentsLoading*`(plural)→`AttachmentLoading*`(singular) (same value). `LoaderEventType.UnknownEventType` is REMOVED (as are the `EventType`/`ExtractorEventType` copies) → raw `'UNKNOWN_EVENT_TYPE'`. |
 | `SyncMode` | kept-same | Root export. INITIAL/INCREMENTAL/LOADING. Replaces removed `ExtractionMode`. |
 | `ExtractionMode` | removed-use:`SyncMode` | Deprecated enum removed. |
 | `SyncMapperRecordTargetType` | kept-same | Root export (enum). |
@@ -114,7 +116,7 @@ Wire protocol is unchanged: every surviving enum STRING VALUE is byte-identical 
 | v1 symbol | Disposition | Action |
 |---|---|---|
 | `ExternalSystemItemLoadingResponse` / `ExternalSystemItemLoadingParams` / `ExternalSystemItem` / `ExternalSystemAttachment` / `ExternalSystemAttachmentStreamingParams` / `ExternalSystemAttachmentStreamingResponse` | kept-same | Root types. Per-item create/update functions returning `{id}`/`{error}`/`{delay}` are UNCHANGED. `ExternalSystemAttachmentStreamingResponse.httpStream` is now typed `HttpStreamResponse`. |
-| `ExternalSystemAttachmentReducerFunction` / `IteratorFunction` / `ExternalProcessAttachmentFunction` | kept-same | Root types. Only the inner adapter param type changes `WorkerAdapter<C>`→`ExtractionAdapter<C>`. |
+| `ExternalSystemAttachmentReducerFunction` / `ExternalSystemAttachmentIteratorFunction` / `ExternalProcessAttachmentFunction` | kept-same | Root types. Only the inner adapter param type changes `WorkerAdapter<C>`→`ExtractionAdapter<C>`. |
 
 ## Errors / domain metadata / uploader (kept)
 
