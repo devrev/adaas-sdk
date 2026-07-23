@@ -27,6 +27,201 @@ import {
   updateCurrentApiJson,
 } from './helpers';
 
+export const normalizeTypeText = (text: string): string =>
+  text.replace(/\s/g, '');
+
+/**
+ * Parse a normalized object type string (e.g. `{delay?:number;error?:{message:string};}`)
+ * into a map of property name -> { optional: boolean, type: string }.
+ *
+ * This handles nested braces so that e.g. `error?:{message:string;fileSize?:number}`
+ * is treated as a single property rather than being split at the inner semicolons.
+ */
+export const parseObjectProperties = (
+  obj: string
+): Map<string, { optional: boolean; type: string }> | null => {
+  const trimmed = obj.replace(/^\{/, '').replace(/\}$/, '');
+  if (!trimmed) return new Map();
+
+  const properties = new Map<string, { optional: boolean; type: string }>();
+
+  // Walk character-by-character, tracking brace depth, to split on
+  // top-level semicolons only.
+  let depth = 0;
+  let current = '';
+  for (const ch of trimmed) {
+    if (ch === '{') depth++;
+    if (ch === '}') depth--;
+    if (ch === ';' && depth === 0) {
+      if (current.length > 0) {
+        const colonIdx = current.indexOf(':');
+        if (colonIdx === -1) return null; // not a valid property
+        let name = current.slice(0, colonIdx);
+        const type = current.slice(colonIdx + 1);
+        const optional = name.endsWith('?');
+        if (optional) name = name.slice(0, -1);
+        properties.set(name, { optional, type });
+      }
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  // Handle trailing segment (when the text doesn't end with ';')
+  if (current.length > 0) {
+    const colonIdx = current.indexOf(':');
+    if (colonIdx !== -1) {
+      let name = current.slice(0, colonIdx);
+      const type = current.slice(colonIdx + 1);
+      const optional = name.endsWith('?');
+      if (optional) name = name.slice(0, -1);
+      properties.set(name, { optional, type });
+    }
+  }
+
+  return properties;
+};
+
+/**
+ * Check whether `newMember` is a backwards-compatible evolution of
+ * `currentMember`.  Both strings are normalised (whitespace stripped)
+ * object type literals.
+ *
+ * Compatible means:
+ * 1. Every property in `currentMember` still exists in `newMember`.
+ * 2. Existing properties that were in `currentMember` are structurally
+ *    compatible in `newMember` (recursively, for nested object types).
+ * 3. Properties that were optional stay optional (not promoted to required).
+ * 4. Any *new* properties in `newMember` must be optional.
+ */
+export const isObjectTypeBackwardsCompatible = (
+  currentMember: string,
+  newMember: string
+): boolean => {
+  if (!currentMember.startsWith('{') || !newMember.startsWith('{')) {
+    return false;
+  }
+
+  const currentProps = parseObjectProperties(currentMember);
+  const newProps = parseObjectProperties(newMember);
+
+  if (!currentProps || !newProps) return false;
+
+  // 1. Every current property must exist in new
+  for (const [name, currentProp] of currentProps) {
+    const newProp = newProps.get(name);
+    if (!newProp) return false;
+
+    // 3. Optional properties must stay optional
+    if (currentProp.optional && !newProp.optional) return false;
+
+    // 2. Property types must be compatible
+    // If both types are object types, recurse
+    if (currentProp.type.startsWith('{') && newProp.type.startsWith('{')) {
+      if (!isObjectTypeBackwardsCompatible(currentProp.type, newProp.type)) {
+        return false;
+      }
+    } else if (currentProp.type !== newProp.type) {
+      return false;
+    }
+  }
+
+  // 4. New properties must be optional
+  for (const [name, newProp] of newProps) {
+    if (!currentProps.has(name) && !newProp.optional) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Splits a normalized intersection type (e.g. `Foo&{bar?:string}`) into its
+ * top-level `&`-separated members, respecting brace depth so that nested
+ * object types aren't split on their own semicolons/ampersands.
+ */
+const getIntersectionMembers = (text: string): string[] => {
+  const members: string[] = [];
+  let depth = 0;
+  let current = '';
+  for (const ch of text) {
+    if (ch === '{') depth++;
+    if (ch === '}') depth--;
+    if (ch === '&' && depth === 0) {
+      members.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  members.push(current);
+  return members;
+};
+
+/**
+ * Check whether a `newType` is a backwards-compatible evolution of
+ * `currentType`. Both are raw (non-normalized) type-excerpt strings.
+ *
+ * Handles two shapes of widening in addition to an exact match:
+ * - Inline object types gaining new optional properties (delegates to
+ *   isObjectTypeBackwardsCompatible).
+ * - Intersection types gaining a new `& { ...optional fields }` member, e.g.
+ *   `ErrorRecord` -> `ErrorRecord & { statusCode?: number }`. Every member of
+ *   the current intersection must still be present (verbatim, or as a
+ *   backwards-compatible object widening) in the new intersection, and any
+ *   brand-new intersection members must themselves reduce to all-optional
+ *   properties (so they don't add a new requirement).
+ */
+export const isTypeBackwardsCompatible = (
+  currentType: string,
+  newType: string
+): boolean => {
+  const currentText = normalizeTypeText(currentType);
+  const newText = normalizeTypeText(newType);
+
+  if (currentText === newText) {
+    return true;
+  }
+
+  if (currentText.startsWith('{') && newText.startsWith('{')) {
+    return isObjectTypeBackwardsCompatible(currentText, newText);
+  }
+
+  if (currentText.includes('&') || newText.includes('&')) {
+    const currentMembers = getIntersectionMembers(currentText);
+    const newMembers = getIntersectionMembers(newText);
+
+    // Every current member must still be satisfied by some new member.
+    const allCurrentMembersSatisfied = currentMembers.every(
+      (currentMember) =>
+        newMembers.includes(currentMember) ||
+        newMembers.some(
+          (newMember) =>
+            currentMember.startsWith('{') &&
+            newMember.startsWith('{') &&
+            isObjectTypeBackwardsCompatible(currentMember, newMember)
+        )
+    );
+    if (!allCurrentMembersSatisfied) {
+      return false;
+    }
+
+    // Any brand-new intersection member must only add optional properties,
+    // so it doesn't impose a new requirement on existing callers/values.
+    const newMembersAreOptionalOnly = newMembers.every((newMember) => {
+      if (currentMembers.includes(newMember)) return true;
+      if (!newMember.startsWith('{')) return false;
+      const props = parseObjectProperties(newMember);
+      return !!props && [...props.values()].every((p) => p.optional);
+    });
+
+    return newMembersAreOptionalOnly;
+  }
+
+  return false;
+};
+
 export function checkFunctionCompatibility(
   newFunction: ApiFunction | ApiConstructor | ApiMethodSignature,
   currentFunction: ApiFunction | ApiConstructor | ApiMethodSignature
@@ -273,10 +468,13 @@ describe('Backwards Compatibility', () => {
             continue;
           }
 
-          it(`Class ${newClass.name} property ${newProperty.name} should have the same type as the current property`, () => {
-            expect(newProperty.propertyTypeExcerpt.text).toEqual(
-              currentProperty.propertyTypeExcerpt.text
-            );
+          it(`Class ${newClass.name} property ${newProperty.name} should have a backwards-compatible type with the current property`, () => {
+            expect(
+              isTypeBackwardsCompatible(
+                currentProperty.propertyTypeExcerpt.text,
+                newProperty.propertyTypeExcerpt.text
+              )
+            ).toBe(true);
           });
 
           it(`Class ${newClass.name} property ${newProperty.name} should have the same optionality as the current property`, () => {
@@ -372,10 +570,13 @@ describe('Backwards Compatibility', () => {
             continue;
           }
 
-          it(`Interface ${newInterface.name} property ${newProperty.name} should have the same type as the current property`, () => {
-            expect(newProperty.propertyTypeExcerpt.text).toEqual(
-              currentProperty.propertyTypeExcerpt.text
-            );
+          it(`Interface ${newInterface.name} property ${newProperty.name} should have a backwards-compatible type with the current property`, () => {
+            expect(
+              isTypeBackwardsCompatible(
+                currentProperty.propertyTypeExcerpt.text,
+                newProperty.propertyTypeExcerpt.text
+              )
+            ).toBe(true);
           });
 
           it(`Interface ${newInterface.name} property ${newProperty.name} should have not been made required if it was optional`, () => {
@@ -590,127 +791,11 @@ describe('Backwards Compatibility', () => {
 
     // Verify that the type alias is the same as the current type alias
     describe('should verify type aliases are the same as the current type aliases', () => {
-      const normalizeTypeText = (text: string): string =>
-        text.replace(/\s/g, '');
       const getUnionMembers = (text: string): string[] =>
         normalizeTypeText(text)
           .split('|')
           .map((member) => member.trim())
           .filter(Boolean);
-
-      /**
-       * Parse a normalized object type string (e.g. `{delay?:number;error?:{message:string};}`)
-       * into a map of property name -> { optional: boolean, type: string }.
-       *
-       * This handles nested braces so that e.g. `error?:{message:string;fileSize?:number}`
-       * is treated as a single property rather than being split at the inner semicolons.
-       */
-      const parseObjectProperties = (
-        obj: string
-      ): Map<string, { optional: boolean; type: string }> | null => {
-        const trimmed = obj.replace(/^\{/, '').replace(/\}$/, '');
-        if (!trimmed) return new Map();
-
-        const properties = new Map<
-          string,
-          { optional: boolean; type: string }
-        >();
-
-        // Walk character-by-character, tracking brace depth, to split on
-        // top-level semicolons only.
-        let depth = 0;
-        let current = '';
-        for (const ch of trimmed) {
-          if (ch === '{') depth++;
-          if (ch === '}') depth--;
-          if (ch === ';' && depth === 0) {
-            if (current.length > 0) {
-              const colonIdx = current.indexOf(':');
-              if (colonIdx === -1) return null; // not a valid property
-              let name = current.slice(0, colonIdx);
-              const type = current.slice(colonIdx + 1);
-              const optional = name.endsWith('?');
-              if (optional) name = name.slice(0, -1);
-              properties.set(name, { optional, type });
-            }
-            current = '';
-          } else {
-            current += ch;
-          }
-        }
-        // Handle trailing segment (when the text doesn't end with ';')
-        if (current.length > 0) {
-          const colonIdx = current.indexOf(':');
-          if (colonIdx !== -1) {
-            let name = current.slice(0, colonIdx);
-            const type = current.slice(colonIdx + 1);
-            const optional = name.endsWith('?');
-            if (optional) name = name.slice(0, -1);
-            properties.set(name, { optional, type });
-          }
-        }
-
-        return properties;
-      };
-
-      /**
-       * Check whether `newMember` is a backwards-compatible evolution of
-       * `currentMember`.  Both strings are normalised (whitespace stripped)
-       * object type literals.
-       *
-       * Compatible means:
-       * 1. Every property in `currentMember` still exists in `newMember`.
-       * 2. Existing properties that were in `currentMember` are structurally
-       *    compatible in `newMember` (recursively, for nested object types).
-       * 3. Properties that were optional stay optional (not promoted to required).
-       * 4. Any *new* properties in `newMember` must be optional.
-       */
-      const isObjectTypeBackwardsCompatible = (
-        currentMember: string,
-        newMember: string
-      ): boolean => {
-        if (!currentMember.startsWith('{') || !newMember.startsWith('{')) {
-          return false;
-        }
-
-        const currentProps = parseObjectProperties(currentMember);
-        const newProps = parseObjectProperties(newMember);
-
-        if (!currentProps || !newProps) return false;
-
-        // 1. Every current property must exist in new
-        for (const [name, currentProp] of currentProps) {
-          const newProp = newProps.get(name);
-          if (!newProp) return false;
-
-          // 3. Optional properties must stay optional
-          if (currentProp.optional && !newProp.optional) return false;
-
-          // 2. Property types must be compatible
-          // If both types are object types, recurse
-          if (
-            currentProp.type.startsWith('{') &&
-            newProp.type.startsWith('{')
-          ) {
-            if (
-              !isObjectTypeBackwardsCompatible(currentProp.type, newProp.type)
-            ) {
-              return false;
-            }
-          } else if (currentProp.type !== newProp.type) {
-            return false;
-          }
-        }
-
-        // 4. New properties must be optional
-        for (const [name, newProp] of newProps) {
-          if (!currentProps.has(name) && !newProp.optional) {
-            return false;
-          }
-        }
-
-        return true;
-      };
 
       for (const newType of newTypes) {
         const currentType = currentTypes.find(
