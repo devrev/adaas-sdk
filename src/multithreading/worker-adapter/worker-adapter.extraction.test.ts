@@ -709,7 +709,7 @@ describe(`${WorkerAdapter.name}.processAttachment`, () => {
   });
 
   // ---- error paths ----
-  it('should return the stream error directly when the stream function returns an error', async () => {
+  it('should return the stream error message when the stream function returns an error', async () => {
     // Arrange
     const stream = jest
       .fn()
@@ -722,7 +722,56 @@ describe(`${WorkerAdapter.name}.processAttachment`, () => {
     );
 
     // Assert
-    expect(result?.error).toBeDefined();
+    expect(result?.error?.message).toBe('stream failed');
+    expect(result?.error?.isTransient).toBe(false);
+  });
+
+  it('should classify a stream error with a 5xx statusCode as transient', async () => {
+    // Arrange
+    const stream = jest.fn().mockResolvedValue({
+      error: { message: 'export failed', statusCode: 500 },
+    });
+
+    // Act
+    const result = await adapter.processAttachment(
+      makeAttachment() as never,
+      stream
+    );
+
+    // Assert
+    expect(result?.error?.isTransient).toBe(true);
+  });
+
+  it('should not classify a stream error with a 4xx statusCode as transient', async () => {
+    // Arrange
+    const stream = jest.fn().mockResolvedValue({
+      error: { message: 'not found', statusCode: 404 },
+    });
+
+    // Act
+    const result = await adapter.processAttachment(
+      makeAttachment() as never,
+      stream
+    );
+
+    // Assert
+    expect(result?.error?.isTransient).toBe(false);
+  });
+
+  it('should not classify a stream error without a statusCode as transient', async () => {
+    // Arrange
+    const stream = jest.fn().mockResolvedValue({
+      error: { message: 'unknown failure' },
+    });
+
+    // Act
+    const result = await adapter.processAttachment(
+      makeAttachment() as never,
+      stream
+    );
+
+    // Assert
+    expect(result?.error?.isTransient).toBe(false);
   });
 
   it('should propagate a rate-limit delay from the stream function', async () => {

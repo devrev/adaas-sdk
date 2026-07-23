@@ -956,7 +956,12 @@ export class WorkerAdapter<ConnectorState> {
       );
 
       if (error) {
-        return { error };
+        return {
+          error: {
+            message: error.message,
+            isTransient: (error.statusCode ?? 0) >= 500,
+          },
+        };
       } else if (delay) {
         return { delay };
       }
