@@ -82,8 +82,8 @@ export const MEMORY_LOG_INTERVAL = 30 * 1000; // 30 seconds
 
 export const DEFAULT_SLEEP_DELAY_MS = 3 * 60 * 1000; // 3 minutes
 
-// Default number of transient upload failures (ECONNABORTED, 5xx) an attachment can
-// accumulate across invocations before it is permanently skipped.
+// Default number of times an attachment is retried within a single invocation after a
+// transient upload error (ECONNABORTED, 5xx) before it is marked permanently failed.
 export const DEFAULT_MAX_ATTACHMENT_FAILURES = 3;
 
 /**

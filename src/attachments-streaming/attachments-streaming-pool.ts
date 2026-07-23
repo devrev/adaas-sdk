@@ -34,17 +34,25 @@ export class AttachmentsStreamingPool<ConnectorState> {
     this.batchSize = batchSize;
     this.delay = undefined;
     this.stream = stream;
-    this.maxAttachmentFailures =
+
+    const configuredMaxAttachmentFailures =
       adapter.options?.maxAttachmentFailures ?? DEFAULT_MAX_ATTACHMENT_FAILURES;
+    if (configuredMaxAttachmentFailures <= 0) {
+      console.warn(
+        `The specified maxAttachmentFailures (${configuredMaxAttachmentFailures}) is invalid. Using ${DEFAULT_MAX_ATTACHMENT_FAILURES} instead.`
+      );
+      this.maxAttachmentFailures = DEFAULT_MAX_ATTACHMENT_FAILURES;
+    } else {
+      this.maxAttachmentFailures = configuredMaxAttachmentFailures;
+    }
   }
 
   /**
-   * Records a transient upload failure (ECONNABORTED, 5xx) for an attachment. Once the
-   * failure count reaches maxAttachmentFailures, the attachment is added to
-   * failedAttachmentsIdsList so subsequent invocations skip it instead of retrying a
-   * deterministically-failing request forever.
+   * Marks an attachment as permanently failed after it exhausted its transient-error
+   * retry budget within this invocation, so subsequent invocations skip it instead of
+   * retrying a deterministically-failing request forever.
    */
-  private recordTransientFailure(attachment: NormalizedAttachment): void {
+  private markPermanentlyFailed(attachment: NormalizedAttachment): void {
     const attachmentsMetadata =
       this.adapter.state.toDevRev?.attachmentsMetadata;
     if (!attachmentsMetadata) {
@@ -55,17 +63,13 @@ export class AttachmentsStreamingPool<ConnectorState> {
       attachmentsMetadata.failedAttachmentsIdsList ?? [];
     attachmentsMetadata.failedAttachmentsIdsList = failedAttachmentsIdsList;
 
-    const existing = failedAttachmentsIdsList.find(
+    const alreadyMarked = failedAttachmentsIdsList.some(
       (it) => it.id === attachment.id && it.parent_id === attachment.parent_id
     );
-
-    if (existing) {
-      existing.failureCount++;
-    } else {
+    if (!alreadyMarked) {
       failedAttachmentsIdsList.push({
         id: attachment.id,
         parent_id: attachment.parent_id,
-        failureCount: 1,
       });
     }
   }
@@ -200,16 +204,39 @@ export class AttachmentsStreamingPool<ConnectorState> {
       if (
         this.adapter.state.toDevRev &&
         this.adapter.state.toDevRev.attachmentsMetadata.failedAttachmentsIdsList?.some(
-          (it) =>
-            it.id == attachment.id &&
-            it.parent_id == attachment.parent_id &&
-            it.failureCount >= this.maxAttachmentFailures
+          (it) => it.id == attachment.id && it.parent_id == attachment.parent_id
         )
       ) {
         console.warn(
-          `Skipping attachment with ID ${attachment.id}: exceeded ${this.maxAttachmentFailures} transient failures.`
+          `Skipping attachment with ID ${attachment.id}: previously exhausted its retry budget.`
         );
-        continue; // Skip if the attachment has exceeded the transient failure limit
+        continue; // Skip if the attachment was already marked as permanently failed
+      }
+
+      const delay = await this.processAttachmentWithRetries(attachment);
+      if (delay !== undefined) {
+        this.delay = delay; // Set the delay for rate limiting
+        return;
+      }
+    }
+  }
+
+  /**
+   * Processes a single attachment, retrying up to maxAttachmentFailures times within
+   * this invocation while the error is transient (ECONNABORTED, 5xx). This keeps
+   * intermittent failures from being marked permanently failed on the first attempt,
+   * while still giving up on deterministically-failing attachments before the invocation
+   * ends, rather than looping across invocations forever.
+   *
+   * @returns the rate-limit delay if one was hit, otherwise undefined
+   */
+  private async processAttachmentWithRetries(
+    attachment: NormalizedAttachment
+  ): Promise<number | undefined> {
+    for (let attempt = 1; attempt <= this.maxAttachmentFailures; attempt++) {
+      if (this.adapter.isTimeout) {
+        // Leave the attachment unmarked so it's retried fresh next invocation.
+        return undefined;
       }
 
       try {
@@ -218,13 +245,16 @@ export class AttachmentsStreamingPool<ConnectorState> {
           this.stream
         );
 
-        // Check if rate limit was hit
         if (response?.delay) {
-          this.delay = response.delay; // Set the delay for rate limiting
-          return;
+          return response.delay;
         }
 
         if (response?.error) {
+          const isLastAttempt = attempt === this.maxAttachmentFailures;
+          if (response.error.isTransient && !isLastAttempt) {
+            continue; // Retry immediately within this invocation
+          }
+
           const fileExtension = attachment.file_name.split('.').pop() || '';
 
           const fileSizeInfo = response.error.fileSize
@@ -241,11 +271,11 @@ export class AttachmentsStreamingPool<ConnectorState> {
           );
 
           if (response.error.isTransient) {
-            this.recordTransientFailure(attachment);
+            this.markPermanentlyFailed(attachment);
           }
 
           await this.updateProgress();
-          continue;
+          return undefined;
         }
 
         if (
@@ -259,6 +289,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
         }
 
         await this.updateProgress();
+        return undefined;
       } catch (error) {
         const fileExtension = attachment.file_name.split('.').pop() || '';
 
@@ -272,7 +303,10 @@ export class AttachmentsStreamingPool<ConnectorState> {
         );
 
         await this.updateProgress();
+        return undefined;
       }
     }
+
+    return undefined;
   }
 }

@@ -201,9 +201,9 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(result).toEqual({});
     });
 
-    it('should skip attachments that already exceeded the transient failure limit', async () => {
+    it('should skip attachments already marked as permanently failed', async () => {
       mockAdapter.state.toDevRev!.attachmentsMetadata.failedAttachmentsIdsList =
-        [{ id: 'attachment-1', parent_id: 'parent-1', failureCount: 3 }];
+        [{ id: 'attachment-1', parent_id: 'parent-1' }];
       mockAdapter.processAttachment.mockResolvedValue({});
 
       const pool = new AttachmentsStreamingPool({
@@ -217,24 +217,35 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(2); // Only 2 out of 3
     });
 
-    it('should not skip an attachment whose failure count is below the limit', async () => {
-      mockAdapter.state.toDevRev!.attachmentsMetadata.failedAttachmentsIdsList =
-        [{ id: 'attachment-1', parent_id: 'parent-1', failureCount: 1 }];
-      mockAdapter.processAttachment.mockResolvedValue({});
+    it('should retry a transient failure within the same invocation before giving up', async () => {
+      mockAdapter.processAttachment
+        .mockResolvedValueOnce({
+          error: { message: 'timeout', isTransient: true },
+        })
+        .mockResolvedValueOnce({});
 
       const pool = new AttachmentsStreamingPool({
         adapter: mockAdapter,
-        attachments: mockAttachments,
+        attachments: [mockAttachments[0]],
         stream: mockStream,
+        batchSize: 1,
       });
 
       await pool.streamAll();
 
-      expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(3);
+      expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(2);
+      expect(
+        mockAdapter.state.toDevRev!.attachmentsMetadata.failedAttachmentsIdsList
+      ).toEqual([]);
+      expect(
+        mockAdapter.state.toDevRev!.attachmentsMetadata
+          .lastProcessedAttachmentsIdsList
+      ).toEqual([{ id: 'attachment-1', parent_id: 'parent-1' }]);
     });
 
-    it('should record a transient failure', async () => {
-      mockAdapter.processAttachment.mockResolvedValueOnce({
+    it('should mark an attachment as permanently failed once it exhausts its retry budget within one invocation', async () => {
+      (mockAdapter as any).options = { maxAttachmentFailures: 2 };
+      mockAdapter.processAttachment.mockResolvedValue({
         error: { message: 'timeout', isTransient: true },
       });
 
@@ -247,14 +258,26 @@ describe(AttachmentsStreamingPool.name, () => {
 
       await pool.streamAll();
 
+      expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(2);
       expect(
         mockAdapter.state.toDevRev!.attachmentsMetadata.failedAttachmentsIdsList
-      ).toEqual([
-        { id: 'attachment-1', parent_id: 'parent-1', failureCount: 1 },
-      ]);
+      ).toEqual([{ id: 'attachment-1', parent_id: 'parent-1' }]);
+
+      // A subsequent invocation should now skip it entirely instead of calling processAttachment again.
+      mockAdapter.processAttachment.mockClear();
+      const secondPool = new AttachmentsStreamingPool({
+        adapter: mockAdapter,
+        attachments: [mockAttachments[0]],
+        stream: mockStream,
+        batchSize: 1,
+      });
+
+      await secondPool.streamAll();
+
+      expect(mockAdapter.processAttachment).not.toHaveBeenCalled();
     });
 
-    it('should not record a failure for a non-transient error', async () => {
+    it('should not retry or mark a non-transient error as failed', async () => {
       mockAdapter.processAttachment.mockResolvedValueOnce({
         error: { message: 'File size is 0 or less.' },
       });
@@ -268,17 +291,19 @@ describe(AttachmentsStreamingPool.name, () => {
 
       await pool.streamAll();
 
+      expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(1);
       expect(
         mockAdapter.state.toDevRev!.attachmentsMetadata.failedAttachmentsIdsList
       ).toEqual([]);
     });
 
-    it('should permanently skip an attachment once it reaches the configured maxAttachmentFailures', async () => {
-      (mockAdapter as any).options = { maxAttachmentFailures: 2 };
-      mockAdapter.state.toDevRev!.attachmentsMetadata.failedAttachmentsIdsList =
-        [{ id: 'attachment-1', parent_id: 'parent-1', failureCount: 1 }];
-      mockAdapter.processAttachment.mockResolvedValueOnce({
-        error: { message: 'timeout', isTransient: true },
+    it('should leave an attachment unmarked if a timeout interrupts its retries', async () => {
+      (mockAdapter as any).options = { maxAttachmentFailures: 3 };
+      mockAdapter.processAttachment.mockImplementation(async () => {
+        (mockAdapter as any).isTimeout = true;
+        return Promise.resolve({
+          error: { message: 'timeout', isTransient: true },
+        });
       });
 
       const pool = new AttachmentsStreamingPool({
@@ -290,24 +315,10 @@ describe(AttachmentsStreamingPool.name, () => {
 
       await pool.streamAll();
 
+      expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(1);
       expect(
         mockAdapter.state.toDevRev!.attachmentsMetadata.failedAttachmentsIdsList
-      ).toEqual([
-        { id: 'attachment-1', parent_id: 'parent-1', failureCount: 2 },
-      ]);
-
-      // A subsequent run should now skip it entirely instead of calling processAttachment again.
-      mockAdapter.processAttachment.mockClear();
-      const secondPool = new AttachmentsStreamingPool({
-        adapter: mockAdapter,
-        attachments: [mockAttachments[0]],
-        stream: mockStream,
-        batchSize: 1,
-      });
-
-      await secondPool.streamAll();
-
-      expect(mockAdapter.processAttachment).not.toHaveBeenCalled();
+      ).toEqual([]);
     });
 
     it('should handle all attachments failing with different file types and sizes', async () => {

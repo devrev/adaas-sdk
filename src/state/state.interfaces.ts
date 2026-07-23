@@ -53,14 +53,13 @@ export interface ProcessedAttachment {
 }
 
 /**
- * Attachment that failed with a transient error (e.g. ECONNABORTED, 5xx) on the SDK-owned
- * upload path, tracked across invocations so it can be skipped once it exceeds the
- * configured retry limit instead of being retried forever.
+ * Attachment that exhausted its transient-error retry budget (ECONNABORTED, 5xx) within a
+ * single invocation. Persisted across invocations so it's permanently skipped instead of
+ * being retried forever on a deterministically-failing request.
  */
 export interface FailedAttachment {
   id: string;
   parent_id: string;
-  failureCount: number;
 }
 
 export interface FromDevRev {
