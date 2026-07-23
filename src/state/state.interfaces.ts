@@ -40,6 +40,7 @@ export interface ToDevRev {
     artifactIds: string[];
     lastProcessed: number;
     lastProcessedAttachmentsIdsList?: ProcessedAttachment[];
+    failedAttachmentsIdsList?: FailedAttachment[];
   };
 }
 
@@ -49,6 +50,17 @@ export interface ToDevRev {
 export interface ProcessedAttachment {
   id: string;
   parent_id: string;
+}
+
+/**
+ * Attachment that failed with a transient error (e.g. ECONNABORTED, 5xx) on the SDK-owned
+ * upload path, tracked across invocations so it can be skipped once it exceeds the
+ * configured retry limit instead of being retried forever.
+ */
+export interface FailedAttachment {
+  id: string;
+  parent_id: string;
+  failureCount: number;
 }
 
 export interface FromDevRev {
@@ -75,6 +87,7 @@ export const extractionSdkState = {
       artifactIds: [],
       lastProcessed: 0,
       lastProcessedAttachmentsIdsList: [],
+      failedAttachmentsIdsList: [],
     },
   },
 };

@@ -524,7 +524,16 @@ export interface StreamAttachmentsResponse {
 export type ProcessAttachmentReturnType =
   | {
       delay?: number;
-      error?: { message: string; fileSize?: number };
+      error?: {
+        message: string;
+        fileSize?: number;
+        /**
+         * Whether the error is a transient upload failure (ECONNABORTED, 5xx) expected
+         * to keep recurring for this attachment on retry. Used to count repeated
+         * failures per attachment so it can eventually be skipped.
+         */
+        isTransient?: boolean;
+      };
     }
   | undefined;
 

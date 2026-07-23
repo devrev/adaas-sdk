@@ -59,6 +59,7 @@ import {
   WorkerMessageSubject,
 } from '../../types/workers';
 import { Uploader } from '../../uploader/uploader';
+import { isTransientUploadError } from '../../uploader/uploader.helpers';
 import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
 import { translateOutgoingEventType } from '../../common/event-type-translation';
 import { truncateMessage } from '../../common/helpers';
@@ -984,6 +985,7 @@ export class WorkerAdapter<ConnectorState> {
                 attachment.id
               }. Skipping attachment. ${serializeError(artifactUrlError)}`,
               fileSize: fileSize,
+              isTransient: isTransientUploadError(artifactUrlError),
             },
           };
         }
@@ -1000,6 +1002,7 @@ export class WorkerAdapter<ConnectorState> {
                 `Error while streaming to artifact for attachment ID ${attachment.id}. Skipping attachment. ` +
                 serializeError(uploadedArtifactError),
               fileSize: fileSize,
+              isTransient: isTransientUploadError(uploadedArtifactError),
             },
           };
         }
@@ -1016,6 +1019,7 @@ export class WorkerAdapter<ConnectorState> {
                 `Error while confirming upload for attachment ID ${attachment.id}. ` +
                 serializeError(confirmArtifactUploadError),
               fileSize: fileSize,
+              isTransient: isTransientUploadError(confirmArtifactUploadError),
             },
           };
         }
@@ -1287,6 +1291,9 @@ export class WorkerAdapter<ConnectorState> {
         attachmentsMetadata.lastProcessed = 0;
         if (attachmentsMetadata.lastProcessedAttachmentsIdsList) {
           attachmentsMetadata.lastProcessedAttachmentsIdsList.length = 0;
+        }
+        if (attachmentsMetadata.failedAttachmentsIdsList) {
+          attachmentsMetadata.failedAttachmentsIdsList.length = 0;
         }
       }
 

@@ -82,6 +82,10 @@ export const MEMORY_LOG_INTERVAL = 30 * 1000; // 30 seconds
 
 export const DEFAULT_SLEEP_DELAY_MS = 3 * 60 * 1000; // 3 minutes
 
+// Default number of transient upload failures (ECONNABORTED, 5xx) an attachment can
+// accumulate across invocations before it is permanently skipped.
+export const DEFAULT_MAX_ATTACHMENT_FAILURES = 3;
+
 /**
  * Sentinel value representing an unbounded (no limit) extraction timestamp.
  * Used as the resolved value for TimeValueType.UNBOUNDED, stored as workersOldest

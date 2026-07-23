@@ -1,6 +1,10 @@
+import { DEFAULT_MAX_ATTACHMENT_FAILURES } from '../common/constants';
 import { sleep } from '../common/helpers';
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
-import { ProcessedAttachment } from '../state/state.interfaces';
+import {
+  FailedAttachment,
+  ProcessedAttachment,
+} from '../state/state.interfaces';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
@@ -14,6 +18,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
   private batchSize: number;
   private delay: number | undefined;
   private stream: ExternalSystemAttachmentStreamingFunction;
+  private readonly maxAttachmentFailures: number;
 
   private totalProcessedCount: number = 0;
   private readonly PROGRESS_REPORT_INTERVAL = 50;
@@ -29,6 +34,40 @@ export class AttachmentsStreamingPool<ConnectorState> {
     this.batchSize = batchSize;
     this.delay = undefined;
     this.stream = stream;
+    this.maxAttachmentFailures =
+      adapter.options?.maxAttachmentFailures ?? DEFAULT_MAX_ATTACHMENT_FAILURES;
+  }
+
+  /**
+   * Records a transient upload failure (ECONNABORTED, 5xx) for an attachment. Once the
+   * failure count reaches maxAttachmentFailures, the attachment is added to
+   * failedAttachmentsIdsList so subsequent invocations skip it instead of retrying a
+   * deterministically-failing request forever.
+   */
+  private recordTransientFailure(attachment: NormalizedAttachment): void {
+    const attachmentsMetadata =
+      this.adapter.state.toDevRev?.attachmentsMetadata;
+    if (!attachmentsMetadata) {
+      return;
+    }
+
+    const failedAttachmentsIdsList: FailedAttachment[] =
+      attachmentsMetadata.failedAttachmentsIdsList ?? [];
+    attachmentsMetadata.failedAttachmentsIdsList = failedAttachmentsIdsList;
+
+    const existing = failedAttachmentsIdsList.find(
+      (it) => it.id === attachment.id && it.parent_id === attachment.parent_id
+    );
+
+    if (existing) {
+      existing.failureCount++;
+    } else {
+      failedAttachmentsIdsList.push({
+        id: attachment.id,
+        parent_id: attachment.parent_id,
+        failureCount: 1,
+      });
+    }
   }
 
   private async updateProgress() {
@@ -97,6 +136,15 @@ export class AttachmentsStreamingPool<ConnectorState> {
           .lastProcessedAttachmentsIdsList
       );
 
+    // Get the list of attachments that have repeatedly failed with a transient error in
+    // previous invocations. If no such list exists, create an empty one.
+    if (
+      !this.adapter.state.toDevRev.attachmentsMetadata.failedAttachmentsIdsList
+    ) {
+      this.adapter.state.toDevRev.attachmentsMetadata.failedAttachmentsIdsList =
+        [];
+    }
+
     // Start initial batch of promises up to batchSize limit
     const initialBatchSize = Math.min(this.batchSize, this.attachments.length);
     const initialPromises = [];
@@ -149,6 +197,21 @@ export class AttachmentsStreamingPool<ConnectorState> {
         continue; // Skip if the attachment ID is already processed
       }
 
+      if (
+        this.adapter.state.toDevRev &&
+        this.adapter.state.toDevRev.attachmentsMetadata.failedAttachmentsIdsList?.some(
+          (it) =>
+            it.id == attachment.id &&
+            it.parent_id == attachment.parent_id &&
+            it.failureCount >= this.maxAttachmentFailures
+        )
+      ) {
+        console.warn(
+          `Skipping attachment with ID ${attachment.id}: exceeded ${this.maxAttachmentFailures} transient failures.`
+        );
+        continue; // Skip if the attachment has exceeded the transient failure limit
+      }
+
       try {
         const response = await this.adapter.processAttachment(
           attachment,
@@ -176,6 +239,11 @@ export class AttachmentsStreamingPool<ConnectorState> {
             `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} ${fileSizeInfo}${contentTypeInfo}due to error returned by the stream function`,
             response.error.message
           );
+
+          if (response.error.isTransient) {
+            this.recordTransientFailure(attachment);
+          }
+
           await this.updateProgress();
           continue;
         }
