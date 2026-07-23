@@ -11,6 +11,7 @@ import { emit } from '../../common/control-protocol';
 import {
   addReportToLoaderReport,
   getFilesToLoad,
+  getSafeResponseHeaders,
   toRfc3339Timestamp,
 } from './worker-adapter.helpers';
 import { ProgressData } from './worker-adapter.interfaces';
@@ -967,6 +968,7 @@ export class WorkerAdapter<ConnectorState> {
       }
 
       if (httpStream) {
+        const fetchHeaders = getSafeResponseHeaders(httpStream.headers);
         const fileType =
           attachment.content_type ||
           httpStream.headers['content-type']?.toString() ||
@@ -991,6 +993,7 @@ export class WorkerAdapter<ConnectorState> {
               }. Skipping attachment. ${serializeError(artifactUrlError)}`,
               fileSize: fileSize,
               isTransient: isTransientUploadError(artifactUrlError),
+              fetchHeaders,
             },
           };
         }
@@ -1008,6 +1011,7 @@ export class WorkerAdapter<ConnectorState> {
                 serializeError(uploadedArtifactError),
               fileSize: fileSize,
               isTransient: isTransientUploadError(uploadedArtifactError),
+              fetchHeaders,
             },
           };
         }
@@ -1025,6 +1029,7 @@ export class WorkerAdapter<ConnectorState> {
                 serializeError(confirmArtifactUploadError),
               fileSize: fileSize,
               isTransient: isTransientUploadError(confirmArtifactUploadError),
+              fetchHeaders,
             },
           };
         }

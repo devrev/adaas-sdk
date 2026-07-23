@@ -540,6 +540,12 @@ export type ProcessAttachmentReturnType =
          * failures per attachment so it can eventually be skipped.
          */
         isTransient?: boolean;
+        /**
+         * A fixed allowlist of structural response headers (content-length, content-type,
+         * etc.) from the attachment fetch, for diagnostics. Deliberately excludes any
+         * header not on the allowlist so auth-adjacent headers never end up here.
+         */
+        fetchHeaders?: Record<string, string>;
       };
     }
   | undefined;

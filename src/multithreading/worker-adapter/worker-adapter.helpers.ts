@@ -5,6 +5,38 @@ import {
   StatsFileObject,
 } from '../../types/loading';
 
+// Response headers safe to include in logs: structural metadata about the fetched file,
+// not the request itself. Everything else (auth-adjacent headers, cookies, etc.) is
+// deliberately excluded — an allowlist rather than a denylist, so a header we haven't
+// thought about doesn't leak through.
+const SAFE_ATTACHMENT_RESPONSE_HEADERS = [
+  'content-length',
+  'content-type',
+  'content-disposition',
+  'content-encoding',
+  'last-modified',
+  'etag',
+  'cache-control',
+] as const;
+
+/**
+ * Extracts a fixed allowlist of structural response headers (size, type, cache metadata)
+ * from an attachment fetch response, for inclusion in "skipping attachment" logs. Headers
+ * outside the allowlist (e.g. anything auth-adjacent) are never included.
+ */
+export function getSafeResponseHeaders(
+  headers: Record<string, unknown>
+): Record<string, string> {
+  const safeHeaders: Record<string, string> = {};
+  for (const key of SAFE_ATTACHMENT_RESPONSE_HEADERS) {
+    const value = headers[key];
+    if (value !== undefined) {
+      safeHeaders[key] = String(value);
+    }
+  }
+  return safeHeaders;
+}
+
 /**
  * Gets the files to load for the loader.
  * @param {string[]} supportedItemTypes - The supported item types
