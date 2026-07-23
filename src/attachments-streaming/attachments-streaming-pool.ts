@@ -1,4 +1,3 @@
-import { DEFAULT_MAX_ATTACHMENT_FAILURES } from '../common/constants';
 import { sleep } from '../common/helpers';
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import {
@@ -18,7 +17,6 @@ export class AttachmentsStreamingPool<ConnectorState> {
   private batchSize: number;
   private delay: number | undefined;
   private stream: ExternalSystemAttachmentStreamingFunction;
-  private readonly maxAttachmentFailures: number;
 
   private totalProcessedCount: number = 0;
   private readonly PROGRESS_REPORT_INTERVAL = 50;
@@ -34,23 +32,14 @@ export class AttachmentsStreamingPool<ConnectorState> {
     this.batchSize = batchSize;
     this.delay = undefined;
     this.stream = stream;
-
-    const configuredMaxAttachmentFailures =
-      adapter.options?.maxAttachmentFailures ?? DEFAULT_MAX_ATTACHMENT_FAILURES;
-    if (configuredMaxAttachmentFailures <= 0) {
-      console.warn(
-        `The specified maxAttachmentFailures (${configuredMaxAttachmentFailures}) is invalid. Using ${DEFAULT_MAX_ATTACHMENT_FAILURES} instead.`
-      );
-      this.maxAttachmentFailures = DEFAULT_MAX_ATTACHMENT_FAILURES;
-    } else {
-      this.maxAttachmentFailures = configuredMaxAttachmentFailures;
-    }
   }
 
   /**
-   * Marks an attachment as permanently failed after it exhausted its transient-error
-   * retry budget within this invocation, so subsequent invocations skip it instead of
-   * retrying a deterministically-failing request forever.
+   * Marks an attachment as permanently failed after a transient error (ECONNABORTED,
+   * 5xx), so subsequent invocations skip it instead of retrying a deterministically-
+   * failing request forever. The stream function's own HTTP client (axiosClient) already
+   * retries transient errors with exponential backoff before returning one here, so a
+   * second retry loop at this level would just double up on an already-exhausted budget.
    */
   private markPermanentlyFailed(attachment: NormalizedAttachment): void {
     const attachmentsMetadata =
@@ -208,35 +197,9 @@ export class AttachmentsStreamingPool<ConnectorState> {
         )
       ) {
         console.warn(
-          `Skipping attachment with ID ${attachment.id}: previously exhausted its retry budget.`
+          `Skipping attachment with ID ${attachment.id}: previously failed with a transient error.`
         );
         continue; // Skip if the attachment was already marked as permanently failed
-      }
-
-      const delay = await this.processAttachmentWithRetries(attachment);
-      if (delay !== undefined) {
-        this.delay = delay; // Set the delay for rate limiting
-        return;
-      }
-    }
-  }
-
-  /**
-   * Processes a single attachment, retrying up to maxAttachmentFailures times within
-   * this invocation while the error is transient (ECONNABORTED, 5xx). This keeps
-   * intermittent failures from being marked permanently failed on the first attempt,
-   * while still giving up on deterministically-failing attachments before the invocation
-   * ends, rather than looping across invocations forever.
-   *
-   * @returns the rate-limit delay if one was hit, otherwise undefined
-   */
-  private async processAttachmentWithRetries(
-    attachment: NormalizedAttachment
-  ): Promise<number | undefined> {
-    for (let attempt = 1; attempt <= this.maxAttachmentFailures; attempt++) {
-      if (this.adapter.isTimeout) {
-        // Leave the attachment unmarked so it's retried fresh next invocation.
-        return undefined;
       }
 
       try {
@@ -245,16 +208,13 @@ export class AttachmentsStreamingPool<ConnectorState> {
           this.stream
         );
 
+        // Check if rate limit was hit
         if (response?.delay) {
-          return response.delay;
+          this.delay = response.delay; // Set the delay for rate limiting
+          return;
         }
 
         if (response?.error) {
-          const isLastAttempt = attempt === this.maxAttachmentFailures;
-          if (response.error.isTransient && !isLastAttempt) {
-            continue; // Retry immediately within this invocation
-          }
-
           const fileExtension = attachment.file_name.split('.').pop() || '';
 
           const fileSizeInfo = response.error.fileSize
@@ -270,12 +230,16 @@ export class AttachmentsStreamingPool<ConnectorState> {
             response.error.message
           );
 
+          // The stream function's HTTP client already retried this request with
+          // exponential backoff before returning an error, so a transient failure here
+          // means that budget is exhausted — mark it permanently failed rather than
+          // retrying it again from scratch next invocation.
           if (response.error.isTransient) {
             this.markPermanentlyFailed(attachment);
           }
 
           await this.updateProgress();
-          return undefined;
+          continue;
         }
 
         if (
@@ -289,7 +253,6 @@ export class AttachmentsStreamingPool<ConnectorState> {
         }
 
         await this.updateProgress();
-        return undefined;
       } catch (error) {
         const fileExtension = attachment.file_name.split('.').pop() || '';
 
@@ -303,10 +266,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
         );
 
         await this.updateProgress();
-        return undefined;
       }
     }
-
-    return undefined;
   }
 }

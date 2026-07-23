@@ -38,9 +38,6 @@ export type ExtractionScope = Record<string, { extract: boolean }>;
  * @param {number=} timeout - The timeout for the worker thread
  * @param {number=} batchSize - Maximum number of extracted items in a batch
  * @param {Record<EventType, string>=} workerPathOverrides - A map of event types to custom worker paths to override default worker paths
- * @param {number=} maxAttachmentFailures - Number of times an attachment may be retried within a
- * single invocation after a transient upload error (ECONNABORTED, 5xx) before it is marked
- * permanently failed and skipped in subsequent invocations
  */
 export interface WorkerAdapterOptions {
   isLocalDevelopment?: boolean;
@@ -48,7 +45,6 @@ export interface WorkerAdapterOptions {
   batchSize?: number;
   workerPathOverrides?: WorkerPathOverrides;
   skipConfirmation?: boolean;
-  maxAttachmentFailures?: number;
 }
 
 /**
