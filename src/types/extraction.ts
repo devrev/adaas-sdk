@@ -511,7 +511,10 @@ export interface ExternalSystemAttachmentStreamingParams {
 
 export interface ExternalSystemAttachmentStreamingResponse {
   httpStream?: AxiosResponse;
-  error?: ErrorRecord;
+  error?: ErrorRecord & {
+    /** The HTTP status code of the failed request, if the error originated from one. */
+    statusCode?: number;
+  };
   delay?: number;
 }
 
@@ -524,7 +527,10 @@ export interface StreamAttachmentsResponse {
 export type ProcessAttachmentReturnType =
   | {
       delay?: number;
-      error?: { message: string; fileSize?: number };
+      error?: {
+        message: string;
+        fileSize?: number;
+      };
     }
   | undefined;
 

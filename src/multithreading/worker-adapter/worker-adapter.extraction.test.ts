@@ -709,7 +709,7 @@ describe(`${WorkerAdapter.name}.processAttachment`, () => {
   });
 
   // ---- error paths ----
-  it('should return the stream error directly when the stream function returns an error', async () => {
+  it('should return the stream error message when the stream function returns an error', async () => {
     // Arrange
     const stream = jest
       .fn()
@@ -722,7 +722,7 @@ describe(`${WorkerAdapter.name}.processAttachment`, () => {
     );
 
     // Assert
-    expect(result?.error).toBeDefined();
+    expect(result?.error?.message).toBe('stream failed');
   });
 
   it('should propagate a rate-limit delay from the stream function', async () => {
