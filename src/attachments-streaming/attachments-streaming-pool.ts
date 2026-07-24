@@ -79,8 +79,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
   /**
    * Migrates processed attachments from older state shapes to the current
    * ProcessedAttachment[] format: legacy string[] IDs, and entries recorded before the
-   * `status` field existed (which only ever held successes, since failures used to live in
-   * the now-removed standalone failedAttachmentsIdsList).
+   * `status` field existed (which only ever held successes).
    *
    * @param attachments - The attachments list to migrate (string[] or partial ProcessedAttachment[])
    * @returns Migrated array of ProcessedAttachment objects, or empty array if input is invalid
@@ -138,30 +137,6 @@ export class AttachmentsStreamingPool<ConnectorState> {
         this.adapter.state.toDevRev.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       );
-
-    // Merge the legacy standalone failed-attachments list (from state persisted before the
-    // two lists were merged) in, then drop it — it's no longer written to.
-    const legacyFailedAttachmentsIdsList =
-      this.adapter.state.toDevRev.attachmentsMetadata.failedAttachmentsIdsList;
-    if (legacyFailedAttachmentsIdsList?.length) {
-      const processedAttachmentsIdsList =
-        this.adapter.state.toDevRev.attachmentsMetadata
-          .lastProcessedAttachmentsIdsList;
-      for (const legacyFailed of legacyFailedAttachmentsIdsList) {
-        const alreadyRecorded = processedAttachmentsIdsList.some(
-          (it) =>
-            it.id === legacyFailed.id && it.parent_id === legacyFailed.parent_id
-        );
-        if (!alreadyRecorded) {
-          processedAttachmentsIdsList.push({
-            ...legacyFailed,
-            status: AttachmentStatus.Failed,
-          });
-        }
-      }
-    }
-    delete this.adapter.state.toDevRev.attachmentsMetadata
-      .failedAttachmentsIdsList;
 
     // Start initial batch of promises up to batchSize limit
     const initialBatchSize = Math.min(this.batchSize, this.attachments.length);

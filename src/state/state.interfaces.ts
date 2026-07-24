@@ -40,11 +40,6 @@ export interface ToDevRev {
     artifactIds: string[];
     lastProcessed: number;
     lastProcessedAttachmentsIdsList?: ProcessedAttachment[];
-    /**
-     * @deprecated Merged into lastProcessedAttachmentsIdsList (with status Failed). Kept
-     * only so state persisted before the merge can still be migrated on read.
-     */
-    failedAttachmentsIdsList?: LegacyFailedAttachment[];
   };
 }
 
@@ -66,14 +61,6 @@ export interface ProcessedAttachment {
   id: string;
   parent_id: string;
   status: AttachmentStatus;
-}
-
-/**
- * @deprecated Legacy shape of the standalone failed-attachments list, pre-merge.
- */
-export interface LegacyFailedAttachment {
-  id: string;
-  parent_id: string;
 }
 
 export interface FromDevRev {
