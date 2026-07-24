@@ -955,11 +955,7 @@ export class WorkerAdapter<ConnectorState> {
       );
 
       if (error) {
-        return {
-          error: {
-            message: error.message,
-          },
-        };
+        return { error };
       } else if (delay) {
         return { delay };
       }
