@@ -196,9 +196,6 @@ export class AttachmentsStreamingPool<ConnectorState> {
           (it) => it.id == attachment.id && it.parent_id == attachment.parent_id
         )
       ) {
-        console.warn(
-          `Skipping attachment with ID ${attachment.id}: previously failed with a transient error.`
-        );
         continue; // Skip if the attachment was already marked as permanently failed
       }
 
