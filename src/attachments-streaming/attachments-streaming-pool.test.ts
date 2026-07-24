@@ -217,26 +217,6 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(2); // Only 2 out of 3
     });
 
-    it('should include the attachment URL when logging a previously-failed skip', async () => {
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
-      mockAdapter.state.toDevRev!.attachmentsMetadata.failedAttachmentsIdsList =
-        [{ id: 'attachment-1', parent_id: 'parent-1' }];
-      mockAdapter.processAttachment.mockResolvedValue({});
-
-      const pool = new AttachmentsStreamingPool({
-        adapter: mockAdapter,
-        attachments: [mockAttachments[0]],
-        stream: mockStream,
-        batchSize: 1,
-      });
-
-      await pool.streamAll();
-
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('https://example.com/file1.pdf')
-      );
-    });
-
     it('should mark an attachment as permanently failed on a transient error', async () => {
       mockAdapter.processAttachment.mockResolvedValueOnce({
         error: { message: 'timeout', isTransient: true },
@@ -288,62 +268,6 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(
         mockAdapter.state.toDevRev!.attachmentsMetadata.failedAttachmentsIdsList
       ).toEqual([]);
-    });
-
-    it('should include the attachment URL and fetch response headers in the skip log', async () => {
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
-      mockAdapter.processAttachment.mockResolvedValueOnce({
-        error: {
-          message: 'timeout',
-          isTransient: true,
-          fileSize: 2048,
-          fetchHeaders: {
-            'content-length': '2048',
-            'content-type': 'application/pdf',
-          },
-        },
-      });
-
-      const pool = new AttachmentsStreamingPool({
-        adapter: mockAdapter,
-        attachments: [mockAttachments[0]],
-        stream: mockStream,
-        batchSize: 1,
-      });
-
-      await pool.streamAll();
-
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('https://example.com/file1.pdf'),
-        'timeout'
-      );
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          '{"content-length":"2048","content-type":"application/pdf"}'
-        ),
-        'timeout'
-      );
-    });
-
-    it('should include the attachment URL in the skip log when the error has no fetch headers', async () => {
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
-      mockAdapter.processAttachment.mockResolvedValueOnce({
-        error: { message: 'File size is 0 or less.' },
-      });
-
-      const pool = new AttachmentsStreamingPool({
-        adapter: mockAdapter,
-        attachments: [mockAttachments[0]],
-        stream: mockStream,
-        batchSize: 1,
-      });
-
-      await pool.streamAll();
-
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('https://example.com/file1.pdf'),
-        'File size is 0 or less.'
-      );
     });
 
     it('should handle all attachments failing with different file types and sizes', async () => {
@@ -453,7 +377,7 @@ describe(AttachmentsStreamingPool.name, () => {
       await pool.streamAll();
 
       expect(warnSpy).toHaveBeenCalledWith(
-        'Skipping attachment with ID attachment-2 with extension jpg fetched from URL https://example.com/file2.jpg due to error in processAttachment function',
+        'Skipping attachment with ID attachment-2 with extension jpg due to error in processAttachment function',
         error
       );
       expect(

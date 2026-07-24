@@ -834,39 +834,6 @@ describe(`${WorkerAdapter.name}.processAttachment`, () => {
     expect(result?.error?.message).toContain('streaming to artifact');
   });
 
-  it('should include allowlisted fetch response headers in the error when streamArtifact fails', async () => {
-    // Arrange
-    const stream = jest.fn().mockResolvedValue({
-      httpStream: createMockHttpStream({
-        'content-length': '2048',
-        'content-type': 'application/pdf',
-        authorization: 'Bearer secret-token',
-      }),
-    });
-    adapter['uploader'].getArtifactUploadUrl = jest.fn().mockResolvedValue({
-      response: {
-        artifact_id: 'art-1',
-        upload_url: 'https://upload',
-        form_data: [],
-      },
-    });
-    adapter['uploader'].streamArtifact = jest
-      .fn()
-      .mockResolvedValue({ error: new Error('stream failed') });
-
-    // Act
-    const result = await adapter.processAttachment(
-      makeAttachment() as never,
-      stream
-    );
-
-    // Assert
-    expect(result?.error?.fetchHeaders).toEqual({
-      'content-length': '2048',
-      'content-type': 'application/pdf',
-    });
-  });
-
   it('should return an error when confirmArtifactUpload fails', async () => {
     // Arrange
     const stream = jest

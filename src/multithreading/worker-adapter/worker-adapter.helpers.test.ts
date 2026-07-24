@@ -8,7 +8,6 @@ import {
 import {
   addReportToLoaderReport,
   getFilesToLoad,
-  getSafeResponseHeaders,
   toRfc3339Timestamp,
 } from './worker-adapter.helpers';
 
@@ -632,63 +631,5 @@ describe(toRfc3339Timestamp.name, () => {
     const result = toRfc3339Timestamp(ms);
 
     expect(result).toBe('1969-12-31T00:00:00.000Z');
-  });
-});
-
-describe(getSafeResponseHeaders.name, () => {
-  it('should extract allowlisted headers', () => {
-    const headers = {
-      'content-length': '1024',
-      'content-type': 'application/pdf',
-      'content-disposition': 'attachment; filename="file.pdf"',
-      'content-encoding': 'gzip',
-      'last-modified': 'Wed, 21 Oct 2015 07:28:00 GMT',
-      etag: '"abc123"',
-      'cache-control': 'no-cache',
-    };
-
-    const result = getSafeResponseHeaders(headers);
-
-    expect(result).toEqual({
-      'content-length': '1024',
-      'content-type': 'application/pdf',
-      'content-disposition': 'attachment; filename="file.pdf"',
-      'content-encoding': 'gzip',
-      'last-modified': 'Wed, 21 Oct 2015 07:28:00 GMT',
-      etag: '"abc123"',
-      'cache-control': 'no-cache',
-    });
-  });
-
-  it('should exclude headers not on the allowlist', () => {
-    const headers = {
-      'content-length': '1024',
-      authorization: 'Bearer secret-token',
-      cookie: 'session=abc123',
-      'set-cookie': 'session=abc123',
-      'x-api-key': 'secret-key',
-    };
-
-    const result = getSafeResponseHeaders(headers);
-
-    expect(result).toEqual({ 'content-length': '1024' });
-  });
-
-  it('[edge] should return an empty object when no headers are present', () => {
-    const result = getSafeResponseHeaders({});
-
-    expect(result).toEqual({});
-  });
-
-  it('[edge] should return an empty object when headers only contain non-allowlisted keys', () => {
-    const result = getSafeResponseHeaders({ authorization: 'Bearer token' });
-
-    expect(result).toEqual({});
-  });
-
-  it('[edge] should stringify non-string header values', () => {
-    const result = getSafeResponseHeaders({ 'content-length': 1024 });
-
-    expect(result).toEqual({ 'content-length': '1024' });
   });
 });

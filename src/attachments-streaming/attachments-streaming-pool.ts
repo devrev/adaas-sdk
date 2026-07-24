@@ -197,7 +197,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
         )
       ) {
         console.warn(
-          `Skipping attachment with ID ${attachment.id} fetched from URL ${attachment.url}: previously failed with a transient error.`
+          `Skipping attachment with ID ${attachment.id}: previously failed with a transient error.`
         );
         continue; // Skip if the attachment was already marked as permanently failed
       }
@@ -225,16 +225,8 @@ export class AttachmentsStreamingPool<ConnectorState> {
             ? `and content_type ${attachment.content_type} `
             : '';
 
-          const fetchHeadersInfo =
-            response.error.fetchHeaders &&
-            Object.keys(response.error.fetchHeaders).length > 0
-              ? `and fetch response headers ${JSON.stringify(
-                  response.error.fetchHeaders
-                )} `
-              : '';
-
           console.warn(
-            `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} ${fileSizeInfo}${contentTypeInfo}${fetchHeadersInfo}fetched from URL ${attachment.url} due to error returned by the stream function`,
+            `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} ${fileSizeInfo}${contentTypeInfo}due to error returned by the stream function`,
             response.error.message
           );
 
@@ -269,7 +261,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
           : '';
 
         console.warn(
-          `Skipping attachment with ID ${attachment.id} with extension ${fileExtension}${contentTypeInfo} fetched from URL ${attachment.url} due to error in processAttachment function`,
+          `Skipping attachment with ID ${attachment.id} with extension ${fileExtension}${contentTypeInfo} due to error in processAttachment function`,
           error
         );
 
