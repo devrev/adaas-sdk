@@ -1132,7 +1132,7 @@ export class WorkerAdapter<ConnectorState> {
 
         return {
           report: {
-            item_type: 'attachment',
+            item_type: 'attachments',
             [ActionType.CREATED]: 1,
           },
         };
@@ -1140,7 +1140,7 @@ export class WorkerAdapter<ConnectorState> {
         console.warn('Failed to create attachment in external system', error);
         return {
           report: {
-            item_type: 'attachment',
+            item_type: 'attachments',
             [ActionType.FAILED]: 1,
           },
         };
