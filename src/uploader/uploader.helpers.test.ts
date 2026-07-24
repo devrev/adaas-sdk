@@ -1,4 +1,3 @@
-import { AxiosError } from 'axios';
 import fs, { promises as fsPromises } from 'fs';
 import type { FileHandle } from 'fs/promises';
 import { jsonl } from 'js-jsonl';
@@ -13,7 +12,6 @@ import {
   computeArtifactDateRanges,
   decompressGzip,
   downloadToLocal,
-  isTransientUploadError,
   parseJsonl,
   truncateFilename,
 } from './uploader.helpers';
@@ -476,54 +474,6 @@ describe('uploader.helpers', () => {
 
       // Assert
       expect(result.length).toBe(MAX_DEVREV_FILENAME_LENGTH);
-    });
-  });
-
-  describe(isTransientUploadError.name, () => {
-    it('should return true for ECONNABORTED errors', () => {
-      // Arrange
-      const error = {
-        isAxiosError: true,
-        code: 'ECONNABORTED',
-      } as unknown as AxiosError;
-
-      // Act & Assert
-      expect(isTransientUploadError(error)).toBe(true);
-    });
-
-    it('should return true for 5xx response errors', () => {
-      // Arrange
-      const error = {
-        isAxiosError: true,
-        response: { status: 503 },
-      } as unknown as AxiosError;
-
-      // Act & Assert
-      expect(isTransientUploadError(error)).toBe(true);
-    });
-
-    it('should return false for 4xx response errors', () => {
-      // Arrange
-      const error = {
-        isAxiosError: true,
-        response: { status: 404 },
-      } as unknown as AxiosError;
-
-      // Act & Assert
-      expect(isTransientUploadError(error)).toBe(false);
-    });
-
-    it('should return false for non-axios errors', () => {
-      // Arrange
-      const error = new Error('some other error');
-
-      // Act & Assert
-      expect(isTransientUploadError(error)).toBe(false);
-    });
-
-    it('[edge] should return false when error is undefined', () => {
-      // Act & Assert
-      expect(isTransientUploadError(undefined)).toBe(false);
     });
   });
 });

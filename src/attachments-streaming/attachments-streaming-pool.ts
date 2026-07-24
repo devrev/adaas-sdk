@@ -1,7 +1,7 @@
 import { sleep } from '../common/helpers';
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import {
-  FailedAttachment,
+  AttachmentStatus,
   ProcessedAttachment,
 } from '../state/state.interfaces';
 import {
@@ -35,30 +35,34 @@ export class AttachmentsStreamingPool<ConnectorState> {
   }
 
   /**
-   * Marks an attachment as permanently failed after a transient error (ECONNABORTED,
-   * 5xx), so subsequent invocations skip it instead of retrying a deterministically-
-   * failing request forever. The stream function's own HTTP client (axiosClient) already
-   * retries transient errors with exponential backoff before returning one here, so a
-   * second retry loop at this level would just double up on an already-exhausted budget.
+   * Records the outcome of sending an attachment for processing, so subsequent invocations
+   * skip it instead of retrying a request that already ran to completion (successfully or
+   * not). The stream function's own HTTP client (axiosClient) already retries transient
+   * errors with exponential backoff before returning here, so once an attachment comes
+   * back with an error its retry budget is exhausted — there's no scenario where retrying
+   * it again from scratch next invocation would succeed.
    */
-  private markPermanentlyFailed(attachment: NormalizedAttachment): void {
+  private recordProcessed(
+    attachment: NormalizedAttachment,
+    status: AttachmentStatus
+  ): void {
     const attachmentsMetadata =
       this.adapter.state.toDevRev?.attachmentsMetadata;
-    if (!attachmentsMetadata) {
+    if (!attachmentsMetadata?.lastProcessedAttachmentsIdsList) {
       return;
     }
 
-    const failedAttachmentsIdsList: FailedAttachment[] =
-      attachmentsMetadata.failedAttachmentsIdsList ?? [];
-    attachmentsMetadata.failedAttachmentsIdsList = failedAttachmentsIdsList;
+    const processedAttachmentsIdsList =
+      attachmentsMetadata.lastProcessedAttachmentsIdsList;
 
-    const alreadyMarked = failedAttachmentsIdsList.some(
+    const alreadyRecorded = processedAttachmentsIdsList.some(
       (it) => it.id === attachment.id && it.parent_id === attachment.parent_id
     );
-    if (!alreadyMarked) {
-      failedAttachmentsIdsList.push({
+    if (!alreadyRecorded) {
+      processedAttachmentsIdsList.push({
         id: attachment.id,
         parent_id: attachment.parent_id,
+        status,
       });
     }
   }
@@ -73,21 +77,18 @@ export class AttachmentsStreamingPool<ConnectorState> {
   }
 
   /**
-   * Migrates processed attachments from the legacy string[] format to the new ProcessedAttachment[] format.
+   * Migrates processed attachments from older state shapes to the current
+   * ProcessedAttachment[] format: legacy string[] IDs, and entries recorded before the
+   * `status` field existed (which only ever held successes, since failures used to live in
+   * the now-removed standalone failedAttachmentsIdsList).
    *
-   * @param attachments - The attachments list to migrate (either string[] or ProcessedAttachment[])
+   * @param attachments - The attachments list to migrate (string[] or partial ProcessedAttachment[])
    * @returns Migrated array of ProcessedAttachment objects, or empty array if input is invalid
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private migrateProcessedAttachments(attachments: any): ProcessedAttachment[] {
-    // Handle null/undefined
     if (!attachments || !Array.isArray(attachments)) {
       return [];
-    }
-
-    // If already migrated (first element is an object), return as-is
-    if (attachments.length > 0 && typeof attachments[0] === 'object') {
-      return attachments as ProcessedAttachment[];
     }
 
     // Migrate old string[] format
@@ -95,6 +96,15 @@ export class AttachmentsStreamingPool<ConnectorState> {
       return attachments.map((it) => ({
         id: it as string,
         parent_id: '',
+        status: AttachmentStatus.Success,
+      }));
+    }
+
+    // Backfill status on entries recorded before it existed
+    if (attachments.length > 0 && typeof attachments[0] === 'object') {
+      return (attachments as ProcessedAttachment[]).map((it) => ({
+        ...it,
+        status: it.status ?? AttachmentStatus.Success,
       }));
     }
 
@@ -112,8 +122,8 @@ export class AttachmentsStreamingPool<ConnectorState> {
       return { error };
     }
 
-    // Get the list of successfully processed attachments in previous (possibly incomplete) batch extraction.
-    // If no such list exists, create an empty one.
+    // Get the list of attachments processed (successfully or not) in a previous
+    // (possibly incomplete) batch extraction. If no such list exists, create an empty one.
     if (
       !this.adapter.state.toDevRev.attachmentsMetadata
         .lastProcessedAttachmentsIdsList
@@ -122,21 +132,36 @@ export class AttachmentsStreamingPool<ConnectorState> {
         [];
     }
 
-    // Migrate old processed attachments to the new format.
+    // Migrate old processed attachments to the current format.
     this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList =
       this.migrateProcessedAttachments(
         this.adapter.state.toDevRev.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       );
 
-    // Get the list of attachments that have repeatedly failed with a transient error in
-    // previous invocations. If no such list exists, create an empty one.
-    if (
-      !this.adapter.state.toDevRev.attachmentsMetadata.failedAttachmentsIdsList
-    ) {
-      this.adapter.state.toDevRev.attachmentsMetadata.failedAttachmentsIdsList =
-        [];
+    // Merge the legacy standalone failed-attachments list (from state persisted before the
+    // two lists were merged) in, then drop it — it's no longer written to.
+    const legacyFailedAttachmentsIdsList =
+      this.adapter.state.toDevRev.attachmentsMetadata.failedAttachmentsIdsList;
+    if (legacyFailedAttachmentsIdsList?.length) {
+      const processedAttachmentsIdsList =
+        this.adapter.state.toDevRev.attachmentsMetadata
+          .lastProcessedAttachmentsIdsList;
+      for (const legacyFailed of legacyFailedAttachmentsIdsList) {
+        const alreadyRecorded = processedAttachmentsIdsList.some(
+          (it) =>
+            it.id === legacyFailed.id && it.parent_id === legacyFailed.parent_id
+        );
+        if (!alreadyRecorded) {
+          processedAttachmentsIdsList.push({
+            ...legacyFailed,
+            status: AttachmentStatus.Failed,
+          });
+        }
+      }
     }
+    delete this.adapter.state.toDevRev.attachmentsMetadata
+      .failedAttachmentsIdsList;
 
     // Start initial batch of promises up to batchSize limit
     const initialBatchSize = Math.min(this.batchSize, this.attachments.length);
@@ -187,16 +212,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
           (it) => it.id == attachment.id && it.parent_id == attachment.parent_id
         )
       ) {
-        continue; // Skip if the attachment ID is already processed
-      }
-
-      if (
-        this.adapter.state.toDevRev &&
-        this.adapter.state.toDevRev.attachmentsMetadata.failedAttachmentsIdsList?.some(
-          (it) => it.id == attachment.id && it.parent_id == attachment.parent_id
-        )
-      ) {
-        continue; // Skip if the attachment was already marked as permanently failed
+        continue; // Skip if the attachment was already processed (succeeded or failed)
       }
 
       try {
@@ -228,25 +244,17 @@ export class AttachmentsStreamingPool<ConnectorState> {
           );
 
           // The stream function's HTTP client already retried this request with
-          // exponential backoff before returning an error, so a transient failure here
-          // means that budget is exhausted — mark it permanently failed rather than
-          // retrying it again from scratch next invocation.
-          if (response.error.isTransient) {
-            this.markPermanentlyFailed(attachment);
-          }
+          // exponential backoff before returning an error, so its retry budget is
+          // exhausted — mark it permanently failed rather than retrying it again from
+          // scratch next invocation.
+          this.recordProcessed(attachment, AttachmentStatus.Failed);
 
           await this.updateProgress();
           continue;
         }
 
-        if (
-          !this.adapter.isTimeout &&
-          this.adapter.state.toDevRev?.attachmentsMetadata
-            ?.lastProcessedAttachmentsIdsList
-        ) {
-          this.adapter.state.toDevRev?.attachmentsMetadata.lastProcessedAttachmentsIdsList.push(
-            { id: attachment.id, parent_id: attachment.parent_id }
-          );
+        if (!this.adapter.isTimeout) {
+          this.recordProcessed(attachment, AttachmentStatus.Success);
         }
 
         await this.updateProgress();

@@ -1,4 +1,3 @@
-import axios from 'axios';
 import fs, { promises as fsPromises } from 'fs';
 import { jsonl } from 'js-jsonl';
 import zlib from 'zlib';
@@ -13,20 +12,6 @@ import {
   ArtifactDateRanges,
   UploaderResult,
 } from './uploader.interfaces';
-
-/**
- * Determines whether an error from the SDK-owned upload path (get upload URL, stream
- * artifact, confirm upload) is a transient failure that's expected to keep recurring on
- * retry for the same attachment: a client-side timeout (ECONNABORTED) or a 5xx response.
- * Used to count repeated failures per attachment so it can eventually be skipped instead
- * of retried forever.
- */
-export function isTransientUploadError(error: unknown): boolean {
-  if (!axios.isAxiosError(error)) {
-    return false;
-  }
-  return error.code === 'ECONNABORTED' || (error.response?.status ?? 0) >= 500;
-}
 
 /**
  * Computes oldest/newest created and modified timestamps (RFC3339) across uploaded items.

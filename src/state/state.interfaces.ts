@@ -40,24 +40,38 @@ export interface ToDevRev {
     artifactIds: string[];
     lastProcessed: number;
     lastProcessedAttachmentsIdsList?: ProcessedAttachment[];
-    failedAttachmentsIdsList?: FailedAttachment[];
+    /**
+     * @deprecated Merged into lastProcessedAttachmentsIdsList (with status Failed). Kept
+     * only so state persisted before the merge can still be migrated on read.
+     */
+    failedAttachmentsIdsList?: LegacyFailedAttachment[];
   };
 }
 
 /**
- * Attachment structure, that stores both attachment id and its parent_id for deduplication on the SDK side.
+ * Outcome of sending an attachment for processing. Once an attachment is sent for
+ * processing it either succeeds or fails permanently — there is no in-between retry state
+ * carried across invocations.
+ */
+export enum AttachmentStatus {
+  Success = 'success',
+  Failed = 'failed',
+}
+
+/**
+ * Attachment structure, that stores both attachment id and its parent_id for deduplication
+ * on the SDK side, along with whether it succeeded or failed.
  */
 export interface ProcessedAttachment {
   id: string;
   parent_id: string;
+  status: AttachmentStatus;
 }
 
 /**
- * Attachment that exhausted its transient-error retry budget (ECONNABORTED, 5xx) within a
- * single invocation. Persisted across invocations so it's permanently skipped instead of
- * being retried forever on a deterministically-failing request.
+ * @deprecated Legacy shape of the standalone failed-attachments list, pre-merge.
  */
-export interface FailedAttachment {
+export interface LegacyFailedAttachment {
   id: string;
   parent_id: string;
 }
@@ -86,7 +100,6 @@ export const extractionSdkState = {
       artifactIds: [],
       lastProcessed: 0,
       lastProcessedAttachmentsIdsList: [],
-      failedAttachmentsIdsList: [],
     },
   },
 };

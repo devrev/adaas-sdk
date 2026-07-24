@@ -1,4 +1,5 @@
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { AttachmentStatus } from '../state/state.interfaces';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
@@ -191,19 +192,37 @@ describe(AttachmentsStreamingPool.name, () => {
         mockAdapter.state.toDevRev?.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([
-        { id: 'attachment-1', parent_id: '' },
-        { id: 'attachment-2', parent_id: '' },
-        { id: 'attachment-1', parent_id: 'parent-1' },
-        { id: 'attachment-2', parent_id: 'parent-2' },
-        { id: 'attachment-3', parent_id: 'parent-3' },
+        { id: 'attachment-1', parent_id: '', status: AttachmentStatus.Success },
+        { id: 'attachment-2', parent_id: '', status: AttachmentStatus.Success },
+        {
+          id: 'attachment-1',
+          parent_id: 'parent-1',
+          status: AttachmentStatus.Success,
+        },
+        {
+          id: 'attachment-2',
+          parent_id: 'parent-2',
+          status: AttachmentStatus.Success,
+        },
+        {
+          id: 'attachment-3',
+          parent_id: 'parent-3',
+          status: AttachmentStatus.Success,
+        },
       ]);
 
       expect(result).toEqual({});
     });
 
     it('should skip attachments already marked as permanently failed', async () => {
-      mockAdapter.state.toDevRev!.attachmentsMetadata.failedAttachmentsIdsList =
-        [{ id: 'attachment-1', parent_id: 'parent-1' }];
+      mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
+        [
+          {
+            id: 'attachment-1',
+            parent_id: 'parent-1',
+            status: AttachmentStatus.Failed,
+          },
+        ];
       mockAdapter.processAttachment.mockResolvedValue({});
 
       const pool = new AttachmentsStreamingPool({
@@ -217,9 +236,9 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(2); // Only 2 out of 3
     });
 
-    it('should mark an attachment as permanently failed on a transient error', async () => {
+    it('should mark an attachment as permanently failed on any error', async () => {
       mockAdapter.processAttachment.mockResolvedValueOnce({
-        error: { message: 'timeout', isTransient: true },
+        error: { message: 'timeout' },
       });
 
       const pool = new AttachmentsStreamingPool({
@@ -233,8 +252,15 @@ describe(AttachmentsStreamingPool.name, () => {
 
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(1);
       expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata.failedAttachmentsIdsList
-      ).toEqual([{ id: 'attachment-1', parent_id: 'parent-1' }]);
+        mockAdapter.state.toDevRev!.attachmentsMetadata
+          .lastProcessedAttachmentsIdsList
+      ).toEqual([
+        {
+          id: 'attachment-1',
+          parent_id: 'parent-1',
+          status: AttachmentStatus.Failed,
+        },
+      ]);
 
       // A subsequent invocation should now skip it entirely instead of calling processAttachment again.
       mockAdapter.processAttachment.mockClear();
@@ -248,26 +274,6 @@ describe(AttachmentsStreamingPool.name, () => {
       await secondPool.streamAll();
 
       expect(mockAdapter.processAttachment).not.toHaveBeenCalled();
-    });
-
-    it('should not mark a non-transient error as permanently failed', async () => {
-      mockAdapter.processAttachment.mockResolvedValueOnce({
-        error: { message: 'File size is 0 or less.' },
-      });
-
-      const pool = new AttachmentsStreamingPool({
-        adapter: mockAdapter,
-        attachments: [mockAttachments[0]],
-        stream: mockStream,
-        batchSize: 1,
-      });
-
-      await pool.streamAll();
-
-      expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(1);
-      expect(
-        mockAdapter.state.toDevRev!.attachmentsMetadata.failedAttachmentsIdsList
-      ).toEqual([]);
     });
 
     it('should handle all attachments failing with different file types and sizes', async () => {
@@ -325,7 +331,13 @@ describe(AttachmentsStreamingPool.name, () => {
   describe(AttachmentsStreamingPool.prototype.startPoolStreaming.name, () => {
     it('should skip already processed attachments', async () => {
       mockAdapter.state.toDevRev!.attachmentsMetadata.lastProcessedAttachmentsIdsList =
-        [{ id: 'attachment-1', parent_id: 'parent-1' }];
+        [
+          {
+            id: 'attachment-1',
+            parent_id: 'parent-1',
+            status: AttachmentStatus.Success,
+          },
+        ];
       mockAdapter.processAttachment.mockResolvedValue({});
 
       const pool = new AttachmentsStreamingPool({
@@ -354,9 +366,21 @@ describe(AttachmentsStreamingPool.name, () => {
         mockAdapter.state.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([
-        { id: 'attachment-1', parent_id: 'parent-1' },
-        { id: 'attachment-2', parent_id: 'parent-2' },
-        { id: 'attachment-3', parent_id: 'parent-3' },
+        {
+          id: 'attachment-1',
+          parent_id: 'parent-1',
+          status: AttachmentStatus.Success,
+        },
+        {
+          id: 'attachment-2',
+          parent_id: 'parent-2',
+          status: AttachmentStatus.Success,
+        },
+        {
+          id: 'attachment-3',
+          parent_id: 'parent-3',
+          status: AttachmentStatus.Success,
+        },
       ]);
     });
 
@@ -387,10 +411,12 @@ describe(AttachmentsStreamingPool.name, () => {
         {
           id: 'attachment-1',
           parent_id: 'parent-1',
+          status: AttachmentStatus.Success,
         },
         {
           id: 'attachment-3',
           parent_id: 'parent-3',
+          status: AttachmentStatus.Success,
         },
       ]);
     });
@@ -414,8 +440,16 @@ describe(AttachmentsStreamingPool.name, () => {
         mockAdapter.state.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([
-        { id: 'attachment-1', parent_id: 'parent-1' },
-        { id: 'attachment-3', parent_id: 'parent-3' },
+        {
+          id: 'attachment-1',
+          parent_id: 'parent-1',
+          status: AttachmentStatus.Success,
+        },
+        {
+          id: 'attachment-3',
+          parent_id: 'parent-3',
+          status: AttachmentStatus.Success,
+        },
       ]);
     });
 
@@ -833,7 +867,13 @@ describe(AttachmentsStreamingPool.name, () => {
       expect(
         mockAdapter.state.toDevRev!.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
-      ).toEqual([{ id: 'attachment-1', parent_id: 'parent-1' }]);
+      ).toEqual([
+        {
+          id: 'attachment-1',
+          parent_id: 'parent-1',
+          status: AttachmentStatus.Success,
+        },
+      ]);
       // 2nd was started then abandoned; 3rd never started.
       expect(mockAdapter.processAttachment).toHaveBeenCalledTimes(2);
     });
