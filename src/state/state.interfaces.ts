@@ -43,12 +43,8 @@ export interface ToDevRev {
   };
 }
 
-/**
- * Outcome of sending an attachment for processing. Once an attachment is sent for
- * processing it either succeeds or fails permanently — there is no in-between retry state
- * carried across invocations.
- */
-export enum AttachmentStatus {
+/** Outcome of sending an attachment for processing. */
+export enum ProcessedAttachmentStatus {
   Success = 'success',
   Failed = 'failed',
 }
@@ -60,7 +56,7 @@ export enum AttachmentStatus {
 export interface ProcessedAttachment {
   id: string;
   parent_id: string;
-  status: AttachmentStatus;
+  status: ProcessedAttachmentStatus;
 }
 
 export interface FromDevRev {

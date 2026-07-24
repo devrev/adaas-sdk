@@ -1,7 +1,7 @@
 import { sleep } from '../common/helpers';
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import {
-  AttachmentStatus,
+  ProcessedAttachmentStatus,
   ProcessedAttachment,
 } from '../state/state.interfaces';
 import {
@@ -34,17 +34,9 @@ export class AttachmentsStreamingPool<ConnectorState> {
     this.stream = stream;
   }
 
-  /**
-   * Records the outcome of sending an attachment for processing, so subsequent invocations
-   * skip it instead of retrying a request that already ran to completion (successfully or
-   * not). The stream function's own HTTP client (axiosClient) already retries transient
-   * errors with exponential backoff before returning here, so once an attachment comes
-   * back with an error its retry budget is exhausted — there's no scenario where retrying
-   * it again from scratch next invocation would succeed.
-   */
-  private recordProcessed(
+  private recordProcessedAttachment(
     attachment: NormalizedAttachment,
-    status: AttachmentStatus
+    status: ProcessedAttachmentStatus
   ): void {
     const attachmentsMetadata =
       this.adapter.state.toDevRev?.attachmentsMetadata;
@@ -95,7 +87,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
       return attachments.map((it) => ({
         id: it as string,
         parent_id: '',
-        status: AttachmentStatus.Success,
+        status: ProcessedAttachmentStatus.Success,
       }));
     }
 
@@ -103,7 +95,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
     if (attachments.length > 0 && typeof attachments[0] === 'object') {
       return (attachments as ProcessedAttachment[]).map((it) => ({
         ...it,
-        status: it.status ?? AttachmentStatus.Success,
+        status: it.status ?? ProcessedAttachmentStatus.Success,
       }));
     }
 
@@ -218,18 +210,20 @@ export class AttachmentsStreamingPool<ConnectorState> {
             response.error.message
           );
 
-          // The stream function's HTTP client already retried this request with
-          // exponential backoff before returning an error, so its retry budget is
-          // exhausted — mark it permanently failed rather than retrying it again from
-          // scratch next invocation.
-          this.recordProcessed(attachment, AttachmentStatus.Failed);
+          this.recordProcessedAttachment(
+            attachment,
+            ProcessedAttachmentStatus.Failed
+          );
 
           await this.updateProgress();
           continue;
         }
 
         if (!this.adapter.isTimeout) {
-          this.recordProcessed(attachment, AttachmentStatus.Success);
+          this.recordProcessedAttachment(
+            attachment,
+            ProcessedAttachmentStatus.Success
+          );
         }
 
         await this.updateProgress();

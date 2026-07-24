@@ -1,5 +1,5 @@
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
-import { AttachmentStatus } from '../state/state.interfaces';
+import { ProcessedAttachmentStatus } from '../state/state.interfaces';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
@@ -192,22 +192,22 @@ describe(AttachmentsStreamingPool.name, () => {
         mockAdapter.state.toDevRev?.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([
-        { id: 'attachment-1', parent_id: '', status: AttachmentStatus.Success },
-        { id: 'attachment-2', parent_id: '', status: AttachmentStatus.Success },
+        { id: 'attachment-1', parent_id: '', status: ProcessedAttachmentStatus.Success },
+        { id: 'attachment-2', parent_id: '', status: ProcessedAttachmentStatus.Success },
         {
           id: 'attachment-1',
           parent_id: 'parent-1',
-          status: AttachmentStatus.Success,
+          status: ProcessedAttachmentStatus.Success,
         },
         {
           id: 'attachment-2',
           parent_id: 'parent-2',
-          status: AttachmentStatus.Success,
+          status: ProcessedAttachmentStatus.Success,
         },
         {
           id: 'attachment-3',
           parent_id: 'parent-3',
-          status: AttachmentStatus.Success,
+          status: ProcessedAttachmentStatus.Success,
         },
       ]);
 
@@ -220,7 +220,7 @@ describe(AttachmentsStreamingPool.name, () => {
           {
             id: 'attachment-1',
             parent_id: 'parent-1',
-            status: AttachmentStatus.Failed,
+            status: ProcessedAttachmentStatus.Failed,
           },
         ];
       mockAdapter.processAttachment.mockResolvedValue({});
@@ -258,7 +258,7 @@ describe(AttachmentsStreamingPool.name, () => {
         {
           id: 'attachment-1',
           parent_id: 'parent-1',
-          status: AttachmentStatus.Failed,
+          status: ProcessedAttachmentStatus.Failed,
         },
       ]);
 
@@ -335,7 +335,7 @@ describe(AttachmentsStreamingPool.name, () => {
           {
             id: 'attachment-1',
             parent_id: 'parent-1',
-            status: AttachmentStatus.Success,
+            status: ProcessedAttachmentStatus.Success,
           },
         ];
       mockAdapter.processAttachment.mockResolvedValue({});
@@ -369,17 +369,17 @@ describe(AttachmentsStreamingPool.name, () => {
         {
           id: 'attachment-1',
           parent_id: 'parent-1',
-          status: AttachmentStatus.Success,
+          status: ProcessedAttachmentStatus.Success,
         },
         {
           id: 'attachment-2',
           parent_id: 'parent-2',
-          status: AttachmentStatus.Success,
+          status: ProcessedAttachmentStatus.Success,
         },
         {
           id: 'attachment-3',
           parent_id: 'parent-3',
-          status: AttachmentStatus.Success,
+          status: ProcessedAttachmentStatus.Success,
         },
       ]);
     });
@@ -411,12 +411,12 @@ describe(AttachmentsStreamingPool.name, () => {
         {
           id: 'attachment-1',
           parent_id: 'parent-1',
-          status: AttachmentStatus.Success,
+          status: ProcessedAttachmentStatus.Success,
         },
         {
           id: 'attachment-3',
           parent_id: 'parent-3',
-          status: AttachmentStatus.Success,
+          status: ProcessedAttachmentStatus.Success,
         },
       ]);
     });
@@ -443,12 +443,12 @@ describe(AttachmentsStreamingPool.name, () => {
         {
           id: 'attachment-1',
           parent_id: 'parent-1',
-          status: AttachmentStatus.Success,
+          status: ProcessedAttachmentStatus.Success,
         },
         {
           id: 'attachment-3',
           parent_id: 'parent-3',
-          status: AttachmentStatus.Success,
+          status: ProcessedAttachmentStatus.Success,
         },
       ]);
     });
@@ -871,7 +871,7 @@ describe(AttachmentsStreamingPool.name, () => {
         {
           id: 'attachment-1',
           parent_id: 'parent-1',
-          status: AttachmentStatus.Success,
+          status: ProcessedAttachmentStatus.Success,
         },
       ]);
       // 2nd was started then abandoned; 3rd never started.

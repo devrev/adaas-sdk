@@ -512,11 +512,7 @@ export interface ExternalSystemAttachmentStreamingParams {
 export interface ExternalSystemAttachmentStreamingResponse {
   httpStream?: AxiosResponse;
   error?: ErrorRecord & {
-    /**
-     * The HTTP status code of the failed request, if the error originated from one
-     * (e.g. a non-2xx response from the external system). Used to classify the error
-     * as transient (e.g. 5xx) so it counts toward the attachment's failure limit.
-     */
+    /** The HTTP status code of the failed request, if the error originated from one. */
     statusCode?: number;
   };
   delay?: number;
