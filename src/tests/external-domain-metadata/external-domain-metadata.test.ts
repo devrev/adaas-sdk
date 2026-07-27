@@ -3,11 +3,13 @@
 // against the JSON schema at runtime using Ajv, catching any drift between the two.
 
 import Ajv, { ValidateFunction } from 'ajv';
-import * as schema from './external_domain_metadata_schema.json';
+
 import {
   ExternalDomainMetadata,
   Field,
 } from '../../types/external-domain-metadata';
+
+import * as schema from './external_domain_metadata_schema.json';
 
 const ajv = new Ajv({ allErrors: true });
 const validate: ValidateFunction = ajv.compile(schema);

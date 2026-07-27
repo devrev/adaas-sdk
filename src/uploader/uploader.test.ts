@@ -1,10 +1,11 @@
+import zlib from 'zlib';
+
 import { AxiosResponse } from 'axios';
 import FormData from 'form-data';
 import { jsonl } from 'js-jsonl';
-import zlib from 'zlib';
 
-import { createMockEvent } from '../common/test-utils';
-import { axiosClient } from '../http/axios-client-internal';
+import { axiosClient } from '../http/client';
+import { createMockEvent } from '../testing/mock-event';
 import { mockServer } from '../tests/jest.setup';
 import {
   callPrivateMethod,
@@ -20,7 +21,7 @@ import { Uploader } from './uploader';
 import { compressGzip, downloadToLocal } from './uploader.helpers';
 import { ArtifactToUpload, UploaderResult } from './uploader.interfaces';
 
-jest.mock('../http/axios-client-internal');
+jest.mock('../http/client');
 jest.mock('./uploader.helpers', () => ({
   ...jest.requireActual('./uploader.helpers'),
   downloadToLocal: jest.fn(),
@@ -31,10 +32,7 @@ const mockedAxiosClient = jest.mocked(axiosClient);
 const mockedDownloadToLocal = jest.mocked(downloadToLocal);
 const mockedCompressGzip = jest.mocked(compressGzip);
 
-/**
- * Type definition for private Uploader methods that need testing.
- * This provides type safety when testing private methods.
- */
+/** Type safety for private Uploader methods accessed in tests. */
 type UploaderPrivateMethods = {
   destroyStream: (fileStream: AxiosResponse) => void;
   getArtifactDownloadUrl: (
@@ -84,75 +82,6 @@ describe(Uploader.name, () => {
         },
       });
       expect(result.error).toBeUndefined();
-    });
-
-    it('should compute oldest/newest created and modified dates from normalized items', async () => {
-      // Arrange
-      const itemType = 'tasks';
-      const fetchedObjects = [
-        {
-          id: '1',
-          created_date: '2020-06-15T10:00:00.000Z',
-          modified_date: '2021-01-20T10:00:00.000Z',
-          data: { name: 'Task 1' },
-        },
-        {
-          id: '2',
-          created_date: '2019-03-01T08:00:00.000Z',
-          modified_date: '2022-11-30T18:00:00.000Z',
-          data: { name: 'Task 2' },
-        },
-      ];
-
-      mockedAxiosClient.get.mockResolvedValueOnce(
-        mockArtifactUploadUrlResponse
-      );
-      mockedAxiosClient.post.mockResolvedValue(createAxiosResponse());
-
-      // Act
-      const result = await uploader.upload(itemType, fetchedObjects);
-
-      // Assert
-      expect(result.artifact?.oldest_created_date).toBe(
-        '2019-03-01T08:00:00.000Z'
-      );
-      expect(result.artifact?.newest_created_date).toBe(
-        '2020-06-15T10:00:00.000Z'
-      );
-      expect(result.artifact?.oldest_modified_date).toBe(
-        '2021-01-20T10:00:00.000Z'
-      );
-      expect(result.artifact?.newest_modified_date).toBe(
-        '2022-11-30T18:00:00.000Z'
-      );
-      expect(result.error).toBeUndefined();
-    });
-
-    it('should compute date ranges for single object upload', async () => {
-      // Arrange
-      const itemType = 'metadata';
-      const fetchedObject = {
-        id: '1',
-        created_date: '2018-12-25T00:00:00.000Z',
-        modified_date: '2018-12-26T00:00:00.000Z',
-        data: { key: 'value' },
-      };
-
-      mockedAxiosClient.get.mockResolvedValueOnce(
-        mockArtifactUploadUrlResponse
-      );
-      mockedAxiosClient.post.mockResolvedValue(createAxiosResponse());
-
-      // Act
-      const result = await uploader.upload(itemType, fetchedObject);
-
-      // Assert
-      const createdTs = '2018-12-25T00:00:00.000Z';
-      const modifiedTs = '2018-12-26T00:00:00.000Z';
-      expect(result.artifact?.oldest_created_date).toBe(createdTs);
-      expect(result.artifact?.newest_created_date).toBe(createdTs);
-      expect(result.artifact?.oldest_modified_date).toBe(modifiedTs);
-      expect(result.artifact?.newest_modified_date).toBe(modifiedTs);
     });
 
     it('should report item_count as 1 when uploading single object', async () => {

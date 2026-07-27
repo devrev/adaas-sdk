@@ -1,3 +1,7 @@
+import { execSync } from 'node:child_process';
+import * as fs from 'fs';
+import * as path from 'path';
+
 import {
   Extractor,
   ExtractorConfig,
@@ -17,10 +21,6 @@ import {
   ApiTypeAlias,
 } from '@microsoft/api-extractor-model';
 
-import * as fs from 'fs';
-import { execSync } from 'node:child_process';
-import * as path from 'path';
-
 export const newApiMdPath = path.join(__dirname, 'temp', 'ts-adaas.md');
 export const currentApiMdPath = path.join(__dirname, 'ts-adaas.md');
 export const newApiJsonPath = path.join(__dirname, 'temp', 'ts-adaas.api.json');
@@ -28,15 +28,13 @@ export const currentApiJsonPath = path.join(__dirname, 'latest.json');
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// Generate API report before all tests run
 export function generateApiReport(): void {
-  // Before running the api extractor, make sure that the code compiles using `tsc` command
+  // Make sure the code compiles before running the api extractor
   const tscCommand = 'npm run build';
   try {
     execSync(tscCommand) as any;
   } catch (error: any) {
-    // Jest has a nice feature: if any of the setup scripts throw an error, the test run will fail
-    // This Error is rethrown to get more information from the error.
+    // Rethrow with stdout so Jest fails the run with the tsc output
     throw new Error(
       `Failed to compile code using tsc command:\n${error.stdout.toString()}`
     );
@@ -47,7 +45,6 @@ export function generateApiReport(): void {
     'api-extractor.json'
   );
 
-  // Ensure the temp and report directories exist
   const tempDir = path.join(__dirname, 'temp');
   const reportDir = path.join(__dirname, 'report');
 
@@ -81,7 +78,6 @@ export function generateApiReport(): void {
   }
 }
 
-// Helper function to load API data
 export const loadApiData = (): {
   newApiMembers: readonly ApiItem[];
   currentApiMembers: readonly ApiItem[];
@@ -107,7 +103,6 @@ export const loadApiData = (): {
   return { newApiMembers, currentApiMembers };
 };
 
-// Helper functions for getting different kinds of items from the API members
 export const getFunctions = (members: readonly ApiItem[]): ApiFunction[] => {
   return members.filter(
     (m: ApiItem) => m instanceof ApiFunction && m.kind === 'Function'
@@ -174,7 +169,6 @@ export const updateCurrentApiJson = () => {
   if (fs.existsSync(newApiMdPath) && fs.existsSync(newApiJsonPath)) {
     fs.copyFileSync(newApiMdPath, currentApiMdPath);
 
-    // Copy new API JSON into latest.json after all tests pass
     const latestJsonPath = path.join(__dirname, 'latest.json');
     fs.copyFileSync(newApiJsonPath, latestJsonPath);
 

@@ -1,4 +1,4 @@
-import { ExtractorEventType, processTask } from '../../index';
+import { processExtractionTask } from '../../index';
 
 const repos = [
   {
@@ -6,7 +6,7 @@ const repos = [
   },
 ];
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     adapter.initializeRepos(repos);
 
@@ -16,11 +16,13 @@ processTask({
       .getRepo('external_domain_metadata')
       ?.push([externalDomainMetadata]);
 
-    await adapter.emit(ExtractorEventType.MetadataExtractionDone);
+    return { status: 'success' };
   },
-  onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.MetadataExtractionError, {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  onTimeout: async () => {
+    return {
+      status: 'error',
       error: { message: 'Failed to extract metadata. Lambda timeout.' },
-    });
+    };
   },
 });

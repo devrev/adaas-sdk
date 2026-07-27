@@ -1,9 +1,10 @@
-import { TimeValueType } from '../types/extraction';
+import { UNBOUNDED_DATE_TIME_VALUE } from '../common/constants';
 import { SdkState } from '../state/state.interfaces';
-import { UNBOUNDED_DATE_TIME_VALUE } from './constants';
+import { TimeValueType } from '../types/extraction';
+
 import {
-  parseDuration,
   applyDuration,
+  parseDuration,
   resolveTimeValue,
 } from './time-value-resolver';
 
@@ -154,8 +155,6 @@ describe('time-value-resolver', () => {
 
   describe('resolveTimeValue', () => {
     const baseState: SdkState = {
-      lastSyncStarted: '',
-      lastSuccessfulSyncStarted: '',
       workersOldest: '2024-01-01T00:00:00.000Z',
       workersNewest: '2024-06-01T00:00:00.000Z',
     };
@@ -255,13 +254,12 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2024-06-01T00:00:00.000Z');
       });
 
-      it('should throw if workersNewest is not set', () => {
-        expect(() =>
-          resolveTimeValue(
-            { type: TimeValueType.WORKERS_NEWEST },
-            { workersNewest: '' }
-          )
-        ).toThrow('workersNewest is not set in state');
+      it('should return UNBOUNDED_DATE_TIME_VALUE if workersNewest is not set', () => {
+        const result = resolveTimeValue(
+          { type: TimeValueType.WORKERS_NEWEST },
+          { workersNewest: '' }
+        );
+        expect(result).toBe(UNBOUNDED_DATE_TIME_VALUE);
       });
     });
 
@@ -332,16 +330,15 @@ describe('time-value-resolver', () => {
         expect(result).toBe('2024-06-01T00:30:00.000Z');
       });
 
-      it('should throw if workersNewest is not set', () => {
-        expect(() =>
-          resolveTimeValue(
-            {
-              type: TimeValueType.WORKERS_NEWEST_PLUS_WINDOW,
-              value: '2h',
-            },
-            { workersNewest: '' }
-          )
-        ).toThrow('workersNewest is not set in state');
+      it('should return UNBOUNDED_DATE_TIME_VALUE if workersNewest is not set', () => {
+        const result = resolveTimeValue(
+          {
+            type: TimeValueType.WORKERS_NEWEST_PLUS_WINDOW,
+            value: '30m',
+          },
+          { workersNewest: '' }
+        );
+        expect(result).toBe(UNBOUNDED_DATE_TIME_VALUE);
       });
 
       it('should throw if value (duration) is missing', () => {
@@ -367,8 +364,6 @@ describe('time-value-resolver', () => {
       const FIXED_NOW = '2026-02-26T15:30:00.000Z';
 
       const scenarioState: SdkState = {
-        lastSyncStarted: '',
-        lastSuccessfulSyncStarted: '',
         workersOldest: '2024-01-01T00:00:00.000Z',
         workersNewest: '2024-06-01T00:00:00.000Z',
       };

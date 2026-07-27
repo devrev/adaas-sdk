@@ -27,201 +27,6 @@ import {
   updateCurrentApiJson,
 } from './helpers';
 
-export const normalizeTypeText = (text: string): string =>
-  text.replace(/\s/g, '');
-
-/**
- * Parse a normalized object type string (e.g. `{delay?:number;error?:{message:string};}`)
- * into a map of property name -> { optional: boolean, type: string }.
- *
- * This handles nested braces so that e.g. `error?:{message:string;fileSize?:number}`
- * is treated as a single property rather than being split at the inner semicolons.
- */
-export const parseObjectProperties = (
-  obj: string
-): Map<string, { optional: boolean; type: string }> | null => {
-  const trimmed = obj.replace(/^\{/, '').replace(/\}$/, '');
-  if (!trimmed) return new Map();
-
-  const properties = new Map<string, { optional: boolean; type: string }>();
-
-  // Walk character-by-character, tracking brace depth, to split on
-  // top-level semicolons only.
-  let depth = 0;
-  let current = '';
-  for (const ch of trimmed) {
-    if (ch === '{') depth++;
-    if (ch === '}') depth--;
-    if (ch === ';' && depth === 0) {
-      if (current.length > 0) {
-        const colonIdx = current.indexOf(':');
-        if (colonIdx === -1) return null; // not a valid property
-        let name = current.slice(0, colonIdx);
-        const type = current.slice(colonIdx + 1);
-        const optional = name.endsWith('?');
-        if (optional) name = name.slice(0, -1);
-        properties.set(name, { optional, type });
-      }
-      current = '';
-    } else {
-      current += ch;
-    }
-  }
-  // Handle trailing segment (when the text doesn't end with ';')
-  if (current.length > 0) {
-    const colonIdx = current.indexOf(':');
-    if (colonIdx !== -1) {
-      let name = current.slice(0, colonIdx);
-      const type = current.slice(colonIdx + 1);
-      const optional = name.endsWith('?');
-      if (optional) name = name.slice(0, -1);
-      properties.set(name, { optional, type });
-    }
-  }
-
-  return properties;
-};
-
-/**
- * Check whether `newMember` is a backwards-compatible evolution of
- * `currentMember`.  Both strings are normalised (whitespace stripped)
- * object type literals.
- *
- * Compatible means:
- * 1. Every property in `currentMember` still exists in `newMember`.
- * 2. Existing properties that were in `currentMember` are structurally
- *    compatible in `newMember` (recursively, for nested object types).
- * 3. Properties that were optional stay optional (not promoted to required).
- * 4. Any *new* properties in `newMember` must be optional.
- */
-export const isObjectTypeBackwardsCompatible = (
-  currentMember: string,
-  newMember: string
-): boolean => {
-  if (!currentMember.startsWith('{') || !newMember.startsWith('{')) {
-    return false;
-  }
-
-  const currentProps = parseObjectProperties(currentMember);
-  const newProps = parseObjectProperties(newMember);
-
-  if (!currentProps || !newProps) return false;
-
-  // 1. Every current property must exist in new
-  for (const [name, currentProp] of currentProps) {
-    const newProp = newProps.get(name);
-    if (!newProp) return false;
-
-    // 3. Optional properties must stay optional
-    if (currentProp.optional && !newProp.optional) return false;
-
-    // 2. Property types must be compatible
-    // If both types are object types, recurse
-    if (currentProp.type.startsWith('{') && newProp.type.startsWith('{')) {
-      if (!isObjectTypeBackwardsCompatible(currentProp.type, newProp.type)) {
-        return false;
-      }
-    } else if (currentProp.type !== newProp.type) {
-      return false;
-    }
-  }
-
-  // 4. New properties must be optional
-  for (const [name, newProp] of newProps) {
-    if (!currentProps.has(name) && !newProp.optional) {
-      return false;
-    }
-  }
-
-  return true;
-};
-
-/**
- * Splits a normalized intersection type (e.g. `Foo&{bar?:string}`) into its
- * top-level `&`-separated members, respecting brace depth so that nested
- * object types aren't split on their own semicolons/ampersands.
- */
-const getIntersectionMembers = (text: string): string[] => {
-  const members: string[] = [];
-  let depth = 0;
-  let current = '';
-  for (const ch of text) {
-    if (ch === '{') depth++;
-    if (ch === '}') depth--;
-    if (ch === '&' && depth === 0) {
-      members.push(current);
-      current = '';
-    } else {
-      current += ch;
-    }
-  }
-  members.push(current);
-  return members;
-};
-
-/**
- * Check whether a `newType` is a backwards-compatible evolution of
- * `currentType`. Both are raw (non-normalized) type-excerpt strings.
- *
- * Handles two shapes of widening in addition to an exact match:
- * - Inline object types gaining new optional properties (delegates to
- *   isObjectTypeBackwardsCompatible).
- * - Intersection types gaining a new `& { ...optional fields }` member, e.g.
- *   `ErrorRecord` -> `ErrorRecord & { statusCode?: number }`. Every member of
- *   the current intersection must still be present (verbatim, or as a
- *   backwards-compatible object widening) in the new intersection, and any
- *   brand-new intersection members must themselves reduce to all-optional
- *   properties (so they don't add a new requirement).
- */
-export const isTypeBackwardsCompatible = (
-  currentType: string,
-  newType: string
-): boolean => {
-  const currentText = normalizeTypeText(currentType);
-  const newText = normalizeTypeText(newType);
-
-  if (currentText === newText) {
-    return true;
-  }
-
-  if (currentText.startsWith('{') && newText.startsWith('{')) {
-    return isObjectTypeBackwardsCompatible(currentText, newText);
-  }
-
-  if (currentText.includes('&') || newText.includes('&')) {
-    const currentMembers = getIntersectionMembers(currentText);
-    const newMembers = getIntersectionMembers(newText);
-
-    // Every current member must still be satisfied by some new member.
-    const allCurrentMembersSatisfied = currentMembers.every(
-      (currentMember) =>
-        newMembers.includes(currentMember) ||
-        newMembers.some(
-          (newMember) =>
-            currentMember.startsWith('{') &&
-            newMember.startsWith('{') &&
-            isObjectTypeBackwardsCompatible(currentMember, newMember)
-        )
-    );
-    if (!allCurrentMembersSatisfied) {
-      return false;
-    }
-
-    // Any brand-new intersection member must only add optional properties,
-    // so it doesn't impose a new requirement on existing callers/values.
-    const newMembersAreOptionalOnly = newMembers.every((newMember) => {
-      if (currentMembers.includes(newMember)) return true;
-      if (!newMember.startsWith('{')) return false;
-      const props = parseObjectProperties(newMember);
-      return !!props && [...props.values()].every((p) => p.optional);
-    });
-
-    return newMembersAreOptionalOnly;
-  }
-
-  return false;
-};
-
 export function checkFunctionCompatibility(
   newFunction: ApiFunction | ApiConstructor | ApiMethodSignature,
   currentFunction: ApiFunction | ApiConstructor | ApiMethodSignature
@@ -252,9 +57,7 @@ export function checkFunctionCompatibility(
       const newParam = newFunctionParamNames[i];
       const currentParam = currentFunctionParamNames[i];
 
-      // If both are destructured parameters (contain '{')
       if (newParam.includes('{') && currentParam.includes('{')) {
-        // Extract field names from destructured parameters
         const extractFields = (param: string) =>
           param
             .replace(/[{}\s]/g, '')
@@ -264,7 +67,7 @@ export function checkFunctionCompatibility(
         const newFields = extractFields(newParam);
         const currentFields = extractFields(currentParam);
 
-        // Check that all current fields are present in new fields
+        // All current fields must still be present in new fields
         const missingFields = currentFields.filter(
           (field) => !newFields.includes(field)
         );
@@ -286,8 +89,7 @@ export function checkFunctionCompatibility(
     expect(newFunctionParamTypes).toEqual(currentFunctionParameterTypes);
   });
 
-  // Check return type compatibility
-  // This check fails if it's a constructor, as those don't have a return type
+  // Return type check — skipped for constructors, which have no return type
   if (
     currentFunction instanceof ApiFunction &&
     newFunction instanceof ApiFunction
@@ -330,7 +132,6 @@ export function checkFunctionCompatibility(
       const newParam = newFunction.parameters[i];
       const currentParam = currentFunction.parameters[i];
 
-      // If current parameter was optional, new parameter should also be optional
       if (currentParam.isOptional && !newParam.isOptional) {
         throw new Error(
           `Parameter ${newParam.name} became required but was optional`
@@ -395,7 +196,6 @@ describe('Backwards Compatibility', () => {
           (f: ApiFunction) => f.name === newFunction.name
         );
 
-        // Skip if function doesn't exist in current API
         if (!currentFunction) {
           continue;
         }
@@ -421,7 +221,6 @@ describe('Backwards Compatibility', () => {
           (c: ApiClass) => c.name === newClass.name
         );
 
-        // Skip if class doesn't exist in current API
         if (!currentClass) {
           continue;
         }
@@ -449,32 +248,26 @@ describe('Backwards Compatibility', () => {
                 (p) => p.name === currentProperty.name
               );
               if (newProperty && currentProperty.isOptional) {
-                // If the current property was optional, the new property should also be optional
                 expect(newProperty.isOptional).toBe(true);
               }
             });
           }
         });
 
-        // Check property compatibility
         const oldProperties = currentClassProperties;
         const newProperties = newClassProperties;
         for (const newProperty of newProperties) {
           const currentProperty = oldProperties.find(
             (p: ApiProperty) => p.name === newProperty.name
           );
-          // If the property is new, there's no need to check for compatibility
           if (!currentProperty) {
             continue;
           }
 
-          it(`Class ${newClass.name} property ${newProperty.name} should have a backwards-compatible type with the current property`, () => {
-            expect(
-              isTypeBackwardsCompatible(
-                currentProperty.propertyTypeExcerpt.text,
-                newProperty.propertyTypeExcerpt.text
-              )
-            ).toBe(true);
+          it(`Class ${newClass.name} property ${newProperty.name} should have the same type as the current property`, () => {
+            expect(newProperty.propertyTypeExcerpt.text).toEqual(
+              currentProperty.propertyTypeExcerpt.text
+            );
           });
 
           it(`Class ${newClass.name} property ${newProperty.name} should have the same optionality as the current property`, () => {
@@ -482,12 +275,11 @@ describe('Backwards Compatibility', () => {
           });
         }
 
-        // Check constructor signature compatibility (same rules as functions)
+        // Constructor signatures follow the same compatibility rules as functions
         const currentMethod = getConstructor(currentClass.members);
         const newMethod = getConstructor(newClass.members);
         checkFunctionCompatibility(newMethod, currentMethod);
 
-        // Check method count
         const newClassMethods = getFunctions(newClass.members);
         const currentClassMethods = getFunctions(currentClass.members);
 
@@ -500,13 +292,11 @@ describe('Backwards Compatibility', () => {
           }
         });
 
-        // Check method compatibility (same rules as functions)
-        // Make sure to allow optional parameters to be added to the end
+        // Methods follow the same rules as functions (optional params may be appended)
         for (const newMethod of newClassMethods) {
           const currentMethod = currentClassMethods.find(
             (m: ApiFunction) => m.name === newMethod.name
           );
-          // If the method is new, there's no need to check for compatibility
           if (!currentMethod) {
             continue;
           }
@@ -558,40 +348,30 @@ describe('Backwards Compatibility', () => {
           );
         });
 
-        // Check property compatibility
         const oldProperties = currentInterfaceProperties;
         const newProperties = newInterfaceProperties;
         for (const newProperty of newProperties) {
           const currentProperty = oldProperties.find(
             (p: ApiPropertySignature) => p.name === newProperty.name
           );
-          // If the property is new, there's no need to check for compatibility
           if (!currentProperty) {
             continue;
           }
 
-          it(`Interface ${newInterface.name} property ${newProperty.name} should have a backwards-compatible type with the current property`, () => {
-            expect(
-              isTypeBackwardsCompatible(
-                currentProperty.propertyTypeExcerpt.text,
-                newProperty.propertyTypeExcerpt.text
-              )
-            ).toBe(true);
+          it(`Interface ${newInterface.name} property ${newProperty.name} should have the same type as the current property`, () => {
+            expect(newProperty.propertyTypeExcerpt.text).toEqual(
+              currentProperty.propertyTypeExcerpt.text
+            );
           });
 
           it(`Interface ${newInterface.name} property ${newProperty.name} should have not been made required if it was optional`, () => {
-            // If the new property is required, it must have been required before.
-            // Otherwise we break backwards-compatibility.
+            // optional -> required is a breaking change; required -> optional is fine
             expect(
-              // If it was required before, it can be either now.
-              !currentProperty.isOptional ||
-                // If it was optional before, it can only be optional now.
-                newProperty.isOptional
+              !currentProperty.isOptional || newProperty.isOptional
             ).toEqual(true);
           });
         }
 
-        // Check method count
         const newInterfaceMethods = getMethodSignatures(newInterface.members);
         const currentInterfaceMethods = getMethodSignatures(
           currentInterface.members
@@ -603,13 +383,11 @@ describe('Backwards Compatibility', () => {
           );
         });
 
-        // Check method compatibility (same rules as functions)
-        // Make sure to allow optional parameters to be added to the end
+        // Methods follow the same rules as functions (optional params may be appended)
         for (const newMethod of newInterfaceMethods) {
           const currentMethod = currentInterfaceMethods.find(
             (m: ApiMethodSignature) => m.name === newMethod.name
           );
-          // If the method is new, there's no need to check for compatibility
           if (!currentMethod) {
             continue;
           }
@@ -632,13 +410,11 @@ describe('Backwards Compatibility', () => {
       newEnums = getEnums(newApiMembers);
       currentEnums = getEnums(currentApiMembers);
 
-      // Verify no enum values were removed
       for (const newEnum of newEnums) {
         const currentEnum = currentEnums.find(
           (e: ApiEnum) => e.name === newEnum.name
         );
 
-        // If it's a new enum, there's no need to check for compatibility
         if (!currentEnum) {
           continue;
         }
@@ -657,7 +433,6 @@ describe('Backwards Compatibility', () => {
             (v: ApiEnumMember) => v.name === currentEnumValue.name
           );
 
-          // If it's a new enum value, there's no need to check for compatibility
           if (!newEnumValue) {
             continue;
           }
@@ -669,7 +444,6 @@ describe('Backwards Compatibility', () => {
       }
     });
 
-    // Verify numeric enum values haven't changed (if numeric enum)
     describe('should verify numeric enum values have not changed', () => {
       const { newApiMembers, currentApiMembers } = loadApiData();
       newEnums = getEnums(newApiMembers);
@@ -680,15 +454,13 @@ describe('Backwards Compatibility', () => {
           (e: ApiEnum) => e.name === newEnum.name
         );
 
-        // If it's a new enum, there's no need to check for compatibility
         if (!currentEnum) {
           continue;
         }
 
-        // Helper function to determine if an enum is numeric based on its members' initializer values
+        // An enum is numeric if every member has a numeric initializer
         const isNumericEnum = (enumMembers: ApiEnumMember[]): boolean => {
           return enumMembers.every((member: ApiEnumMember) => {
-            // Check if the member has an initializer and if it's a numeric value
             const initializerText = member.excerptTokens
               ?.find(
                 (token) =>
@@ -722,7 +494,6 @@ describe('Backwards Compatibility', () => {
             (v: ApiEnumMember) => v.name === currentEnumValue.name
           );
 
-          // If it's not defined, an existing value is missing from the new enum
           it(`Enum ${newEnum.name} should contain enum value: ${currentEnumValue.name}`, () => {
             expect(newEnumValue).toBeDefined();
           });
@@ -749,7 +520,6 @@ describe('Backwards Compatibility', () => {
           (e: ApiEnum) => e.name === newEnum.name
         );
 
-        // If it's a new enum, there's no need to check for compatibility
         if (!currentEnum) {
           continue;
         }
@@ -774,7 +544,6 @@ describe('Backwards Compatibility', () => {
     const newTypes = getTypes(newApiMembers);
     const currentTypes = getTypes(currentApiMembers);
 
-    // Verify type aliases weren't removed
     describe("should verify type aliases weren't removed", () => {
       for (const newType of newTypes) {
         const currentType = currentTypes.find(
@@ -789,13 +558,118 @@ describe('Backwards Compatibility', () => {
       }
     });
 
-    // Verify that the type alias is the same as the current type alias
     describe('should verify type aliases are the same as the current type aliases', () => {
+      const normalizeTypeText = (text: string): string =>
+        text.replace(/\s/g, '');
       const getUnionMembers = (text: string): string[] =>
         normalizeTypeText(text)
           .split('|')
           .map((member) => member.trim())
           .filter(Boolean);
+
+      /**
+       * Parse a normalized object type string into a map of property name ->
+       * { optional, type }. Tracks brace depth so nested object types aren't
+       * split at their inner semicolons.
+       */
+      const parseObjectProperties = (
+        obj: string
+      ): Map<string, { optional: boolean; type: string }> | null => {
+        const trimmed = obj.replace(/^\{/, '').replace(/\}$/, '');
+        if (!trimmed) return new Map();
+
+        const properties = new Map<
+          string,
+          { optional: boolean; type: string }
+        >();
+
+        let depth = 0;
+        let current = '';
+        for (const ch of trimmed) {
+          if (ch === '{') depth++;
+          if (ch === '}') depth--;
+          if (ch === ';' && depth === 0) {
+            if (current.length > 0) {
+              const colonIdx = current.indexOf(':');
+              if (colonIdx === -1) return null; // not a valid property
+              let name = current.slice(0, colonIdx);
+              const type = current.slice(colonIdx + 1);
+              const optional = name.endsWith('?');
+              if (optional) name = name.slice(0, -1);
+              properties.set(name, { optional, type });
+            }
+            current = '';
+          } else {
+            current += ch;
+          }
+        }
+        // Handle trailing segment (when the text doesn't end with ';')
+        if (current.length > 0) {
+          const colonIdx = current.indexOf(':');
+          if (colonIdx !== -1) {
+            let name = current.slice(0, colonIdx);
+            const type = current.slice(colonIdx + 1);
+            const optional = name.endsWith('?');
+            if (optional) name = name.slice(0, -1);
+            properties.set(name, { optional, type });
+          }
+        }
+
+        return properties;
+      };
+
+      /**
+       * Compatible means: (1) every current property still exists, (2) types
+       * stay compatible (recursively for nested objects), (3) optional stays
+       * optional, (4) any new property is optional. Inputs are normalised
+       * object type literals.
+       */
+      const isObjectTypeBackwardsCompatible = (
+        currentMember: string,
+        newMember: string
+      ): boolean => {
+        if (!currentMember.startsWith('{') || !newMember.startsWith('{')) {
+          return false;
+        }
+
+        const currentProps = parseObjectProperties(currentMember);
+        const newProps = parseObjectProperties(newMember);
+
+        if (!currentProps || !newProps) return false;
+
+        // 1. Every current property must exist in new
+        for (const [name, currentProp] of currentProps) {
+          const newProp = newProps.get(name);
+          if (!newProp) return false;
+
+          // 3. Optional properties must stay optional
+          if (currentProp.optional && !newProp.optional) return false;
+
+          // 2. Property types must be compatible
+          // If both types are object types, recurse
+          if (
+            currentProp.type.startsWith('{') &&
+            newProp.type.startsWith('{')
+          ) {
+            if (
+              !isObjectTypeBackwardsCompatible(currentProp.type, newProp.type)
+            ) {
+              return false;
+            }
+          } else if (currentProp.type !== newProp.type) {
+            return false;
+          }
+        }
+
+        // 4. New properties must be optional
+        for (const [name, newProp] of newProps) {
+          if (!currentProps.has(name) && !newProp.optional) {
+            return false;
+          }
+        }
+
+        return true;
+      };
 
       for (const newType of newTypes) {
         const currentType = currentTypes.find(
@@ -819,7 +693,6 @@ describe('Backwards Compatibility', () => {
 
             expect(!!currentUnionMembers.length).toBe(true);
             for (const member of currentUnionMembers) {
-              // Exact match: member is unchanged
               if (newUnionMembersSet.has(member)) {
                 continue;
               }

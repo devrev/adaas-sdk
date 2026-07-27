@@ -1,20 +1,21 @@
-import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
+
+import { AxiosError } from 'axios';
+
 import { LIBRARY_VERSION } from '../common/constants';
+import { createMockEvent } from '../testing/mock-event';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
-import { AirdropEvent, EventType } from '../types/extraction';
+import { AirSyncEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
+
 import {
   getPrintableState,
+  INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
   Logger,
+  MAX_LOG_STRING_LENGTH,
   serializeAxiosError,
   serializeError,
 } from './logger';
-import {
-  INSPECT_OPTIONS as EXPECTED_INSPECT_OPTIONS,
-  MAX_LOG_STRING_LENGTH,
-} from './logger.constants';
 
 // Mock console methods
 const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation();
@@ -32,7 +33,7 @@ jest.mock('node:worker_threads', () => {
 });
 
 describe(Logger.name, () => {
-  let mockEvent: AirdropEvent;
+  let mockEvent: AirSyncEvent;
   let mockOptions: WorkerAdapterOptions;
 
   beforeEach(() => {
@@ -61,7 +62,6 @@ describe(Logger.name, () => {
     expect(tags).toEqual({
       ...mockEvent.payload.event_context,
       sdk_version: LIBRARY_VERSION,
-      is_sdk_log: true,
     });
   });
 
@@ -79,7 +79,6 @@ describe(Logger.name, () => {
         message,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
-        is_sdk_log: true,
       })
     );
   });
@@ -99,7 +98,6 @@ describe(Logger.name, () => {
         message: expectedMessage,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
-        is_sdk_log: true,
       })
     );
   });
@@ -120,7 +118,6 @@ describe(Logger.name, () => {
         message: `${text} ${expectedDataMessage}`,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
-        is_sdk_log: true,
       })
     );
   });
@@ -142,7 +139,6 @@ describe(Logger.name, () => {
         message: `${text1} ${expectedDataMessage} ${text2}`,
         ...mockEvent.payload.event_context,
         sdk_version: LIBRARY_VERSION,
-        is_sdk_log: true,
       })
     );
   });
@@ -346,7 +342,6 @@ describe(Logger.name, () => {
     const logObject = JSON.parse(callArgs);
     expect(logObject.message).toBe('');
     expect(logObject.sdk_version).toBe(LIBRARY_VERSION);
-    expect(logObject.is_sdk_log).toBe(true);
   });
 
   it('[edge] should handle null and undefined values in log arguments', () => {
