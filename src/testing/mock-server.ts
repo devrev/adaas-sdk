@@ -10,11 +10,12 @@ import {
   RouteHandlers,
 } from './mock-server.interfaces';
 
+// Port 0 lets the OS assign a free port at listen time; tests read the
+// resolved URL from `mockServer.baseUrl`.
+export const MOCK_SERVER_DEFAULT_URL = 'http://localhost:0';
+
 const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10mb
 
-/**
- * Parses the JSON body from an incoming request.
- */
 async function parseJsonBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -47,9 +48,6 @@ async function parseJsonBody(req: IncomingMessage): Promise<unknown> {
   });
 }
 
-/**
- * Wraps a ServerResponse with helper methods (status, json, set, send).
- */
 function wrapResponse(res: ServerResponse): MockResponse {
   const mock = res as MockResponse;
   let statusCode = 200;
@@ -85,9 +83,8 @@ function wrapResponse(res: ServerResponse): MockResponse {
 }
 
 /**
- * MockServer used in tests to mock internal AirSync endpoints.
- * This is a simple mock server that listens on a port and responds to requests.
- * Supports per-test route configuration to simulate different response scenarios.
+ * Mocks internal AirSync endpoints in tests, with per-test route
+ * configuration to simulate different response scenarios.
  */
 export class MockServer {
   private server: Server | null = null;
@@ -175,10 +172,7 @@ export class MockServer {
     }
   }
 
-  /**
-   * Default route handler for the mock server. Returns { success: true } for
-   * routes that are not explicitly set.
-   */
+  /** Falls back to { success: true } for routes not explicitly set. */
   private defaultRouteHandler(req: ParsedRequest, res: MockResponse): void {
     if (req.method === 'GET' && req.path === '/worker_data_url.get') {
       res.status(200).json({
@@ -212,9 +206,6 @@ export class MockServer {
     return `${method.toUpperCase()}:${path}`;
   }
 
-  /**
-   * Configures a route to return a specific status code and optional response body.
-   */
   public setRoute(config: RouteConfig): void {
     const { path, method, status, body, bodyBuffer, retry, headers, delay } =
       config;
@@ -293,19 +284,13 @@ export class MockServer {
     });
   }
 
-  /**
-   * Resets all custom route handlers, restoring all default handlers.
-   * Also clears request tracking data.
-   */
+  /** Restores default handlers and clears request tracking data. */
   public resetRoutes(): void {
     this.routeHandlers.clear();
     this.requestCounts.clear();
     this.requests = [];
   }
 
-  /**
-   * Returns the most recent request or undefined if no requests exist.
-   */
   public getLastRequest(): RequestInfo | undefined {
     if (this.requests.length === 0) {
       return undefined;
@@ -313,16 +298,10 @@ export class MockServer {
     return this.requests[this.requests.length - 1];
   }
 
-  /**
-   * Gets the number of requests made to a specific endpoint.
-   */
   public getRequestCount(method: string, path: string): number {
     return this.getRequests(method, path).length;
   }
 
-  /**
-   * Gets all requests made to a specific endpoint.
-   */
   public getRequests(method: string, path: string): RequestInfo[] {
     const pathWithoutQuery = path.split('?')[0];
     return this.requests.filter(

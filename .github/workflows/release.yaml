@@ -1,4 +1,4 @@
-# This workflow is used to release a new version of @devrev/ts-adaas package to
+# This workflow is used to release a new version of @devrev/airsync-sdk package to
 # npm registry and generate release notes using softprops/action-gh-release
 # action. It consists of two jobs:
 #
@@ -93,7 +93,7 @@ jobs:
         id: version
         run: |
           # Get the latest version including prereleases
-          LATEST_VERSION=$(npm view @devrev/ts-adaas versions --json 2>/dev/null | jq -r '.[-1]' || echo "0.0.0")
+          LATEST_VERSION=$(npm view @devrev/airsync-sdk versions --json 2>/dev/null | jq -r '.[-1]' || echo "0.0.0")
           echo "Latest published version: $LATEST_VERSION"
           echo "LATEST_PUBLISHED_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
 

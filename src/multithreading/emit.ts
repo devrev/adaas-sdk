@@ -1,7 +1,9 @@
 import { AxiosResponse } from 'axios';
-import { axiosClient } from '../http/axios-client-internal';
+
+import { LIBRARY_VERSION } from '../common/constants';
+import { axiosClient } from '../http/client';
 import {
-  AirdropEvent,
+  AirSyncEvent,
   EventData,
   ExtractorEvent,
   ExtractorEventType,
@@ -9,11 +11,9 @@ import {
   WorkerMetadata,
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
-import { LIBRARY_VERSION } from './constants';
-import { translateOutgoingEventType } from './event-type-translation';
 
 export interface EmitInterface {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   eventType: ExtractorEventType | LoaderEventType;
   data?: EventData;
   worker_metadata?: WorkerMetadata;
@@ -25,12 +25,8 @@ export const emit = async ({
   data,
   worker_metadata,
 }: EmitInterface): Promise<AxiosResponse> => {
-  // Translate outgoing event type to ensure we always send new event types
-  // TODO: Remove when the old types are completely phased out
-  const translatedEventType = translateOutgoingEventType(eventType);
-
   const newEvent: ExtractorEvent | LoaderEvent = {
-    event_type: translatedEventType,
+    event_type: eventType,
     event_context: event.payload.event_context,
     event_data: {
       ...data,

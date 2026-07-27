@@ -1,19 +1,8 @@
-import { TimeUnit, TimeValue, TimeValueType } from '../types/extraction';
+import { UNBOUNDED_DATE_TIME_VALUE } from '../common/constants';
 import { SdkState } from '../state/state.interfaces';
-import { UNBOUNDED_DATE_TIME_VALUE } from './constants';
+import { TimeUnit, TimeValue, TimeValueType } from '../types/extraction';
 
-/**
- * Parses a shorthand duration string into its numeric value and unit.
- * Supported units:
- * - 'ns' for nanoseconds
- * - 'us' or 'µs' for microseconds
- * - 'ms' for milliseconds
- * - 's' for seconds
- * - 'm' for minutes
- * - 'h' for hours
- *
- * @throws Error if the format is invalid
- */
+/** Parses a shorthand duration (e.g. '100ns', '500ms', '5m', '2h'); units are the `TimeUnit` values. */
 export function parseDuration(shorthand: string): {
   value: number;
   unit: TimeUnit;
@@ -33,14 +22,7 @@ export function parseDuration(shorthand: string): {
   };
 }
 
-/**
- * Applies a shorthand duration to a base ISO 8601 timestamp.
- *
- * @param baseTimestamp - ISO 8601 timestamp to apply duration to
- * @param duration - Shorthand duration string (e.g. '100ns', '500ms', '30s', '5m', '2h')
- * @param operation - Whether to 'add' or 'subtract' the duration
- * @returns ISO 8601 timestamp with the duration applied
- */
+/** Adds/subtracts a shorthand duration to/from an ISO 8601 timestamp. */
 export function applyDuration(
   baseTimestamp: string,
   duration: string,
@@ -77,22 +59,10 @@ export function applyDuration(
 }
 
 /**
- * Resolves a TimeValue into a concrete ISO 8601 timestamp string.
- *
- * Resolution rules:
- * - ABSOLUTE: Returns the value directly (must be an ISO 8601 timestamp)
- * - NOW: Returns the current time as ISO 8601
- * - UNBOUNDED: Returns UNBOUNDED_DATE_TIME_VALUE ('1970-01-01T00:00:00.000Z')
- * - WORKERS_OLDEST: Returns workersOldest from state, or throws if not set
- * - WORKERS_NEWEST: Returns workersNewest from state, or throws if not set
- * - WORKERS_OLDEST_MINUS_WINDOW: Subtracts duration from workersOldest, or throws if not set
- * - WORKERS_NEWEST_PLUS_WINDOW: Adds duration to workersNewest, or throws if not set
- *
- * @param timeValue - The TimeValue to resolve
- * @param state - The current SDK state containing workersOldest and workersNewest
- * @returns Resolved ISO 8601 timestamp string
- * @throws Error if required TimeValue.value is missing for ABSOLUTE or *_WINDOW types
- * @throws Error if workersOldest/workersNewest is not set in state for WORKERS_* types
+ * Resolves a TimeValue into a concrete ISO 8601 timestamp. WORKERS_* types
+ * read the boundaries from state and fall back to UNBOUNDED when unset
+ * (backwards compatibility with old state); *_WINDOW types apply the duration
+ * in `timeValue.value` to the boundary.
  */
 export function resolveTimeValue(
   timeValue: TimeValue,
@@ -126,7 +96,6 @@ export function resolveTimeValue(
 
     case TimeValueType.WORKERS_OLDEST: {
       if (!state.workersOldest) {
-        // To support backwards-compatibility for the old state
         return UNBOUNDED_DATE_TIME_VALUE;
       }
       return state.workersOldest;
@@ -134,14 +103,7 @@ export function resolveTimeValue(
 
     case TimeValueType.WORKERS_NEWEST: {
       if (!state.workersNewest) {
-        // To support backwards-compatibility for the old state
-        if (state.lastSuccessfulSyncStarted) {
-          return state.lastSuccessfulSyncStarted;
-        }
-
-        throw new Error(
-          'Field workersNewest is not set in state. Cannot resolve TimeValue of type WORKERS_NEWEST without a prior extraction boundary.'
-        );
+        return UNBOUNDED_DATE_TIME_VALUE;
       }
       return state.workersNewest;
     }
@@ -153,7 +115,6 @@ export function resolveTimeValue(
         );
       }
       if (!state.workersOldest) {
-        // To support backwards-compatibility for the old state
         return UNBOUNDED_DATE_TIME_VALUE;
       }
       return applyDuration(state.workersOldest, timeValue.value, 'subtract');
@@ -166,14 +127,7 @@ export function resolveTimeValue(
         );
       }
       if (!state.workersNewest) {
-        // To support backwards-compatibility for the old state
-        if (state.lastSuccessfulSyncStarted) {
-          return state.lastSuccessfulSyncStarted;
-        }
-
-        throw new Error(
-          'Field workersNewest is not set in state. Cannot resolve TimeValue of type WORKERS_NEWEST_PLUS_WINDOW without a prior extraction boundary.'
-        );
+        return UNBOUNDED_DATE_TIME_VALUE;
       }
       return applyDuration(state.workersNewest, timeValue.value, 'add');
     }

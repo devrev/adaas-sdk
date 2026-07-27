@@ -1,11 +1,12 @@
 import { AxiosResponse } from 'axios';
 import FormData from 'form-data';
 import { jsonl } from 'js-jsonl';
-import { axiosClient } from '../http/axios-client-internal';
 
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
-import { NormalizedAttachment } from '../repo/repo.interfaces';
+import { axiosClient } from '../http/client';
 import { serializeError } from '../logger/logger';
+import { NormalizedAttachment } from '../repo/repo.interfaces';
+import { HttpStreamResponse } from '../types/extraction';
 
 import {
   compressGzip,
@@ -18,9 +19,9 @@ import {
 import {
   Artifact,
   ArtifactToUpload,
-  UploadResponse,
   UploaderFactoryInterface,
   UploaderResult,
+  UploadResponse,
 } from './uploader.interfaces';
 
 export class Uploader {
@@ -42,12 +43,7 @@ export class Uploader {
     };
   }
 
-  /**
-   * Uploads the fetched objects to the DevRev platform. Fetched objects are compressed to a gzipped jsonl object and uploaded to the platform.
-   * @param {string} itemType - The type of the item to be uploaded
-   * @param {object[] | object} fetchedObjects - The objects to be uploaded
-   * @returns {Promise<UploadResponse>} - The response object containing the artifact information or error information if there was an error
-   */
+  /** Compresses fetched objects to gzipped JSONL and uploads them as an artifact. */
   async upload(
     itemType: string,
     fetchedObjects: object[] | object
@@ -55,7 +51,6 @@ export class Uploader {
     if (this.isLocalDevelopment) {
       await downloadToLocal(itemType, fetchedObjects);
     }
-    // Compress the fetched objects to a gzipped jsonl object
     const { response: file, error: fileError } = compressGzip(
       jsonl.stringify(fetchedObjects)
     );
@@ -72,7 +67,6 @@ export class Uploader {
     const filename = itemType + '.jsonl.gz';
     const fileType = 'application/x-gzip';
 
-    // Get upload url
     const { error: preparedArtifactError, response: preparedArtifact } =
       await this.getArtifactUploadUrl(filename, fileType);
     if (preparedArtifactError) {
@@ -85,7 +79,6 @@ export class Uploader {
       };
     }
 
-    // Upload prepared artifact to the given url
     const { error: uploadItemError } = await this.uploadArtifact(
       preparedArtifact!,
       file!
@@ -100,10 +93,9 @@ export class Uploader {
       };
     }
 
-    // Skip confirmation for External Sync Units, as this confirmation attachments
-    // uploads to the sync, which we haven't created yet when extracting External Sync Units.
+    // Skip confirmation for External Sync Units: confirmation attaches the upload
+    // to the sync, which doesn't exist yet when extracting External Sync Units.
     if (!this.skipConfirmation) {
-      // Confirm upload
       const { error: confirmArtifactUploadError } =
         await this.confirmArtifactUpload(preparedArtifact!.artifact_id);
       if (confirmArtifactUploadError) {
@@ -111,7 +103,7 @@ export class Uploader {
           error: {
             message:
               'Error while confirming artifact upload. ' +
-              serializeError(confirmArtifactUploadError),
+              JSON.stringify(confirmArtifactUploadError),
           },
         };
       }
@@ -119,7 +111,6 @@ export class Uploader {
 
     const artifactDateRanges = computeArtifactDateRanges(fetchedObjects);
 
-    // Return the artifact information to the platform
     const artifact: Artifact = {
       id: preparedArtifact!.artifact_id,
       item_type: itemType,
@@ -130,13 +121,6 @@ export class Uploader {
     return { artifact };
   }
 
-  /**
-   * Gets the upload URL for an artifact from the DevRev API.
-   * @param {string} filename - The name of the file to upload
-   * @param {string} fileType - The MIME type of the file
-   * @param {number} [fileSize] - Optional file size in bytes
-   * @returns {Promise<ArtifactToUpload | void>} The artifact upload information or undefined on error
-   */
   async getArtifactUploadUrl(
     filename: string,
     fileType: string,
@@ -168,12 +152,7 @@ export class Uploader {
     }
   }
 
-  /**
-   * Uploads an artifact file to the provided upload URL using multipart form data.
-   * @param {ArtifactToUpload} artifact - The artifact upload information containing upload URL and form data
-   * @param {Buffer} file - The file buffer to upload
-   * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
-   */
+  /** Uploads the file buffer to the artifact's upload URL as multipart form data. */
   async uploadArtifact(
     artifact: ArtifactToUpload,
     file: Buffer
@@ -196,15 +175,10 @@ export class Uploader {
     }
   }
 
-  /**
-   * Streams an artifact file from an axios response to the upload URL.
-   * @param {ArtifactToUpload} artifact - The artifact upload information containing upload URL and form data
-   * @param {AxiosResponse} fileStream - The axios response stream containing the file data
-   * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
-   */
+  /** Streams a file from an HTTP response directly to the artifact's upload URL. */
   async streamArtifact(
     artifact: ArtifactToUpload,
-    fileStream: AxiosResponse
+    fileStream: HttpStreamResponse
   ): Promise<UploaderResult<AxiosResponse>> {
     const formData = new FormData();
     for (const field in artifact.form_data) {
@@ -226,13 +200,12 @@ export class Uploader {
               }
             : {}),
         },
-        // Prevents buffering of the response in the memory
+        // Prevents buffering of the response in memory
         maxRedirects: 0,
-        // Allow 2xx and 3xx (redirects) to be considered successful, 4xx and 5xx will throw errors and be caught in the catch block
+        // 2xx and 3xx are success; 4xx/5xx throw into the catch block
         validateStatus: (status) => status >= 200 && status < 400,
-        // The fallback Content-Length above is a guess, not the real size, so the
-        // upload will hit the same ECONNABORTED timeout on every attempt. Retrying
-        // it just multiplies the delay for no chance of success.
+        // The fallback Content-Length is a guess, so the upload hits the same
+        // ECONNABORTED timeout on every attempt — retrying only multiplies the delay.
         ...(!hasContentLength ? { 'axios-retry': { retries: 0 } } : {}),
       });
       this.destroyStream(fileStream);
@@ -243,11 +216,6 @@ export class Uploader {
     }
   }
 
-  /**
-   * Confirms that an artifact upload has been completed successfully.
-   * @param {string} artifactId - The ID of the artifact to confirm
-   * @returns {Promise<AxiosResponse | void>} The axios response or undefined on error
-   */
   async confirmArtifactUpload(artifactId: string): Promise<{
     response?: AxiosResponse;
     error?: unknown;
@@ -267,25 +235,26 @@ export class Uploader {
         }
       );
 
-      // If response exists and the status is 2xx, return the response
       if (response?.status >= 200 && response?.status < 300) {
         return { response };
       } else {
-        return { error: response };
+        return {
+          error: {
+            message:
+              'Error while confirming artifact upload. ' +
+              serializeError(response),
+          },
+        };
       }
     } catch (error) {
-      return { error };
+      return { error: { message: serializeError(error) } };
     }
   }
 
-  /**
-   * Destroys a stream to prevent resource leaks.
-   * @param {any} fileStream - The axios response stream to destroy
-   */
-  private destroyStream(fileStream: AxiosResponse): void {
+  private destroyStream(fileStream: HttpStreamResponse): void {
     try {
       if (fileStream && fileStream.data) {
-        // For axios response streams, the data property contains the actual stream
+        // For axios response streams, `data` holds the actual stream
         if (typeof fileStream.data.destroy === 'function') {
           fileStream.data.destroy();
         } else if (typeof fileStream.data.close === 'function') {
@@ -297,12 +266,7 @@ export class Uploader {
     }
   }
 
-  /**
-   * Retrieves attachment metadata from an artifact by downloading and parsing it.
-   * @param {object} param0 - Configuration object
-   * @param {string} param0.artifact - The artifact ID to download attachments from
-   * @returns {Promise<{attachments?: NormalizedAttachment[], error?: {message: string}}>} The attachments array or error object
-   */
+  /** Downloads an artifact and parses it into attachment metadata. */
   async getAttachmentsFromArtifactId({
     artifact,
   }: {
@@ -311,7 +275,6 @@ export class Uploader {
     attachments?: NormalizedAttachment[];
     error?: { message: string };
   }> {
-    // Get the URL of the attachments metadata artifact
     const { response: artifactUrl, error: artifactUrlError } =
       await this.getArtifactDownloadUrl(artifact);
 
@@ -325,7 +288,6 @@ export class Uploader {
       };
     }
 
-    // Download artifact from the URL
     const { response: gzippedJsonlObject, error: gzippedJsonlObjectError } =
       await this.downloadArtifact(artifactUrl!);
     if (gzippedJsonlObjectError) {
@@ -338,7 +300,6 @@ export class Uploader {
       };
     }
 
-    // Decompress the gzipped jsonl object
     const { response: jsonlObject, error: jsonlObjectError } = decompressGzip(
       gzippedJsonlObject!
     );
@@ -352,7 +313,6 @@ export class Uploader {
       };
     }
 
-    // Parse the jsonl object to get the attachment metadata
     const { response: jsonObject, error: jsonObjectError } = parseJsonl(
       jsonlObject!
     );
@@ -369,11 +329,6 @@ export class Uploader {
     return { attachments: jsonObject! as NormalizedAttachment[] };
   }
 
-  /**
-   * Gets the download URL for an artifact from the DevRev API.
-   * @param {string} artifactId - The ID of the artifact to download
-   * @returns {Promise<string | void>} The download URL or undefined on error
-   */
   private async getArtifactDownloadUrl(
     artifactId: string
   ): Promise<UploaderResult<string>> {
@@ -396,11 +351,6 @@ export class Uploader {
     }
   }
 
-  /**
-   * Downloads an artifact file from the given URL.
-   * @param {string} artifactUrl - The URL to download the artifact from
-   * @returns {Promise<Buffer | void>} The artifact file buffer or undefined on error
-   */
   private async downloadArtifact(
     artifactUrl: string
   ): Promise<UploaderResult<Buffer>> {
@@ -415,13 +365,7 @@ export class Uploader {
     }
   }
 
-  /**
-   * Retrieves and parses JSON objects from an artifact by artifact ID.
-   * @param {object} param0 - Configuration object
-   * @param {string} param0.artifactId - The artifact ID to download and parse
-   * @param {boolean} [param0.isGzipped=false] - Whether the artifact is gzipped
-   * @returns {Promise<object[] | object | void>} The parsed JSON objects or undefined on error
-   */
+  /** Downloads an artifact (optionally gzipped) and parses it as JSONL. */
   async getJsonObjectByArtifactId({
     artifactId,
     isGzipped = false,

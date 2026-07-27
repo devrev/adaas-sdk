@@ -1,14 +1,12 @@
-import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
-
 import { Console } from 'node:console';
-import { inspect } from 'node:util';
+import { inspect, InspectOptions } from 'node:util';
 import { isMainThread, parentPort } from 'node:worker_threads';
+
+import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
 
 import { LIBRARY_VERSION } from '../common/constants';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 
-import { INSPECT_OPTIONS } from './logger.constants';
-import { getSdkLogContextValue } from './logger.context';
 import {
   AxiosErrorResponse,
   LoggerFactoryInterface,
@@ -17,11 +15,34 @@ import {
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
-import { truncateMessage } from '../common/helpers';
+
+// ── Log formatting ──
+
+export const MAX_LOG_STRING_LENGTH = 10000;
+const MAX_LOG_DEPTH = 10;
+const MAX_LOG_ARRAY_LENGTH = 100;
+
+export const INSPECT_OPTIONS: InspectOptions = {
+  compact: false,
+  breakLength: Infinity,
+  depth: MAX_LOG_DEPTH,
+  maxArrayLength: MAX_LOG_ARRAY_LENGTH,
+  maxStringLength: MAX_LOG_STRING_LENGTH,
+};
+
+export function truncateMessage(message: string): string {
+  if (message.length > MAX_LOG_STRING_LENGTH) {
+    return `${message.substring(0, MAX_LOG_STRING_LENGTH)}... ${
+      message.length - MAX_LOG_STRING_LENGTH
+    } more characters`;
+  }
+  return message;
+}
 
 /**
- * Custom logger that extends Node.js Console with context-aware logging.
- * Handles local development, main thread, and worker thread logging differently.
+ * Console replacement that tags every log line with the event context. Worker
+ * threads forward log lines to the main thread, because the snap-in platform
+ * only captures logs written through the main thread's console.
  */
 export class Logger extends Console {
   private originalConsole: Console;
@@ -35,16 +56,9 @@ export class Logger extends Console {
     this.tags = {
       ...event.payload.event_context,
       sdk_version: LIBRARY_VERSION,
-      is_sdk_log: true,
     };
   }
 
-  /**
-   * Converts any value to a string using `util.inspect()` for complex types.
-   *
-   * @param value - The value to convert
-   * @returns String representation of the value
-   */
   private valueToString(value: unknown): string {
     if (typeof value === 'string') {
       return value;
@@ -52,21 +66,8 @@ export class Logger extends Console {
     return inspect(value, INSPECT_OPTIONS);
   }
 
-  /**
-   * Logs a pre-formatted message string to the console.
-   * In production mode, wraps the message with JSON formatting and event context tags.
-   * In local development mode, logs the message directly without JSON wrapping.
-   * This is useful when you need to log already-stringified content.
-   *
-   * @param message - The pre-formatted message string to log
-   * @param level - Log level (info, warn, error)
-   * @param isSdkLog - Flag indicating if the log originated from the SDK
-   */
-  logFn(
-    message: string,
-    level: LogLevel,
-    isSdkLog: boolean = getSdkLogContextValue(true)
-  ): void {
+  /** In production wraps the message in JSON with event context tags; in local development logs as-is. */
+  logFn(message: string, level: LogLevel): void {
     if (this.options?.isLocalDevelopment) {
       this.originalConsole[level](message);
       return;
@@ -75,32 +76,20 @@ export class Logger extends Console {
     const logObject = {
       message,
       ...this.tags,
-      is_sdk_log: isSdkLog,
     };
     this.originalConsole[level](JSON.stringify(logObject));
   }
 
-  /**
-   * Stringifies and logs arguments to the appropriate destination.
-   * On main thread, converts arguments to strings and calls logFn.
-   * In worker threads, forwards stringified arguments to the main thread for processing.
-   * All arguments are converted to strings using util.inspect and joined with spaces.
-   *
-   * @param args - Values to log (will be stringified and truncated if needed)
-   * @param level - Log level (info, warn, error)
-   */
   private stringifyAndLog(args: unknown[], level: LogLevel): void {
     let stringifiedArgs = args.map((arg) => this.valueToString(arg)).join(' ');
     stringifiedArgs = truncateMessage(stringifiedArgs);
 
-    const isSdkLog = getSdkLogContextValue(true);
-
     if (isMainThread) {
-      this.logFn(stringifiedArgs, level, isSdkLog);
+      this.logFn(stringifiedArgs, level);
     } else {
       parentPort?.postMessage({
         subject: WorkerMessageSubject.WorkerMessageLog,
-        payload: { stringifiedArgs, level, isSdkLog },
+        payload: { stringifiedArgs, level },
       });
     }
   }
@@ -121,14 +110,8 @@ export class Logger extends Console {
     this.stringifyAndLog(args, LogLevel.ERROR);
   }
 }
-/**
- * Converts a state object into a printable format where arrays are summarized.
- * Arrays show their length, first item, and last item instead of all elements.
- * Objects are recursively processed and primitives are returned as-is.
- *
- * @param state - State object to convert
- * @returns Printable representation with summarized arrays
- */
+
+/** Summarizes arrays as `{ length, firstItem, lastItem }` instead of listing all elements. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getPrintableState(state: Record<string, any>): PrintableState {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -153,21 +136,13 @@ export function getPrintableState(state: Record<string, any>): PrintableState {
   return processValue(state) as PrintableState;
 }
 
-/**
- * Serializes an error into a structured format.
- * Automatically detects and formats Axios errors with HTTP details.
- * Returns other error types as-is.
- *
- * @param error - Error to serialize
- * @returns Serialized error or original if not an Axios error
- */
+/** Serializes any error into a loggable string; Axios errors get HTTP details. */
 export function serializeError(error: unknown): string {
   if (isAxiosError(error)) {
     return JSON.stringify(serializeAxiosError(error));
   }
   if (error instanceof Error) {
-    // Include error name (e.g. TypeError, RangeError) alongside message
-    // for easier debugging
+    // Include non-default error name (e.g. TypeError) for easier debugging
     return error.name !== 'Error'
       ? `${error.name}: ${error.message}`
       : error.message;
@@ -199,14 +174,6 @@ export function serializeError(error: unknown): string {
   return stringified;
 }
 
-/**
- * Serializes an Axios error into a structured format with HTTP request/response details.
- * Extracts method, URL, parameters, status code, headers, and data.
- * Includes CORS/network failure indicator when no response is available.
- *
- * @param error - Axios error to serialize
- * @returns Structured object with error details
- */
 export function serializeAxiosError(error: AxiosError): AxiosErrorResponse {
   const serializedAxiosError: AxiosErrorResponse = {
     config: {
@@ -231,15 +198,4 @@ export function serializeAxiosError(error: AxiosError): AxiosErrorResponse {
   }
 
   return serializedAxiosError;
-}
-
-/**
- * Formats an Axios error to a printable format.
- *
- * @param error - Axios error to format
- * @returns Formatted error object
- * @deprecated Use {@link serializeAxiosError} instead
- */
-export function formatAxiosError(error: AxiosError): object {
-  return serializeAxiosError(error);
 }

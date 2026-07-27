@@ -1,18 +1,12 @@
-import { AirdropEvent, EventType } from '../types/extraction';
+import { AirSyncEvent, EventType } from '../types/extraction';
 
-export const MOCK_SERVER_DEFAULT_URL = 'http://localhost:0';
+import { MOCK_SERVER_DEFAULT_URL } from './mock-server';
 
-/**
- * Recursively makes all properties of T optional.
- */
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
 
-/**
- * Deep merges source into target. Arrays and primitives from source replace
- * those in target; plain objects are merged recursively.
- */
+/** Arrays and primitives from source replace target's; plain objects merge recursively. */
 function deepMerge<T extends Record<string, unknown>>(
   target: T,
   source: DeepPartial<T>
@@ -44,25 +38,24 @@ function deepMerge<T extends Record<string, unknown>>(
 }
 
 /**
- * Creates a mock AirdropEvent for testing.
- *
- * @param mockServerUrl - Base URL for the mock server. Defaults to {@link MOCK_SERVER_DEFAULT_URL}.
- *   The `callback_url`, `worker_data_url`, and `devrev_endpoint` fields are
- *   derived from this value unless explicitly overridden.
- * @param overrides - Deep partial of AirdropEvent. Any provided fields are
- *   deep-merged on top of the defaults.
+ * Creates a mock AirSyncEvent for testing. `callback_url`, `worker_data_url`,
+ * and `devrev_endpoint` derive from `mockServerUrl` unless explicitly overridden.
  */
 export function createMockEvent(
   mockServerUrl: string = MOCK_SERVER_DEFAULT_URL,
-  overrides: DeepPartial<AirdropEvent> = {}
-): AirdropEvent {
-  const base: AirdropEvent = {
+  overrides: DeepPartial<AirSyncEvent> = {}
+): AirSyncEvent {
+  const base: AirSyncEvent = {
     context: {
       secrets: {
         service_account_token: 'test_token',
       },
       snap_in_version_id: 'test_snap_in_version_id',
       snap_in_id: 'test_snap_in_id',
+      user_id: 'test_user_id',
+      dev_oid: 'test_dev_oid',
+      source_id: 'test_source_id',
+      service_account_id: 'test_service_account_id',
     },
     payload: {
       connection_data: {
@@ -118,7 +111,7 @@ export function createMockEvent(
   const merged = deepMerge(
     base as unknown as Record<string, unknown>,
     overrides as DeepPartial<Record<string, unknown>>
-  ) as unknown as AirdropEvent;
+  ) as unknown as AirSyncEvent;
 
   // Ensure mock server URLs always win over overrides, unless the caller
   // explicitly provided them.
