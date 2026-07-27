@@ -111,7 +111,7 @@ export class Uploader {
           error: {
             message:
               'Error while confirming artifact upload. ' +
-              JSON.stringify(confirmArtifactUploadError),
+              serializeError(confirmArtifactUploadError),
           },
         };
       }
@@ -271,16 +271,10 @@ export class Uploader {
       if (response?.status >= 200 && response?.status < 300) {
         return { response };
       } else {
-        return {
-          error: {
-            message:
-              'Error while confirming artifact upload. ' +
-              serializeError(response),
-          },
-        };
+        return { error: response };
       }
     } catch (error) {
-      return { error: { message: serializeError(error) } };
+      return { error };
     }
   }
 
