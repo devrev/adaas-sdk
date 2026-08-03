@@ -251,18 +251,10 @@ describe('uploader.helpers', () => {
       const result = computeArtifactDateRanges(items);
 
       // Assert
-      expect(result.oldest_created_date).toBe(
-        '2020-01-01T00:00:00.000Z'
-      );
-      expect(result.newest_created_date).toBe(
-        '2022-03-15T12:00:00.000Z'
-      );
-      expect(result.oldest_modified_date).toBe(
-        '2020-12-31T23:59:59.000Z'
-      );
-      expect(result.newest_modified_date).toBe(
-        '2021-06-01T00:00:00.000Z'
-      );
+      expect(result.oldest_created_date).toBe('2020-01-01T00:00:00.000Z');
+      expect(result.newest_created_date).toBe('2022-03-15T12:00:00.000Z');
+      expect(result.oldest_modified_date).toBe('2020-12-31T23:59:59.000Z');
+      expect(result.newest_modified_date).toBe('2021-06-01T00:00:00.000Z');
     });
 
     it('should return zeros when no items have date fields', () => {
@@ -298,18 +290,10 @@ describe('uploader.helpers', () => {
       const result = computeArtifactDateRanges(items);
 
       // Assert
-      expect(result.oldest_created_date).toBe(
-        '2021-01-01T00:00:00.000Z'
-      );
-      expect(result.newest_created_date).toBe(
-        '2021-01-01T00:00:00.000Z'
-      );
-      expect(result.oldest_modified_date).toBe(
-        '2023-01-01T00:00:00.000Z'
-      );
-      expect(result.newest_modified_date).toBe(
-        '2023-01-01T00:00:00.000Z'
-      );
+      expect(result.oldest_created_date).toBe('2021-01-01T00:00:00.000Z');
+      expect(result.newest_created_date).toBe('2021-01-01T00:00:00.000Z');
+      expect(result.oldest_modified_date).toBe('2023-01-01T00:00:00.000Z');
+      expect(result.newest_modified_date).toBe('2023-01-01T00:00:00.000Z');
     });
 
     it('should handle single object input', () => {
@@ -367,12 +351,8 @@ describe('uploader.helpers', () => {
       const result = computeArtifactDateRanges(items);
 
       // Assert
-      expect(result.oldest_created_date).toBe(
-        '2024-01-01T00:00:00.000Z'
-      );
-      expect(result.newest_created_date).toBe(
-        '2024-01-01T00:00:00.000Z'
-      );
+      expect(result.oldest_created_date).toBe('2024-01-01T00:00:00.000Z');
+      expect(result.newest_created_date).toBe('2024-01-01T00:00:00.000Z');
     });
   });
 
