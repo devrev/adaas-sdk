@@ -5,7 +5,7 @@ const axiosClient = axios.create({
   timeout: 30 * 1000,
 });
 
-axiosRetry(axiosClient, {
+axiosRetry(axiosClient as Parameters<typeof axiosRetry>[0], {
   retries: 5,
   shouldResetTimeout: true,
   retryDelay: (retryCount, error) => {
