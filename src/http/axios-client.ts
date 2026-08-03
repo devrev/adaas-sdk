@@ -28,7 +28,7 @@ import { runWithUserLogContext } from '../logger/logger.context';
 
 const axiosClient = axios.create();
 
-axiosRetry(axiosClient, {
+axiosRetry(axiosClient as Parameters<typeof axiosRetry>[0], {
   retries: 5,
   retryDelay: (retryCount, error) => {
     // exponential backoff algorithm: 1 * 2 ^ retryCount * 1000ms

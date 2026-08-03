@@ -192,8 +192,16 @@ describe(AttachmentsStreamingPool.name, () => {
         mockAdapter.state.toDevRev?.attachmentsMetadata
           .lastProcessedAttachmentsIdsList
       ).toEqual([
-        { id: 'attachment-1', parent_id: '', status: ProcessedAttachmentStatus.Success },
-        { id: 'attachment-2', parent_id: '', status: ProcessedAttachmentStatus.Success },
+        {
+          id: 'attachment-1',
+          parent_id: '',
+          status: ProcessedAttachmentStatus.Success,
+        },
+        {
+          id: 'attachment-2',
+          parent_id: '',
+          status: ProcessedAttachmentStatus.Success,
+        },
         {
           id: 'attachment-1',
           parent_id: 'parent-1',
