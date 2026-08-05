@@ -319,24 +319,23 @@ export interface EventContext {
   external_system_name: string;
   external_system_type: string;
   /**
-   * PLATFORM CHECK REQUIRED (ISS-338642): placeholder for the field-level-merge
-   * feature flag. The platform does not send this field today - field-level
-   * merging is evaluated server-side in airdrop-record-manager
-   * (`airdrop.field_level_merging_primary`, per dev_org + external_system_name)
-   * and is not currently surfaced on the event context. Confirm with platform
-   * how (or whether) the SDK should learn this before relying on it; see
-   * src/common/feature-flags.ts.
+   * Whether field-level merging is enabled for this sync. Set server-side
+   * from `adaas.SyncRunContext.FieldLevelMergingEnabled`
+   * (devrev/airdrop-snapin-manager PR #431, ASFND-299, merged), which is
+   * resolved per dev-org + external-system-name from the
+   * `airdrop.field_level_merging_primary` flag and inlined into
+   * `adaas.EventContext`. See src/common/feature-flags.ts.
    */
-  field_level_merge_enabled?: boolean;
+  field_level_merging_enabled?: boolean;
   /**
-   * PLATFORM CHECK REQUIRED (ISS-297298): placeholder for which system is
-   * primary for field-level conflict resolution on this sync ("devrev" |
-   * "external"). Mirrors FieldMergingPrimarySystem in
-   * devrev/airdrop-record-manager internal/flags/flags.go, which is evaluated
-   * server-side and not currently returned to the SDK. See
-   * src/common/feature-flags.ts.
+   * Which system is primary for field-level conflict resolution on this
+   * sync. Set server-side from
+   * `adaas.SyncRunContext.FieldLevelMergingPrimarySystem`
+   * (devrev/airdrop-snapin-manager PR #431, ASFND-299, merged). Unset when
+   * field-level merging is disabled or the external system isn't mapped by
+   * the flag. See src/common/feature-flags.ts.
    */
-  field_level_merge_primary_system?: 'devrev' | 'external';
+  field_level_merging_primary_system?: 'devrev' | 'external';
   /**
    * Resolved start timestamp of extraction (ISO 8601 format).
    * Automatically computed by the SDK from extraction_start_time and worker state.

@@ -731,7 +731,8 @@ describe(`${WorkerAdapter.name}.loadAttachment`, () => {
 
 describe(`${WorkerAdapter.name}.loadItem — field-level merge (ENH-7536)`, () => {
   let adapter: WorkerAdapter<TestState>;
-  let getExternalLoaderSeen: jest.Mock;
+  let loaderRecordMergingGet: jest.Mock;
+  let loaderRecordMergingSet: jest.Mock;
 
   const makeItemTypeToLoad = () => ({
     itemType: 'tasks',
@@ -750,13 +751,15 @@ describe(`${WorkerAdapter.name}.loadItem — field-level merge (ENH-7536)`, () =
     });
     adapter['_mappers'].update = jest.fn().mockResolvedValue({ data: {} });
 
-    getExternalLoaderSeen = jest.fn().mockResolvedValue({
+    loaderRecordMergingGet = jest.fn().mockResolvedValue({
       data: { external_object_diff: { status: 'closed' } },
     });
-    adapter['_recordManager'].getExternalLoaderSeen = getExternalLoaderSeen;
+    loaderRecordMergingSet = jest.fn().mockResolvedValue({ data: {} });
+    adapter['_recordManager'].loaderRecordMergingGet = loaderRecordMergingGet;
+    adapter['_recordManager'].loaderRecordMergingSet = loaderRecordMergingSet;
   });
 
-  it('does not call read/getExternalLoaderSeen when the feature flag is off', async () => {
+  it('does not call read/loaderRecordMergingGet/Set when the feature flag is off', async () => {
     // Arrange
     const itemTypeToLoad = makeItemTypeToLoad();
 
@@ -765,31 +768,42 @@ describe(`${WorkerAdapter.name}.loadItem — field-level merge (ENH-7536)`, () =
 
     // Assert
     expect(itemTypeToLoad.read).not.toHaveBeenCalled();
-    expect(getExternalLoaderSeen).not.toHaveBeenCalled();
+    expect(loaderRecordMergingGet).not.toHaveBeenCalled();
+    expect(loaderRecordMergingSet).not.toHaveBeenCalled();
     expect(itemTypeToLoad.update).toHaveBeenCalledWith(
       expect.objectContaining({ item: makeLoaderItem() })
     );
   });
 
-  it('does not call read/getExternalLoaderSeen when DevRev is primary, even with the flag on', async () => {
+  it('does not call read/loaderRecordMergingGet when DevRev is primary, but still writes back after a successful update', async () => {
     // Arrange
-    adapter['event'].payload.event_context.field_level_merge_enabled = true;
-    adapter['event'].payload.event_context.field_level_merge_primary_system =
+    adapter['event'].payload.event_context.field_level_merging_enabled = true;
+    adapter['event'].payload.event_context.field_level_merging_primary_system =
       'devrev';
     const itemTypeToLoad = makeItemTypeToLoad();
+    const item = makeLoaderItem();
+    item.data = { title: 'from devrev' };
 
     // Act
-    await adapter.loadItem({ item: makeLoaderItem(), itemTypeToLoad });
+    await adapter.loadItem({ item, itemTypeToLoad });
 
     // Assert
-    expect(itemTypeToLoad.read).not.toHaveBeenCalled();
-    expect(getExternalLoaderSeen).not.toHaveBeenCalled();
+    expect(loaderRecordMergingGet).not.toHaveBeenCalled();
+    expect(itemTypeToLoad.update).toHaveBeenCalledWith(
+      expect.objectContaining({ item })
+    );
+    expect(loaderRecordMergingSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        devrev_object_id: item.id.devrev,
+        devrev_changes: { title: 'from devrev' },
+      })
+    );
   });
 
-  it('does not call getExternalLoaderSeen when the connector did not supply read', async () => {
+  it('does not call loaderRecordMergingGet when the connector did not supply read', async () => {
     // Arrange
-    adapter['event'].payload.event_context.field_level_merge_enabled = true;
-    adapter['event'].payload.event_context.field_level_merge_primary_system =
+    adapter['event'].payload.event_context.field_level_merging_enabled = true;
+    adapter['event'].payload.event_context.field_level_merging_primary_system =
       'external';
     const itemTypeToLoad = makeItemTypeToLoad();
     delete (itemTypeToLoad as { read?: unknown }).read;
@@ -798,16 +812,16 @@ describe(`${WorkerAdapter.name}.loadItem — field-level merge (ENH-7536)`, () =
     await adapter.loadItem({ item: makeLoaderItem(), itemTypeToLoad });
 
     // Assert
-    expect(getExternalLoaderSeen).not.toHaveBeenCalled();
+    expect(loaderRecordMergingGet).not.toHaveBeenCalled();
     expect(itemTypeToLoad.update).toHaveBeenCalledWith(
       expect.objectContaining({ item: makeLoaderItem() })
     );
   });
 
-  it('merges the diff from getExternalLoaderSeen into the item passed to update when external is primary', async () => {
+  it('merges the diff from loaderRecordMergingGet into the item passed to update when external is primary, and sets isDelta', async () => {
     // Arrange
-    adapter['event'].payload.event_context.field_level_merge_enabled = true;
-    adapter['event'].payload.event_context.field_level_merge_primary_system =
+    adapter['event'].payload.event_context.field_level_merging_enabled = true;
+    adapter['event'].payload.event_context.field_level_merging_primary_system =
       'external';
     const itemTypeToLoad = makeItemTypeToLoad();
     const item = makeLoaderItem();
@@ -820,9 +834,9 @@ describe(`${WorkerAdapter.name}.loadItem — field-level merge (ENH-7536)`, () =
     expect(itemTypeToLoad.read).toHaveBeenCalledWith(
       expect.objectContaining({ item })
     );
-    expect(getExternalLoaderSeen).toHaveBeenCalledWith(
+    expect(loaderRecordMergingGet).toHaveBeenCalledWith(
       expect.objectContaining({
-        devrev_id: item.id.devrev,
+        devrev_object_id: item.id.devrev,
         external_object: { status: 'open' },
       })
     );
@@ -830,6 +844,7 @@ describe(`${WorkerAdapter.name}.loadItem — field-level merge (ENH-7536)`, () =
       expect.objectContaining({
         item: expect.objectContaining({
           data: { title: 'from devrev', status: 'closed' },
+          isDelta: true,
         }),
       })
     );
@@ -837,8 +852,8 @@ describe(`${WorkerAdapter.name}.loadItem — field-level merge (ENH-7536)`, () =
 
   it('falls back to the whole item when read fails', async () => {
     // Arrange
-    adapter['event'].payload.event_context.field_level_merge_enabled = true;
-    adapter['event'].payload.event_context.field_level_merge_primary_system =
+    adapter['event'].payload.event_context.field_level_merging_enabled = true;
+    adapter['event'].payload.event_context.field_level_merging_primary_system =
       'external';
     const itemTypeToLoad = makeItemTypeToLoad();
     itemTypeToLoad.read = jest.fn().mockResolvedValue({ error: 'read failed' });
@@ -848,18 +863,18 @@ describe(`${WorkerAdapter.name}.loadItem — field-level merge (ENH-7536)`, () =
     await adapter.loadItem({ item, itemTypeToLoad });
 
     // Assert
-    expect(getExternalLoaderSeen).not.toHaveBeenCalled();
+    expect(loaderRecordMergingGet).not.toHaveBeenCalled();
     expect(itemTypeToLoad.update).toHaveBeenCalledWith(
       expect.objectContaining({ item })
     );
   });
 
-  it('falls back to the whole item when getExternalLoaderSeen throws', async () => {
+  it('falls back to the whole item when loaderRecordMergingGet throws', async () => {
     // Arrange
-    adapter['event'].payload.event_context.field_level_merge_enabled = true;
-    adapter['event'].payload.event_context.field_level_merge_primary_system =
+    adapter['event'].payload.event_context.field_level_merging_enabled = true;
+    adapter['event'].payload.event_context.field_level_merging_primary_system =
       'external';
-    getExternalLoaderSeen.mockRejectedValueOnce(new Error('down'));
+    loaderRecordMergingGet.mockRejectedValueOnce(new Error('down'));
     const itemTypeToLoad = makeItemTypeToLoad();
     const item = makeLoaderItem();
 
@@ -869,6 +884,74 @@ describe(`${WorkerAdapter.name}.loadItem — field-level merge (ENH-7536)`, () =
     // Assert
     expect(itemTypeToLoad.update).toHaveBeenCalledWith(
       expect.objectContaining({ item })
+    );
+  });
+
+  it('calls loaderRecordMergingSet with the applied changes after a successful update', async () => {
+    // Arrange
+    adapter['event'].payload.event_context.field_level_merging_enabled = true;
+    adapter['event'].payload.event_context.field_level_merging_primary_system =
+      'external';
+    const itemTypeToLoad = makeItemTypeToLoad();
+    const item = makeLoaderItem();
+    item.data = { title: 'from devrev' };
+
+    // Act
+    await adapter.loadItem({ item, itemTypeToLoad });
+
+    // Assert - itemTypeToLoad.read is called once for the pre-write diff and
+    // again for the write-back's post-write external object.
+    expect(itemTypeToLoad.read).toHaveBeenCalledTimes(2);
+    expect(loaderRecordMergingSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        devrev_object_id: item.id.devrev,
+        external_object: { status: 'open' },
+        devrev_changes: { title: 'from devrev', status: 'closed' },
+      })
+    );
+  });
+
+  it('does not fail the load when loaderRecordMergingSet throws', async () => {
+    // Arrange
+    adapter['event'].payload.event_context.field_level_merging_enabled = true;
+    const itemTypeToLoad = makeItemTypeToLoad();
+    loaderRecordMergingSet.mockRejectedValueOnce(new Error('down'));
+    const item = makeLoaderItem();
+
+    // Act
+    const result = await adapter.loadItem({ item, itemTypeToLoad });
+
+    // Assert
+    expect(result.report).toEqual(
+      expect.objectContaining({ [ActionType.UPDATED]: 1 })
+    );
+  });
+
+  it('calls loaderRecordMergingSet after a successful create', async () => {
+    // Arrange
+    adapter['event'].payload.event_context.field_level_merging_enabled = true;
+    const itemTypeToLoad = makeItemTypeToLoad();
+    itemTypeToLoad.update.mockRejectedValueOnce({
+      response: { status: 404 },
+      isAxiosError: true,
+    });
+    itemTypeToLoad.create = jest.fn().mockResolvedValue({ id: 'ext-2' });
+    adapter['_mappers'].create = jest.fn().mockResolvedValue({ data: {} });
+    const item = makeLoaderItem();
+    item.data = { title: 'new item' };
+
+    // Act
+    const result = await adapter.loadItem({ item, itemTypeToLoad });
+
+    // Assert
+    expect(result.report).toEqual(
+      expect.objectContaining({ [ActionType.CREATED]: 1 })
+    );
+    expect(loaderRecordMergingSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        devrev_object_id: item.id.devrev,
+        devrev_changes: { title: 'new item' },
+      })
     );
   });
 });

@@ -6,7 +6,6 @@ import {
 import { isFieldLevelMergeEnabled } from '../common/feature-flags';
 import { Item } from '../repo/repo.interfaces';
 import { RecordManager } from '../record-manager/record-manager';
-import { buildExternalSystemSpecifierFromEvent } from '../record-manager/record-manager.helpers';
 import { AirdropEvent } from '../types/extraction';
 import { ErrorRecord } from '../types/common';
 import { Uploader } from '../uploader/uploader';
@@ -67,28 +66,23 @@ export class Repo {
    * normalized item's data with the field-level delta the record-manager
    * computes against RecordExternalExtractorSeen and
    * RecordExternalLoaderAttempted, so the transformer receives only changed
-   * fields instead of the whole object.
+   * fields instead of the whole object. Calls the
+   * `ExtractorRecordMergingSet` snapin-manager proxy
+   * (devrev/airdrop-snapin-manager PR #434, ASFND-298), which forwards to
+   * the (now real, Mongo-backed) RecordExternalExtractorSeenSet.
    *
-   * PLATFORM CHECK REQUIRED before this is relied on in production:
-   * 1. As of this writing, RecordExternalExtractorSeenSet on
-   *    devrev/airdrop-record-manager main is a stub - it validates the
-   *    request and the feature flag, but does not persist anything or
-   *    compute a real diff; it echoes back the whole `external_object` it
-   *    was given (see internal/service/record_external_extractor_set.go).
-   *    Until the real diff/persist logic ships, enabling this flag will NOT
-   *    strip previously-seen fields - every extracted item will still look
-   *    like a full object to the transformer.
-   * 2. `external_system_specifier`/`external_identifier` field names and
-   *    shape are taken from the proto on main
-   *    (api/record_field_merging.proto) but the RPCs are RPC_TYPE_INTERNAL
-   *    and not yet bound into the gateway's REST layer
-   *    (devrev/gateway apiv2/airdrop_record_manager.proto has no
-   *    airdrop.record-*-seen.* entries) - the endpoint paths in
-   *    RecordManager are placeholders (see RECORD_MANAGER_ENDPOINTS).
-   * 3. Per-item network round trips here (one putExternalExtractorSeen call
-   *    per item) proceed as-is for the Salesforce/EROAD pilot per plan
-   *    decision; revisit batch support with platform if throughput becomes
-   *    an issue.
+   * Items with no id are skipped rather than sent: `external_object_identifier`
+   * is a required field on the proxy request and `external_record_id` must
+   * have at least one character.
+   *
+   * PLATFORM CHECK REQUIRED before this is relied on in production: the
+   * proxy RPC is RPC_TYPE_INTERNAL and not yet bound into the gateway's REST
+   * layer (devrev/gateway apiv2/airdrop_snapin_manager.proto has no
+   * record-merging entries) - the endpoint path in RecordManager is a
+   * placeholder (see RECORD_MANAGER_ENDPOINTS). Per-item network round trips
+   * here (one extractorRecordMergingSet call per item) proceed as-is for the
+   * Salesforce/EROAD pilot per plan decision; revisit batch support with
+   * platform if throughput becomes an issue.
    */
   private async applyFieldLevelMerge(
     items: NormalizedItem[]
@@ -97,16 +91,15 @@ export class Repo {
       return items;
     }
 
-    const externalSystemSpecifier = buildExternalSystemSpecifierFromEvent(
-      this.event
-    );
-
     return Promise.all(
       items.map(async (item) => {
+        if (!item.id) {
+          return item;
+        }
+
         try {
-          const { data } = await this.recordManager!.putExternalExtractorSeen({
-            external_identifier: { external_record_id: item.id },
-            external_system_specifier: externalSystemSpecifier,
+          const { data } = await this.recordManager!.extractorRecordMergingSet({
+            external_object_identifier: { external_record_id: item.id },
             external_object: item.data as Record<string, unknown>,
           });
 

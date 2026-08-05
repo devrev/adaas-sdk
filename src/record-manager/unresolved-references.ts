@@ -16,11 +16,13 @@ import {
  * Endpoint paths are placeholders following the platform's established
  * `airdrop.<resource>.<verb>` convention (see Mappers, RecordManager). The
  * UnresolvedReferences RPCs (Set, List, Resolve) are defined in
- * devrev/airdrop-record-manager `api/unresolved_references.proto` and, unlike
- * the record-field-merging RPCs, are fully implemented (real MongoDB-backed
- * persistence, not stubs) - but they are RPC_TYPE_INTERNAL and not yet bound
- * into the gateway's REST layer, so exact REST paths are still guessed.
- * Rename in one place once the gateway binding lands.
+ * devrev/airdrop-record-manager `api/unresolved_references.proto` and, like
+ * the record-field-merging RPCs (RecordExternalExtractorSeenSet,
+ * RecordExternalLoaderSeenGet/Set, RecordDevRevLoaderSeenGet/Set - all
+ * real Mongo-backed persistence, not stubs, as of this writing), are fully
+ * implemented - but they are RPC_TYPE_INTERNAL and not yet bound into the
+ * gateway's REST layer, so exact REST paths are still guessed. Rename in
+ * one place once the gateway binding lands.
  */
 const UNRESOLVED_REFERENCES_ENDPOINTS = {
   SET: 'airdrop.unresolved-references.set',
@@ -43,6 +45,12 @@ const UNRESOLVED_REFERENCES_ENDPOINTS = {
  * no existing "reconcile unresolved references" entry point to attach a
  * `list`+`resolve` call to. Wiring this in is future work once the platform
  * or a connector author defines that call site.
+ *
+ * The DevRev-Loader (E2DR, proposal §5.4) gap has the same root cause as
+ * this class's missing call site: no snapin-manager proxy RPC exists for
+ * DevRev-Loader at all yet (see the class doc on RecordManager) - the
+ * record-manager side (RecordDevRevLoaderSeenGet/Set) is implemented but
+ * unreachable from a snap-in.
  */
 export class UnresolvedReferences {
   private devrevApiEndpoint: string;

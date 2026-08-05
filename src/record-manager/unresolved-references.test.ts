@@ -1,7 +1,7 @@
 import { createMockEvent, MOCK_SERVER_DEFAULT_URL } from '../common/test-utils';
 import { axiosClient } from '../http/axios-client-internal';
 import { EventType } from '../types/extraction';
-import { RecordManagerExternalSystemSpecifier } from './record-manager.interfaces';
+import { UnresolvedReferencesExternalSystemSpecifier } from './unresolved-references.interfaces';
 import { UnresolvedReferences } from './unresolved-references';
 import {
   UnresolvedReferenceDevRevType,
@@ -17,7 +17,7 @@ const mockAxiosClient = axiosClient as jest.Mocked<typeof axiosClient>;
 describe(UnresolvedReferences.name, () => {
   const apiToken = 'test_service_token';
 
-  const externalSystemSpecifier: RecordManagerExternalSystemSpecifier = {
+  const externalSystemSpecifier: UnresolvedReferencesExternalSystemSpecifier = {
     external_system_type: 'salesforce',
     external_system_name: 'salesforce',
     external_system_id: 'test_external_system_id',

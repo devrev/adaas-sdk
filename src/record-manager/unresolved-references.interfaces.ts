@@ -1,6 +1,5 @@
 import { AirdropEvent } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
-import { RecordManagerExternalSystemSpecifier } from './record-manager.interfaces';
 
 /**
  * Configuration interface for creating an UnresolvedReferences instance.
@@ -8,6 +7,23 @@ import { RecordManagerExternalSystemSpecifier } from './record-manager.interface
 export interface UnresolvedReferencesFactoryInterface {
   event: AirdropEvent;
   options?: WorkerAdapterOptions;
+}
+
+/**
+ * Scopes an UnresolvedReferences request to one external system. Unlike
+ * RecordManager's record-merging RPCs (proxied through snapin-manager, which
+ * resolves this server-side from SyncContext - see record-manager.ts), the
+ * UnresolvedReferences RPCs' calling contract has not been verified against
+ * a snapin-manager proxy, so this field is kept pending that check. Mirrors
+ * the platform's SyncExternalSystemSpecifier
+ * (devrev/airdrop-record-manager api/composite.proto).
+ */
+export interface UnresolvedReferencesExternalSystemSpecifier {
+  external_system_type: string;
+  external_system_name: string;
+  external_system_id: string;
+  import_slug?: string;
+  snap_in_slug?: string;
 }
 
 /**
@@ -99,7 +115,7 @@ export interface ResolvedReference {
  * that are no longer present are removed).
  */
 export interface UnresolvedReferencesSetParams {
-  external_system_specifier: RecordManagerExternalSystemSpecifier;
+  external_system_specifier: UnresolvedReferencesExternalSystemSpecifier;
   object_external_id: string;
   /** Object type of the source object. Numeric value per UnresolvedReferenceDevRevType. */
   object_devrev_type: UnresolvedReferenceDevRevType;
@@ -117,7 +133,7 @@ export type UnresolvedReferencesSetResponse = Record<string, never>;
  * referenced object).
  */
 export interface UnresolvedReferencesResolveParams {
-  external_system_specifier: RecordManagerExternalSystemSpecifier;
+  external_system_specifier: UnresolvedReferencesExternalSystemSpecifier;
   object_external_id: string;
   object_devrev_type: UnresolvedReferenceDevRevType;
   resolved_references: ResolvedReference[];
@@ -142,7 +158,7 @@ export interface ObjectWithUnresolvedReferences {
  * that read-then-resolve a page should always re-fetch the first page.
  */
 export interface UnresolvedReferencesListParams {
-  external_system_specifier: RecordManagerExternalSystemSpecifier;
+  external_system_specifier: UnresolvedReferencesExternalSystemSpecifier;
   object_devrev_type?: UnresolvedReferenceDevRevType;
   page?: number;
   limit?: number;

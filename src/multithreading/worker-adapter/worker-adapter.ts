@@ -25,7 +25,6 @@ import {
 } from '../../logger/logger.context';
 import { Mappers } from '../../mappers/mappers';
 import { RecordManager } from '../../record-manager/record-manager';
-import { buildExternalSystemSpecifierFromEvent } from '../../record-manager/record-manager.helpers';
 import { UnresolvedReferences } from '../../record-manager/unresolved-references';
 import { SyncMapperRecordStatus } from '../../mappers/mappers.interface';
 import { Repo } from '../../repo/repo';
@@ -765,11 +764,13 @@ export class WorkerAdapter<ConnectorState> {
    * ENH-7536 (External-Loader / DR2E field-level merge, proposal §5.2):
    * before applying DevRev-originated changes to the external system, reads
    * the item's current external state via the connector-supplied
-   * `itemTypeToLoad.read`, diffs it against the last-seen snapshot, and
-   * returns an item whose `data` is narrowed to the resolved changes.
-   * Returns `item` unchanged when the flag is off, DevRev is primary (no
-   * diff needed - proposal §5.2 step 2), or the connector didn't supply
-   * `read` (additive/optional per ItemTypeToLoad.read).
+   * `itemTypeToLoad.read`, diffs it against the last-seen snapshot via the
+   * `LoaderRecordMergingGet` snapin-manager proxy (devrev/airdrop-snapin-manager
+   * PR #434, ASFND-298), and returns an item whose `data` is narrowed to the
+   * resolved changes with `isDelta: true` set. Returns `item` unchanged when
+   * the flag is off, DevRev is primary (no diff needed - proposal §5.2 step
+   * 2), or the connector didn't supply `read` (additive/optional per
+   * ItemTypeToLoad.read).
    *
    * Conflict-resolution rule (confirmed against the "External System
    * Timeline Design" doc, Gasper Senk, 2026-05-25): "When the fields
@@ -781,25 +782,13 @@ export class WorkerAdapter<ConnectorState> {
    * granularity in the design.
    *
    * PLATFORM CHECK REQUIRED before this is relied on in production:
-   * 1. `RecordExternalLoaderSeenGet`/`Set` on devrev/airdrop-record-manager
-   *    main are stubs today - Get always returns an empty response (no
-   *    diff, no fallback to ExternalExtractorSeen) and Set persists
-   *    nothing (see internal/service/record_external_loader_get.go and
-   *    record_external_loader_set.go). Enabling this flag will not yet
-   *    produce a real diff or persist ExternalLoaderSeen/Attempted.
-   * 2. Endpoint REST paths are placeholders - RPCs are RPC_TYPE_INTERNAL and
-   *    not yet bound into the gateway (see RECORD_MANAGER_ENDPOINTS in
-   *    record-manager.ts).
-   * 3. The SDK-visible flag delivery is still undefined: no code anywhere
-   *    reads `airdrop.field_level_merging_primary` and surfaces it on the
-   *    event context (isFieldLevelMergeEnabled/isDevRevPrimaryForFieldMerge
-   *    read placeholder EventContext fields nothing populates today). See
-   *    src/common/feature-flags.ts.
-   * 4. `external_identifier.external_record_type` / `devrev_object_type` are
-   *    not resolvable anywhere in the SDK today (no connector-facing
-   *    mapping from itemType strings to the platform's numeric
-   *    devrev_object_type enum exists) - omitted below pending platform
-   *    guidance on how connectors should supply them.
+   * endpoint REST paths are placeholders - the proxy RPC is RPC_TYPE_INTERNAL
+   * and not yet bound into the gateway (see RECORD_MANAGER_ENDPOINTS in
+   * record-manager.ts). `external_object_identifier.external_record_type` /
+   * `devrev_object_type` are not resolvable anywhere in the SDK today (no
+   * connector-facing mapping from itemType strings to the platform's
+   * numeric devrev_object_type enum exists) - omitted below pending
+   * platform guidance on how connectors should supply them.
    */
   private async applyFieldLevelMergeToLoadItem({
     item,
@@ -835,13 +824,8 @@ export class WorkerAdapter<ConnectorState> {
         return item;
       }
 
-      const externalSystemSpecifier = buildExternalSystemSpecifierFromEvent(
-        this.event
-      );
-
-      const { data } = await this._recordManager.getExternalLoaderSeen({
-        devrev_id: item.id.devrev,
-        external_system_specifier: externalSystemSpecifier,
+      const { data } = await this._recordManager.loaderRecordMergingGet({
+        devrev_object_id: item.id.devrev,
         external_object: currExtObjData,
       });
 
@@ -852,6 +836,7 @@ export class WorkerAdapter<ConnectorState> {
       return {
         ...item,
         data: { ...item.data, ...data.external_object_diff },
+        isDelta: true,
       };
     } catch (error) {
       console.warn(
@@ -859,6 +844,66 @@ export class WorkerAdapter<ConnectorState> {
         serializeError(error)
       );
       return item;
+    }
+  }
+
+  /**
+   * ENH-7536 (External-Loader / DR2E field-level merge, proposal §5.2 /
+   * §8-item-3): after `itemTypeToLoad.create`/`.update` has already
+   * succeeded, records the external object's post-write state plus the
+   * DevRev changes that were applied, via the `LoaderRecordMergingSet`
+   * snapin-manager proxy. Without this write-back, the next
+   * `ExtractorRecordMergingSet` diff (Repo.applyFieldLevelMerge) would
+   * re-surface the loader's own writes as external-system changes - the
+   * echo loop field-level merging exists to prevent.
+   *
+   * Reuses `itemTypeToLoad.read` for the post-write external object when the
+   * connector supplies it; otherwise falls back to the DevRev-originated
+   * `data` that was actually applied, since that's the caller's best
+   * evidence of the external object's new state. A failure here is logged
+   * and swallowed - the load itself already succeeded and must not be
+   * failed by a snapshot-write error.
+   */
+  private async recordLoaderWriteBack({
+    item,
+    itemTypeToLoad,
+    appliedData,
+  }: {
+    item: ExternalSystemItem;
+    itemTypeToLoad: ItemTypeToLoad;
+    appliedData: Record<string, unknown>;
+  }): Promise<void> {
+    if (!isFieldLevelMergeEnabled(this.event)) {
+      return;
+    }
+
+    try {
+      let externalObject: Record<string, unknown> = appliedData;
+
+      if (itemTypeToLoad.read) {
+        const { data, error } = await runWithUserLogContext(async () => {
+          return await itemTypeToLoad.read!({
+            item,
+            mappers: this._mappers,
+            event: this.event,
+          });
+        });
+
+        if (!error && data !== undefined) {
+          externalObject = data;
+        }
+      }
+
+      await this._recordManager.loaderRecordMergingSet({
+        devrev_object_id: item.id.devrev,
+        external_object: externalObject,
+        devrev_changes: appliedData,
+      });
+    } catch (error) {
+      console.warn(
+        'Failed to record loader field-level-merge write-back.',
+        serializeError(error)
+      );
     }
   }
 
@@ -947,6 +992,14 @@ export class WorkerAdapter<ConnectorState> {
             };
           }
 
+          // ENH-7536 (External-Loader / DR2E field-level merge, proposal
+          // §5.2/§8-item-3). See recordLoaderWriteBack for platform caveats.
+          await this.recordLoaderWriteBack({
+            item: itemToLoad,
+            itemTypeToLoad,
+            appliedData: itemToLoad.data,
+          });
+
           return {
             report: {
               item_type: itemTypeToLoad.itemType,
@@ -1010,6 +1063,15 @@ export class WorkerAdapter<ConnectorState> {
                   'Successfully created sync mapper record.',
                   syncMapperRecordCreateResponse.data
                 );
+
+                // ENH-7536 (External-Loader / DR2E field-level merge,
+                // proposal §5.2/§8-item-3). See recordLoaderWriteBack for
+                // platform caveats.
+                await this.recordLoaderWriteBack({
+                  item,
+                  itemTypeToLoad,
+                  appliedData: item.data,
+                });
 
                 return {
                   report: {

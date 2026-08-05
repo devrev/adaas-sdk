@@ -495,8 +495,8 @@ describe(Repo.name, () => {
   });
 
   describe('field-level merge (ENH-7536)', () => {
-    let putExternalExtractorSeen: jest.Mock;
-    let recordManager: { putExternalExtractorSeen: jest.Mock };
+    let extractorRecordMergingSet: jest.Mock;
+    let recordManager: { extractorRecordMergingSet: jest.Mock };
 
     // Local stand-in for `normalizeItem` (which is auto-mocked to a jest.fn()
     // at the top of this file for the other describe blocks).
@@ -511,10 +511,10 @@ describe(Repo.name, () => {
     }
 
     beforeEach(() => {
-      putExternalExtractorSeen = jest.fn().mockResolvedValue({
+      extractorRecordMergingSet = jest.fn().mockResolvedValue({
         data: { external_object_diff: { name: 'diffed' } },
       });
-      recordManager = { putExternalExtractorSeen };
+      recordManager = { extractorRecordMergingSet };
       normalize = jest.fn(normalize_);
     });
 
@@ -532,7 +532,7 @@ describe(Repo.name, () => {
 
       await repo.push(createItems(1));
 
-      expect(putExternalExtractorSeen).not.toHaveBeenCalled();
+      expect(extractorRecordMergingSet).not.toHaveBeenCalled();
       expect(repo.getItems()).toEqual([normalize_(createItems(1)[0])]);
     });
 
@@ -541,7 +541,7 @@ describe(Repo.name, () => {
         event: createMockEvent(mockServer.baseUrl, {
           payload: {
             event_type: EventType.ExtractionDataStart,
-            event_context: { field_level_merge_enabled: true },
+            event_context: { field_level_merging_enabled: true },
           },
         }),
         itemType: 'test_item_type',
@@ -551,7 +551,7 @@ describe(Repo.name, () => {
 
       await repo.push(createItems(1));
 
-      expect(putExternalExtractorSeen).not.toHaveBeenCalled();
+      expect(extractorRecordMergingSet).not.toHaveBeenCalled();
     });
 
     it('replaces item data with the record-manager diff when the flag is on', async () => {
@@ -559,7 +559,7 @@ describe(Repo.name, () => {
         event: createMockEvent(mockServer.baseUrl, {
           payload: {
             event_type: EventType.ExtractionDataStart,
-            event_context: { field_level_merge_enabled: true },
+            event_context: { field_level_merging_enabled: true },
           },
         }),
         itemType: 'test_item_type',
@@ -571,19 +571,19 @@ describe(Repo.name, () => {
 
       await repo.push(createItems(1));
 
-      expect(putExternalExtractorSeen).toHaveBeenCalledTimes(1);
+      expect(extractorRecordMergingSet).toHaveBeenCalledTimes(1);
       expect(repo.getItems()).toEqual([
         { ...normalize_(createItems(1)[0]), data: { name: 'diffed' } },
       ]);
     });
 
     it('falls back to the whole object for an item when the record-manager call fails', async () => {
-      putExternalExtractorSeen.mockRejectedValueOnce(new Error('down'));
+      extractorRecordMergingSet.mockRejectedValueOnce(new Error('down'));
       repo = new Repo({
         event: createMockEvent(mockServer.baseUrl, {
           payload: {
             event_type: EventType.ExtractionDataStart,
-            event_context: { field_level_merge_enabled: true },
+            event_context: { field_level_merging_enabled: true },
           },
         }),
         itemType: 'test_item_type',
@@ -603,7 +603,7 @@ describe(Repo.name, () => {
         event: createMockEvent(mockServer.baseUrl, {
           payload: {
             event_type: EventType.ExtractionDataStart,
-            event_context: { field_level_merge_enabled: true },
+            event_context: { field_level_merging_enabled: true },
           },
         }),
         itemType: AirSyncDefaultItemTypes.ATTACHMENTS,
@@ -615,7 +615,41 @@ describe(Repo.name, () => {
 
       await repo.push(createItems(1));
 
-      expect(putExternalExtractorSeen).not.toHaveBeenCalled();
+      expect(extractorRecordMergingSet).not.toHaveBeenCalled();
+    });
+
+    it('skips the record-manager call for an item with a blank id, keeping its data unchanged', async () => {
+      normalize = jest.fn((item) => ({
+        id: '',
+        created_date: '',
+        modified_date: '',
+        data: { name: item.name },
+      }));
+      repo = new Repo({
+        event: createMockEvent(mockServer.baseUrl, {
+          payload: {
+            event_type: EventType.ExtractionDataStart,
+            event_context: { field_level_merging_enabled: true },
+          },
+        }),
+        itemType: 'test_item_type',
+        normalize,
+        onUpload: jest.fn(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recordManager: recordManager as any,
+      });
+
+      await repo.push(createItems(1));
+
+      expect(extractorRecordMergingSet).not.toHaveBeenCalled();
+      expect(repo.getItems()).toEqual([
+        {
+          id: '',
+          created_date: '',
+          modified_date: '',
+          data: { name: 'item0' },
+        },
+      ]);
     });
   });
 });

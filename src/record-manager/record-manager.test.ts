@@ -5,10 +5,9 @@ import { RecordManager } from './record-manager';
 import {
   RecordManagerDevRevLoaderSeenGetParams,
   RecordManagerDevRevLoaderSeenSetParams,
-  RecordManagerExternalExtractorSeenSetParams,
-  RecordManagerExternalLoaderSeenGetParams,
-  RecordManagerExternalLoaderSeenSetParams,
-  RecordManagerExternalSystemSpecifier,
+  RecordManagerExtractorRecordMergingSetParams,
+  RecordManagerLoaderRecordMergingGetParams,
+  RecordManagerLoaderRecordMergingSetParams,
 } from './record-manager.interfaces';
 
 // Mock the axios client
@@ -17,19 +16,19 @@ const mockAxiosClient = axiosClient as jest.Mocked<typeof axiosClient>;
 
 describe(RecordManager.name, () => {
   const apiToken = 'test_service_token';
-  const devrevId = 'test_devrev_id';
-
-  const externalSystemSpecifier: RecordManagerExternalSystemSpecifier = {
-    external_system_type: 'salesforce',
-    external_system_name: 'salesforce',
-    external_system_id: 'test_external_system_id',
-  };
+  const requestId = 'test_request_id';
+  const devOrgId = 'test_dev_oid';
+  const devrevObjectId = 'test_devrev_object_id';
+  const baseParams = { request_id: requestId, dev_org_id: devOrgId };
 
   const mockEvent = createMockEvent(MOCK_SERVER_DEFAULT_URL, {
     context: {
       secrets: { service_account_token: apiToken },
     },
-    payload: { event_type: EventType.StartExtractingData },
+    payload: {
+      event_type: EventType.StartExtractingData,
+      event_context: { request_id: requestId, dev_oid: devOrgId },
+    },
   });
 
   const recordManager = new RecordManager({ event: mockEvent });
@@ -38,11 +37,80 @@ describe(RecordManager.name, () => {
     jest.clearAllMocks();
   });
 
+  it(`should call ${recordManager.extractorRecordMergingSet.name} with correct endpoint, headers and data`, async () => {
+    // Arrange
+    const params: RecordManagerExtractorRecordMergingSetParams = {
+      external_object_identifier: { external_record_id: 'ext-1' },
+      external_object: { status: 'open', owner: 'bob' },
+    };
+    mockAxiosClient.post.mockResolvedValue({ data: {} });
+
+    // Act
+    await recordManager.extractorRecordMergingSet(params);
+
+    // Assert
+    expect(mockAxiosClient.post).toHaveBeenCalledWith(
+      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.extractor-record-merging.set`,
+      { ...baseParams, ...params },
+      {
+        headers: {
+          Authorization: apiToken,
+        },
+      }
+    );
+  });
+
+  it(`should call ${recordManager.loaderRecordMergingSet.name} with correct endpoint, headers and data`, async () => {
+    // Arrange
+    const params: RecordManagerLoaderRecordMergingSetParams = {
+      devrev_object_id: devrevObjectId,
+      external_object: { status: 'closed' },
+      devrev_changes: { status: 'closed' },
+    };
+    mockAxiosClient.post.mockResolvedValue({ data: {} });
+
+    // Act
+    await recordManager.loaderRecordMergingSet(params);
+
+    // Assert
+    expect(mockAxiosClient.post).toHaveBeenCalledWith(
+      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.loader-record-merging.set`,
+      { ...baseParams, ...params },
+      {
+        headers: {
+          Authorization: apiToken,
+        },
+      }
+    );
+  });
+
+  it(`should call ${recordManager.loaderRecordMergingGet.name} with correct endpoint, headers and params`, async () => {
+    // Arrange
+    const params: RecordManagerLoaderRecordMergingGetParams = {
+      devrev_object_id: devrevObjectId,
+      external_object: { status: 'open' },
+    };
+    mockAxiosClient.get.mockResolvedValue({ data: {} });
+
+    // Act
+    await recordManager.loaderRecordMergingGet(params);
+
+    // Assert
+    expect(mockAxiosClient.get).toHaveBeenCalledWith(
+      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.loader-record-merging.get`,
+      {
+        headers: {
+          Authorization: apiToken,
+        },
+        params: { ...baseParams, ...params },
+      }
+    );
+  });
+
   it(`should call ${recordManager.getDevRevLoaderSeen.name} with correct endpoint, headers and params`, async () => {
     // Arrange
     const params: RecordManagerDevRevLoaderSeenGetParams = {
-      devrev_id: devrevId,
-      external_system_specifier: externalSystemSpecifier,
+      devrev_object_id: devrevObjectId,
       devrev_object: { status: 'open' },
     };
     mockAxiosClient.get.mockResolvedValue({ data: {} });
@@ -52,12 +120,12 @@ describe(RecordManager.name, () => {
 
     // Assert
     expect(mockAxiosClient.get).toHaveBeenCalledWith(
-      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.record-devrev-loader-seen.get`,
+      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.devrev-loader-record-merging.get`,
       {
         headers: {
           Authorization: apiToken,
         },
-        params,
+        params: { ...baseParams, ...params },
       }
     );
   });
@@ -65,8 +133,7 @@ describe(RecordManager.name, () => {
   it(`should call ${recordManager.putDevRevLoaderSeen.name} with correct endpoint, headers and data`, async () => {
     // Arrange
     const params: RecordManagerDevRevLoaderSeenSetParams = {
-      devrev_id: devrevId,
-      external_system_specifier: externalSystemSpecifier,
+      devrev_object_id: devrevObjectId,
       devrev_object: { status: 'closed' },
     };
     mockAxiosClient.post.mockResolvedValue({ data: {} });
@@ -76,81 +143,8 @@ describe(RecordManager.name, () => {
 
     // Assert
     expect(mockAxiosClient.post).toHaveBeenCalledWith(
-      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.record-devrev-loader-seen.set`,
-      params,
-      {
-        headers: {
-          Authorization: apiToken,
-        },
-      }
-    );
-  });
-
-  it(`should call ${recordManager.getExternalLoaderSeen.name} with correct endpoint, headers and params`, async () => {
-    // Arrange
-    const params: RecordManagerExternalLoaderSeenGetParams = {
-      devrev_id: devrevId,
-      external_system_specifier: externalSystemSpecifier,
-      external_object: { status: 'open' },
-    };
-    mockAxiosClient.get.mockResolvedValue({ data: {} });
-
-    // Act
-    await recordManager.getExternalLoaderSeen(params);
-
-    // Assert
-    expect(mockAxiosClient.get).toHaveBeenCalledWith(
-      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.record-external-loader-seen.get`,
-      {
-        headers: {
-          Authorization: apiToken,
-        },
-        params,
-      }
-    );
-  });
-
-  it(`should call ${recordManager.putExternalLoaderSeen.name} with correct endpoint, headers and data`, async () => {
-    // Arrange
-    const params: RecordManagerExternalLoaderSeenSetParams = {
-      devrev_id: devrevId,
-      external_system_specifier: externalSystemSpecifier,
-      external_object: { status: 'closed' },
-      devrev_changes: { status: 'closed' },
-    };
-    mockAxiosClient.post.mockResolvedValue({ data: {} });
-
-    // Act
-    await recordManager.putExternalLoaderSeen(params);
-
-    // Assert
-    expect(mockAxiosClient.post).toHaveBeenCalledWith(
-      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.record-external-loader-seen.set`,
-      params,
-      {
-        headers: {
-          Authorization: apiToken,
-        },
-      }
-    );
-  });
-
-  it(`should call ${recordManager.putExternalExtractorSeen.name} with correct endpoint, headers and data`, async () => {
-    // Arrange
-    const params: RecordManagerExternalExtractorSeenSetParams = {
-      devrev_id: devrevId,
-      external_system_specifier: externalSystemSpecifier,
-      external_object: { status: 'open', owner: 'bob' },
-    };
-    mockAxiosClient.post.mockResolvedValue({ data: {} });
-
-    // Act
-    await recordManager.putExternalExtractorSeen(params);
-
-    // Assert
-    expect(mockAxiosClient.post).toHaveBeenCalledWith(
-      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.record-external-extractor-seen.set`,
-      params,
+      `${MOCK_SERVER_DEFAULT_URL}/internal/airdrop.devrev-loader-record-merging.set`,
+      { ...baseParams, ...params },
       {
         headers: {
           Authorization: apiToken,

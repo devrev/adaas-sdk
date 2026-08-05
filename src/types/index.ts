@@ -84,11 +84,10 @@ export {
 export type {
   RecordManagerDevRevLoaderSeenGetParams,
   RecordManagerDevRevLoaderSeenSetParams,
-  RecordManagerExternalExtractorSeenSetParams,
-  RecordManagerExternalLoaderSeenGetParams,
-  RecordManagerExternalLoaderSeenSetParams,
   RecordManagerExternalRecordIdentifier,
-  RecordManagerExternalSystemSpecifier,
+  RecordManagerExtractorRecordMergingSetParams,
+  RecordManagerLoaderRecordMergingGetParams,
+  RecordManagerLoaderRecordMergingSetParams,
 } from '../record-manager/record-manager.interfaces';
 
 // Unresolved References
