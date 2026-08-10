@@ -1,6 +1,9 @@
 import { sleep } from '../common/helpers';
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
-import { ProcessedAttachment } from '../state/state.interfaces';
+import {
+  ProcessedAttachmentStatus,
+  ProcessedAttachment,
+} from '../state/state.interfaces';
 import {
   ExternalSystemAttachmentStreamingFunction,
   NormalizedAttachment,
@@ -31,6 +34,31 @@ export class AttachmentsStreamingPool<ConnectorState> {
     this.stream = stream;
   }
 
+  private recordProcessedAttachment(
+    attachment: NormalizedAttachment,
+    status: ProcessedAttachmentStatus
+  ): void {
+    const attachmentsMetadata =
+      this.adapter.state.toDevRev?.attachmentsMetadata;
+    if (!attachmentsMetadata?.lastProcessedAttachmentsIdsList) {
+      return;
+    }
+
+    const processedAttachmentsIdsList =
+      attachmentsMetadata.lastProcessedAttachmentsIdsList;
+
+    const alreadyRecorded = processedAttachmentsIdsList.some(
+      (it) => it.id === attachment.id && it.parent_id === attachment.parent_id
+    );
+    if (!alreadyRecorded) {
+      processedAttachmentsIdsList.push({
+        id: attachment.id,
+        parent_id: attachment.parent_id,
+        status,
+      });
+    }
+  }
+
   private async updateProgress() {
     this.totalProcessedCount++;
     if (this.totalProcessedCount % this.PROGRESS_REPORT_INTERVAL === 0) {
@@ -41,21 +69,17 @@ export class AttachmentsStreamingPool<ConnectorState> {
   }
 
   /**
-   * Migrates processed attachments from the legacy string[] format to the new ProcessedAttachment[] format.
+   * Migrates processed attachments from older state shapes to the current
+   * ProcessedAttachment[] format: legacy string[] IDs, and entries recorded before the
+   * `status` field existed (which only ever held successes).
    *
-   * @param attachments - The attachments list to migrate (either string[] or ProcessedAttachment[])
+   * @param attachments - The attachments list to migrate (string[] or partial ProcessedAttachment[])
    * @returns Migrated array of ProcessedAttachment objects, or empty array if input is invalid
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private migrateProcessedAttachments(attachments: any): ProcessedAttachment[] {
-    // Handle null/undefined
     if (!attachments || !Array.isArray(attachments)) {
       return [];
-    }
-
-    // If already migrated (first element is an object), return as-is
-    if (attachments.length > 0 && typeof attachments[0] === 'object') {
-      return attachments as ProcessedAttachment[];
     }
 
     // Migrate old string[] format
@@ -63,6 +87,15 @@ export class AttachmentsStreamingPool<ConnectorState> {
       return attachments.map((it) => ({
         id: it as string,
         parent_id: '',
+        status: ProcessedAttachmentStatus.Success,
+      }));
+    }
+
+    // Backfill status on entries recorded before it existed
+    if (attachments.length > 0 && typeof attachments[0] === 'object') {
+      return (attachments as ProcessedAttachment[]).map((it) => ({
+        ...it,
+        status: it.status ?? ProcessedAttachmentStatus.Success,
       }));
     }
 
@@ -80,8 +113,8 @@ export class AttachmentsStreamingPool<ConnectorState> {
       return { error };
     }
 
-    // Get the list of successfully processed attachments in previous (possibly incomplete) batch extraction.
-    // If no such list exists, create an empty one.
+    // Get the list of attachments processed (successfully or not) in a previous
+    // (possibly incomplete) batch extraction. If no such list exists, create an empty one.
     if (
       !this.adapter.state.toDevRev.attachmentsMetadata
         .lastProcessedAttachmentsIdsList
@@ -90,7 +123,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
         [];
     }
 
-    // Migrate old processed attachments to the new format.
+    // Migrate old processed attachments to the current format.
     this.adapter.state.toDevRev.attachmentsMetadata.lastProcessedAttachmentsIdsList =
       this.migrateProcessedAttachments(
         this.adapter.state.toDevRev.attachmentsMetadata
@@ -146,7 +179,7 @@ export class AttachmentsStreamingPool<ConnectorState> {
           (it) => it.id == attachment.id && it.parent_id == attachment.parent_id
         )
       ) {
-        continue; // Skip if the attachment ID is already processed
+        continue; // Skip if the attachment was already processed (succeeded or failed)
       }
 
       try {
@@ -176,17 +209,20 @@ export class AttachmentsStreamingPool<ConnectorState> {
             `Skipping attachment with ID ${attachment.id} with extension ${fileExtension} ${fileSizeInfo}${contentTypeInfo}due to error returned by the stream function`,
             response.error.message
           );
+
+          this.recordProcessedAttachment(
+            attachment,
+            ProcessedAttachmentStatus.Failed
+          );
+
           await this.updateProgress();
           continue;
         }
 
-        if (
-          !this.adapter.isTimeout &&
-          this.adapter.state.toDevRev?.attachmentsMetadata
-            ?.lastProcessedAttachmentsIdsList
-        ) {
-          this.adapter.state.toDevRev?.attachmentsMetadata.lastProcessedAttachmentsIdsList.push(
-            { id: attachment.id, parent_id: attachment.parent_id }
+        if (!this.adapter.isTimeout) {
+          this.recordProcessedAttachment(
+            attachment,
+            ProcessedAttachmentStatus.Success
           );
         }
 

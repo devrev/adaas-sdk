@@ -43,12 +43,20 @@ export interface ToDevRev {
   };
 }
 
+/** Outcome of sending an attachment for processing. */
+export enum ProcessedAttachmentStatus {
+  Success = 'success',
+  Failed = 'failed',
+}
+
 /**
- * Attachment structure, that stores both attachment id and its parent_id for deduplication on the SDK side.
+ * Attachment structure, that stores both attachment id and its parent_id for deduplication
+ * on the SDK side, along with whether it succeeded or failed.
  */
 export interface ProcessedAttachment {
   id: string;
   parent_id: string;
+  status: ProcessedAttachmentStatus;
 }
 
 export interface FromDevRev {

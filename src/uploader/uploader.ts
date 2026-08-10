@@ -9,6 +9,7 @@ import { serializeError } from '../logger/logger';
 
 import {
   compressGzip,
+  computeArtifactDateRanges,
   decompressGzip,
   downloadToLocal,
   parseJsonl,
@@ -110,17 +111,20 @@ export class Uploader {
           error: {
             message:
               'Error while confirming artifact upload. ' +
-              JSON.stringify(confirmArtifactUploadError),
+              serializeError(confirmArtifactUploadError),
           },
         };
       }
     }
+
+    const artifactDateRanges = computeArtifactDateRanges(fetchedObjects);
 
     // Return the artifact information to the platform
     const artifact: Artifact = {
       id: preparedArtifact!.artifact_id,
       item_type: itemType,
       item_count: Array.isArray(fetchedObjects) ? fetchedObjects.length : 1,
+      ...artifactDateRanges,
     };
 
     return { artifact };
@@ -208,11 +212,15 @@ export class Uploader {
     }
     formData.append('file', fileStream.data);
 
+    const hasContentLength = !!fileStream.headers['content-length'];
+
     try {
       const response = await axiosClient.post(artifact.upload_url, formData, {
         headers: {
           ...formData.getHeaders(),
-          ...(!fileStream.headers['content-length']
+          // S3 presigned uploads don't support chunked transfer-encoding, so
+          // Content-Length must be set even when the real size is unknown.
+          ...(!hasContentLength
             ? {
                 'Content-Length': MAX_DEVREV_ARTIFACT_SIZE,
               }
@@ -222,6 +230,10 @@ export class Uploader {
         maxRedirects: 0,
         // Allow 2xx and 3xx (redirects) to be considered successful, 4xx and 5xx will throw errors and be caught in the catch block
         validateStatus: (status) => status >= 200 && status < 400,
+        // The fallback Content-Length above is a guess, not the real size, so the
+        // upload will hit the same ECONNABORTED timeout on every attempt. Retrying
+        // it just multiplies the delay for no chance of success.
+        ...(!hasContentLength ? { 'axios-retry': { retries: 0 } } : {}),
       });
       this.destroyStream(fileStream);
       return { response };
@@ -259,16 +271,10 @@ export class Uploader {
       if (response?.status >= 200 && response?.status < 300) {
         return { response };
       } else {
-        return {
-          error: {
-            message:
-              'Error while confirming artifact upload. ' +
-              serializeError(response),
-          },
-        };
+        return { error: response };
       }
     } catch (error) {
-      return { error: { message: serializeError(error) } };
+      return { error };
     }
   }
 
