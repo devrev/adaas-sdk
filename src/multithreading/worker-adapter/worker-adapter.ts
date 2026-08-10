@@ -274,35 +274,6 @@ export class WorkerAdapter<ConnectorState> {
         return;
       }
 
-      // If the event is ExternalSyncUnitExtractionDone, upload external sync units via a Repo before emitting
-      // TODO: Remove in v2.0.0
-      if (
-        newEventType === ExtractorEventType.ExternalSyncUnitExtractionDone &&
-        data?.external_sync_units &&
-        data.external_sync_units.length > 0
-      ) {
-        console.log(
-          `Uploading ${data.external_sync_units.length} external sync units via repo before emitting event.`
-        );
-
-        this.initializeRepos([
-          {
-            itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
-            overridenOptions: {
-              batchSize: 25000,
-              skipConfirmation: true,
-            },
-          },
-        ]);
-
-        await this.getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)?.push(
-          data.external_sync_units
-        );
-
-        // Remove inline external_sync_units from data to avoid SQS size issues
-        delete data.external_sync_units;
-      }
-
       // Uploading all repos can fail partway through. When it does, we still
       // want to report whatever artifacts were successfully uploaded before
       // the failure (otherwise they become untracked orphans in storage), so
@@ -312,6 +283,35 @@ export class WorkerAdapter<ConnectorState> {
       let payload: EventData;
 
       try {
+        // If the event is ExternalSyncUnitExtractionDone, upload external sync units via a Repo before emitting.
+        // TODO: Remove in v2.0.0
+        if (
+          newEventType === ExtractorEventType.ExternalSyncUnitExtractionDone &&
+          data?.external_sync_units &&
+          data.external_sync_units.length > 0
+        ) {
+          console.log(
+            `Uploading ${data.external_sync_units.length} external sync units via repo before emitting event.`
+          );
+
+          this.initializeRepos([
+            {
+              itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
+              overridenOptions: {
+                batchSize: 25000,
+                skipConfirmation: true,
+              },
+            },
+          ]);
+
+          await this.getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)?.push(
+            data.external_sync_units
+          );
+
+          // Remove inline external_sync_units from data to avoid SQS size issues
+          delete data.external_sync_units;
+        }
+
         const prepared = await this.beforeEmit(newEventType);
         if (!prepared) {
           return;
@@ -386,6 +386,50 @@ export class WorkerAdapter<ConnectorState> {
         );
         parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
         this.hasWorkerEmitted = true;
+      }
+    });
+  }
+
+  /**
+   * Emits a phase-specific error after task execution fails. This path avoids
+   * flushing repos again, so artifacts uploaded before the failure are still
+   * reported without retrying the failed batch.
+   */
+  async emitFailure(error: unknown): Promise<void> {
+    return runWithSdkLogContext(async () => {
+      if (this.hasWorkerEmitted) {
+        return;
+      }
+
+      for (const repo of this.repos) {
+        this.artifacts = [...this.artifacts, ...repo.uploadedArtifacts];
+      }
+
+      const { eventType } = getTimeoutErrorEventType(
+        this.event.payload.event_type
+      );
+
+      try {
+        await emit({
+          eventType,
+          event: this.event,
+          data: this.buildEmitPayload(eventType, {
+            error: { message: serializeError(error) },
+          }),
+        });
+
+        const message: WorkerMessageEmitted = {
+          subject: WorkerMessageSubject.WorkerMessageEmitted,
+          payload: { eventType },
+        };
+        this.artifacts = [];
+        parentPort?.postMessage(message);
+        this.hasWorkerEmitted = true;
+      } catch (emitError) {
+        console.error(
+          `Error while emitting failure event with event type: ${eventType}.`,
+          serializeError(emitError)
+        );
       }
     });
   }

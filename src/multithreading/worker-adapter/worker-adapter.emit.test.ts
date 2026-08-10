@@ -500,6 +500,35 @@ describe(`${WorkerAdapter.name}.emit — ExternalSyncUnitExtractionDone legacy p
     >;
     expect(emittedData).not.toHaveProperty('external_sync_units');
   });
+
+  it('should emit an error when external sync unit upload fails', async () => {
+    const { adapter } = makeAdapter(EventType.StartExtractingExternalSyncUnits);
+    adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
+    adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+    const pushMock = jest
+      .fn()
+      .mockRejectedValue(new Error('external sync unit upload failed'));
+    jest.spyOn(adapter, 'initializeRepos').mockImplementation(() => undefined);
+    jest.spyOn(adapter, 'getRepo').mockReturnValue({ push: pushMock } as never);
+
+    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionDone, {
+      external_sync_units: [{ id: 'esu-1' }] as never,
+    });
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: ExtractorEventType.ExternalSyncUnitExtractionError,
+        data: expect.objectContaining({
+          error: expect.objectContaining({
+            message: expect.stringContaining(
+              'external sync unit upload failed'
+            ),
+          }),
+        }),
+      })
+    );
+  });
 });
 
 describe('WorkerAdapter — workersOldest / workersNewest boundary updates', () => {

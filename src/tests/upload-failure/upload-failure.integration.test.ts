@@ -50,9 +50,11 @@ describe('Upload failure integration (fast)', () => {
       expect(
         mockServer.getRequestCount('GET', UPLOAD_URL_PATH)
       ).toBeGreaterThanOrEqual(1);
-      expect(
-        callbacks[callbacks.length - 1].event_data?.error?.message
-      ).toContain('Error while processing task');
+      expectLastCallbackError(
+        callbacks,
+        ExtractorEventType.DataExtractionError,
+        UPLOAD_URL_ERROR_SNIPPET
+      );
     });
 
     it('should emit DataExtractionError when presigned file upload returns 400 during push', async () => {
@@ -84,9 +86,11 @@ describe('Upload failure integration (fast)', () => {
         mockServer.getRequestCount('GET', UPLOAD_URL_PATH)
       ).toBeGreaterThanOrEqual(1);
       expect(mockServer.getRequestCount('POST', '/file-upload-url')).toBe(1);
-      expect(
-        callbacks[callbacks.length - 1].event_data?.error?.message
-      ).toContain('Error while processing task');
+      expectLastCallbackError(
+        callbacks,
+        ExtractorEventType.DataExtractionError,
+        'uploading artifact'
+      );
     });
   });
 

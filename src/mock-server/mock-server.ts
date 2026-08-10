@@ -241,7 +241,17 @@ export class MockServer {
             this.requestCounts.set(key, currentCount + 1);
 
             if (currentCount < succeedThenFail.successCount) {
-              this.defaultRouteHandler(req, res);
+              if (headers) {
+                res.set(headers);
+              }
+
+              if (bodyBuffer !== undefined) {
+                res.status(status).buffer(bodyBuffer);
+              } else if (body !== undefined) {
+                res.status(status).json(body);
+              } else {
+                this.defaultRouteHandler(req, res);
+              }
             } else {
               const errorStatus = succeedThenFail.errorStatus ?? 400;
               if (succeedThenFail.errorBody !== undefined) {

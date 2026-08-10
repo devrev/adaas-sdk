@@ -23,6 +23,8 @@ export function processTask<ConnectorState>({
 
   void (async () => {
     await runWithSdkLogContext(async () => {
+      let adapter: WorkerAdapter<ConnectorState> | undefined;
+
       try {
         const event = workerData.event;
 
@@ -44,27 +46,52 @@ export function processTask<ConnectorState>({
           options,
         });
 
-        const adapter = new WorkerAdapter<ConnectorState>({
+        const workerAdapter = new WorkerAdapter<ConnectorState>({
           event,
           adapterState,
           options,
         });
+        adapter = workerAdapter;
 
         parentPort?.on(WorkerEvent.WorkerMessage, (message) => {
           if (message.subject !== WorkerMessageSubject.WorkerMessageExit) {
             return;
           }
           console.log('Timeout received. Waiting for the task to finish.');
-          adapter.isTimeout = true;
+          workerAdapter.isTimeout = true;
         });
 
-        await runWithUserLogContext(async () => task({ adapter }));
-        if (adapter.isTimeout && !adapter.hasWorkerEmitted) {
-          await runWithUserLogContext(async () => onTimeout({ adapter }));
+        await runWithUserLogContext(async () =>
+          task({ adapter: workerAdapter })
+        );
+        if (workerAdapter.isTimeout && !workerAdapter.hasWorkerEmitted) {
+          await runWithUserLogContext(async () =>
+            onTimeout({ adapter: workerAdapter })
+          );
         }
         process.exit(0);
       } catch (error) {
-        runWithUserLogContext(() => {
+        await runWithUserLogContext(async () => {
+          if (
+            adapter &&
+            !adapter.hasWorkerEmitted &&
+            typeof adapter.emitFailure === 'function'
+          ) {
+            try {
+              await adapter.emitFailure(error);
+            } catch (failureError) {
+              console.error(
+                'Error while emitting task failure.',
+                serializeError(failureError)
+              );
+            }
+          }
+
+          if (adapter?.hasWorkerEmitted) {
+            process.exit(1);
+            return;
+          }
+
           const errorMessage = `Error while processing task. ${serializeError(
             error
           )}`;
