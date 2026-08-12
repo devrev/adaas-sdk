@@ -30,6 +30,8 @@ export {
   ExtractorEvent,
   ExtractorEventType,
   InitialSyncScope,
+  ItemInputType,
+  ItemTypeCount,
   ProcessAttachmentReturnType,
   TimeUnit,
   TimeValue,
