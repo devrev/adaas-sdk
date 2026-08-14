@@ -1,6 +1,10 @@
-import { createMockEvent, MOCK_SERVER_DEFAULT_URL } from '../common/test-utils';
-import { axiosClient } from '../http/axios-client-internal';
+import { axiosClient } from '../http/client';
+import {
+  createMockEvent,
+  MOCK_SERVER_DEFAULT_URL,
+} from '../testing/mock-event';
 import { EventType } from '../types/extraction';
+
 import { Mappers } from './mappers';
 import {
   MappersCreateParams,
@@ -9,7 +13,7 @@ import {
   MappersUpdateParams,
   SyncMapperRecordStatus,
   SyncMapperRecordTargetType,
-} from './mappers.interface';
+} from './mappers.interfaces';
 
 // Mock the axios client
 jest.mock('../http/axios-client-internal');

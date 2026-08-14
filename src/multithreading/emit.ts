@@ -1,5 +1,7 @@
 import { AxiosResponse } from 'axios';
-import { axiosClient } from '../http/axios-client-internal';
+
+import { LIBRARY_VERSION } from '../common/constants';
+import { axiosClient } from '../http/client';
 import {
   AirdropEvent,
   EventData,
@@ -9,7 +11,7 @@ import {
   WorkerMetadata,
 } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
-import { LIBRARY_VERSION } from './constants';
+
 import { translateOutgoingEventType } from './event-type-translation';
 
 export interface EmitInterface {

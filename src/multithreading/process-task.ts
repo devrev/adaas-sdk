@@ -1,4 +1,5 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
+
 import { translateIncomingEventType } from '../common/event-type-translation';
 import { Logger, serializeError } from '../logger/logger';
 import {
@@ -11,6 +12,7 @@ import {
   WorkerEvent,
   WorkerMessageSubject,
 } from '../types/workers';
+
 import { WorkerAdapter } from './worker-adapter/worker-adapter';
 
 export function processTask<ConnectorState>({

@@ -1,9 +1,10 @@
+import { UNBOUNDED_DATE_TIME_VALUE } from '../common/constants';
 import { TimeValueType } from '../types/extraction';
-import { SdkState } from '../state/state.interfaces';
-import { UNBOUNDED_DATE_TIME_VALUE } from './constants';
+
+import { SdkState } from './state.interfaces';
 import {
-  parseDuration,
   applyDuration,
+  parseDuration,
   resolveTimeValue,
 } from './time-value-resolver';
 

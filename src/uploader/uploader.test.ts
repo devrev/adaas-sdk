@@ -1,10 +1,11 @@
+import zlib from 'zlib';
+
 import { AxiosResponse } from 'axios';
 import FormData from 'form-data';
 import { jsonl } from 'js-jsonl';
-import zlib from 'zlib';
 
-import { createMockEvent } from '../common/test-utils';
-import { axiosClient } from '../http/axios-client-internal';
+import { axiosClient } from '../http/client';
+import { createMockEvent } from '../testing/mock-event';
 import { mockServer } from '../tests/jest.setup';
 import {
   callPrivateMethod,

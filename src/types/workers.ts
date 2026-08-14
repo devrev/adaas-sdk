@@ -1,14 +1,12 @@
 import { Worker } from 'worker_threads';
 
 import type { LogLevel } from '../logger/logger.interfaces';
-import { State } from '../state/state';
 import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
-
-import { AirdropEvent, EventType, ExtractorEventType } from './extraction';
-
-import { LoaderEventType } from './loading';
+import { State } from '../state/state';
 
 import { InitialDomainMapping } from './common';
+import { AirdropEvent, EventType, ExtractorEventType } from './extraction';
+import { LoaderEventType } from './loading';
 
 /**
  * WorkerAdapterInterface is an interface for WorkerAdapter class.

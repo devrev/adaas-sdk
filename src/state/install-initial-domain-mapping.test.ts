@@ -1,9 +1,11 @@
 import axios from 'axios';
-import { axiosClient } from '../http/axios-client-internal';
+
+import { axiosClient } from '../http/client';
+import { createMockEvent } from '../testing/mock-event';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from './test-utils';
 import { InitialDomainMapping } from '../types';
 import { EventType } from '../types/extraction';
+
 import { installInitialDomainMapping } from './install-initial-domain-mapping';
 
 // Mock dependencies

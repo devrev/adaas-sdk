@@ -1,10 +1,11 @@
 import { AirSyncDefaultItemTypes, SSOR_ATTACHMENT } from '../common/constants';
-import { createItems, normalizeItem } from '../tests/test-helpers';
+import { createMockEvent } from '../testing/mock-event';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
+import { createItems, normalizeItem } from '../tests/test-helpers';
 import { EventType } from '../types';
-import { NormalizedAttachment, NormalizedItem } from './repo.interfaces';
+
 import { Repo } from './repo';
+import { NormalizedAttachment, NormalizedItem } from './repo.interfaces';
 
 jest.mock('../tests/test-helpers', () => ({
   ...jest.requireActual('../tests/test-helpers'),

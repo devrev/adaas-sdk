@@ -1,6 +1,6 @@
 import { AxiosResponse } from 'axios';
 
-import { axiosClient } from '../http/axios-client-internal';
+import { axiosClient } from '../http/client';
 
 import {
   MappersCreateParams,
@@ -12,7 +12,7 @@ import {
   MappersGetByTargetIdResponse,
   MappersUpdateParams,
   MappersUpdateResponse,
-} from './mappers.interface';
+} from './mappers.interfaces';
 
 /**
  * Manages sync mapper records that link external system items to DevRev items.

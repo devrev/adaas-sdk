@@ -1,5 +1,7 @@
-import axios, { AxiosResponse } from 'axios';
 import { parentPort } from 'node:worker_threads';
+
+import axios, { AxiosResponse } from 'axios';
+
 import { AttachmentsStreamingPool } from '../../attachments-streaming/attachments-streaming-pool';
 import {
   AirSyncDefaultItemTypes,
@@ -7,20 +9,15 @@ import {
   SSOR_ATTACHMENT,
   STATELESS_EVENT_TYPES,
 } from '../../common/constants';
-import { emit } from '../../common/control-protocol';
-import {
-  addReportToLoaderReport,
-  getFilesToLoad,
-  toRfc3339Timestamp,
-} from './worker-adapter.helpers';
-import { ProgressData } from './worker-adapter.interfaces';
+import { translateOutgoingEventType } from '../../common/event-type-translation';
+import { truncateMessage } from '../../common/helpers';
 import { serializeError } from '../../logger/logger';
 import {
   runWithSdkLogContext,
   runWithUserLogContext,
 } from '../../logger/logger.context';
 import { Mappers } from '../../mappers/mappers';
-import { SyncMapperRecordStatus } from '../../mappers/mappers.interface';
+import { SyncMapperRecordStatus } from '../../mappers/mappers.interfaces';
 import { Repo } from '../../repo/repo';
 import {
   NormalizedAttachment,
@@ -60,8 +57,14 @@ import {
 } from '../../types/workers';
 import { Uploader } from '../../uploader/uploader';
 import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
-import { translateOutgoingEventType } from '../../common/event-type-translation';
-import { truncateMessage } from '../../common/helpers';
+import {
+  addReportToLoaderReport,
+  getFilesToLoad,
+  toRfc3339Timestamp,
+} from '../adapters/loading-adapter.helpers';
+import { emit } from '../emit';
+
+import { ProgressData } from './worker-adapter.interfaces';
 
 export function createWorkerAdapter<ConnectorState>({
   event,

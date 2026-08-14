@@ -5,6 +5,7 @@ import {
   NormalizedAttachment,
   ProcessAttachmentReturnType,
 } from '../types';
+
 import { AttachmentsStreamingPool } from './attachments-streaming-pool';
 
 interface TestState {

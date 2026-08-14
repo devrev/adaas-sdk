@@ -1,10 +1,15 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import { emit } from '../../common/control-protocol';
+import {
+  DEFAULT_LAMBDA_TIMEOUT,
+  HARD_TIMEOUT_MULTIPLIER,
+  MEMORY_LOG_INTERVAL,
+} from '../../common/constants';
 import { translateIncomingEventType } from '../../common/event-type-translation';
 import { getMemoryUsage } from '../../common/helpers';
 import { Logger, serializeError } from '../../logger/logger';
+import { LogLevel } from '../../logger/logger.interfaces';
 import { AirdropEvent, EventType } from '../../types/extraction';
 import {
   GetWorkerPathInterface,
@@ -13,17 +18,12 @@ import {
   WorkerEvent,
   WorkerMessageSubject,
 } from '../../types/workers';
+import { createWorker } from '../create-worker';
+import { emit } from '../emit';
 
 import {
-  DEFAULT_LAMBDA_TIMEOUT,
-  HARD_TIMEOUT_MULTIPLIER,
-  MEMORY_LOG_INTERVAL,
-} from '../../common/constants';
-import { LogLevel } from '../../logger/logger.interfaces';
-import { createWorker } from '../create-worker';
-import {
-  getTimeoutErrorEventType,
   getNoScriptEventType,
+  getTimeoutErrorEventType,
 } from './spawn.helpers';
 
 function getWorkerPath({

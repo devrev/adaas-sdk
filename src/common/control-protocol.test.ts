@@ -1,7 +1,7 @@
-import { axiosClient } from '../http/axios-client-internal';
+import { axiosClient } from '../http/client';
+import { emit } from '../multithreading/emit';
+import { createMockEvent } from '../testing/mock-event';
 import { createAxiosResponse } from '../tests/test-helpers';
-import { createMockEvent } from './test-utils';
-import { emit } from './control-protocol';
 import { EventType, ExtractorEventType } from '../types/extraction';
 import { LoaderEventType } from '../types/loading';
 

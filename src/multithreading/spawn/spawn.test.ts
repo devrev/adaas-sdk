@@ -1,8 +1,9 @@
 import { EventEmitter } from 'events';
+
 import { DEFAULT_LAMBDA_TIMEOUT } from '../../common/constants';
+import { createMockEvent } from '../../testing/mock-event';
 import { EventType, ExtractorEventType } from '../../types/extraction';
 import { WorkerEvent, WorkerMessageSubject } from '../../types/workers';
-import { createMockEvent } from '../../common/test-utils';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -45,10 +46,11 @@ jest.mock('../../common/helpers', () => ({
 // ---------------------------------------------------------------------------
 // Imports after mocks
 // ---------------------------------------------------------------------------
-import { spawn, Spawn } from './spawn';
-import { createWorker } from '../create-worker';
-import { emit } from '../../common/control-protocol';
 import { getMemoryUsage } from '../../common/helpers';
+import { createWorker } from '../create-worker';
+import { emit } from '../emit';
+
+import { Spawn, spawn } from './spawn';
 
 // ---------------------------------------------------------------------------
 // Factory for a fake worker (EventEmitter with postMessage + terminate)

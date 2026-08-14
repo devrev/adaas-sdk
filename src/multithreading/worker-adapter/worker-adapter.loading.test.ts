@@ -1,6 +1,6 @@
 import { State } from '../../state/state';
+import { createMockEvent } from '../../testing/mock-event';
 import { mockServer } from '../../tests/jest.setup';
-import { createMockEvent } from '../../common/test-utils';
 import {
   AdapterState,
   AirdropEvent,
@@ -12,6 +12,7 @@ import {
   ExternalSystemAttachment,
   ExternalSystemItem,
 } from '../../types/loading';
+
 import { WorkerAdapter } from './worker-adapter';
 
 jest.mock('../../common/control-protocol', () => ({

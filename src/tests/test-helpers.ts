@@ -1,11 +1,14 @@
-import { AxiosResponse } from 'axios';
 import { Readable } from 'stream';
+
+import { AxiosResponse } from 'axios';
+
 import {
   Item,
   NormalizedAttachment,
   NormalizedItem,
 } from '../repo/repo.interfaces';
 import { ArtifactToUpload } from '../uploader/uploader.interfaces';
+
 import { CreateFileStreamOptions } from './test-helpers.interfaces';
 
 export function createItem(id: number): Item {

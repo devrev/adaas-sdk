@@ -1,8 +1,7 @@
-import { axiosClient } from '../http/axios-client-internal';
-import { AirdropEvent } from '../types/extraction';
-
+import { axiosClient } from '../http/client';
 import { serializeError } from '../logger/logger';
 import { InitialDomainMapping } from '../types/common';
+import { AirdropEvent } from '../types/extraction';
 
 export async function installInitialDomainMapping(
   event: AirdropEvent,

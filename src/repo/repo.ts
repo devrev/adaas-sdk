@@ -3,19 +3,19 @@ import {
   ARTIFACT_BATCH_SIZE,
   SSOR_ATTACHMENT,
 } from '../common/constants';
+import { runWithUserLogContext } from '../logger/logger.context';
 import { Item } from '../repo/repo.interfaces';
 import { ErrorRecord } from '../types/common';
+import { WorkerAdapterOptions } from '../types/workers';
 import { Uploader } from '../uploader/uploader';
 import { Artifact } from '../uploader/uploader.interfaces';
 
-import { WorkerAdapterOptions } from '../types/workers';
-import { runWithUserLogContext } from '../logger/logger.context';
+import { toValidTimestamp, updateRange } from './repo.helpers';
 import {
   NormalizedAttachment,
   NormalizedItem,
   RepoFactoryInterface,
 } from './repo.interfaces';
-import { updateRange, toValidTimestamp } from './repo.helpers';
 
 export class Repo {
   readonly itemType: string;

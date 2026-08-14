@@ -1,10 +1,10 @@
+import { createMockEvent } from '../../testing/mock-event';
 import {
   AirdropEvent,
   EventType,
   ExtractorEventType,
 } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
-import { createMockEvent } from '../../common/test-utils';
 
 import run from './extraction';
 

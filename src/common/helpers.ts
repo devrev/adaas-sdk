@@ -2,11 +2,12 @@ import { readFileSync } from 'fs';
 import * as path from 'path';
 import * as v8 from 'v8';
 
+import { MAX_LOG_STRING_LENGTH } from '../logger/logger.constants';
+
 import {
   MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
   MAX_DEVREV_FILENAME_LENGTH,
 } from './constants';
-import { MAX_LOG_STRING_LENGTH } from '../logger/logger.constants';
 
 /**
  * Gets the library version from the package.json file.

@@ -1,11 +1,11 @@
 import { AxiosResponse } from 'axios';
 import FormData from 'form-data';
 import { jsonl } from 'js-jsonl';
-import { axiosClient } from '../http/axios-client-internal';
 
 import { MAX_DEVREV_ARTIFACT_SIZE } from '../common/constants';
-import { NormalizedAttachment } from '../repo/repo.interfaces';
+import { axiosClient } from '../http/client';
 import { serializeError } from '../logger/logger';
+import { NormalizedAttachment } from '../repo/repo.interfaces';
 
 import {
   compressGzip,
@@ -18,9 +18,9 @@ import {
 import {
   Artifact,
   ArtifactToUpload,
-  UploadResponse,
   UploaderFactoryInterface,
   UploaderResult,
+  UploadResponse,
 } from './uploader.interfaces';
 
 export class Uploader {

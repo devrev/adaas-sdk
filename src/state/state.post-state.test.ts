@@ -1,7 +1,8 @@
+import { createMockEvent } from '../testing/mock-event';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
 import { EventType } from '../types/extraction';
-import { State, createAdapterState } from './state';
+
+import { createAdapterState, State } from './state';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 
@@ -77,7 +78,7 @@ describe('State.postState', () => {
     });
 
     // Mock axiosClient.post directly to bypass the retry backoff
-    const axiosClientModule = require('../http/axios-client-internal');
+    const axiosClientModule = require('../http/client');
     const axiosPostSpy = jest
       .spyOn(axiosClientModule.axiosClient, 'post')
       .mockRejectedValue(new Error('network error'));

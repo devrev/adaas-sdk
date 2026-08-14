@@ -1,7 +1,6 @@
-import { Artifact } from '../uploader/uploader.interfaces';
-
 import { AirdropEvent } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
+import { Artifact } from '../uploader/uploader.interfaces';
 
 /**
  * RepoInterface is an interface that defines the structure of a repo which is used to store and upload extracted data.

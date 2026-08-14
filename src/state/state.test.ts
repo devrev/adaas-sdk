@@ -2,10 +2,11 @@ import {
   STATEFUL_EVENT_TYPES,
   STATELESS_EVENT_TYPES,
 } from '../common/constants';
+import { createMockEvent } from '../testing/mock-event';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
 import { EventType } from '../types/extraction';
-import { State, createAdapterState } from './state';
+
+import { createAdapterState, State } from './state';
 import { extractionSdkState } from './state.interfaces';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -25,7 +26,7 @@ describe(State.name, () => {
     postStateSpy = jest.spyOn(State.prototype, 'postState');
     fetchStateSpy = jest.spyOn(State.prototype, 'fetchState');
     installInitialDomainMappingSpy = jest.spyOn(
-      require('../common/install-initial-domain-mapping'),
+      require('./install-initial-domain-mapping'),
       'installInitialDomainMapping'
     );
     processExitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {

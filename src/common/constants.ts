@@ -1,4 +1,5 @@
 import { EventType } from '../types/extraction';
+
 import { getLibraryVersion } from './helpers';
 
 export const ALLOWED_EXTRACTION_EVENT_TYPES = [

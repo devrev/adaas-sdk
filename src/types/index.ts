@@ -14,9 +14,9 @@ export {
   AirdropMessage,
   ConnectionData,
   DomainObjectState,
+  EventContext,
   EventContextIn,
   EventContextOut,
-  EventContext,
   EventData,
   EventType,
   ExternalProcessAttachmentFunction,
@@ -55,9 +55,8 @@ export {
 } from '../repo/repo.interfaces';
 
 // State
-export { AdapterState } from '../state/state.interfaces';
-
 export { UNBOUNDED_DATE_TIME_VALUE } from '../common/constants';
+export { AdapterState } from '../state/state.interfaces';
 
 // Uploader
 export {
@@ -75,12 +74,11 @@ export type {
   MappersGetByExternalIdParams,
   MappersGetByTargetIdParams,
   MappersUpdateParams,
-} from '../mappers/mappers.interface';
-
+} from '../mappers/mappers.interfaces';
 export {
   SyncMapperRecordStatus,
   SyncMapperRecordTargetType,
-} from '../mappers/mappers.interface';
+} from '../mappers/mappers.interfaces';
 
 // External Domain Metadata
 export type {
@@ -116,12 +114,12 @@ export type {
   ReferenceDetail,
   ReferenceType,
   SchemaVersion,
-  StageKey,
   StageDiagram,
+  StageKey,
   StateKey,
   StructData,
-  StructTypeKey,
   StructType,
+  StructTypeKey,
   TargetTypeKeyData,
   TextData,
   TypedReferenceData,

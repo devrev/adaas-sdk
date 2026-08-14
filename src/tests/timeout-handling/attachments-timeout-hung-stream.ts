@@ -1,10 +1,11 @@
-import { AxiosResponse } from 'axios';
 import { Readable } from 'stream';
+
+import { AxiosResponse } from 'axios';
 
 import { ExtractorEventType, processTask } from '../../index';
 import {
-  ExternalSystemAttachmentStreamingResponse,
   ExternalSystemAttachmentStreamingParams,
+  ExternalSystemAttachmentStreamingResponse,
 } from '../../types/extraction';
 
 // Repro for logs2.csv: one attachment's stream() hangs forever, keeping a pool

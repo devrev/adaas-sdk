@@ -1,11 +1,11 @@
 import { InputData } from '@devrev/typescript-sdk/dist/snap-ins';
+import { AxiosResponse } from 'axios';
 
+import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
+import { NormalizedAttachment } from '../repo/repo.interfaces';
 import { Artifact } from '../uploader/uploader.interfaces';
 
 import { ErrorRecord } from './common';
-import { AxiosResponse } from 'axios';
-import { NormalizedAttachment } from '../repo/repo.interfaces';
-import { WorkerAdapter } from '../multithreading/worker-adapter/worker-adapter';
 import { DonV2, LoaderReport, RateLimited } from './loading';
 
 /**

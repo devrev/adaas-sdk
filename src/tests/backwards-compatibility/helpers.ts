@@ -1,3 +1,7 @@
+import { execSync } from 'node:child_process';
+import * as fs from 'fs';
+import * as path from 'path';
+
 import {
   Extractor,
   ExtractorConfig,
@@ -16,10 +20,6 @@ import {
   ApiPropertySignature,
   ApiTypeAlias,
 } from '@microsoft/api-extractor-model';
-
-import * as fs from 'fs';
-import { execSync } from 'node:child_process';
-import * as path from 'path';
 
 export const newApiMdPath = path.join(__dirname, 'temp', 'ts-adaas.md');
 export const currentApiMdPath = path.join(__dirname, 'ts-adaas.md');

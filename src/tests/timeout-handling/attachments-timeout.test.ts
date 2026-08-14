@@ -1,15 +1,16 @@
 import zlib from 'zlib';
+
 import { jsonl } from 'js-jsonl';
 
+import { NormalizedAttachment } from '../../repo/repo.interfaces';
+import { createMockEvent } from '../../testing/mock-event';
 import {
   AirdropEvent,
   EventType,
   ExtractorEvent,
   ExtractorEventType,
 } from '../../types/extraction';
-import { NormalizedAttachment } from '../../repo/repo.interfaces';
 import { mockServer } from '../jest.setup';
-import { createMockEvent } from '../../common/test-utils';
 
 import run from './attachments-extraction';
 

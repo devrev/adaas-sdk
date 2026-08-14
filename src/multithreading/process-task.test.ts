@@ -65,11 +65,12 @@ jest.mock('./worker-adapter/worker-adapter', () => ({
   })),
 }));
 
-import { processTask } from './process-task';
 import { translateIncomingEventType } from '../common/event-type-translation';
 import { createAdapterState } from '../state/state';
+import { createMockEvent } from '../testing/mock-event';
+
 import { WorkerAdapter } from './worker-adapter/worker-adapter';
-import { createMockEvent } from '../common/test-utils';
+import { processTask } from './process-task';
 
 function setWorkerData(data: Record<string, unknown>) {
   (global as Record<string, unknown>).__workerData__ = data;

@@ -1,7 +1,8 @@
+import { createMockEvent } from '../testing/mock-event';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
 import { EventType, TimeValue, TimeValueType } from '../types/extraction';
-import { State, createAdapterState } from './state';
+
+import { createAdapterState, State } from './state';
 
 describe('State — TimeValue resolution', () => {
   let fetchStateSpy: jest.SpyInstance;

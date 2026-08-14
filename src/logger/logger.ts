@@ -1,10 +1,11 @@
-import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
-
 import { Console } from 'node:console';
 import { inspect } from 'node:util';
 import { isMainThread, parentPort } from 'node:worker_threads';
 
+import { AxiosError, isAxiosError, RawAxiosResponseHeaders } from 'axios';
+
 import { LIBRARY_VERSION } from '../common/constants';
+import { truncateMessage } from '../common/helpers';
 import { WorkerAdapterOptions, WorkerMessageSubject } from '../types/workers';
 
 import { INSPECT_OPTIONS } from './logger.constants';
@@ -17,7 +18,6 @@ import {
   PrintableArray,
   PrintableState,
 } from './logger.interfaces';
-import { truncateMessage } from '../common/helpers';
 
 /**
  * Custom logger that extends Node.js Console with context-aware logging.

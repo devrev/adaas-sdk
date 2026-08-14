@@ -1,10 +1,13 @@
-import { AxiosError } from 'axios';
 import { inspect } from 'node:util';
+
+import { AxiosError } from 'axios';
+
 import { LIBRARY_VERSION } from '../common/constants';
+import { createMockEvent } from '../testing/mock-event';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
 import { AirdropEvent, EventType } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
+
 import {
   getPrintableState,
   Logger,

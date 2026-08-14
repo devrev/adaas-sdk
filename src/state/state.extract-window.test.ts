@@ -1,7 +1,8 @@
+import { createMockEvent } from '../testing/mock-event';
 import { mockServer } from '../tests/jest.setup';
-import { createMockEvent } from '../common/test-utils';
 import { EventType, TimeValueType } from '../types/extraction';
-import { State, createAdapterState } from './state';
+
+import { createAdapterState, State } from './state';
 
 describe('State — extraction window validation', () => {
   let fetchStateSpy: jest.SpyInstance;

@@ -1,12 +1,14 @@
 import fs, { promises as fsPromises } from 'fs';
 import type { FileHandle } from 'fs/promises';
-import { jsonl } from 'js-jsonl';
 import zlib from 'zlib';
+
+import { jsonl } from 'js-jsonl';
 
 import {
   MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
   MAX_DEVREV_FILENAME_LENGTH,
 } from '../common/constants';
+
 import {
   compressGzip,
   computeArtifactDateRanges,

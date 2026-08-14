@@ -4,12 +4,11 @@ import {
   LoaderReport,
   StatsFileObject,
 } from '../../types/loading';
-
 import {
   addReportToLoaderReport,
   getFilesToLoad,
   toRfc3339Timestamp,
-} from './worker-adapter.helpers';
+} from '../adapters/loading-adapter.helpers';
 
 describe(getFilesToLoad.name, () => {
   let statsFile: StatsFileObject[];

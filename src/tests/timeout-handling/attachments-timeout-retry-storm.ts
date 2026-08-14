@@ -1,5 +1,6 @@
-import { AxiosResponse } from 'axios';
 import { Readable } from 'stream';
+
+import { AxiosResponse } from 'axios';
 
 import { ExtractorEventType, processTask } from '../../index';
 import { ExternalSystemAttachmentStreamingResponse } from '../../types/extraction';

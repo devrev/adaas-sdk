@@ -1,4 +1,5 @@
 import { Mappers } from '../mappers/mappers';
+
 import { ErrorRecord } from './common';
 import { AirdropEvent } from './extraction';
 

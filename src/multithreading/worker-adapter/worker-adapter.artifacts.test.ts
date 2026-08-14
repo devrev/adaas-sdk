@@ -1,10 +1,11 @@
 import { AirSyncDefaultItemTypes } from '../../common/constants';
 import { State } from '../../state/state';
+import { createMockEvent } from '../../testing/mock-event';
 import { mockServer } from '../../tests/jest.setup';
 import { createItems } from '../../tests/test-helpers';
-import { createMockEvent } from '../../common/test-utils';
 import { Artifact, EventType } from '../../types';
 import { ExternalSyncUnit } from '../../types/extraction';
+
 import { WorkerAdapter } from './worker-adapter';
 
 // 1. Create a mock function for the method you want to override.

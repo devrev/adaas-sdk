@@ -1,15 +1,16 @@
-import axios from 'axios';
 import { parentPort } from 'node:worker_threads';
 
+import axios from 'axios';
+
 import { STATELESS_EVENT_TYPES } from '../common/constants';
-import { installInitialDomainMapping } from '../common/install-initial-domain-mapping';
-import { resolveTimeValue } from '../common/time-value-resolver';
-import { axiosClient } from '../http/axios-client-internal';
+import { axiosClient } from '../http/client';
 import { getPrintableState, serializeError } from '../logger/logger';
 import { SyncMode } from '../types/common';
 import { EventType } from '../types/extraction';
 import { WorkerMessageSubject } from '../types/workers';
+import { ExtractionScope } from '../types/workers';
 
+import { installInitialDomainMapping } from './install-initial-domain-mapping';
 import {
   AdapterState,
   extractionSdkState,
@@ -17,7 +18,7 @@ import {
   SdkState,
   StateInterface,
 } from './state.interfaces';
-import { ExtractionScope } from '../types/workers';
+import { resolveTimeValue } from './time-value-resolver';
 
 export async function createAdapterState<ConnectorState>({
   event,
