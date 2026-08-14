@@ -1,30 +1,22 @@
-import { AirdropEvent } from '../types/extraction';
+import { AirSyncEvent } from '../types/extraction';
 import { WorkerAdapterOptions } from '../types/workers';
 import { Artifact } from '../uploader/uploader.interfaces';
 
-/**
- * RepoInterface is an interface that defines the structure of a repo which is used to store and upload extracted data.
- */
+/** Stores and uploads extracted data. */
 export interface RepoInterface {
   itemType: string;
   normalize?: (record: object) => NormalizedItem | NormalizedAttachment;
   overridenOptions?: WorkerAdapterOptions;
 }
 
-/**
- * RepoFactoryInterface is an interface that defines the structure of a repo factory which is used to create a repo.
- */
 export interface RepoFactoryInterface {
-  event: AirdropEvent;
+  event: AirSyncEvent;
   itemType: string;
   normalize?: (record: object) => NormalizedItem | NormalizedAttachment;
   onUpload: (artifact: Artifact) => void;
   options?: WorkerAdapterOptions;
 }
 
-/**
- * NormalizedItem is an interface of item after normalization.
- */
 export interface NormalizedItem {
   id: string;
   created_date: string;
@@ -32,9 +24,6 @@ export interface NormalizedItem {
   data: object;
 }
 
-/**
- * NormalizedAttachment is an interface of attachment after normalization.
- */
 export interface NormalizedAttachment {
   url: string;
   id: string;
@@ -46,13 +35,9 @@ export interface NormalizedAttachment {
   created_date?: string;
   modified_date?: string;
 
-  // This should be a string, but it was a number in the past. Due to backwards
-  // compatibility we are keeping it also as a number.
+  // number kept only for backwards compatibility; should be a string
   grand_parent_id?: number | string;
 }
 
-/**
- * Item is an interface that defines the structure of an item.
- */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Item = Record<string, any>;

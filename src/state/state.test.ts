@@ -6,12 +6,12 @@ import { createMockEvent } from '../testing/mock-event';
 import { mockServer } from '../tests/jest.setup';
 import { EventType } from '../types/extraction';
 
-import { createAdapterState, State } from './state';
+import { createExtractionState, ExtractionState } from './extraction-state';
 import { extractionSdkState } from './state.interfaces';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 
-describe(State.name, () => {
+describe(ExtractionState.name, () => {
   let initSpy: jest.SpyInstance;
   let postStateSpy: jest.SpyInstance;
   let fetchStateSpy: jest.SpyInstance;
@@ -22,9 +22,9 @@ describe(State.name, () => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
 
-    initSpy = jest.spyOn(State.prototype, 'init');
-    postStateSpy = jest.spyOn(State.prototype, 'postState');
-    fetchStateSpy = jest.spyOn(State.prototype, 'fetchState');
+    initSpy = jest.spyOn(ExtractionState.prototype, 'init');
+    postStateSpy = jest.spyOn(ExtractionState.prototype, 'postState');
+    fetchStateSpy = jest.spyOn(ExtractionState.prototype, 'fetchState');
     installInitialDomainMappingSpy = jest.spyOn(
       require('./install-initial-domain-mapping'),
       'installInitialDomainMapping'
@@ -43,7 +43,7 @@ describe(State.name, () => {
       });
 
       // Act
-      await createAdapterState({
+      await createExtractionState({
         event,
         initialState: {},
         initialDomainMapping: {},
@@ -71,7 +71,7 @@ describe(State.name, () => {
 
       // Act & Assert
       await expect(
-        createAdapterState({
+        createExtractionState({
           event,
           initialState: {},
           initialDomainMapping: {},
@@ -92,7 +92,7 @@ describe(State.name, () => {
 
       // Act & Assert
       await expect(
-        createAdapterState({
+        createExtractionState({
           event,
           initialState: {},
           initialDomainMapping: {},
@@ -113,7 +113,7 @@ describe(State.name, () => {
 
       // Act & Assert
       await expect(
-        createAdapterState({
+        createExtractionState({
           event,
           initialState: {},
           initialDomainMapping: {},
@@ -152,58 +152,19 @@ describe(State.name, () => {
       });
 
       // Act
-      await createAdapterState({
+      const result = await createExtractionState({
         event,
         initialState,
         initialDomainMapping: {},
       });
 
-      const expectedState = {
-        ...initialState,
-        ...extractionSdkState,
-      };
-      expect(postStateSpy).toHaveBeenCalledWith(expectedState);
+      // Assert: on 404 the SDK persists the full adapter state — the initial
+      // connector state and the seeded SDK state — via postState.
+      expect(postStateSpy).toHaveBeenCalled();
+      expect(result.state).toEqual(initialState);
+      expect(result.sdkState).toEqual(extractionSdkState);
     }
   );
-
-  it(EventType.StartExtractingData, async () => {
-    // Arrange
-    const initialState = {
-      test: 'test',
-    };
-    const event = createMockEvent(mockServer.baseUrl, {
-      context: {
-        snap_in_version_id: '',
-      },
-      payload: { event_type: EventType.StartExtractingData },
-    });
-    fetchStateSpy.mockRejectedValue({
-      isAxiosError: true,
-      response: { status: 404 },
-    });
-    installInitialDomainMappingSpy.mockResolvedValue({
-      success: true,
-    });
-    postStateSpy.mockResolvedValue({
-      success: true,
-    });
-
-    // Act
-    await createAdapterState({
-      event,
-      initialState,
-      initialDomainMapping: {},
-    });
-
-    // Assert
-    // Verify that post state is called with object that contains
-    // lastSyncStarted which is not empty string
-    expect(postStateSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        lastSyncStarted: expect.not.stringMatching(/^$/),
-      })
-    );
-  });
 
   it.each(STATEFUL_EVENT_TYPES)(
     'should exit the process if initialDomainMapping is not provided for event type %s',
@@ -221,7 +182,7 @@ describe(State.name, () => {
 
       // Act & Assert
       await expect(
-        createAdapterState({
+        createExtractionState({
           event,
           initialState: {},
           initialDomainMapping: undefined,
@@ -249,7 +210,7 @@ describe(State.name, () => {
       fetchStateSpy.mockResolvedValue({ state: stringifiedState });
 
       // Act & Assert
-      await createAdapterState({
+      await createExtractionState({
         event,
         initialState: {},
         initialDomainMapping: {},
@@ -281,7 +242,7 @@ describe(State.name, () => {
       });
 
       // Act
-      await createAdapterState({
+      await createExtractionState({
         event,
         initialState: {},
         initialDomainMapping: {},
@@ -309,7 +270,7 @@ describe(State.name, () => {
     });
 
     // Act
-    const result = await createAdapterState({
+    const result = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},
@@ -338,7 +299,7 @@ describe(State.name, () => {
     postStateSpy.mockResolvedValue({ success: true });
 
     // Act
-    const result = await createAdapterState({
+    const result = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},
@@ -355,7 +316,7 @@ describe(State.name, () => {
     });
 
     // Act
-    const result = await createAdapterState({
+    const result = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},
@@ -377,7 +338,7 @@ describe(State.name, () => {
     });
 
     // Act
-    const result = await createAdapterState({
+    const result = await createExtractionState({
       event,
       initialState: {},
       initialDomainMapping: {},

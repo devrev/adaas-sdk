@@ -1,7 +1,6 @@
 import {
-  ExtractorEventType,
   NormalizedItem,
-  processTask,
+  processExtractionTask,
   RepoInterface,
 } from '../../index';
 
@@ -25,7 +24,7 @@ const repos: RepoInterface[] = [
   },
 ];
 
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
     adapter.initializeRepos(repos);
 
@@ -44,9 +43,10 @@ processTask({
     }
 
     await adapter.getRepo('tasks')?.push(tasks);
-    await adapter.emit(ExtractorEventType.DataExtractionDone);
+    return { status: 'success' };
   },
-  onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.DataExtractionProgress);
+  // eslint-disable-next-line @typescript-eslint/require-await
+  onTimeout: async () => {
+    return { status: 'progress' };
   },
 });

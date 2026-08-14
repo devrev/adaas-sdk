@@ -6,11 +6,10 @@ import {
   HARD_TIMEOUT_MULTIPLIER,
   MEMORY_LOG_INTERVAL,
 } from '../../common/constants';
-import { translateIncomingEventType } from '../../common/event-type-translation';
 import { getMemoryUsage } from '../../common/helpers';
 import { Logger, serializeError } from '../../logger/logger';
 import { LogLevel } from '../../logger/logger.interfaces';
-import { AirdropEvent, EventType } from '../../types/extraction';
+import { AirSyncEvent, EventType } from '../../types/extraction';
 import {
   GetWorkerPathInterface,
   SpawnFactoryInterface,
@@ -60,34 +59,17 @@ function getWorkerPath({
 }
 
 /**
- * Creates a new instance of Spawn class.
- * Spawn class is responsible for spawning a new worker thread and managing the lifecycle of the worker.
- * The class provides utilities to emit control events to the platform and exit the worker gracefully.
- * In case of lambda timeout, the class emits a lambda timeout event to the platform.
- * @param {SpawnFactoryInterface} options - The options to create a new instance of Spawn class
- * @param {AirdropEvent} options.event - The event object received from the platform
- * @param {object} options.initialState - The initial state of the adapter
- * @param {string} [options.workerPath] Remove getWorkerPath function and use baseWorkerPath: __dirname instead of workerPath
- * @param {string} [options.baseWorkerPath] - The base path for the worker files, usually `__dirname`
- * @returns {Promise<Spawn>} - A new instance of Spawn class
+ * Spawns a worker thread for the event and manages its lifecycle (control
+ * events, graceful exit, lambda timeout handling). Resolves when the worker
+ * run is fully finished.
  */
 export async function spawn<ConnectorState>({
   event,
   initialState,
-  workerPath,
   initialDomainMapping,
   options,
   baseWorkerPath,
 }: SpawnFactoryInterface<ConnectorState>): Promise<void> {
-  // Translate incoming event type for backwards compatibility. This allows the
-  // SDK to accept both old and new event type formats. Then update the event with the translated event type.
-  const originalEventType = event.payload.event_type;
-  const translatedEventType = translateIncomingEventType(
-    event.payload.event_type as string
-  );
-  event.payload.event_type = translatedEventType;
-
-  // Read the command line arguments to check if the local flag is passed.
   const argv = await yargs(hideBin(process.argv)).argv;
   if (argv._.includes('local') || argv.local) {
     options = {
@@ -100,26 +82,19 @@ export async function spawn<ConnectorState>({
   // eslint-disable-next-line no-global-assign
   console = new Logger({ event, options });
 
-  if (translatedEventType !== originalEventType) {
-    console.log(
-      `Event type translated from ${originalEventType} to ${translatedEventType}.`
-    );
-  }
   if (options?.isLocalDevelopment) {
     console.log('Snap-in is running in local development mode.');
   }
 
   let script = null;
-  if (workerPath != null) {
-    script = workerPath;
-  } else if (
+  if (
     baseWorkerPath != null &&
     options?.workerPathOverrides != null &&
-    options.workerPathOverrides[translatedEventType as EventType] != null
+    options.workerPathOverrides[event.payload.event_type as EventType] != null
   ) {
     script =
       baseWorkerPath +
-      options.workerPathOverrides[translatedEventType as EventType];
+      options.workerPathOverrides[event.payload.event_type as EventType];
   } else {
     script = getWorkerPath({
       event,
@@ -127,7 +102,6 @@ export async function spawn<ConnectorState>({
     });
   }
 
-  // If a script is found for the event type, spawn a new worker.
   if (script) {
     try {
       const worker = await createWorker<ConnectorState>({
@@ -169,7 +143,7 @@ export async function spawn<ConnectorState>({
 }
 
 export class Spawn {
-  private event: AirdropEvent;
+  private event: AirSyncEvent;
   private alreadyEmitted: boolean;
   private softTimeoutSent: boolean;
   private defaultLambdaTimeout: number = DEFAULT_LAMBDA_TIMEOUT;
@@ -198,7 +172,7 @@ export class Spawn {
       : this.defaultLambdaTimeout;
     this.resolve = resolve;
 
-    // If soft timeout is reached, send a message to the worker to gracefully exit.
+    // Soft timeout: ask the worker to gracefully exit.
     this.softTimeoutTimer = setTimeout(
       () =>
         void (async () => {
@@ -218,7 +192,7 @@ export class Spawn {
       this.lambdaTimeout
     );
 
-    // If hard timeout is reached, that means the worker did not exit in time. Terminate the worker.
+    // Hard timeout: the worker did not exit in time, terminate it.
     this.hardTimeoutTimer = setTimeout(
       () =>
         void (async () => {
@@ -235,13 +209,10 @@ export class Spawn {
       this.lambdaTimeout * HARD_TIMEOUT_MULTIPLIER
     );
 
-    // If worker exits with process.exit(code), clear the timeouts and exit from
-    // main thread. When a soft timeout was sent, we use setImmediate to defer
-    // processing so that any pending WorkerMessage events (e.g.
-    // WorkerMessageEmitted from onTimeout) already queued in the event loop are
-    // handled first, preventing a race condition where exitFromMainThread sees
-    // alreadyEmitted=false and emits an error even though the worker
-    // successfully emitted an event.
+    // After a soft timeout, defer exit handling via setImmediate so pending
+    // WorkerMessage events (e.g. WorkerMessageEmitted from onTimeout) are
+    // handled first; otherwise exitFromMainThread could see
+    // alreadyEmitted=false and emit a spurious error.
     worker.on(WorkerEvent.WorkerExit, (code: number) => {
       const handler = async () => {
         console.info('Worker exited with exit code: ' + code + '.');
@@ -257,29 +228,25 @@ export class Spawn {
     });
 
     worker.on(WorkerEvent.WorkerMessage, (message) => {
-      // Since logs from the worker thread are handled differently in snap-in
-      // platform,  we need to catch the log messages from worker thread and log
-      // them in main thread.
+      // The snap-in platform handles worker-thread logs differently, so worker
+      // log messages are re-logged in the main thread.
       if (message?.subject === WorkerMessageSubject.WorkerMessageLog) {
         const stringifiedArgs = message.payload?.stringifiedArgs;
         const level = message.payload?.level as LogLevel;
-        const isSdkLog = message.payload?.isSdkLog ?? true;
-        this.logger.logFn(stringifiedArgs, level, isSdkLog);
+        this.logger.logFn(stringifiedArgs, level);
       }
 
-      // If worker sends a message that it has emitted an event, then set alreadyEmitted to true.
       if (message?.subject === WorkerMessageSubject.WorkerMessageEmitted) {
-        console.info('Worker has emitted message to ADaaS.');
+        console.info('Worker has emitted message to AirSync.');
         this.alreadyEmitted = true;
       }
 
-      // If worker sends a failure message before exiting, capture it for use in the error event.
+      // Capture the worker's failure reason for use in the error event.
       if (message?.subject === WorkerMessageSubject.WorkerMessageFailed) {
         this.workerFailedMessage = message.payload?.message;
       }
     });
 
-    // Log memory usage every 30 seconds
     this.memoryMonitoringInterval = setInterval(() => {
       try {
         const memoryInfo = getMemoryUsage();
@@ -287,7 +254,7 @@ export class Spawn {
           console.info(memoryInfo.formattedMessage);
         }
       } catch (error) {
-        // If memory monitoring fails, log the warning and clear the interval to prevent further issues
+        // Stop monitoring on failure to prevent repeated crashes
         console.warn(
           'Memory monitoring failed, stopping logging of memory usage interval',
           error

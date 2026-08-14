@@ -1,5 +1,6 @@
+import { UNKNOWN_EVENT_TYPE } from '../../common/constants';
 import { createMockEvent } from '../../testing/mock-event';
-import { EventType, ExtractorEventType } from '../../types/extraction';
+import { EventType } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
 
 import run from './extraction';
@@ -18,7 +19,7 @@ describe('Unknown event type', () => {
     expect(lastRequest?.url).toContain('/callback_url');
     expect(lastRequest?.method).toBe('POST');
     expect((lastRequest?.body as { event_type: string }).event_type).toBe(
-      ExtractorEventType.UnknownEventType
+      UNKNOWN_EVENT_TYPE
     );
   });
 });

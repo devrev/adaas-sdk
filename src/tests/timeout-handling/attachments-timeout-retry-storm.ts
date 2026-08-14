@@ -2,15 +2,15 @@ import { Readable } from 'stream';
 
 import { AxiosResponse } from 'axios';
 
-import { ExtractorEventType, processTask } from '../../index';
+import { processExtractionTask } from '../../index';
 import { ExternalSystemAttachmentStreamingResponse } from '../../types/extraction';
 
 // Repro for logs1.csv: stream() succeeds but the upload 5xxs, so axios-retry
 // backs off (2s, 4s, ...) and a pool worker is stuck mid-retry across the soft
 // timeout (it only re-checks the flag between attachments, never mid-retry).
-processTask({
+processExtractionTask({
   task: async ({ adapter }) => {
-    await adapter.streamAttachments({
+    return adapter.streamAttachments({
       stream: async (): Promise<ExternalSystemAttachmentStreamingResponse> => {
         await Promise.resolve();
         const body = Buffer.from('hello world');
@@ -27,10 +27,9 @@ processTask({
       },
       batchSize: 10,
     });
-
-    await adapter.emit(ExtractorEventType.AttachmentExtractionDone);
   },
-  onTimeout: async ({ adapter }) => {
-    await adapter.emit(ExtractorEventType.AttachmentExtractionProgress);
+  // eslint-disable-next-line @typescript-eslint/require-await
+  onTimeout: async () => {
+    return { status: 'progress' };
   },
 });

@@ -1,10 +1,10 @@
 import { axiosClient } from '../http/client';
 import { serializeError } from '../logger/logger';
 import { InitialDomainMapping } from '../types/common';
-import { AirdropEvent } from '../types/extraction';
+import { AirSyncEvent } from '../types/extraction';
 
 export async function installInitialDomainMapping(
-  event: AirdropEvent,
+  event: AirSyncEvent,
   initialDomainMappingJson: InitialDomainMapping
 ): Promise<void> {
   const devrevEndpoint = event.execution_metadata.devrev_endpoint;
@@ -16,7 +16,6 @@ export async function installInitialDomainMapping(
     return;
   }
 
-  // Get snap-in details
   const snapInResponse = await axiosClient.get(
     devrevEndpoint + '/internal/snap-ins.get',
     {
@@ -40,7 +39,7 @@ export async function installInitialDomainMapping(
   const startingRecipeBlueprint =
     initialDomainMappingJson?.starting_recipe_blueprint;
 
-  // Try to create a recipe blueprint
+  // Recipe blueprint creation is best-effort; install proceeds without it.
   let recipeBlueprintId;
   if (
     startingRecipeBlueprint &&
@@ -72,7 +71,6 @@ export async function installInitialDomainMapping(
     }
   }
 
-  // Install the initial domain mappings
   const additionalMappings = initialDomainMappingJson.additional_mappings || {};
   const initialDomainMappingInstallResponse = await axiosClient.post(
     `${devrevEndpoint}/internal/airdrop.recipe.initial-domain-mappings.install`,

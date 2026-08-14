@@ -5,12 +5,7 @@ import {
   StatsFileObject,
 } from '../../types/loading';
 
-/**
- * Gets the files to load for the loader.
- * @param {string[]} supportedItemTypes - The supported item types
- * @param {StatsFileObject[]} statsFile - The stats file
- * @returns {FileToLoad[]} The files to load
- */
+/** Filters the stats file to supported item types, ordered by their position in supportedItemTypes. */
 export function getFilesToLoad({
   supportedItemTypes,
   statsFile,
@@ -49,12 +44,7 @@ export function getFilesToLoad({
   return filesToLoad;
 }
 
-/**
- * Adds a report to the loader report.
- * @param {LoaderReport[]} loaderReports - The loader reports
- * @param {LoaderReport} report - The report to add
- * @returns {LoaderReport[]} The updated loader reports
- */
+/** Merges a report into the loader reports, summing counts per item type. */
 export function addReportToLoaderReport({
   loaderReports,
   report,
@@ -89,12 +79,4 @@ export function addReportToLoaderReport({
   }
 
   return loaderReports;
-}
-
-export function toRfc3339Timestamp(ms?: number): string | undefined {
-  if (ms === undefined || !Number.isFinite(ms)) {
-    return undefined;
-  }
-
-  return new Date(ms).toISOString();
 }

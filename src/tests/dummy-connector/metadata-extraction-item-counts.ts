@@ -1,4 +1,4 @@
-import { processExtractionTask } from '../../index';
+import { ItemInputType, processExtractionTask } from '../../index';
 
 const repos = [
   {
@@ -15,6 +15,19 @@ processExtractionTask({
     await adapter
       .getRepo('external_domain_metadata')
       ?.push([externalDomainMetadata]);
+
+    adapter.preExtractionItemCounts = [
+      {
+        record_type: 'tickets',
+        count: 0,
+        model_input_type: ItemInputType.MAIN,
+      },
+      {
+        record_type: 'customers',
+        count: 1200,
+        model_input_type: ItemInputType.USERS,
+      },
+    ];
 
     return { status: 'success' };
   },

@@ -43,12 +43,11 @@ axiosRetry(axiosClient as Parameters<typeof axiosRetry>[0], {
       error.response?.headers?.['retry-after'] ||
       error.response?.headers?.['Retry-After'];
 
-    // 5xx errors
     if (error.response?.status && error.response.status >= 500) {
       return true;
     }
 
-    // 429 errors when retry-after header is present
+    // 429 only when a valid non-negative Retry-After header is present
     else if (
       error.response?.status &&
       error.response.status === 429 &&
@@ -59,7 +58,7 @@ axiosRetry(axiosClient as Parameters<typeof axiosRetry>[0], {
       return true;
     }
 
-    // Network errors for idempotent requests if not 429, because 429 is handled above
+    // Network errors for idempotent requests; 429 already handled above
     else if (
       axiosRetry.isNetworkOrIdempotentRequestError(error) &&
       error.response?.status !== 429
@@ -67,16 +66,11 @@ axiosRetry(axiosClient as Parameters<typeof axiosRetry>[0], {
       return true;
     }
 
-    // Request timeout errors (ECONNABORTED) — axios-retry explicitly excludes
-    // ECONNABORTED from isNetworkError, so we handle it here separately.
-    // Axios only produces ECONNABORTED on client-side timeouts and browser
-    // cancellations, never on server responses, so no response guard is needed.
+    // axios-retry excludes ECONNABORTED (client-side timeout only, never a
+    // server response) from isNetworkError, so handle it here separately.
     else if (error.code === 'ECONNABORTED') {
       return true;
-    }
-
-    // all other errors
-    else {
+    } else {
       return false;
     }
   },
