@@ -1,26 +1,16 @@
-import { DeepPartial } from '../common/test-utils';
-import { AirdropEvent } from '../types/extraction';
+import { DeepPartial } from '../testing/mock-event';
+import { AirSyncEvent } from '../types/extraction';
 
-/**
- * Internal variant of the createMockEvent overrides — a deep partial of
- * {@link AirdropEvent}. The shared test wrapper injects defaults automatically.
- */
-export type CreateMockEventOverrides = DeepPartial<AirdropEvent>;
+/** Overrides for createMockEvent; the shared test wrapper injects defaults. */
+export type CreateMockEventOverrides = DeepPartial<AirSyncEvent>;
 
-/**
- * Options for creating a file stream response.
- */
 export interface CreateFileStreamOptions {
-  /** File content as Buffer or string (default: 'test file content') */
   content?: Buffer | string;
-  /** Override content-length header (auto-calculated from content if not provided) */
+  /** Overrides the content-length header (defaults to actual content length) */
   contentLength?: number;
-  /** Set to false to omit content-length header (for testing missing header scenarios) */
+  /** Set to false to omit the content-length header entirely */
   includeContentLength?: boolean;
-  /** Optional filename for metadata */
   filename?: string;
-  /** Optional MIME type (default: 'application/octet-stream') */
   mimeType?: string;
-  /** Optional custom destroy function for testing stream cleanup */
   destroyFn?: () => void;
 }

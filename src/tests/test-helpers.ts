@@ -1,11 +1,14 @@
-import { AxiosResponse } from 'axios';
 import { Readable } from 'stream';
+
+import { AxiosResponse } from 'axios';
+
 import {
   Item,
   NormalizedAttachment,
   NormalizedItem,
 } from '../repo/repo.interfaces';
 import { ArtifactToUpload } from '../uploader/uploader.interfaces';
+
 import { CreateFileStreamOptions } from './test-helpers.interfaces';
 
 export function createItem(id: number): Item {
@@ -46,10 +49,6 @@ export function createAttachments(count: number): NormalizedAttachment[] {
   return Array.from({ length: count }, (_, index) => createAttachment(index));
 }
 
-/**
- * Creates a mock artifact object for testing upload flows.
- * Use the `overrides` parameter to customize specific fields for your test case.
- */
 export function createArtifact(
   overrides: Partial<ArtifactToUpload> = {}
 ): ArtifactToUpload {
@@ -61,10 +60,6 @@ export function createArtifact(
   };
 }
 
-/**
- * Creates a mock Axios success response for testing HTTP calls.
- * Use the `overrides` parameter to customize response properties.
- */
 export function createAxiosResponse(
   overrides: Partial<AxiosResponse> = {}
 ): AxiosResponse {
@@ -78,10 +73,6 @@ export function createAxiosResponse(
   } as AxiosResponse;
 }
 
-/**
- * Creates a mock download URL response matching the DevRev API format.
- * Used when testing artifact download flows.
- */
 export function createDownloadUrlResponse(
   downloadUrl = 'https://s3.example.com/download'
 ) {
@@ -90,18 +81,10 @@ export function createDownloadUrlResponse(
   };
 }
 
-/**
- * Creates a mock file buffer for testing file upload/download operations.
- * Use the `content` parameter to customize the file content.
- */
 export function createFileBuffer(content = 'test file content'): Buffer {
   return Buffer.from(content);
 }
 
-/**
- * Creates an AxiosResponse-like object with a Readable stream for testing file streaming operations.
- * Useful for testing upload/download flows that work with streamed file data.
- */
 export function createFileStream(
   options: CreateFileStreamOptions = {}
 ): AxiosResponse {
@@ -146,13 +129,8 @@ export function createFileStream(
 }
 
 /**
- * Calls a private method on an instance.
- * Use with a type parameter to get the specific method signature.
- *
- * @example
- * type MyClassPrivate = { privateMethod: (x: number) => string };
- * const fn = callPrivateMethod<MyClassPrivate>()(instance, 'privateMethod');
- * const result = fn(42);
+ * Calls a private method on an instance. Curried so the private-method map is
+ * supplied as a type parameter: callPrivateMethod<T>()(instance, 'method').
  */
 export function callPrivateMethod<TPrivateMethods>() {
   return <K extends keyof TPrivateMethods>(
@@ -164,14 +142,6 @@ export function callPrivateMethod<TPrivateMethods>() {
   };
 }
 
-/**
- * Spies on a private method of an instance.
- *
- * @example
- * type MyClassPrivate = { privateMethod: (x: number) => string };
- * const spy = spyOnPrivateMethod<MyClassPrivate>(instance, 'privateMethod');
- * spy.mockResolvedValueOnce('mocked');
- */
 export function spyOnPrivateMethod<TPrivateMethods>(
   instance: object,
   methodName: keyof TPrivateMethods

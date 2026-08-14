@@ -1,22 +1,21 @@
 import fs, { promises as fsPromises } from 'fs';
-import { jsonl } from 'js-jsonl';
 import zlib from 'zlib';
+
+import { jsonl } from 'js-jsonl';
 
 import {
   MAX_DEVREV_FILENAME_EXTENSION_LENGTH,
   MAX_DEVREV_FILENAME_LENGTH,
 } from '../common/constants';
 import { NormalizedItem } from '../repo/repo.interfaces';
+
 import {
   ArtifactDateField,
   ArtifactDateRanges,
   UploaderResult,
 } from './uploader.interfaces';
 
-/**
- * Computes oldest/newest created and modified timestamps (RFC3339) across uploaded items.
- * @param fetchedObjects - Single object or array of objects (e.g. NormalizedItem[])
- */
+/** Computes oldest/newest created and modified timestamps (RFC3339) across uploaded items. */
 export function computeArtifactDateRanges(
   fetchedObjects: object[] | object
 ): ArtifactDateRanges {
@@ -93,11 +92,6 @@ export function computeArtifactDateRanges(
   return result;
 }
 
-/**
- * Compresses a JSONL string using gzip compression.
- * @param {string} jsonlObject - The JSONL string to compress
- * @returns {Buffer | void} The compressed buffer or undefined on error
- */
 export function compressGzip(jsonlObject: string): UploaderResult<Buffer> {
   try {
     return { response: zlib.gzipSync(jsonlObject) };
@@ -106,11 +100,6 @@ export function compressGzip(jsonlObject: string): UploaderResult<Buffer> {
   }
 }
 
-/**
- * Decompresses a gzipped buffer to a JSONL string.
- * @param {Buffer} gzippedJsonlObject - The gzipped buffer to decompress
- * @returns {string | void} The decompressed JSONL string or undefined on error
- */
 export function decompressGzip(
   gzippedJsonlObject: Buffer
 ): UploaderResult<string> {
@@ -122,11 +111,6 @@ export function decompressGzip(
   }
 }
 
-/**
- * Parses a JSONL string into an array of objects.
- * @param {string} jsonlObject - The JSONL string to parse
- * @returns {object[] | null} The parsed array of objects or null on error
- */
 export function parseJsonl(jsonlObject: string): UploaderResult<object[]> {
   try {
     return { response: jsonl.parse(jsonlObject) };
@@ -135,12 +119,7 @@ export function parseJsonl(jsonlObject: string): UploaderResult<object[]> {
   }
 }
 
-/**
- * Downloads fetched objects to the local file system (for local development).
- * @param {string} itemType - The type of items being downloaded
- * @param {object | object[]} fetchedObjects - The objects to write to file
- * @returns {Promise<void>} Resolves when the file is written or rejects on error
- */
+/** Writes fetched objects to the local file system (local development only). */
 export async function downloadToLocal(
   itemType: string,
   fetchedObjects: object | object[]
@@ -174,13 +153,7 @@ export async function downloadToLocal(
   }
 }
 
-/**
- * Truncates a filename if it exceeds the maximum allowed length.
- * @param {string} filename - The filename to truncate
- * @returns {string} The truncated filename
- */
 export function truncateFilename(filename: string): string {
-  // If the filename is already within the limit, return it as is.
   if (filename.length <= MAX_DEVREV_FILENAME_LENGTH) {
     return filename;
   }
@@ -190,11 +163,9 @@ export function truncateFilename(filename: string): string {
   );
 
   const extension = filename.slice(-MAX_DEVREV_FILENAME_EXTENSION_LENGTH);
-  // Calculate how many characters are available for the name part after accounting for the extension and "..."
   const availableNameLength =
     MAX_DEVREV_FILENAME_LENGTH - MAX_DEVREV_FILENAME_EXTENSION_LENGTH - 3; // -3 for "..."
 
-  // Truncate the name part and add an ellipsis
   const truncatedFilename = filename.slice(0, availableNameLength);
 
   return `${truncatedFilename}...${extension}`;

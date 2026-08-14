@@ -1,4 +1,4 @@
-import { MockServer } from '../mock-server/mock-server';
+import { MockServer } from '../testing/mock-server';
 
 // Use port 0 for dynamic port allocation, enabling parallel test execution
 export const mockServer = new MockServer(0);

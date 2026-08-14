@@ -5,17 +5,16 @@ import {
 } from '../common/constants';
 import { Item } from '../repo/repo.interfaces';
 import { ErrorRecord } from '../types/common';
+import { WorkerAdapterOptions } from '../types/workers';
 import { Uploader } from '../uploader/uploader';
 import { Artifact } from '../uploader/uploader.interfaces';
 
-import { WorkerAdapterOptions } from '../types/workers';
-import { runWithUserLogContext } from '../logger/logger.context';
+import { toValidTimestamp, updateRange } from './repo.helpers';
 import {
   NormalizedAttachment,
   NormalizedItem,
   RepoFactoryInterface,
 } from './repo.interfaces';
-import { updateRange, toValidTimestamp } from './repo.helpers';
 
 export class Repo {
   readonly itemType: string;
@@ -60,14 +59,14 @@ export class Repo {
 
     if (itemsToUpload.length > 0) {
       for (const item of itemsToUpload) {
-        const createdDate = item?.created_date;
+        const createdDate = (item as NormalizedItem)?.created_date;
         if (createdDate != null) {
           const createdMs = toValidTimestamp(createdDate);
           if (createdMs !== undefined) {
             updateRange(this.dateRanges.creationDate, createdMs);
           }
         }
-        const modifiedDate = item?.modified_date;
+        const modifiedDate = (item as NormalizedItem)?.modified_date;
         if (modifiedDate != null && modifiedDate !== '') {
           const modifiedMs = toValidTimestamp(modifiedDate);
           if (modifiedMs !== undefined) {
@@ -94,7 +93,7 @@ export class Repo {
 
       this.uploadedArtifacts.push(artifact);
 
-      // Clear the uploaded items from the main items array if no batch was specified
+      // An explicit batch was already spliced out of this.items by the caller
       if (!batch) {
         this.items = [];
       }
@@ -117,30 +116,23 @@ export class Repo {
       return true;
     }
 
-    // Normalize items if needed
     if (
       this.normalize &&
       this.itemType != AirSyncDefaultItemTypes.EXTERNAL_DOMAIN_METADATA &&
       this.itemType != SSOR_ATTACHMENT
     ) {
-      recordsToPush = runWithUserLogContext(() =>
-        items.map((item: Item) => this.normalize!(item))
-      );
+      recordsToPush = items.map((item: Item) => this.normalize!(item));
     } else {
       recordsToPush = items;
     }
 
-    // Add the new records to the items array
     this.items.push(...recordsToPush);
 
-    // Upload in batches while the number of items exceeds the batch size
     const batchSize = this.options?.batchSize || ARTIFACT_BATCH_SIZE;
     while (this.items.length >= batchSize) {
-      // Slice out a batch of batchSize items to upload
       const batch = this.items.splice(0, batchSize);
 
       try {
-        // Upload the batch
         await this.upload(batch);
       } catch (error) {
         console.error('Error while uploading batch', error);

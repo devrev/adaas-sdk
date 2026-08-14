@@ -1,4 +1,5 @@
 import { EventType } from '../types/extraction';
+
 import { getLibraryVersion } from './helpers';
 
 export const ALLOWED_EXTRACTION_EVENT_TYPES = [
@@ -57,7 +58,7 @@ export const STATEFUL_EVENT_TYPES = [
 export const ARTIFACT_BATCH_SIZE = 2000;
 export const MAX_DEVREV_ARTIFACT_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
 export const MAX_DEVREV_FILENAME_LENGTH = 256;
-export const MAX_DEVREV_FILENAME_EXTENSION_LENGTH = 20; // 20 characters for the file extension
+export const MAX_DEVREV_FILENAME_EXTENSION_LENGTH = 20;
 
 // Max SQS message size is 250KB, we want to leave some room for the other data in the message
 export const MAX_EVENT_SIZE_BYTES = 200_000;
@@ -67,6 +68,7 @@ export const EVENT_SIZE_THRESHOLD_BYTES = Math.floor(
 );
 
 export const SSOR_ATTACHMENT: string = 'ssor_attachment';
+export const UNKNOWN_EVENT_TYPE = 'UNKNOWN_EVENT_TYPE';
 
 export enum AirSyncDefaultItemTypes {
   EXTERNAL_DOMAIN_METADATA = 'external_domain_metadata',
@@ -83,10 +85,8 @@ export const MEMORY_LOG_INTERVAL = 30 * 1000; // 30 seconds
 export const DEFAULT_SLEEP_DELAY_MS = 3 * 60 * 1000; // 3 minutes
 
 /**
- * Sentinel value representing an unbounded (no limit) extraction timestamp.
- * Used as the resolved value for TimeValueType.UNBOUNDED, stored as workersOldest
- * when the initial import has no lower time bound. The Unix epoch ensures that
- * no real extraction timestamp can be earlier, preventing accidental overwrites
- * of the boundary by subsequent syncs (e.g. reconciliation with absolute dates).
+ * Sentinel for an unbounded extraction timestamp (TimeValueType.UNBOUNDED),
+ * stored as workersOldest. The Unix epoch guarantees no real timestamp can be
+ * earlier, so subsequent syncs cannot accidentally overwrite the boundary.
  */
 export const UNBOUNDED_DATE_TIME_VALUE = '1970-01-01T00:00:00.000Z';

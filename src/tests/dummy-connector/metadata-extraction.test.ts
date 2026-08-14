@@ -1,17 +1,18 @@
+import { createMockEvent } from '../../testing/mock-event';
 import {
-  AirdropEvent,
+  AirSyncEvent,
   EventType,
   ExtractorEventType,
+  ItemTypeCount,
 } from '../../types/extraction';
 import { mockServer } from '../jest.setup';
-import { createMockEvent } from '../../common/test-utils';
 
 import run from './extraction';
 
 jest.setTimeout(60000);
 
 describe('Dummy Connector - Metadata Extraction', () => {
-  let event: AirdropEvent;
+  let event: AirSyncEvent;
   beforeEach(() => {
     event = createMockEvent(mockServer.baseUrl, {
       payload: { event_type: EventType.StartExtractingMetadata },
@@ -27,6 +28,21 @@ describe('Dummy Connector - Metadata Extraction', () => {
     expect((lastRequest?.body as { event_type: string }).event_type).toBe(
       ExtractorEventType.MetadataExtractionDone
     );
+  });
+
+  it('should include pre_extraction_item_counts on the metadata done event when the connector sets them', async () => {
+    await run([event], __dirname + '/metadata-extraction-item-counts');
+
+    const lastRequest = mockServer.getLastRequest();
+    const body = lastRequest?.body as {
+      event_type: string;
+      event_data: { pre_extraction_item_counts?: ItemTypeCount[] };
+    };
+    expect(body.event_type).toBe(ExtractorEventType.MetadataExtractionDone);
+    expect(body.event_data.pre_extraction_item_counts).toEqual([
+      { record_type: 'tickets', count: 0, model_input_type: 'main' },
+      { record_type: 'customers', count: 1200, model_input_type: 'users' },
+    ]);
   });
 
   it('should emit metadata error event when it fails to initialize state due to 400 response', async () => {

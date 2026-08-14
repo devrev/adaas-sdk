@@ -1,3 +1,4 @@
+import { UNKNOWN_EVENT_TYPE } from '../../common/constants';
 import { EventType, ExtractorEventType } from '../../types/extraction';
 import { LoaderEventType } from '../../types/loading';
 
@@ -19,9 +20,9 @@ describe(getTimeoutErrorEventType.name, () => {
       expect(result.eventType).toBe(ExtractorEventType.MetadataExtractionError);
     });
 
-    it('should return MetadataExtractionError for deprecated ExtractionMetadataStart', () => {
+    it('should return MetadataExtractionError for StartExtractingMetadata (renamed from ExtractionMetadataStart)', () => {
       // Arrange
-      const eventType = EventType.ExtractionMetadataStart;
+      const eventType = EventType.StartExtractingMetadata;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -54,9 +55,9 @@ describe(getTimeoutErrorEventType.name, () => {
       expect(result.eventType).toBe(ExtractorEventType.DataExtractionError);
     });
 
-    it('should return DataExtractionError for deprecated ExtractionDataStart', () => {
+    it('should return DataExtractionError for StartExtractingData (renamed from ExtractionDataStart)', () => {
       // Arrange
-      const eventType = EventType.ExtractionDataStart;
+      const eventType = EventType.StartExtractingData;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -65,9 +66,9 @@ describe(getTimeoutErrorEventType.name, () => {
       expect(result.eventType).toBe(ExtractorEventType.DataExtractionError);
     });
 
-    it('should return DataExtractionError for deprecated ExtractionDataContinue', () => {
+    it('should return DataExtractionError for ContinueExtractingData (renamed from ExtractionDataContinue)', () => {
       // Arrange
-      const eventType = EventType.ExtractionDataContinue;
+      const eventType = EventType.ContinueExtractingData;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -91,9 +92,9 @@ describe(getTimeoutErrorEventType.name, () => {
       );
     });
 
-    it('should return ExtractorStateDeletionError for deprecated ExtractionDataDelete', () => {
+    it('should return ExtractorStateDeletionError for StartDeletingExtractorState (renamed from ExtractionDataDelete)', () => {
       // Arrange
-      const eventType = EventType.ExtractionDataDelete;
+      const eventType = EventType.StartDeletingExtractorState;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -132,9 +133,9 @@ describe(getTimeoutErrorEventType.name, () => {
       );
     });
 
-    it('should return AttachmentExtractionError for deprecated ExtractionAttachmentsStart', () => {
+    it('should return AttachmentExtractionError for StartExtractingAttachments (renamed from ExtractionAttachmentsStart)', () => {
       // Arrange
-      const eventType = EventType.ExtractionAttachmentsStart;
+      const eventType = EventType.StartExtractingAttachments;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -145,9 +146,9 @@ describe(getTimeoutErrorEventType.name, () => {
       );
     });
 
-    it('should return AttachmentExtractionError for deprecated ExtractionAttachmentsContinue', () => {
+    it('should return AttachmentExtractionError for ContinueExtractingAttachments (renamed from ExtractionAttachmentsContinue)', () => {
       // Arrange
-      const eventType = EventType.ExtractionAttachmentsContinue;
+      const eventType = EventType.ContinueExtractingAttachments;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -173,9 +174,9 @@ describe(getTimeoutErrorEventType.name, () => {
       );
     });
 
-    it('should return ExtractorAttachmentsStateDeletionError for deprecated ExtractionAttachmentsDelete', () => {
+    it('should return ExtractorAttachmentsStateDeletionError for StartDeletingExtractorAttachmentsState (renamed from ExtractionAttachmentsDelete)', () => {
       // Arrange
-      const eventType = EventType.ExtractionAttachmentsDelete;
+      const eventType = EventType.StartDeletingExtractorAttachmentsState;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -201,9 +202,9 @@ describe(getTimeoutErrorEventType.name, () => {
       );
     });
 
-    it('should return ExternalSyncUnitExtractionError for deprecated ExtractionExternalSyncUnitsStart', () => {
+    it('should return ExternalSyncUnitExtractionError for StartExtractingExternalSyncUnits (renamed from ExtractionExternalSyncUnitsStart)', () => {
       // Arrange
-      const eventType = EventType.ExtractionExternalSyncUnitsStart;
+      const eventType = EventType.StartExtractingExternalSyncUnits;
 
       // Act
       const result = getTimeoutErrorEventType(eventType);
@@ -292,9 +293,9 @@ describe(getTimeoutErrorEventType.name, () => {
   });
 
   describe('unknown event types', () => {
-    it('[edge] should return UnknownEventType and log error for unrecognized event type', () => {
+    it('[edge] should return UNKNOWN_EVENT_TYPE and log error for unrecognized event type', () => {
       // Arrange
-      const eventType = EventType.UnknownEventType;
+      const eventType = 'TOTALLY_UNKNOWN' as EventType;
       const consoleErrorSpy = jest
         .spyOn(console, 'error')
         .mockImplementation(() => {});
@@ -303,7 +304,7 @@ describe(getTimeoutErrorEventType.name, () => {
       const result = getTimeoutErrorEventType(eventType);
 
       // Assert
-      expect(result.eventType).toBe(LoaderEventType.UnknownEventType);
+      expect(result.eventType).toBe(UNKNOWN_EVENT_TYPE);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Event type not recognized in getTimeoutErrorEventType function: ' +
           eventType
@@ -375,7 +376,7 @@ describe(getNoScriptEventType.name, () => {
   });
 
   describe('unknown event types', () => {
-    it('[edge] should return UnknownEventType and log error for unrecognized event type', () => {
+    it('[edge] should return UNKNOWN_EVENT_TYPE and log error for unrecognized event type', () => {
       // Arrange
       const eventType = EventType.StartExtractingData;
       const consoleErrorSpy = jest
@@ -386,7 +387,7 @@ describe(getNoScriptEventType.name, () => {
       const result = getNoScriptEventType(eventType);
 
       // Assert
-      expect(result.eventType).toBe(LoaderEventType.UnknownEventType);
+      expect(result.eventType).toBe(UNKNOWN_EVENT_TYPE);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Event type not recognized in getNoScriptEventType function: ' +
           eventType
@@ -396,7 +397,7 @@ describe(getNoScriptEventType.name, () => {
       consoleErrorSpy.mockRestore();
     });
 
-    it('[edge] should return UnknownEventType for StartLoadingData', () => {
+    it('[edge] should return UNKNOWN_EVENT_TYPE for StartLoadingData', () => {
       // Arrange
       const eventType = EventType.StartLoadingData;
       const consoleErrorSpy = jest
@@ -407,7 +408,7 @@ describe(getNoScriptEventType.name, () => {
       const result = getNoScriptEventType(eventType);
 
       // Assert
-      expect(result.eventType).toBe(LoaderEventType.UnknownEventType);
+      expect(result.eventType).toBe(UNKNOWN_EVENT_TYPE);
       expect(consoleErrorSpy).toHaveBeenCalled();
 
       // Cleanup

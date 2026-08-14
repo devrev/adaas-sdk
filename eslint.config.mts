@@ -1,9 +1,16 @@
+import { builtinModules } from 'node:module';
+
 import js from '@eslint/js';
 import prettierConfig from 'eslint-config-prettier';
 import prettierPlugin from 'eslint-plugin-prettier';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+
+const nodeBuiltins = builtinModules
+  .filter((m) => !m.startsWith('_'))
+  .join('|');
 
 export default defineConfig([
   { ignores: ['dist/**', 'test/**', 'src/deprecated/**', 'coverage'] },
@@ -54,9 +61,25 @@ export default defineConfig([
     },
     plugins: {
       prettier: prettierPlugin,
+      'simple-import-sort': simpleImportSort,
     },
     rules: {
       'prettier/prettier': 'error',
+
+      // Import order: node builtins, external packages,
+      // parent-relative paths, same-directory paths.
+      'simple-import-sort/imports': [
+        'error',
+        {
+          groups: [
+            [`^node:`, `^(${nodeBuiltins})(/|$)`],
+            ['^@?\\w'],
+            ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
+            ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
+          ],
+        },
+      ],
+      'simple-import-sort/exports': 'error',
 
       // Custom rules
       'require-await': 'off',
