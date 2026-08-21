@@ -85,7 +85,10 @@ export class Repo {
       );
 
       if (error || !artifact) {
-        console.error('Error while uploading batch', error);
+        console.error(
+          `Error while uploading batch of ${itemsToUpload.length} items of type ${this.itemType}.`,
+          error
+        );
         throw new Error(
           error?.message ??
             `Upload failed for item type "${this.itemType}" without artifact.`

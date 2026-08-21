@@ -62,6 +62,7 @@ jest.mock('./worker-adapter/worker-adapter', () => ({
   WorkerAdapter: jest.fn().mockImplementation(() => ({
     isTimeout: false,
     hasWorkerEmitted: false,
+    emitError: jest.fn(),
   })),
 }));
 
@@ -150,7 +151,11 @@ describe(processTask.name, () => {
     // Arrange
     const event = makeEvent();
     setWorkerData({ event, initialState: {}, options: {} });
-    const mockAdapter = { isTimeout: false, hasWorkerEmitted: false };
+    const mockAdapter = {
+      isTimeout: false,
+      hasWorkerEmitted: false,
+      emitError: jest.fn(),
+    };
     (WorkerAdapter as jest.Mock).mockImplementation(() => mockAdapter);
     const task = jest.fn().mockResolvedValue(undefined);
     const onTimeout = jest.fn().mockResolvedValue(undefined);
@@ -207,7 +212,7 @@ describe(processTask.name, () => {
     const mockAdapter = {
       isTimeout: false,
       hasWorkerEmitted: false,
-      emitFailure: jest.fn().mockImplementation(() => {
+      emitError: jest.fn().mockImplementation(() => {
         mockAdapter.hasWorkerEmitted = true;
       }),
     };
@@ -219,7 +224,7 @@ describe(processTask.name, () => {
     processTask({ task, onTimeout });
     await flush();
 
-    expect(mockAdapter.emitFailure).toHaveBeenCalledWith(taskError);
+    expect(mockAdapter.emitError).toHaveBeenCalledWith(taskError);
     expect(mockParentPortPostMessage).not.toHaveBeenCalledWith(
       expect.objectContaining({
         subject: WorkerMessageSubject.WorkerMessageFailed,

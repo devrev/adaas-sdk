@@ -274,13 +274,7 @@ export class WorkerAdapter<ConnectorState> {
         return;
       }
 
-      // Uploading all repos can fail partway through. When it does, we still
-      // want to report whatever artifacts were successfully uploaded before
-      // the failure (otherwise they become untracked orphans in storage), so
-      // we emit an error event for the current phase instead of the
-      // originally requested event type.
-      let eventTypeToEmit = newEventType;
-      let payload: EventData;
+      let eventPayload: EventData;
 
       try {
         // If the event is ExternalSyncUnitExtractionDone, upload external sync units via a Repo before emitting.
@@ -312,38 +306,30 @@ export class WorkerAdapter<ConnectorState> {
           delete data.external_sync_units;
         }
 
-        const prepared = await this.beforeEmit(newEventType);
-        if (!prepared) {
-          return;
-        }
-        payload = this.buildEmitPayload(newEventType, data);
+        await this.beforeEmit(newEventType);
+        eventPayload = this.buildEmitPayload(newEventType, data);
       } catch (error) {
-        console.error('Error while uploading repos', error);
-        for (const repo of this.repos) {
-          this.artifacts = [...this.artifacts, ...repo.uploadedArtifacts];
-        }
-        const { eventType: errorEventType } = getTimeoutErrorEventType(
-          this.event.payload.event_type
+        console.error(
+          'Error while preparing event for emission.',
+          serializeError(error)
         );
-        eventTypeToEmit = errorEventType;
-        payload = this.buildEmitPayload(errorEventType, {
-          error: { message: serializeError(error) },
-        });
+        await this.emitError(error);
+        return;
       }
 
       try {
         const isExtractionEvent = Object.values(ExtractorEventType).includes(
-          eventTypeToEmit as ExtractorEventType
+          newEventType as ExtractorEventType
         );
 
         const progressData: ProgressData = {};
 
         if (
           isExtractionEvent &&
-          (eventTypeToEmit === ExtractorEventType.DataExtractionDone ||
-            eventTypeToEmit === ExtractorEventType.DataExtractionProgress ||
-            eventTypeToEmit === ExtractorEventType.AttachmentExtractionDone ||
-            eventTypeToEmit === ExtractorEventType.AttachmentExtractionProgress)
+          (newEventType === ExtractorEventType.DataExtractionDone ||
+            newEventType === ExtractorEventType.DataExtractionProgress ||
+            newEventType === ExtractorEventType.AttachmentExtractionDone ||
+            newEventType === ExtractorEventType.AttachmentExtractionProgress)
         ) {
           const repo = this.lastExtractedItemType
             ? this.repos.find((r) => r.itemType === this.lastExtractedItemType)
@@ -366,22 +352,22 @@ export class WorkerAdapter<ConnectorState> {
         }
 
         await emit({
-          eventType: eventTypeToEmit,
+          eventType: newEventType,
           event: this.event,
-          data: payload,
+          data: eventPayload,
           worker_metadata: { ...progressData },
         });
 
         const message: WorkerMessageEmitted = {
           subject: WorkerMessageSubject.WorkerMessageEmitted,
-          payload: { eventType: eventTypeToEmit },
+          payload: { eventType: newEventType },
         };
         this.artifacts = [];
         parentPort?.postMessage(message);
         this.hasWorkerEmitted = true;
       } catch (error) {
         console.error(
-          `Error while emitting event with event type: ${eventTypeToEmit}.`,
+          `Error while emitting event with event type: ${newEventType}.`,
           serializeError(error)
         );
         parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
@@ -391,16 +377,18 @@ export class WorkerAdapter<ConnectorState> {
   }
 
   /**
-   * Emits a phase-specific error after task execution fails. This path avoids
-   * flushing repos again, so artifacts uploaded before the failure are still
-   * reported without retrying the failed batch.
+   * Emits a phase-specific error after task or pre-emit execution fails. This
+   * path avoids flushing repos again, so artifacts uploaded before the failure
+   * are still reported without retrying the failed batch.
    */
-  async emitFailure(error: unknown): Promise<void> {
+  async emitError(error: unknown): Promise<void> {
     return runWithSdkLogContext(async () => {
       if (this.hasWorkerEmitted) {
         return;
       }
 
+      // Include artifacts uploaded before a failure so they are not orphaned
+      // and can be associated with the emitted phase error.
       for (const repo of this.repos) {
         this.artifacts = [...this.artifacts, ...repo.uploadedArtifacts];
       }
@@ -427,7 +415,7 @@ export class WorkerAdapter<ConnectorState> {
         this.hasWorkerEmitted = true;
       } catch (emitError) {
         console.error(
-          `Error while emitting failure event with event type: ${eventType}.`,
+          `Error while emitting error event with event type: ${eventType}.`,
           serializeError(emitError)
         );
       }
@@ -443,15 +431,12 @@ export class WorkerAdapter<ConnectorState> {
 
   /**
    * Pre-emit hook: uploads all repos and updates extraction boundaries/state.
-   * Throws if a repo upload fails — the caller is responsible for emitting a
-   * compensating error event with whatever artifacts did upload. Returns
-   * false when it has already resolved the emit itself by signalling the
-   * worker to exit after a state-persistence failure; the caller must return
-   * immediately without emitting the originally requested event.
+   * Throws if uploading repos or persisting state fails. The caller emits a
+   * compensating error event with whatever artifacts did upload.
    */
   private async beforeEmit(
     eventType: ExtractorEventType | LoaderEventType
-  ): Promise<boolean> {
+  ): Promise<void> {
     // Upload all repos before emitting the event.
     console.log(
       `Uploading all repos before emitting event with event type: ${eventType}.`
@@ -499,7 +484,7 @@ export class WorkerAdapter<ConnectorState> {
     }
 
     if (STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
-      return true;
+      return;
     }
 
     let stateSizeKb = 0;
@@ -519,12 +504,9 @@ export class WorkerAdapter<ConnectorState> {
 
     try {
       await this.adapterState.postState(this.state);
-      return true;
     } catch (error) {
-      console.error('Error while posting state', error);
-      parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
-      this.hasWorkerEmitted = true;
-      return false;
+      console.error('Error while posting state.', serializeError(error));
+      throw error;
     }
   }
 

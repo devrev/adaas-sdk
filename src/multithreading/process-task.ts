@@ -72,13 +72,9 @@ export function processTask<ConnectorState>({
         process.exit(0);
       } catch (error) {
         await runWithUserLogContext(async () => {
-          if (
-            adapter &&
-            !adapter.hasWorkerEmitted &&
-            typeof adapter.emitFailure === 'function'
-          ) {
+          if (adapter && !adapter.hasWorkerEmitted) {
             try {
-              await adapter.emitFailure(error);
+              await adapter.emitError(error);
             } catch (failureError) {
               console.error(
                 'Error while emitting task failure.',
