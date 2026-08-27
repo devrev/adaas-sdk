@@ -61,6 +61,11 @@ export function processTask<ConnectorState>({
           workerAdapter.isTimeout = true;
         });
 
+        console.log(
+          'Event passsed from SDK to the connector:',
+          workerAdapter.event
+        );
+
         await runWithUserLogContext(async () =>
           task({ adapter: workerAdapter })
         );
