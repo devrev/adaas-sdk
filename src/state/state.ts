@@ -124,6 +124,15 @@ export async function createAdapterState<ConnectorState>({
             });
             process.exit(1);
           }
+        } else if (
+          target === 'extract_from' &&
+          as.state.lastSuccessfulSyncStarted
+        ) {
+          eventContext.extract_from = as.state.lastSuccessfulSyncStarted;
+          as.state.pendingWorkersOldest = as.state.lastSuccessfulSyncStarted;
+          console.log(
+            `Using lastSuccessfulSyncStarted as extract_from: ${as.state.lastSuccessfulSyncStarted}.`
+          );
         }
       }
     } else {
