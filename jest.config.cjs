@@ -13,6 +13,7 @@ module.exports = {
         'src/tests/dummy-connector/metadata-extraction.test.ts',
         'src/http/axios-client-internal.test.ts',
         'src/tests/event-data-size-limit/.*.test.ts',
+        'src/tests/upload-failure/upload-failure.slow.test.ts',
       ],
     },
     {
@@ -33,6 +34,7 @@ module.exports = {
         '<rootDir>/src/tests/dummy-connector/metadata-extraction.test.ts',
         '<rootDir>/src/http/axios-client-internal.test.ts',
         '<rootDir>/src/tests/event-data-size-limit/size-limit-1.test.ts',
+        '<rootDir>/src/tests/upload-failure/upload-failure.slow.test.ts',
       ],
     },
   ],

@@ -14,7 +14,7 @@ import {
   toRfc3339Timestamp,
 } from './worker-adapter.helpers';
 import { ProgressData } from './worker-adapter.interfaces';
-import { serializeError } from '../../logger/logger';
+import { getPrintableState, serializeError } from '../../logger/logger';
 import {
   runWithSdkLogContext,
   runWithUserLogContext,
@@ -62,6 +62,7 @@ import { Uploader } from '../../uploader/uploader';
 import { Artifact, SsorAttachment } from '../../uploader/uploader.interfaces';
 import { translateOutgoingEventType } from '../../common/event-type-translation';
 import { truncateMessage } from '../../common/helpers';
+import { getTimeoutErrorEventType } from '../spawn/spawn.helpers';
 
 export function createWorkerAdapter<ConnectorState>({
   event,
@@ -273,127 +274,62 @@ export class WorkerAdapter<ConnectorState> {
         return;
       }
 
-      // If the event is ExternalSyncUnitExtractionDone, upload external sync units via a Repo before emitting
-      // TODO: Remove in v2.0.0
-      if (
-        newEventType === ExtractorEventType.ExternalSyncUnitExtractionDone &&
-        data?.external_sync_units &&
-        data.external_sync_units.length > 0
-      ) {
-        console.log(
-          `Uploading ${data.external_sync_units.length} external sync units via repo before emitting event.`
-        );
-
-        this.initializeRepos([
-          {
-            itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
-            overridenOptions: {
-              batchSize: 25000,
-              skipConfirmation: true,
-            },
-          },
-        ]);
-
-        await this.getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)?.push(
-          data.external_sync_units
-        );
-
-        // Remove inline external_sync_units from data to avoid SQS size issues
-        delete data.external_sync_units;
-      }
-
-      // Upload all repos before emitting the event
-      console.log(
-        `Uploading all repos before emitting event with event type: ${newEventType}.`
-      );
+      let eventPayload: EventData;
 
       try {
-        await this.uploadAllRepos();
+        // If the event is ExternalSyncUnitExtractionDone, upload external sync units via a Repo before emitting.
+        // TODO: Remove in v2.0.0
+        if (
+          newEventType === ExtractorEventType.ExternalSyncUnitExtractionDone &&
+          data?.external_sync_units &&
+          data.external_sync_units.length > 0
+        ) {
+          console.log(
+            `Uploading ${data.external_sync_units.length} external sync units via repo before emitting event.`
+          );
+
+          this.initializeRepos([
+            {
+              itemType: AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS,
+              overridenOptions: {
+                batchSize: 25000,
+                skipConfirmation: true,
+              },
+            },
+          ]);
+
+          await this.getRepo(AirSyncDefaultItemTypes.EXTERNAL_SYNC_UNITS)?.push(
+            data.external_sync_units
+          );
+
+          // Remove inline external_sync_units from data to avoid SQS size issues
+          delete data.external_sync_units;
+        }
+
+        await this.beforeEmit(newEventType);
+        eventPayload = this.buildEmitPayload(newEventType, data);
       } catch (error) {
-        console.error('Error while uploading repos', error);
-        parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
-        this.hasWorkerEmitted = true;
+        console.error(
+          'Error while preparing event for emission.',
+          serializeError(error)
+        );
+        await this.emitError(error);
         return;
       }
 
-      // If the extraction is done, we want to save the timestamp of the last successful sync
-      if (newEventType === ExtractorEventType.AttachmentExtractionDone) {
-        console.log(
-          `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${this.state.lastSyncStarted}).`
-        );
-
-        this.state.lastSuccessfulSyncStarted = this.state.lastSyncStarted;
-        this.state.lastSyncStarted = '';
-
-        // Clear pending extraction boundaries now that the cycle is complete
-        this.state.pendingWorkersOldest = '';
-        this.state.pendingWorkersNewest = '';
-
-        // Update workersOldest and workersNewest boundaries from resolved extraction timestamps.
-        // Expand boundaries: workersOldest gets the earliest timestamp, workersNewest gets the latest.
-        const extractionStart = this.event.payload.event_context.extract_from;
-        const extractionEnd = this.event.payload.event_context.extract_to;
-
-        if (
-          extractionStart &&
-          (!this.state.workersOldest ||
-            extractionStart < this.state.workersOldest)
-        ) {
-          console.log(
-            `Updating workersOldest from '${this.state.workersOldest}' to '${extractionStart}'.`
-          );
-          this.state.workersOldest = extractionStart;
-        }
-
-        if (
-          extractionEnd &&
-          (!this.state.workersNewest ||
-            extractionEnd > this.state.workersNewest)
-        ) {
-          console.log(
-            `Updating workersNewest from '${this.state.workersNewest}' to '${extractionEnd}'.`
-          );
-          this.state.workersNewest = extractionEnd;
-        }
-      }
-
-      // We want to save the state every time we emit an event, except for the start and delete events
-      if (!STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
-        console.log(
-          `Saving state before emitting event with event type: ${newEventType}.`
-        );
-
-        try {
-          await this.adapterState.postState(this.state);
-        } catch (error) {
-          console.error('Error while posting state', error);
-          parentPort?.postMessage(WorkerMessageSubject.WorkerMessageExit);
-          this.hasWorkerEmitted = true;
-          return;
-        }
-      }
-
       try {
-        // Always prune error messages to make them shorter before emit
-        if (data?.error?.message) {
-          data.error.message = truncateMessage(data.error.message);
-        }
-
         const isExtractionEvent = Object.values(ExtractorEventType).includes(
           newEventType as ExtractorEventType
-        );
-        const isLoaderEvent = Object.values(LoaderEventType).includes(
-          newEventType as LoaderEventType
         );
 
         const progressData: ProgressData = {};
 
         if (
           isExtractionEvent &&
-          (newEventType == ExtractorEventType.DataExtractionDone ||
-            newEventType == ExtractorEventType.DataExtractionProgress ||
-            newEventType == ExtractorEventType.AttachmentExtractionDone ||
-            newEventType == ExtractorEventType.AttachmentExtractionProgress)
+          (newEventType === ExtractorEventType.DataExtractionDone ||
+            newEventType === ExtractorEventType.DataExtractionProgress ||
+            newEventType === ExtractorEventType.AttachmentExtractionDone ||
+            newEventType === ExtractorEventType.AttachmentExtractionProgress)
         ) {
           const repo = this.lastExtractedItemType
             ? this.repos.find((r) => r.itemType === this.lastExtractedItemType)
@@ -418,13 +354,7 @@ export class WorkerAdapter<ConnectorState> {
         await emit({
           eventType: newEventType,
           event: this.event,
-          data: {
-            ...data,
-            ...(isExtractionEvent ? { artifacts: this.artifacts } : {}),
-            ...(isLoaderEvent
-              ? { reports: this.reports, processed_files: this.processedFiles }
-              : {}),
-          },
+          data: eventPayload,
           worker_metadata: { ...progressData },
         });
 
@@ -446,14 +376,162 @@ export class WorkerAdapter<ConnectorState> {
     });
   }
 
+  /**
+   * Emits a phase-specific error after task or pre-emit execution fails. This
+   * path avoids flushing repos again, so artifacts uploaded before the failure
+   * are still reported without retrying the failed batch.
+   */
+  async emitError(error: unknown): Promise<void> {
+    return runWithSdkLogContext(async () => {
+      if (this.hasWorkerEmitted) {
+        return;
+      }
+
+      // Include artifacts uploaded before a failure so they are not orphaned
+      // and can be associated with the emitted phase error.
+      for (const repo of this.repos) {
+        this.artifacts = [...this.artifacts, ...repo.uploadedArtifacts];
+      }
+
+      const { eventType } = getTimeoutErrorEventType(
+        this.event.payload.event_type
+      );
+
+      try {
+        await emit({
+          eventType,
+          event: this.event,
+          data: this.buildEmitPayload(eventType, {
+            error: { message: serializeError(error) },
+          }),
+        });
+
+        const message: WorkerMessageEmitted = {
+          subject: WorkerMessageSubject.WorkerMessageEmitted,
+          payload: { eventType },
+        };
+        this.artifacts = [];
+        parentPort?.postMessage(message);
+        this.hasWorkerEmitted = true;
+      } catch (emitError) {
+        console.error(
+          `Error while emitting error event with event type: ${eventType}.`,
+          serializeError(emitError)
+        );
+      }
+    });
+  }
+
   async uploadAllRepos(): Promise<void> {
     for (const repo of this.repos) {
-      const error = await repo.upload();
+      await repo.upload();
       this.artifacts.push(...repo.uploadedArtifacts);
-      if (error) {
-        throw error;
+    }
+  }
+
+  /**
+   * Pre-emit hook: uploads all repos and updates extraction boundaries/state.
+   * Throws if uploading repos or persisting state fails. The caller emits a
+   * compensating error event with whatever artifacts did upload.
+   */
+  private async beforeEmit(
+    eventType: ExtractorEventType | LoaderEventType
+  ): Promise<void> {
+    // Upload all repos before emitting the event.
+    console.log(
+      `Uploading all repos before emitting event with event type: ${eventType}.`
+    );
+
+    await this.uploadAllRepos();
+
+    // If the extraction is done, save the timestamp of the last successful sync.
+    if (eventType === ExtractorEventType.AttachmentExtractionDone) {
+      console.log(
+        `Overwriting lastSuccessfulSyncStarted with lastSyncStarted (${this.state.lastSyncStarted}).`
+      );
+
+      this.state.lastSuccessfulSyncStarted = this.state.lastSyncStarted;
+      this.state.lastSyncStarted = '';
+
+      // Clear pending extraction boundaries now that the cycle is complete.
+      this.state.pendingWorkersOldest = '';
+      this.state.pendingWorkersNewest = '';
+
+      // Update workersOldest and workersNewest boundaries from resolved extraction timestamps.
+      const extractionStart = this.event.payload.event_context.extract_from;
+      const extractionEnd = this.event.payload.event_context.extract_to;
+
+      if (
+        extractionStart &&
+        (!this.state.workersOldest ||
+          extractionStart < this.state.workersOldest)
+      ) {
+        console.log(
+          `Updating workersOldest from '${this.state.workersOldest}' to '${extractionStart}'.`
+        );
+        this.state.workersOldest = extractionStart;
+      }
+
+      if (
+        extractionEnd &&
+        (!this.state.workersNewest || extractionEnd > this.state.workersNewest)
+      ) {
+        console.log(
+          `Updating workersNewest from '${this.state.workersNewest}' to '${extractionEnd}'.`
+        );
+        this.state.workersNewest = extractionEnd;
       }
     }
+
+    if (STATELESS_EVENT_TYPES.includes(this.event.payload.event_type)) {
+      return;
+    }
+
+    let stateSizeKb = 0;
+    try {
+      stateSizeKb =
+        Buffer.byteLength(JSON.stringify(this.state), 'utf8') / 1024;
+    } catch {
+      stateSizeKb = 0;
+    }
+
+    console.log(
+      `Saving ${stateSizeKb.toFixed(
+        2
+      )} KB state before emitting event with event type: ${eventType}. Current state`,
+      getPrintableState(this.state)
+    );
+
+    try {
+      await this.adapterState.postState(this.state);
+    } catch (error) {
+      console.error('Error while posting state.', serializeError(error));
+      throw error;
+    }
+  }
+
+  private buildEmitPayload(
+    eventType: ExtractorEventType | LoaderEventType,
+    data?: EventData
+  ): EventData {
+    if (data?.error?.message) {
+      data.error.message = truncateMessage(data.error.message);
+    }
+
+    const isExtractionEvent = Object.values(ExtractorEventType).includes(
+      eventType as ExtractorEventType
+    );
+    const isLoaderEvent = Object.values(LoaderEventType).includes(
+      eventType as LoaderEventType
+    );
+
+    return {
+      ...data,
+      ...(isExtractionEvent ? { artifacts: this.artifacts } : {}),
+      ...(isLoaderEvent
+        ? { reports: this.reports, processed_files: this.processedFiles }
+        : {}),
+    };
   }
 
   async loadItemTypes({

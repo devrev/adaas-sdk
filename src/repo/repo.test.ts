@@ -426,7 +426,9 @@ describe(Repo.name, () => {
         artifact: null,
       });
 
-      await repo.upload([itemWithDate('1', '2022-01-01T00:00:00.000Z')]);
+      await expect(
+        repo.upload([itemWithDate('1', '2022-01-01T00:00:00.000Z')])
+      ).rejects.toThrow('fail');
 
       expect(repo.dateRanges.creationDate.oldest).toBe(
         ts('2022-01-01T00:00:00.000Z')
@@ -492,5 +494,41 @@ describe(Repo.name, () => {
         ts('2023-01-01T00:00:00.000Z')
       );
     });
+  });
+
+  it('should throw when upload fails', async () => {
+    mockUploadFn.mockResolvedValueOnce({
+      error: { message: 'upload failed' },
+    });
+
+    await expect(repo.upload(createItems(1))).rejects.toThrow('upload failed');
+  });
+
+  it('should retain items in repo when batch upload fails during push', async () => {
+    repo = new Repo({
+      event: createMockEvent(mockServer.baseUrl, {
+        payload: { event_type: EventType.ExtractionDataStart },
+      }),
+      itemType: 'test_item_type',
+      normalize,
+      onUpload: jest.fn(),
+      options: { batchSize: 10 },
+    });
+
+    const items = createItems(20);
+    mockUploadFn
+      .mockResolvedValueOnce({
+        artifact: {
+          id: 'artifact-1',
+          item_type: 'test_item_type',
+          item_count: 10,
+        },
+      })
+      .mockResolvedValueOnce({
+        error: { message: 'second batch failed' },
+      });
+
+    await expect(repo.push(items)).rejects.toThrow('second batch failed');
+    expect(repo.getItems().length).toBe(10);
   });
 });
