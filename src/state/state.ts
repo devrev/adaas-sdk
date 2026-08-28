@@ -126,6 +126,7 @@ export async function createAdapterState<ConnectorState>({
           }
         } else if (
           target === 'extract_from' &&
+          eventContext.extract_from === undefined &&
           as.state.lastSuccessfulSyncStarted
         ) {
           eventContext.extract_from = as.state.lastSuccessfulSyncStarted;
@@ -133,11 +134,24 @@ export async function createAdapterState<ConnectorState>({
           console.log(
             `Using lastSuccessfulSyncStarted as extract_from: ${as.state.lastSuccessfulSyncStarted}.`
           );
+        } else if (
+          target === 'extract_from' &&
+          eventContext.extract_from !== undefined
+        ) {
+          // CPv1.1 supplies the resolved boundary directly. Keep it pending so
+          // later extraction phases expose the same event_context value.
+          as.state.pendingWorkersOldest = eventContext.extract_from;
+          console.log(
+            `Using platform-provided extract_from: ${eventContext.extract_from}. Stored in pendingWorkersOldest.`
+          );
         }
       }
     } else {
       // Non-StartExtractingMetadata events: reuse pending values from state
-      if (as.state.pendingWorkersOldest) {
+      if (
+        eventContext.extract_from === undefined &&
+        as.state.pendingWorkersOldest
+      ) {
         eventContext.extract_from = as.state.pendingWorkersOldest;
         console.log(
           `Reusing pendingWorkersOldest as extract_from: ${as.state.pendingWorkersOldest}.`
