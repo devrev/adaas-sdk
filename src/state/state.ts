@@ -158,13 +158,20 @@ export async function createAdapterState<ConnectorState>({
       }
     } else {
       // Non-StartExtractingMetadata events: reuse pending values from state
+      const pendingExtractFrom =
+        as.state.pendingWorkersOldest || as.state.lastSuccessfulSyncStarted;
       if (
-        eventContext.extract_from === undefined &&
-        as.state.pendingWorkersOldest
+        pendingExtractFrom &&
+        (eventContext.extract_from === undefined ||
+          eventContext.extract_from !== pendingExtractFrom)
       ) {
-        overrideExtractFrom(as.state.pendingWorkersOldest);
+        overrideExtractFrom(pendingExtractFrom);
         console.log(
-          `Reusing pendingWorkersOldest as extract_from: ${as.state.pendingWorkersOldest}.`
+          `Using ${
+            as.state.pendingWorkersOldest
+              ? 'pendingWorkersOldest'
+              : 'lastSuccessfulSyncStarted'
+          } as extract_from: ${pendingExtractFrom}.`
         );
       } else {
         console.log(

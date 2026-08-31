@@ -274,6 +274,43 @@ describe('State — TimeValue resolution', () => {
       expect(state.state.pendingWorkersOldest).toBe(lastSuccessfulSyncStarted);
     });
 
+    it('should override platform extract_from on StartExtractingData and preserve its original value', async () => {
+      const platformExtractFrom = '2026-08-24T13:26:15.388Z';
+      const lastSuccessfulSyncStarted = '2026-08-25T13:26:15.388Z';
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extract_from: platformExtractFrom,
+            extraction_start_time: {} as TimeValue,
+          },
+        },
+      });
+
+      fetchStateSpy.mockResolvedValue({
+        state: JSON.stringify({
+          snapInVersionId: 'test_snap_in_version_id',
+          lastSuccessfulSyncStarted,
+        }),
+      });
+
+      await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      expect(event.payload.event_context.extract_from).toBe(
+        lastSuccessfulSyncStarted
+      );
+      expect(event.payload.event_context.platform_extract_from).toBe(
+        platformExtractFrom
+      );
+    });
+
     it('should skip resolution when extraction_end_time has no type', async () => {
       // Arrange: platform sends extraction_end_time without a type field
       const event = createMockEvent(mockServer.baseUrl, {
