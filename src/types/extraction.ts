@@ -324,6 +324,11 @@ export interface EventContext {
    * This is the field developers should read to know when to start extracting from.
    */
   extract_from?: string;
+  /**
+   * Original extraction start timestamp supplied by the platform before the SDK
+   * overrides extract_from.
+   */
+  platform_extract_from?: string;
   import_slug: string;
   initial_sync_scope?: InitialSyncScope;
   mode: string;

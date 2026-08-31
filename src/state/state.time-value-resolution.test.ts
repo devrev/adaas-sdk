@@ -119,7 +119,49 @@ describe('State — TimeValue resolution', () => {
       expect(event.payload.event_context.extract_from).toBe(
         '2025-05-01T00:00:00.000Z'
       );
+      expect(event.payload.event_context.platform_extract_from).toBe(
+        platformExtractFrom
+      );
       expect(state.state.pendingWorkersOldest).toBe('2025-05-01T00:00:00.000Z');
+    });
+
+    it('should preserve the platform extract_from when resolving a CPv2 start time', async () => {
+      const platformExtractFrom = '2025-04-01T00:00:00.000Z';
+      const resolvedExtractFrom = '2025-06-01T00:00:00.000Z';
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.StartExtractingMetadata,
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.ABSOLUTE_TIME,
+              value: resolvedExtractFrom,
+            },
+            extract_from: platformExtractFrom,
+          },
+        },
+      });
+
+      fetchStateSpy.mockResolvedValue({
+        state: JSON.stringify({
+          snapInVersionId: 'test_snap_in_version_id',
+        }),
+      });
+
+      await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      expect(event.payload.event_context.extract_from).toBe(
+        resolvedExtractFrom
+      );
+      expect(event.payload.event_context.platform_extract_from).toBe(
+        platformExtractFrom
+      );
     });
 
     it('should use the platform extract_from when lastSuccessfulSyncStarted is not set', async () => {

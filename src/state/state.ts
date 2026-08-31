@@ -88,6 +88,12 @@ export async function createAdapterState<ConnectorState>({
     // On StartExtractingMetadata: resolve fresh from TimeValue objects and store in pending state (always overwrite).
     // On all other events: reuse the pending values cached during StartExtractingMetadata.
     const eventContext = event.payload.event_context;
+    const overrideExtractFrom = (value: string) => {
+      if (eventContext.extract_from !== undefined) {
+        eventContext.platform_extract_from = eventContext.extract_from;
+      }
+      eventContext.extract_from = value;
+    };
 
     if (event.payload.event_type === EventType.StartExtractingMetadata) {
       const timeFields = [
@@ -108,7 +114,11 @@ export async function createAdapterState<ConnectorState>({
         if (timeValue && timeValue.type) {
           try {
             const resolved = resolveTimeValue(timeValue, as.state);
-            eventContext[target] = resolved;
+            if (target === 'extract_from') {
+              overrideExtractFrom(resolved);
+            } else {
+              eventContext[target] = resolved;
+            }
             as.state[pending] = resolved;
             console.log(
               `Resolved ${target} to ${resolved}. Stored in ${pending}.`
@@ -128,7 +138,7 @@ export async function createAdapterState<ConnectorState>({
           target === 'extract_from' &&
           as.state.lastSuccessfulSyncStarted
         ) {
-          eventContext.extract_from = as.state.lastSuccessfulSyncStarted;
+          overrideExtractFrom(as.state.lastSuccessfulSyncStarted);
           as.state.pendingWorkersOldest = as.state.lastSuccessfulSyncStarted;
           console.log(
             `Using lastSuccessfulSyncStarted as extract_from: ${as.state.lastSuccessfulSyncStarted}.`
@@ -152,7 +162,7 @@ export async function createAdapterState<ConnectorState>({
         eventContext.extract_from === undefined &&
         as.state.pendingWorkersOldest
       ) {
-        eventContext.extract_from = as.state.pendingWorkersOldest;
+        overrideExtractFrom(as.state.pendingWorkersOldest);
         console.log(
           `Reusing pendingWorkersOldest as extract_from: ${as.state.pendingWorkersOldest}.`
         );
