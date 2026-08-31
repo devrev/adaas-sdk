@@ -19,6 +19,17 @@ describe(getTimeoutErrorEventType.name, () => {
       expect(result.eventType).toBe(ExtractorEventType.MetadataExtractionError);
     });
 
+    it('should return MetadataExtractionError for ContinueExtractingMetadata', () => {
+      // Arrange
+      const eventType = EventType.ContinueExtractingMetadata;
+
+      // Act
+      const result = getTimeoutErrorEventType(eventType);
+
+      // Assert
+      expect(result.eventType).toBe(ExtractorEventType.MetadataExtractionError);
+    });
+
     it('should return MetadataExtractionError for deprecated ExtractionMetadataStart', () => {
       // Arrange
       const eventType = EventType.ExtractionMetadataStart;
@@ -316,6 +327,41 @@ describe(getTimeoutErrorEventType.name, () => {
 });
 
 describe(getNoScriptEventType.name, () => {
+  describe('metadata extraction', () => {
+    it('should return MetadataExtractionError for StartExtractingMetadata', () => {
+      // Arrange
+      const eventType = EventType.StartExtractingMetadata;
+
+      // Act
+      const result = getNoScriptEventType(eventType);
+
+      // Assert
+      expect(result.eventType).toBe(ExtractorEventType.MetadataExtractionError);
+    });
+
+    it('should return MetadataExtractionError for ContinueExtractingMetadata', () => {
+      // Arrange
+      const eventType = EventType.ContinueExtractingMetadata;
+
+      // Act
+      const result = getNoScriptEventType(eventType);
+
+      // Assert
+      expect(result.eventType).toBe(ExtractorEventType.MetadataExtractionError);
+    });
+
+    it('should return MetadataExtractionError for deprecated ExtractionMetadataStart', () => {
+      // Arrange
+      const eventType = EventType.ExtractionMetadataStart;
+
+      // Act
+      const result = getNoScriptEventType(eventType);
+
+      // Assert
+      expect(result.eventType).toBe(ExtractorEventType.MetadataExtractionError);
+    });
+  });
+
   describe('extractor state deletion', () => {
     it('should return ExtractorStateDeletionDone for StartDeletingExtractorState', () => {
       // Arrange

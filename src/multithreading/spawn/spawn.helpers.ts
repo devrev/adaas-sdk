@@ -12,6 +12,7 @@ export function getTimeoutErrorEventType(eventType: EventType): {
   switch (eventType) {
     // Metadata extraction (handles both old and new enum members)
     case EventType.StartExtractingMetadata:
+    case EventType.ContinueExtractingMetadata:
     case EventType.ExtractionMetadataStart:
       return {
         eventType: ExtractorEventType.MetadataExtractionError,
@@ -100,6 +101,14 @@ export function getTimeoutErrorEventType(eventType: EventType): {
  */
 export function getNoScriptEventType(eventType: EventType) {
   switch (eventType) {
+    // A missing metadata worker is a misconfigured connector, so report it as a
+    // phase error rather than an unknown event type.
+    case EventType.StartExtractingMetadata:
+    case EventType.ContinueExtractingMetadata:
+    case EventType.ExtractionMetadataStart:
+      return {
+        eventType: ExtractorEventType.MetadataExtractionError,
+      };
     case EventType.StartDeletingExtractorState:
       return {
         eventType: ExtractorEventType.ExtractorStateDeletionDone,

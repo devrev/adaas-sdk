@@ -67,6 +67,10 @@ export enum EventType {
   StartExtractingAttachments = 'START_EXTRACTING_ATTACHMENTS',
   ContinueExtractingAttachments = 'CONTINUE_EXTRACTING_ATTACHMENTS',
   StartDeletingExtractorAttachmentsState = 'START_DELETING_EXTRACTOR_ATTACHMENTS_STATE',
+
+  // Appended after the members above to keep the enum backwards compatible:
+  // the API-compatibility suite requires new options at the end of the enum.
+  ContinueExtractingMetadata = 'CONTINUE_EXTRACTING_METADATA',
 }
 
 /**
@@ -160,6 +164,11 @@ export enum ExtractorEventType {
   AttachmentExtractionError = 'ATTACHMENT_EXTRACTION_ERROR',
   ExtractorAttachmentsStateDeletionDone = 'EXTRACTOR_ATTACHMENTS_STATE_DELETION_DONE',
   ExtractorAttachmentsStateDeletionError = 'EXTRACTOR_ATTACHMENTS_STATE_DELETION_ERROR',
+
+  // Appended after the members above to keep the enum backwards compatible:
+  // the API-compatibility suite requires new options at the end of the enum.
+  MetadataExtractionProgress = 'METADATA_EXTRACTION_PROGRESS',
+  MetadataExtractionDelayed = 'METADATA_EXTRACTION_DELAYED',
 }
 
 /**
