@@ -126,7 +126,6 @@ export async function createAdapterState<ConnectorState>({
           }
         } else if (
           target === 'extract_from' &&
-          eventContext.extract_from === undefined &&
           as.state.lastSuccessfulSyncStarted
         ) {
           eventContext.extract_from = as.state.lastSuccessfulSyncStarted;
@@ -136,6 +135,7 @@ export async function createAdapterState<ConnectorState>({
           );
         } else if (
           target === 'extract_from' &&
+          !as.state.lastSuccessfulSyncStarted &&
           eventContext.extract_from !== undefined
         ) {
           // CPv1.1 supplies the resolved boundary directly. Keep it pending so

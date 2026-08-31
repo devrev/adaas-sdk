@@ -85,7 +85,7 @@ describe('State — TimeValue resolution', () => {
   });
 
   describe('Backwards compatibility - missing TimeValue type', () => {
-    it('should preserve the platform extract_from when no CPv2 start time is provided', async () => {
+    it('should prefer lastSuccessfulSyncStarted over the platform extract_from when no CPv2 start time is provided', async () => {
       // Arrange: CPv1.1 sends a concrete extract_from instead of a TimeValue.
       const platformExtractFrom = '2025-04-01T00:00:00.000Z';
       const event = createMockEvent(mockServer.baseUrl, {
@@ -114,7 +114,43 @@ describe('State — TimeValue resolution', () => {
         initialDomainMapping: {},
       });
 
-      // Assert: the platform value is forwarded and retained for later phases.
+      // Assert: the successful sync boundary takes precedence and is retained
+      // for later phases.
+      expect(event.payload.event_context.extract_from).toBe(
+        '2025-05-01T00:00:00.000Z'
+      );
+      expect(state.state.pendingWorkersOldest).toBe('2025-05-01T00:00:00.000Z');
+    });
+
+    it('should use the platform extract_from when lastSuccessfulSyncStarted is not set', async () => {
+      // Arrange: CPv1.1 sends a concrete extract_from instead of a TimeValue.
+      const platformExtractFrom = '2025-04-01T00:00:00.000Z';
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.StartExtractingMetadata,
+          event_context: {
+            extract_from: platformExtractFrom,
+          },
+        },
+      });
+
+      fetchStateSpy.mockResolvedValue({
+        state: JSON.stringify({
+          snapInVersionId: 'test_snap_in_version_id',
+        }),
+      });
+
+      // Act
+      const state = await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: the platform value is used and retained for later phases.
       expect(event.payload.event_context.extract_from).toBe(
         platformExtractFrom
       );
