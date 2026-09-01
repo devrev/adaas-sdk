@@ -146,12 +146,11 @@ describe(`${WorkerAdapter.name}.emit`, () => {
     expect(mockPostMessage).toHaveBeenCalledTimes(1);
   });
 
-  it('should correctly emit one event even if uploadAllRepos errors', async () => {
+  it('should log state size and current state before posting state', async () => {
     // Arrange
+    const logSpy = jest.spyOn(console, 'log').mockImplementation();
     adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
-    adapter.uploadAllRepos = jest
-      .fn()
-      .mockRejectedValue(new Error('uploadAllRepos error'));
+    adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
 
     // Act
     await adapter.emit(ExtractorEventType.MetadataExtractionError, {
@@ -160,7 +159,46 @@ describe(`${WorkerAdapter.name}.emit`, () => {
     });
 
     // Assert
-    expect(mockPostMessage).toHaveBeenCalledTimes(1);
+    const stateLogCall = logSpy.mock.calls.find(
+      ([message]) =>
+        typeof message === 'string' &&
+        message.includes('Saving ') &&
+        message.includes('Current state')
+    );
+    expect(stateLogCall).toBeDefined();
+    expect(stateLogCall?.[0]).toContain(
+      'KB state before emitting event with event type: METADATA_EXTRACTION_ERROR. Current state'
+    );
+    expect(stateLogCall?.[1]).toEqual(
+      expect.objectContaining({ attachments: { completed: false } })
+    );
+  });
+
+  it('should emit phase extraction error when uploadAllRepos fails', async () => {
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
+    adapter.uploadAllRepos = jest
+      .fn()
+      .mockRejectedValue(new Error('uploadAllRepos error'));
+
+    await adapter.emit(ExtractorEventType.DataExtractionDone);
+
+    expect(mockEmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: ExtractorEventType.DataExtractionError,
+        data: expect.objectContaining({
+          error: expect.objectContaining({
+            message: expect.stringContaining('uploadAllRepos error'),
+          }),
+        }),
+      })
+    );
+    expect(mockPostMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: 'emit',
+        payload: { eventType: ExtractorEventType.DataExtractionError },
+      })
+    );
   });
 
   it('should include artifacts in data for extraction events', async () => {
@@ -492,6 +530,35 @@ describe(`${WorkerAdapter.name}.emit — ExternalSyncUnitExtractionDone legacy p
       unknown
     >;
     expect(emittedData).not.toHaveProperty('external_sync_units');
+  });
+
+  it('should emit an error when external sync unit upload fails', async () => {
+    const { adapter } = makeAdapter(EventType.StartExtractingExternalSyncUnits);
+    adapter['adapterState'].postState = jest.fn().mockResolvedValue(undefined);
+    adapter.uploadAllRepos = jest.fn().mockResolvedValue(undefined);
+    const pushMock = jest
+      .fn()
+      .mockRejectedValue(new Error('external sync unit upload failed'));
+    jest.spyOn(adapter, 'initializeRepos').mockImplementation(() => undefined);
+    jest.spyOn(adapter, 'getRepo').mockReturnValue({ push: pushMock } as never);
+
+    await adapter.emit(ExtractorEventType.ExternalSyncUnitExtractionDone, {
+      external_sync_units: [{ id: 'esu-1' }] as never,
+    });
+
+    const { emit: mockEmit } = require('../../common/control-protocol');
+    expect(mockEmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: ExtractorEventType.ExternalSyncUnitExtractionError,
+        data: expect.objectContaining({
+          error: expect.objectContaining({
+            message: expect.stringContaining(
+              'external sync unit upload failed'
+            ),
+          }),
+        }),
+      })
+    );
   });
 });
 

@@ -4,7 +4,6 @@ import {
   SSOR_ATTACHMENT,
 } from '../common/constants';
 import { Item } from '../repo/repo.interfaces';
-import { ErrorRecord } from '../types/common';
 import { Uploader } from '../uploader/uploader';
 import { Artifact } from '../uploader/uploader.interfaces';
 
@@ -55,7 +54,7 @@ export class Repo {
 
   async upload(
     batch?: (NormalizedItem | NormalizedAttachment | Item)[]
-  ): Promise<void | ErrorRecord> {
+  ): Promise<void> {
     const itemsToUpload = batch || this.items;
 
     if (itemsToUpload.length > 0) {
@@ -86,8 +85,14 @@ export class Repo {
       );
 
       if (error || !artifact) {
-        console.error('Error while uploading batch', error);
-        return error;
+        console.error(
+          `Error while uploading batch of ${itemsToUpload.length} items of type ${this.itemType}.`,
+          error
+        );
+        throw new Error(
+          error?.message ??
+            `Upload failed for item type "${this.itemType}" without artifact.`
+        );
       }
 
       this.onUpload(artifact);
@@ -136,16 +141,9 @@ export class Repo {
     // Upload in batches while the number of items exceeds the batch size
     const batchSize = this.options?.batchSize || ARTIFACT_BATCH_SIZE;
     while (this.items.length >= batchSize) {
-      // Slice out a batch of batchSize items to upload
-      const batch = this.items.splice(0, batchSize);
-
-      try {
-        // Upload the batch
-        await this.upload(batch);
-      } catch (error) {
-        console.error('Error while uploading batch', error);
-        return false;
-      }
+      const batch = this.items.slice(0, batchSize);
+      await this.upload(batch);
+      this.items.splice(0, batchSize);
     }
 
     return true;
