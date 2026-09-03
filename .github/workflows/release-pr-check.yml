@@ -1,0 +1,70 @@
+# Validates PR titles that use release commands and posts merge guidance comments.
+
+name: Release PR check
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited, reopened]
+    branches:
+      - main
+      - "release/**"
+
+jobs:
+  release-pr-comment:
+    name: Release PR guidance
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.pull_request.title, 'beta/') || startsWith(github.event.pull_request.title, 'release/') || startsWith(github.event.pull_request.title, 'patch/')
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate release command format
+        id: validate
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: bash .github/scripts/validate-release-command.sh "$PR_TITLE"
+
+      - name: Build comment body
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+        run: bash .github/scripts/pr-release-comment.sh "$PR_TITLE" "$BASE_BRANCH" > comment.md
+
+      - name: Post or update PR comment
+        uses: actions/github-script@v7
+        env:
+          COMMENT_FILE: comment.md
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- release-pr-check -->';
+            const body = `${marker}\n${fs.readFileSync(process.env.COMMENT_FILE, 'utf8')}`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+
+            const existing = comments.find((c) =>
+              c.user.type === 'Bot' && c.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }

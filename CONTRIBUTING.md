@@ -10,6 +10,52 @@ We follow Semantic Versioning (SemVer) for versioning, with the format `MAJOR.MI
 - `MINOR` - New features, backwards compatible
 - `PATCH` - Bug fixes, no new features
 
+## Commit Messages
+
+- Commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+- Example: `feat: add retry handling`
+- Local git hooks reject non-conforming commit messages.
+
+Release commands use a separate format (see [Releases](#releases) below) and are exempt from Conventional Commits rules.
+
+## Releases
+
+Releases are automated via GitHub Actions when a PR is **squash-merged** with the PR title used as the commit message. Enable **"Use pull request title as commit message"** in the repository merge settings.
+
+Only users listed in [`.github/CODEOWNERS`](.github/CODEOWNERS) can trigger release workflows.
+
+### Branch strategy
+
+- **`main`** — feature PRs (`feat:`, `fix:`, etc.) merge here during development.
+- **`release/X.Y`** — long-lived branch for a minor release line (e.g. `release/1.19`). Hotfixes merge here.
+- Patches published from a release branch are automatically backported to `main` via a PR.
+
+### Release commands (PR titles)
+
+| PR title | Target branch | On merge |
+|----------|---------------|----------|
+| `beta/1.19.4-beta.0` | `main` | Publish `@beta` to npm at that exact version |
+| `release/1.19` | `main` | Create `release/1.19`, publish `1.19.0` to npm `@latest` |
+| `patch/1.19.5` | `release/1.19` | Publish `1.19.5` to npm `@latest`, open backport PR to `main` |
+
+**Examples:**
+
+- `beta/1.19.4-beta.0` — prerelease on `main`
+- `release/1.19` — cut the `1.19` maintenance line (fails if `release/1.19` exists or npm already has `1.19.x` ≥ `1.19.0`)
+- `patch/1.19.5` — hotfix on `release/1.19` only
+
+### Hotfix workflow
+
+1. Branch from `release/X.Y`.
+2. Open a PR to `release/X.Y` with normal `fix:` / `feat:` commits.
+3. Merge a separate PR (or the same PR if it only contains the release) titled `patch/X.Y.Z` to publish and backport.
+
+The automated backport PR is titled `backport: patch/X.Y.Z`. Resolve cherry-pick conflicts manually if needed.
+
+### Emergency manual release
+
+If automation is unavailable, CODEOWNERS can run **Emergency release (manual)** in GitHub Actions (`.github/workflows/release.yaml`). This is not the normal release path.
+
 ## Testing
 
 All new code must include comprehensive tests. Follow these testing guidelines:
