@@ -88,6 +88,12 @@ export async function createAdapterState<ConnectorState>({
     // On StartExtractingMetadata: resolve fresh from TimeValue objects and store in pending state (always overwrite).
     // On all other events: reuse the pending values cached during StartExtractingMetadata.
     const eventContext = event.payload.event_context;
+    const overrideExtractFrom = (value: string) => {
+      if (eventContext.extract_from !== undefined) {
+        eventContext.original_extract_from = eventContext.extract_from;
+      }
+      eventContext.extract_from = value;
+    };
 
     if (event.payload.event_type === EventType.StartExtractingMetadata) {
       const timeFields = [
@@ -108,7 +114,11 @@ export async function createAdapterState<ConnectorState>({
         if (timeValue && timeValue.type) {
           try {
             const resolved = resolveTimeValue(timeValue, as.state);
-            eventContext[target] = resolved;
+            if (target === 'extract_from') {
+              overrideExtractFrom(resolved);
+            } else {
+              eventContext[target] = resolved;
+            }
             as.state[pending] = resolved;
             console.log(
               `Resolved ${target} to ${resolved}. Stored in ${pending}.`
@@ -124,14 +134,44 @@ export async function createAdapterState<ConnectorState>({
             });
             process.exit(1);
           }
+        } else if (
+          target === 'extract_from' &&
+          as.state.lastSuccessfulSyncStarted
+        ) {
+          overrideExtractFrom(as.state.lastSuccessfulSyncStarted);
+          as.state.pendingWorkersOldest = as.state.lastSuccessfulSyncStarted;
+          console.log(
+            `Using lastSuccessfulSyncStarted as extract_from: ${as.state.lastSuccessfulSyncStarted}.`
+          );
+        } else if (
+          target === 'extract_from' &&
+          !as.state.lastSuccessfulSyncStarted &&
+          eventContext.extract_from !== undefined
+        ) {
+          // CPv1.1 supplies the resolved boundary directly. Keep it pending so
+          // later extraction phases expose the same event_context value.
+          as.state.pendingWorkersOldest = eventContext.extract_from;
+          console.log(
+            `Using platform-provided extract_from: ${eventContext.extract_from}. Stored in pendingWorkersOldest.`
+          );
         }
       }
     } else {
       // Non-StartExtractingMetadata events: reuse pending values from state
-      if (as.state.pendingWorkersOldest) {
-        eventContext.extract_from = as.state.pendingWorkersOldest;
+      const pendingExtractFrom =
+        as.state.pendingWorkersOldest || as.state.lastSuccessfulSyncStarted;
+      if (
+        pendingExtractFrom &&
+        (eventContext.extract_from === undefined ||
+          eventContext.extract_from !== pendingExtractFrom)
+      ) {
+        overrideExtractFrom(pendingExtractFrom);
         console.log(
-          `Reusing pendingWorkersOldest as extract_from: ${as.state.pendingWorkersOldest}.`
+          `Using ${
+            as.state.pendingWorkersOldest
+              ? 'pendingWorkersOldest'
+              : 'lastSuccessfulSyncStarted'
+          } as extract_from: ${pendingExtractFrom}.`
         );
       } else {
         console.log(

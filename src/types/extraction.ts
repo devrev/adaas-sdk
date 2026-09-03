@@ -322,11 +322,16 @@ export interface EventContext {
   external_system_name: string;
   external_system_type: string;
   /**
-   * Resolved start timestamp of extraction (ISO 8601 format).
-   * Automatically computed by the SDK from extraction_start_time and worker state.
+   * Extraction start timestamp (ISO 8601 format), supplied directly by CPv1.1
+   * or resolved by the SDK from extraction_start_time and worker state for CPv2.
    * This is the field developers should read to know when to start extracting from.
    */
   extract_from?: string;
+  /**
+   * Original extraction start timestamp supplied by the platform before the SDK
+   * overrides extract_from.
+   */
+  original_extract_from?: string;
   import_slug: string;
   initial_sync_scope?: InitialSyncScope;
   mode: string;

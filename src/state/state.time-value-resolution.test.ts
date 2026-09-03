@@ -85,6 +85,120 @@ describe('State — TimeValue resolution', () => {
   });
 
   describe('Backwards compatibility - missing TimeValue type', () => {
+    it('should prefer lastSuccessfulSyncStarted over the platform extract_from when no CPv2 start time is provided', async () => {
+      // Arrange: CPv1.1 sends a concrete extract_from instead of a TimeValue.
+      const platformExtractFrom = '2025-04-01T00:00:00.000Z';
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.StartExtractingMetadata,
+          event_context: {
+            extract_from: platformExtractFrom,
+          },
+        },
+      });
+
+      fetchStateSpy.mockResolvedValue({
+        state: JSON.stringify({
+          snapInVersionId: 'test_snap_in_version_id',
+          lastSuccessfulSyncStarted: '2025-05-01T00:00:00.000Z',
+        }),
+      });
+
+      // Act
+      const state = await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: the successful sync boundary takes precedence and is retained
+      // for later phases.
+      expect(event.payload.event_context.extract_from).toBe(
+        '2025-05-01T00:00:00.000Z'
+      );
+      expect(event.payload.event_context.original_extract_from).toBe(
+        platformExtractFrom
+      );
+      expect(state.state.pendingWorkersOldest).toBe('2025-05-01T00:00:00.000Z');
+    });
+
+    it('should preserve the platform extract_from when resolving a CPv2 start time', async () => {
+      const platformExtractFrom = '2025-04-01T00:00:00.000Z';
+      const resolvedExtractFrom = '2025-06-01T00:00:00.000Z';
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.StartExtractingMetadata,
+          event_context: {
+            extraction_start_time: {
+              type: TimeValueType.ABSOLUTE_TIME,
+              value: resolvedExtractFrom,
+            },
+            extract_from: platformExtractFrom,
+          },
+        },
+      });
+
+      fetchStateSpy.mockResolvedValue({
+        state: JSON.stringify({
+          snapInVersionId: 'test_snap_in_version_id',
+        }),
+      });
+
+      await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      expect(event.payload.event_context.extract_from).toBe(
+        resolvedExtractFrom
+      );
+      expect(event.payload.event_context.original_extract_from).toBe(
+        platformExtractFrom
+      );
+    });
+
+    it('should use the platform extract_from when lastSuccessfulSyncStarted is not set', async () => {
+      // Arrange: CPv1.1 sends a concrete extract_from instead of a TimeValue.
+      const platformExtractFrom = '2025-04-01T00:00:00.000Z';
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.StartExtractingMetadata,
+          event_context: {
+            extract_from: platformExtractFrom,
+          },
+        },
+      });
+
+      fetchStateSpy.mockResolvedValue({
+        state: JSON.stringify({
+          snapInVersionId: 'test_snap_in_version_id',
+        }),
+      });
+
+      // Act
+      const state = await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: the platform value is used and retained for later phases.
+      expect(event.payload.event_context.extract_from).toBe(
+        platformExtractFrom
+      );
+      expect(state.state.pendingWorkersOldest).toBe(platformExtractFrom);
+    });
+
     it('should skip resolution when extraction_start_time has no type', async () => {
       // Arrange: platform sends extraction_start_time without a type field (old platform version)
       const event = createMockEvent(mockServer.baseUrl, {
@@ -122,6 +236,79 @@ describe('State — TimeValue resolution', () => {
         '2025-06-01T00:00:00.000Z'
       );
       expect(state.state.pendingWorkersNewest).toBe('2025-06-01T00:00:00.000Z');
+    });
+
+    it('should use lastSuccessfulSyncStarted for extract_from when extraction_start_time has no type', async () => {
+      // Arrange: platform sends an empty extraction_start_time on a subsequent sync
+      const lastSuccessfulSyncStarted = '2025-05-01T00:00:00.000Z';
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.StartExtractingMetadata,
+          event_context: {
+            extraction_start_time: {} as TimeValue,
+          },
+        },
+      });
+
+      fetchStateSpy.mockResolvedValue({
+        state: JSON.stringify({
+          snapInVersionId: 'test_snap_in_version_id',
+          lastSuccessfulSyncStarted,
+        }),
+      });
+
+      // Act
+      const state = await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      // Assert: the fallback is also stored for the following data phase
+      expect(event.payload.event_context.extract_from).toBe(
+        lastSuccessfulSyncStarted
+      );
+      expect(state.state.pendingWorkersOldest).toBe(lastSuccessfulSyncStarted);
+    });
+
+    it('should override platform extract_from on StartExtractingData and preserve its original value', async () => {
+      const platformExtractFrom = '2026-08-24T13:26:15.388Z';
+      const lastSuccessfulSyncStarted = '2026-08-25T13:26:15.388Z';
+      const event = createMockEvent(mockServer.baseUrl, {
+        context: {
+          snap_in_version_id: 'test_snap_in_version_id',
+        },
+        payload: {
+          event_type: EventType.StartExtractingData,
+          event_context: {
+            extract_from: platformExtractFrom,
+            extraction_start_time: {} as TimeValue,
+          },
+        },
+      });
+
+      fetchStateSpy.mockResolvedValue({
+        state: JSON.stringify({
+          snapInVersionId: 'test_snap_in_version_id',
+          lastSuccessfulSyncStarted,
+        }),
+      });
+
+      await createAdapterState({
+        event,
+        initialState: {},
+        initialDomainMapping: {},
+      });
+
+      expect(event.payload.event_context.extract_from).toBe(
+        lastSuccessfulSyncStarted
+      );
+      expect(event.payload.event_context.original_extract_from).toBe(
+        platformExtractFrom
+      );
     });
 
     it('should skip resolution when extraction_end_time has no type', async () => {
