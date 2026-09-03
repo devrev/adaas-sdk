@@ -28,6 +28,8 @@ export function translateIncomingEventType(eventTypeString: string): EventType {
     [EventType.StartExtractingExternalSyncUnits]:
       EventType.StartExtractingExternalSyncUnits,
     [EventType.StartExtractingMetadata]: EventType.StartExtractingMetadata,
+    [EventType.ContinueExtractingMetadata]:
+      EventType.ContinueExtractingMetadata,
     [EventType.StartExtractingData]: EventType.StartExtractingData,
     [EventType.ContinueExtractingData]: EventType.ContinueExtractingData,
     [EventType.StartDeletingExtractorState]:

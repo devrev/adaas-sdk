@@ -36,6 +36,7 @@ describe(translateIncomingEventType.name, () => {
   it.each([
     [EventType.StartExtractingExternalSyncUnits],
     [EventType.StartExtractingMetadata],
+    [EventType.ContinueExtractingMetadata],
     [EventType.StartExtractingData],
     [EventType.ContinueExtractingData],
     [EventType.StartDeletingExtractorState],

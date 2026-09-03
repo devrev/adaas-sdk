@@ -36,6 +36,7 @@ function getWorkerPath({
       path = '/workers/external-sync-units-extraction';
       break;
     case EventType.StartExtractingMetadata:
+    case EventType.ContinueExtractingMetadata:
       path = '/workers/metadata-extraction';
       break;
     case EventType.StartExtractingData:
