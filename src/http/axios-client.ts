@@ -27,11 +27,10 @@ import axiosRetry from 'axios-retry';
 import { runWithUserLogContext } from '../logger/logger.context';
 
 /**
-  @deprecated
-  This client has been deprecated due to all uses requiring something specific.
-  This is meant for SDK-internal use only.
-**/
-const axiosClient = axios.create();
+ * @deprecated This client has been deprecated because each use requires a
+ * specific configuration. It is intended for SDK-internal use only.
+ */
+export const axiosClient = axios.create();
 
 axiosRetry(axiosClient as Parameters<typeof axiosRetry>[0], {
   retries: 5,
@@ -70,4 +69,4 @@ axiosRetry(axiosClient as Parameters<typeof axiosRetry>[0], {
   },
 });
 
-export { axios, axiosClient };
+export { axios };
