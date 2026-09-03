@@ -4,6 +4,7 @@ import { getLibraryVersion } from './helpers';
 export const ALLOWED_EXTRACTION_EVENT_TYPES = [
   EventType.StartExtractingExternalSyncUnits,
   EventType.StartExtractingMetadata,
+  EventType.ContinueExtractingMetadata,
   EventType.StartExtractingData,
   EventType.ContinueExtractingData,
   EventType.StartDeletingExtractorState,
