@@ -90,7 +90,7 @@ export async function createAdapterState<ConnectorState>({
     const eventContext = event.payload.event_context;
     const overrideExtractFrom = (value: string) => {
       if (eventContext.extract_from !== undefined) {
-        eventContext.platform_extract_from = eventContext.extract_from;
+        eventContext.original_extract_from = eventContext.extract_from;
       }
       eventContext.extract_from = value;
     };

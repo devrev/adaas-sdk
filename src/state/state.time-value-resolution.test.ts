@@ -119,7 +119,7 @@ describe('State — TimeValue resolution', () => {
       expect(event.payload.event_context.extract_from).toBe(
         '2025-05-01T00:00:00.000Z'
       );
-      expect(event.payload.event_context.platform_extract_from).toBe(
+      expect(event.payload.event_context.original_extract_from).toBe(
         platformExtractFrom
       );
       expect(state.state.pendingWorkersOldest).toBe('2025-05-01T00:00:00.000Z');
@@ -159,7 +159,7 @@ describe('State — TimeValue resolution', () => {
       expect(event.payload.event_context.extract_from).toBe(
         resolvedExtractFrom
       );
-      expect(event.payload.event_context.platform_extract_from).toBe(
+      expect(event.payload.event_context.original_extract_from).toBe(
         platformExtractFrom
       );
     });
@@ -306,7 +306,7 @@ describe('State — TimeValue resolution', () => {
       expect(event.payload.event_context.extract_from).toBe(
         lastSuccessfulSyncStarted
       );
-      expect(event.payload.event_context.platform_extract_from).toBe(
+      expect(event.payload.event_context.original_extract_from).toBe(
         platformExtractFrom
       );
     });

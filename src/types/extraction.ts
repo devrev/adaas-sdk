@@ -328,7 +328,7 @@ export interface EventContext {
    * Original extraction start timestamp supplied by the platform before the SDK
    * overrides extract_from.
    */
-  platform_extract_from?: string;
+  original_extract_from?: string;
   import_slug: string;
   initial_sync_scope?: InitialSyncScope;
   mode: string;
